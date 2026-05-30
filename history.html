@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>History | Pureore Capital</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0A0A0C;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #FFFFFF;
+            padding: 1rem;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .brand-logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2ecc71, #f1c40f, #e67e22);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #2ecc71;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: #111116;
+            border-radius: 60px;
+            padding: 0.3rem;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0.7rem;
+            border-radius: 50px;
+            font-weight: 600;
+            color: #aaa;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            box-shadow: 0 2px 8px rgba(46,204,113,0.3);
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Cards */
+        .history-card {
+            background: rgba(18, 18, 24, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            transition: 0.2s;
+        }
+        .history-card:hover {
+            transform: translateX(4px);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .amount {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .status {
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .status.pending { background: #f1c40f20; color: #f1c40f; border: 1px solid #f1c40f; }
+        .status.completed { background: #2ecc7120; color: #2ecc71; border: 1px solid #2ecc71; }
+        .status.rejected { background: #ef444420; color: #ef4444; border: 1px solid #ef4444; }
+        .status.active { background: #2ecc7120; color: #2ecc71; border: 1px solid #2ecc71; }
+        .status.paid { background: #2ecc7120; color: #2ecc71; border: 1px solid #2ecc71; }
+        .status.overdue { background: #ef444420; color: #ef4444; border: 1px solid #ef4444; }
+        .details {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 0.3rem;
+        }
+        .screenshot-thumb {
+            max-width: 80px;
+            border-radius: 12px;
+            margin-top: 0.5rem;
+            cursor: pointer;
+        }
+        .empty-msg {
+            text-align: center;
+            color: #aaa;
+            padding: 2rem;
+        }
+        .pending-badge {
+            background: #f1c40f;
+            color: #0A0A0C;
+            border-radius: 30px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        .loader {
+            border: 3px solid #2C2C3A;
+            border-top: 3px solid #2ecc71;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.7rem;
+            color: #6B6F85;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="brand-logo">📜 Transaction History</div>
+        <br>
+        <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="deposits">💸 Deposits</button>
+        <button class="tab-btn" data-tab="withdrawals">💳 Withdrawals</button>
+        <button class="tab-btn" data-tab="loans">🏦 Loans</button>
+    </div>
+
+    <!-- Tab Contents -->
+    <div id="depositsTab" class="tab-content active">
+        <div id="depositsList"></div>
+    </div>
+    <div id="withdrawalsTab" class="tab-content">
+        <div id="withdrawalsList"></div>
+    </div>
+    <div id="loansTab" class="tab-content">
+        <div id="loansList"></div>
+    </div>
+
+    <div class="footer">
+        <span>© Pureore Capital 2025</span> — <span>Pending requests are reviewed by admin</span>
+    </div>
+</div>
+
+<script src="js/firebase-config.js"></script>
+<script>
+    // Wait for auth
+    auth.onAuthStateChanged((user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        // Real-time listeners for each collection
+        listenDeposits(user.uid);
+        listenWithdrawals(user.uid);
+        listenLoans(user.uid);
+    });
+
+    // Tab switching
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabs = {
+        deposits: document.getElementById('depositsTab'),
+        withdrawals: document.getElementById('withdrawalsTab'),
+        loans: document.getElementById('loansTab')
+    };
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            // Update active class on buttons
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // Show selected tab
+            Object.values(tabs).forEach(tab => tab.classList.remove('active'));
+            tabs[tabId].classList.add('active');
+        });
+    });
+
+    // Format date from Firestore timestamp
+    function formatDate(timestamp) {
+        if (!timestamp) return 'N/A';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toLocaleString();
+    }
+
+    // Format money
+    function formatMoney(amount) {
+        return 'K' + parseFloat(amount).toFixed(2);
+    }
+
+    // Render deposit list with real-time updates
+    function listenDeposits(userId) {
+        const depositsList = document.getElementById('depositsList');
+        let initialLoad = true;
+        const q = db.collection('deposits').where('userId', '==', userId).orderBy('createdAt', 'desc');
+        const unsubscribe = q.onSnapshot((snapshot) => {
+            if (snapshot.empty && !initialLoad) {
+                depositsList.innerHTML = '<div class="empty-msg">No deposit records found.</div>';
+                return;
+            }
+            let html = '';
+            let pendingCount = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.status === 'pending') pendingCount++;
+                const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
+                html += `
+                    <div class="history-card" style="border-left-color: ${data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444')}">
+                        <div class="card-header">
+                            <span class="amount">${formatMoney(data.amount)}</span>
+                            <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
+                        </div>
+                        <div class="details">
+                            <strong>Method:</strong> ${data.paymentMethod || 'N/A'}<br>
+                            <strong>Phone/Card:</strong> ${data.phone || data.cardNumber || 'N/A'}<br>
+                            <strong>Date:</strong> ${formatDate(data.createdAt)}
+                        </div>
+                        ${data.screenshotUrl ? `<img src="${data.screenshotUrl}" class="screenshot-thumb" onclick="window.open('${data.screenshotUrl}','_blank')" alt="screenshot">` : ''}
+                    </div>
+                `;
+            });
+            if (pendingCount > 0 && !initialLoad) {
+                // Optional: show a small badge on the deposits tab
+                const depositTabBtn = document.querySelector('.tab-btn[data-tab="deposits"]');
+                depositTabBtn.innerHTML = `💸 Deposits <span class="pending-badge">${pendingCount}</span>`;
+            } else {
+                const depositTabBtn = document.querySelector('.tab-btn[data-tab="deposits"]');
+                depositTabBtn.innerHTML = `💸 Deposits`;
+            }
+            depositsList.innerHTML = html || '<div class="empty-msg">No deposit records found.</div>';
+            initialLoad = false;
+        }, (error) => {
+            console.error("Deposit listener error:", error);
+            depositsList.innerHTML = '<div class="error-msg">Error loading deposits.</div>';
+        });
+        // Store unsubscribe if needed (optional)
+    }
+
+    function listenWithdrawals(userId) {
+        const withdrawalsList = document.getElementById('withdrawalsList');
+        let initialLoad = true;
+        const q = db.collection('withdrawals').where('userId', '==', userId).orderBy('createdAt', 'desc');
+        const unsubscribe = q.onSnapshot((snapshot) => {
+            if (snapshot.empty && !initialLoad) {
+                withdrawalsList.innerHTML = '<div class="empty-msg">No withdrawal records found.</div>';
+                return;
+            }
+            let html = '';
+            let pendingCount = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.status === 'pending') pendingCount++;
+                const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
+                html += `
+                    <div class="history-card" style="border-left-color: ${data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444')}">
+                        <div class="card-header">
+                            <span class="amount">${formatMoney(data.amount)}</span>
+                            <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
+                        </div>
+                        <div class="details">
+                            <strong>Network:</strong> ${data.network || 'N/A'}<br>
+                            <strong>Contact:</strong> ${data.phone || data.cardNumber || 'N/A'}<br>
+                            <strong>Received after fee:</strong> ${formatMoney(data.netAmount || data.amount)}<br>
+                            <strong>Date:</strong> ${formatDate(data.createdAt)}
+                        </div>
+                    </div>
+                `;
+            });
+            if (pendingCount > 0 && !initialLoad) {
+                const withdrawTabBtn = document.querySelector('.tab-btn[data-tab="withdrawals"]');
+                withdrawTabBtn.innerHTML = `💳 Withdrawals <span class="pending-badge">${pendingCount}</span>`;
+            } else {
+                const withdrawTabBtn = document.querySelector('.tab-btn[data-tab="withdrawals"]');
+                withdrawTabBtn.innerHTML = `💳 Withdrawals`;
+            }
+            withdrawalsList.innerHTML = html || '<div class="empty-msg">No withdrawal records found.</div>';
+            initialLoad = false;
+        }, (error) => {
+            console.error("Withdrawal listener error:", error);
+            withdrawalsList.innerHTML = '<div class="error-msg">Error loading withdrawals.</div>';
+        });
+    }
+
+    function listenLoans(userId) {
+        const loansList = document.getElementById('loansList');
+        let initialLoad = true;
+        const q = db.collection('loans').where('userId', '==', userId).orderBy('createdAt', 'desc');
+        const unsubscribe = q.onSnapshot((snapshot) => {
+            if (snapshot.empty && !initialLoad) {
+                loansList.innerHTML = '<div class="empty-msg">No loan records found.</div>';
+                return;
+            }
+            let html = '';
+            let pendingCount = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.status === 'active') pendingCount++;
+                const statusClass = data.status === 'active' ? 'active' : (data.status === 'paid' ? 'paid' : 'overdue');
+                html += `
+                    <div class="history-card" style="border-left-color: ${data.status === 'paid' ? '#2ecc71' : (data.status === 'active' ? '#f1c40f' : '#ef4444')}">
+                        <div class="card-header">
+                            <span class="amount">${formatMoney(data.amount)}</span>
+                            <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
+                        </div>
+                        <div class="details">
+                            <strong>To repay:</strong> ${formatMoney(data.repayTotal)}<br>
+                            <strong>Due date:</strong> ${formatDate(data.dueDate)}<br>
+                            <strong>Created:</strong> ${formatDate(data.createdAt)}
+                        </div>
+                    </div>
+                `;
+            });
+            if (pendingCount > 0 && !initialLoad) {
+                const loanTabBtn = document.querySelector('.tab-btn[data-tab="loans"]');
+                loanTabBtn.innerHTML = `🏦 Loans <span class="pending-badge">${pendingCount}</span>`;
+            } else {
+                const loanTabBtn = document.querySelector('.tab-btn[data-tab="loans"]');
+                loanTabBtn.innerHTML = `🏦 Loans`;
+            }
+            loansList.innerHTML = html || '<div class="empty-msg">No loan records found.</div>';
+            initialLoad = false;
+        }, (error) => {
+            console.error("Loan listener error:", error);
+            loansList.innerHTML = '<div class="error-msg">Error loading loans.</div>';
+        });
+    }
+</script>
+</body>
+</html>

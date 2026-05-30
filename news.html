@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>News | Pureore Capital</title>
+    <!-- Firebase SDKs (for auth check) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0A0A0C;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            color: #FFFFFF;
+            padding: 1rem;
+            padding-bottom: 85px;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 25% 40%, rgba(46, 204, 113, 0.03) 1.5px, transparent 1.5px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(30,30,42,0.8);
+            border-radius: 40px;
+            padding: 8px 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #2ecc71;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(46,204,113,0.3);
+            z-index: 20;
+        }
+        .back-arrow:hover {
+            background: #2ecc71;
+            color: #0A0A0C;
+            transform: translateX(-3px);
+        }
+        .animated-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 2rem 0 1.5rem;
+            background: linear-gradient(135deg, #2ecc71, #f1c40f, #e67e22);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: gradientFlow 3s ease infinite;
+        }
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* Flag Marquee */
+        .flags-container {
+            background: rgba(18, 18, 24, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 0.8rem 0;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(46,204,113,0.2);
+            overflow: hidden;
+        }
+        .flags-marquee {
+            display: flex;
+            animation: scrollFlags 20s linear infinite;
+            width: fit-content;
+        }
+        .flag-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+            margin: 0 1rem;
+        }
+        .flag-icon {
+            font-size: 2.5rem;
+        }
+        .flag-name {
+            font-size: 0.75rem;
+            margin-top: 0.2rem;
+            color: #ccc;
+        }
+        @keyframes scrollFlags {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        /* News Cards */
+        .news-card {
+            background: rgba(18, 18, 24, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .news-card:hover {
+            transform: translateY(-5px);
+            border-color: #f1c40f;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+        .news-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+        }
+        .news-content {
+            padding: 1.5rem;
+        }
+        .news-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .news-description {
+            color: #ddd;
+            line-height: 1.6;
+        }
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(46, 204, 113, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px 20px;
+            z-index: 30;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .nav-item:hover {
+            transform: translateY(-3px);
+        }
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            filter: brightness(0.8);
+            transition: 0.2s;
+        }
+        .nav-label {
+            font-size: 0.7rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .nav-item.active .nav-label {
+            color: #2ecc71;
+        }
+        @media (max-width: 768px) {
+            .animated-title { font-size: 1.8rem; }
+            .news-image { height: 200px; }
+            .flag-item { min-width: 70px; }
+            .flag-icon { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
+    <div class="animated-title">📰 NEWS</div>
+
+    <!-- Auto-scrolling flags -->
+    <div class="flags-container">
+        <div class="flags-marquee" id="flagsMarquee">
+            <!-- Flags will be duplicated for seamless scroll -->
+        </div>
+    </div>
+
+    <!-- News Articles -->
+    <div class="news-card">
+        <img class="news-image" src="https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png" alt="DR Congo Community">
+        <div class="news-content">
+            <div class="news-title">📍 DR Congo Community Market Support</div>
+            <div class="news-description">
+                Pureore Capital members gathered in a busy local market in DR Congo, helping families with essential support. Men and women wearing Pureore Capital t‑shirts and caps welcomed community members with smiles while sharing mealie meal and cooking oil. The market was full of life as people came together in unity, showing Pureore Capital’s commitment to helping communities grow stronger through care and support.
+            </div>
+        </div>
+    </div>
+
+    <div class="news-card">
+        <img class="news-image" src="https://i.ibb.co/DPVJnzTT/file-000000000da472438ebd83841715ab80.png" alt="Bus Outreach">
+        <div class="news-content">
+            <div class="news-title">🚌 Pureore Capital Community Bus Outreach</div>
+            <div class="news-description">
+                A large Pureore Capital bus moved through the community while people stood outside waving goodbye with excitement and joy. The bus carried support and outreach materials while members of the community watched and celebrated. This moment showed Pureore Capital reaching people directly and building stronger connections across different places.
+            </div>
+        </div>
+    </div>
+
+    <div class="news-card">
+        <img class="news-image" src="https://i.ibb.co/JRFRBHCz/file-000000007eec7243a7fece111ff00de4.png" alt="UK Community">
+        <div class="news-content">
+            <div class="news-title">🇬🇧 United Kingdom Community Support</div>
+            <div class="news-description">
+                In a small community in the United Kingdom, Pureore Capital members came together to support local families. Wearing company colors, the team distributed mealie meal and cooking oil while speaking with residents and sharing encouragement. The scene reflected Pureore Capital’s international mission of bringing support and practical help to communities in different countries.
+            </div>
+        </div>
+    </div>
+
+    <div class="news-card">
+        <img class="news-image" src="https://i.ibb.co/rR4zT1Xp/file-00000000a3f8724389f6b3fe5429d0b5.png" alt="Business Offices">
+        <div class="news-content">
+            <div class="news-title">🏢 Pureore Capital Business Offices</div>
+            <div class="news-description">
+                Pureore Capital offices showed different teams working in business and sales. In one office, members helped customers with bicycles. In another, staff sold solar panels and explained clean energy solutions. A third office displayed jewelry including necklaces and rings with team members assisting customers. The final office showed workers focused at their desks, managing company operations and supporting Pureore Capital’s daily work.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Navigation (6 icons) -->
+<div class="bottom-nav">
+    <div class="nav-item" data-page="dashboard.html">
+        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" data-page="mkvip.html">
+        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
+    </div>
+    <div class="nav-item" data-page="jproduct.html">
+        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
+    </div>
+    <div class="nav-item" data-page="income.html">
+        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
+    </div>
+    <div class="nav-item" data-page="team.html">
+        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
+    </div>
+    <div class="nav-item" data-page="me.html">
+        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
+    </div>
+</div>
+
+<script src="js/firebase-config.js"></script>
+<script>
+    // Auth check: redirect to login if not authenticated
+    auth.onAuthStateChanged(user => {
+        if (!user) {
+            window.location.href = 'login.html';
+        }
+    });
+
+    // Auto-scrolling flags (6 countries)
+    const countries = [
+        { name: "UK", emoji: "🇬🇧" },
+        { name: "Congo", emoji: "🇨🇬" },
+        { name: "Tanzania", emoji: "🇹🇿" },
+        { name: "Ghana", emoji: "🇬🇭" },
+        { name: "Zimbabwe", emoji: "🇿🇼" },
+        { name: "Zambia", emoji: "🇿🇲" }
+    ];
+
+    // Build marquee with two sets for seamless scrolling
+    const marquee = document.getElementById('flagsMarquee');
+    function buildMarquee() {
+        let html = '';
+        // Double the items for continuous scroll
+        for (let i = 0; i < 2; i++) {
+            countries.forEach(country => {
+                html += `
+                    <div class="flag-item">
+                        <div class="flag-icon">${country.emoji}</div>
+                        <div class="flag-name">${country.name}</div>
+                    </div>
+                `;
+            });
+        }
+        marquee.innerHTML = html;
+    }
+    buildMarquee();
+
+    // Bottom navigation active highlight and redirection
+    const navItems = document.querySelectorAll('.nav-item');
+    const currentPage = window.location.pathname.split('/').pop() || 'news.html';
+    navItems.forEach(item => {
+        const targetPage = item.getAttribute('data-page');
+        if (currentPage === targetPage) item.classList.add('active');
+        item.addEventListener('click', () => {
+            if (targetPage && !window.location.pathname.includes(targetPage)) {
+                window.location.href = targetPage;
+            }
+        });
+    });
+</script>
+</body>
+</html>

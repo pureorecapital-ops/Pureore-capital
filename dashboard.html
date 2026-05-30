@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Dashboard | Pureore Capital</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0A0A0C;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            color: #FFFFFF;
+            padding-bottom: 85px;
+            position: relative;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 25% 40%, rgba(46, 204, 113, 0.03) 1.5px, transparent 1.5px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1.2rem 1.2rem 2rem;
+            position: relative;
+            z-index: 2;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .brand-logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: inline-flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.1rem;
+            background: linear-gradient(135deg, #2ecc71, #f1c40f, #e67e22);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: glowShift 4s infinite alternate;
+        }
+        @keyframes glowShift {
+            0% { text-shadow: 0 0 3px rgba(46, 204, 113, 0.3); }
+            50% { text-shadow: 0 0 12px rgba(241, 196, 15, 0.4); }
+            100% { text-shadow: 0 0 8px rgba(230, 126, 34, 0.4); }
+        }
+        .tagline {
+            font-size: 0.9rem;
+            color: #B0B3B8;
+            margin-top: 0.3rem;
+        }
+        /* Flags marquee */
+        .flags-container {
+            background: rgba(18, 18, 24, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            padding: 0.5rem 0;
+            margin: 1rem 0 1.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(46,204,113,0.2);
+        }
+        .flags-marquee {
+            display: flex;
+            animation: scrollFlags 20s linear infinite;
+            width: fit-content;
+        }
+        .flag-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 90px;
+            margin: 0 1rem;
+        }
+        .flag-icon {
+            font-size: 2rem;
+        }
+        .flag-name {
+            font-size: 0.7rem;
+            margin-top: 0.2rem;
+            color: #ccc;
+        }
+        @keyframes scrollFlags {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .balance-card {
+            background: rgba(18, 18, 24, 0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            padding: 1.8rem 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            box-shadow: 0 0 25px rgba(46, 204, 113, 0.1);
+            margin-bottom: 2rem;
+            transition: transform 0.2s;
+        }
+        .balance-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(241, 196, 15, 0.5);
+        }
+        .balance-label {
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: #C0C4CC;
+            margin-bottom: 0.6rem;
+        }
+        .balance-amount {
+            font-size: 3.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2ecc71, #f1c40f);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .secure-note {
+            font-size: 0.7rem;
+            color: #7E8299;
+            margin-bottom: 1.8rem;
+        }
+        .button-group {
+            display: flex;
+            gap: 1.2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-deposit, .btn-withdraw {
+            padding: 0.85rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+        }
+        .btn-deposit {
+            background: linear-gradient(135deg, #2ecc71, #239b56);
+        }
+        .btn-withdraw {
+            background: linear-gradient(135deg, #e67e22, #c0392b);
+        }
+        .btn-deposit:hover, .btn-withdraw:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.05);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
+        }
+        .middle-row {
+            display: flex;
+            justify-content: space-around;
+            gap: 1rem;
+            margin: 1.5rem 0 2rem;
+            flex-wrap: wrap;
+        }
+        .middle-item {
+            flex: 1;
+            background: #111116;
+            border-radius: 28px;
+            padding: 1rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #1E1F28;
+            min-width: 90px;
+        }
+        .middle-item:hover {
+            transform: translateY(-5px);
+            border-color: #2ecc71;
+            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.2);
+        }
+        .middle-icon {
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 8px;
+            background: rgba(46, 204, 113, 0.08);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        .middle-icon img {
+            width: 100%;
+            max-width: 42px;
+            filter: drop-shadow(0 0 5px rgba(46,204,113,0.3));
+        }
+        .middle-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #ddd;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(46, 204, 113, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px 20px;
+            z-index: 30;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .nav-item:hover {
+            transform: translateY(-3px);
+        }
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            filter: brightness(0.8);
+            transition: 0.2s;
+        }
+        .nav-item.active .nav-icon {
+            filter: brightness(1) drop-shadow(0 0 6px #2ecc71);
+        }
+        .nav-label {
+            font-size: 0.7rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .nav-item.active .nav-label {
+            color: #2ecc71;
+        }
+        .support-float {
+            position: fixed;
+            bottom: 95px;
+            right: 20px;
+            background: linear-gradient(145deg, #2ecc71, #1f8f4b);
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.5);
+            transition: 0.2s;
+            z-index: 25;
+            border: none;
+        }
+        .support-float:hover {
+            transform: scale(1.08);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .support-modal {
+            background: #14161F;
+            border-radius: 36px;
+            width: 90%;
+            max-width: 450px;
+            padding: 1.8rem;
+            border: 1px solid #2ecc71;
+            position: relative;
+            color: #fff;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .close-modal {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #aaa;
+        }
+        .support-modal h3 {
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .support-line {
+            margin: 1rem 0;
+            background: #1C1E28;
+            padding: 0.8rem;
+            border-radius: 20px;
+        }
+        .support-line strong {
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+        .support-btn {
+            background: #25D366;
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-top: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .support-btn.telegram {
+            background: #0088cc;
+        }
+        .support-btn.whatsapp-group {
+            background: #25D366;
+        }
+        .support-btn.whatsapp-channel {
+            background: #25D366;
+        }
+        .support-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        .footer-links {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.7rem;
+            color: #6B6F85;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .footer-links a {
+            color: #8E92AA;
+            text-decoration: none;
+        }
+        @media (max-width: 600px) {
+            .balance-amount { font-size: 2.2rem; }
+            .brand-logo { font-size: 1.8rem; }
+            .nav-icon { width: 24px; height: 24px; }
+            .nav-label { font-size: 0.6rem; }
+            .middle-icon { width: 45px; height: 45px; }
+            .middle-icon img { max-width: 34px; }
+            .middle-label { font-size: 0.7rem; }
+            .support-modal { padding: 1rem; }
+            .flag-item { min-width: 70px; }
+            .flag-icon { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="brand-logo">
+            <span>P</span><span>U</span><span>R</span><span>E</span><span>O</span><span>R</span><span>E</span>
+            <span style="margin-left: 8px;">C</span><span>A</span><span>P</span><span>I</span><span>T</span><span>A</span><span>L</span>
+        </div>
+        <div class="tagline">Welcome back. Build your future with confidence.</div>
+    </div>
+
+    <!-- Country flags marquee -->
+    <div class="flags-container">
+        <div class="flags-marquee" id="flagsMarquee"></div>
+    </div>
+
+    <div class="balance-card">
+        <div class="balance-label">Available Balance</div>
+        <div class="balance-amount" id="userBalanceSpan">0.00 ZMW</div>
+        <div class="secure-note">🔒 Secure account balance</div>
+        <div class="button-group">
+            <button class="btn-deposit" id="depositBtn">💸 Deposit</button>
+            <button class="btn-withdraw" id="withdrawBtn">💳 Withdraw</button>
+        </div>
+    </div>
+
+    <!-- Corrected middle icons: Treasure gets voucher image, Loan gets treasure image, Voucher gets loan image -->
+    <div class="middle-row">
+        <div class="middle-item" onclick="location.href='treasure.html';">
+            <div class="middle-icon"><img src="https://i.ibb.co/zhHL7zW5/IMG-20260527-204336.jpg" alt="Treasure"></div>
+            <div class="middle-label">Treasure</div>
+        </div>
+        <div class="middle-item" onclick="location.href='loan.html';">
+            <div class="middle-icon"><img src="https://i.ibb.co/wZ3dDNTV/IMG-20260527-204420.jpg" alt="Loan"></div>
+            <div class="middle-label">Loan</div>
+        </div>
+        <div class="middle-item" onclick="location.href='voucher.html';">
+            <div class="middle-icon"><img src="https://i.ibb.co/QvmJxMkk/IMG-20260527-204350.jpg" alt="Voucher"></div>
+            <div class="middle-label">Voucher</div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+    <div class="nav-item" data-page="dashboard.html">
+        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" data-page="mkvip.html">
+        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
+    </div>
+    <div class="nav-item" data-page="jproduct.html">
+        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
+    </div>
+    <div class="nav-item" data-page="income.html">
+        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
+    </div>
+    <div class="nav-item" data-page="team.html">
+        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
+    </div>
+    <div class="nav-item" data-page="me.html">
+        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
+    </div>
+</div>
+
+<!-- Floating Support Button & Modal (redesigned with WhatsApp Group/Channel & Telegram) -->
+<div class="support-float" id="supportFloatBtn">💬</div>
+<div id="supportModal" class="modal-overlay">
+    <div class="support-modal">
+        <button class="close-modal" id="closeModalBtn">&times;</button>
+        <h3>📢 Support & Community</h3>
+        
+        <!-- Direct WhatsApp Contacts -->
+        <div class="support-line">
+            <strong>📞 Assistant (Deposit/Withdraw)</strong>
+            <span>0961391022</span><br>
+            <button class="support-btn" onclick="window.open('https://wa.me/260961391022', '_blank')">💬 WhatsApp Assistant</button>
+        </div>
+        <div class="support-line">
+            <strong>📞 Manager (All Accounts)</strong>
+            <span>0951359357</span><br>
+            <button class="support-btn" onclick="window.open('https://wa.me/260951359357', '_blank')">💬 WhatsApp Manager</button>
+        </div>
+
+        <!-- WhatsApp Group -->
+        <div class="support-line">
+            <strong>👥 WhatsApp Group</strong>
+            <span>Join our investor community</span><br>
+            <button class="support-btn whatsapp-group" onclick="window.open('https://chat.whatsapp.com/KnggKPDuxj98Wxo1HAE6FP', '_blank')">📱 Join Group</button>
+        </div>
+
+        <!-- WhatsApp Channel -->
+        <div class="support-line">
+            <strong>📢 WhatsApp Channel</strong>
+            <span>Get news & updates</span><br>
+            <button class="support-btn whatsapp-channel" onclick="window.open('https://whatsapp.com/channel/0029VbCoP1qFcowAHv8uFV2Y', '_blank')">🔔 Follow Channel</button>
+        </div>
+
+        <!-- Telegram (placeholder – replace with actual invite link) -->
+        <div class="support-line">
+            <strong>✈️ Telegram Community</strong>
+            <span>Stay connected</span><br>
+            <button class="support-btn telegram" onclick="window.open('https://t.me/pureorecapital', '_blank')">📨 Join Telegram</button>
+            <div style="font-size: 0.7rem; margin-top: 5px; color: #aaa;">(Official link – coming soon)</div>
+        </div>
+
+        <div style="font-size: 11px; margin-top: 12px; text-align:center;">We're here 24/7 to help you grow.</div>
+    </div>
+</div>
+
+<div class="footer-links">
+    <a href="term.html">Terms of Service</a>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="risk-disclaimer.html">Risk Disclaimer</a>
+    <span>© Pureore Capital 2025</span>
+</div>
+
+<script src="js/firebase-config.js"></script>
+<script>
+    // Build flags marquee
+    const countries = [
+        { name: "UK", emoji: "🇬🇧" },
+        { name: "Tanzania", emoji: "🇹🇿" },
+        { name: "Ghana", emoji: "🇬🇭" },
+        { name: "Zimbabwe", emoji: "🇿🇼" },
+        { name: "Congo", emoji: "🇨🇬" },
+        { name: "Zambia", emoji: "🇿🇲" }
+    ];
+    const marquee = document.getElementById('flagsMarquee');
+    function buildMarquee() {
+        let html = '';
+        // Double for seamless scroll
+        for (let i = 0; i < 2; i++) {
+            countries.forEach(country => {
+                html += `
+                    <div class="flag-item">
+                        <div class="flag-icon">${country.emoji}</div>
+                        <div class="flag-name">${country.name}</div>
+                    </div>
+                `;
+            });
+        }
+        marquee.innerHTML = html;
+    }
+    buildMarquee();
+
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const userId = user.uid;
+            db.collection('users').doc(userId).onSnapshot((doc) => {
+                if (doc.exists) {
+                    let balance = doc.data().balance || 0;
+                    document.getElementById('userBalanceSpan').innerHTML = balance.toFixed(2) + ' ZMW';
+                } else {
+                    document.getElementById('userBalanceSpan').innerHTML = '0.00 ZMW';
+                }
+            });
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+
+    document.getElementById('depositBtn')?.addEventListener('click', () => window.location.href = 'deposit.html');
+    document.getElementById('withdrawBtn')?.addEventListener('click', () => window.location.href = 'withdraw.html');
+
+    const modal = document.getElementById('supportModal');
+    const supportBtn = document.getElementById('supportFloatBtn');
+    const closeModal = document.getElementById('closeModalBtn');
+    supportBtn?.addEventListener('click', () => modal.classList.add('active'));
+    closeModal?.addEventListener('click', () => modal.classList.remove('active'));
+    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+    const navItems = document.querySelectorAll('.nav-item');
+    const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
+    navItems.forEach(item => {
+        const targetPage = item.getAttribute('data-page');
+        if (currentPage === targetPage) {
+            item.classList.add('active');
+        }
+        item.addEventListener('click', () => {
+            if (targetPage && !window.location.pathname.includes(targetPage)) {
+                window.location.href = targetPage;
+            }
+        });
+    });
+</script>
+</body>
+</html>

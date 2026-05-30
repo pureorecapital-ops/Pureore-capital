@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Treasure | Pureore Capital</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0A0A0C;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #FFFFFF;
+            padding: 1rem;
+            padding-bottom: 85px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(30,30,42,0.8);
+            border-radius: 40px;
+            padding: 8px 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #2ecc71;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(46,204,113,0.3);
+            z-index: 20;
+        }
+        .back-arrow:hover {
+            background: #2ecc71;
+            color: #0A0A0C;
+            transform: translateX(-3px);
+        }
+        .animated-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 2rem 0 1rem;
+            background: linear-gradient(135deg, #2ecc71, #f1c40f, #e67e22);
+            background-size: 200% auto;
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: gradientFlow 3s ease infinite;
+        }
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .treasure-card {
+            background: rgba(18, 18, 24, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 1.8rem;
+            text-align: center;
+            border: 1px solid rgba(241, 196, 15, 0.4);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .treasure-icon {
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .code-input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 2px;
+            background: #1E1E2A;
+            border: 1px solid #f1c40f;
+            border-radius: 60px;
+            color: white;
+            font-family: monospace;
+            text-transform: uppercase;
+        }
+        .code-input:focus {
+            outline: none;
+            border-color: #2ecc71;
+            box-shadow: 0 0 10px rgba(46,204,113,0.3);
+        }
+        .claim-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #f1c40f, #e67e22);
+            padding: 1rem;
+            border: none;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #0A0A0C;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: 0.2s;
+        }
+        .claim-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+        .claim-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            border-radius: 30px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .success {
+            background: rgba(46,204,113,0.2);
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
+        }
+        .error {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+        .info-card {
+            background: #111116;
+            border-radius: 28px;
+            padding: 1.2rem;
+            margin-top: 1rem;
+            border: 1px solid #2C2C3A;
+        }
+        .info-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #f1c40f;
+        }
+        .join-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .join-btn {
+            background: #25D366;
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: 0.2s;
+        }
+        .join-btn.telegram {
+            background: #0088cc;
+        }
+        .join-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(46, 204, 113, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px 20px;
+            z-index: 30;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .nav-item:hover {
+            transform: translateY(-3px);
+        }
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            filter: brightness(0.8);
+        }
+        .nav-label {
+            font-size: 0.7rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .nav-item.active .nav-label {
+            color: #2ecc71;
+        }
+        @media (max-width: 600px) {
+            .animated-title { font-size: 1.5rem; }
+            .treasure-card { padding: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Back arrow to dashboard -->
+    <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
+
+    <div class="animated-title">🎁 TREASURE HUNT 🎁</div>
+
+    <div class="treasure-card">
+        <div class="treasure-icon">💎</div>
+        <p style="margin-bottom: 1rem; color: #ccc;">Enter the secret code to claim your reward</p>
+        <input type="text" id="treasureCode" class="code-input" placeholder="e.g., GOLD7XP" maxlength="7" autocomplete="off" style="text-transform:uppercase">
+        <button id="claimBtn" class="claim-btn">🔓 Claim Treasure</button>
+        <div id="messageArea"></div>
+    </div>
+
+    <div class="info-card">
+        <div class="info-title">📢 How to get Treasure Codes?</div>
+        <p>Join our official WhatsApp group and channel. We post exclusive treasure codes there daily! Missing out means losing free ZMW.</p>
+        <div class="join-buttons">
+            <a href="https://chat.whatsapp.com/KnggKPDuxj98Wxo1HAE6FP" target="_blank" class="join-btn">📱 WhatsApp Group</a>
+            <a href="https://whatsapp.com/channel/0029VbCoP1qFcowAHv8uFV2Y" target="_blank" class="join-btn">📢 WhatsApp Channel</a>
+            <a href="https://t.me/pureorecapital" target="_blank" class="join-btn telegram">✈️ Telegram</a>
+        </div>
+        <p style="margin-top: 0.8rem; font-size: 0.75rem; color: #aaa;">Codes are 7 characters (letters & numbers). Be fast – each code can be used only once!</p>
+    </div>
+</div>
+
+<!-- Bottom Navigation (same as dashboard) -->
+<div class="bottom-nav">
+    <div class="nav-item" data-page="dashboard.html">
+        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" data-page="mkvip.html">
+        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
+    </div>
+    <div class="nav-item" data-page="jproduct.html">
+        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
+    </div>
+    <div class="nav-item" data-page="income.html">
+        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
+    </div>
+    <div class="nav-item" data-page="team.html">
+        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
+    </div>
+    <div class="nav-item" data-page="me.html">
+        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
+    </div>
+</div>
+
+<script src="js/firebase-config.js"></script>
+<script>
+    const claimBtn = document.getElementById('claimBtn');
+    const codeInput = document.getElementById('treasureCode');
+    const messageArea = document.getElementById('messageArea');
+
+    // Auth check
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+    });
+
+    claimBtn.addEventListener('click', async () => {
+        let code = codeInput.value.trim().toUpperCase();
+        if (code.length !== 7) {
+            showMessage('Code must be exactly 7 characters (letters & numbers).', 'error');
+            return;
+        }
+        // Validate alphanumeric
+        if (!/^[A-Z0-9]{7}$/.test(code)) {
+            showMessage('Use only letters A-Z and numbers 0-9.', 'error');
+            return;
+        }
+
+        claimBtn.disabled = true;
+        claimBtn.innerText = 'Checking...';
+
+        const user = auth.currentUser;
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        try {
+            // Look for the code in Firestore
+            const codeQuery = await db.collection('treasureCodes')
+                .where('code', '==', code)
+                .limit(1)
+                .get();
+
+            if (codeQuery.empty) {
+                showMessage('❌ Invalid treasure code. No such code exists.', 'error');
+                claimBtn.disabled = false;
+                claimBtn.innerText = '🔓 Claim Treasure';
+                return;
+            }
+
+            const codeDoc = codeQuery.docs[0];
+            const codeData = codeDoc.data();
+
+            if (codeData.used === true) {
+                showMessage('⚠️ This treasure code has already been used.', 'error');
+                claimBtn.disabled = false;
+                claimBtn.innerText = '🔓 Claim Treasure';
+                return;
+            }
+
+            const amount = codeData.amount;
+            if (!amount || amount <= 0) {
+                showMessage('❌ Invalid amount for this code. Contact admin.', 'error');
+                claimBtn.disabled = false;
+                claimBtn.innerText = '🔓 Claim Treasure';
+                return;
+            }
+
+            // Use transaction to add balance to user and mark code as used
+            await db.runTransaction(async (transaction) => {
+                const userRef = db.collection('users').doc(user.uid);
+                const userSnap = await transaction.get(userRef);
+                if (!userSnap.exists) throw new Error('User document not found');
+                const currentBalance = userSnap.data().balance || 0;
+                const newBalance = currentBalance + amount;
+                transaction.update(userRef, { balance: newBalance });
+                transaction.update(codeDoc.ref, { used: true, usedBy: user.uid, usedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            });
+
+            // Record transaction
+            await db.collection('transactions').add({
+                userId: user.uid,
+                type: 'treasure',
+                amount: amount,
+                description: `Treasure code: ${code}`,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showMessage(`🎉 SUCCESS! You earned ${amount} ZMW! 🎉`, 'success');
+            codeInput.value = '';
+            // Optionally update dashboard balance via listener, but user will see when they go back
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 2000);
+        } catch (err) {
+            console.error(err);
+            showMessage('Server error. Please try again later.', 'error');
+            claimBtn.disabled = false;
+            claimBtn.innerText = '🔓 Claim Treasure';
+        }
+    });
+
+    function showMessage(msg, type) {
+        messageArea.innerHTML = `<div class="message ${type}">${msg}</div>`;
+        setTimeout(() => {
+            if (messageArea.innerHTML.includes(msg)) messageArea.innerHTML = '';
+        }, 5000);
+    }
+</script>
+</body>
+</html>

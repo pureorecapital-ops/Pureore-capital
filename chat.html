@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Chat | Pureore Capital</title>
+    <!-- Firebase SDKs (for auth) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0A0A0C;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #FFFFFF;
+            padding: 1rem;
+            padding-bottom: 85px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+        }
+        .back-arrow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(30,30,42,0.8);
+            border-radius: 40px;
+            padding: 8px 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #2ecc71;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(46,204,113,0.3);
+            z-index: 20;
+        }
+        .back-arrow:hover {
+            background: #2ecc71;
+            color: #0A0A0C;
+            transform: translateX(-3px);
+        }
+        .animated-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 2rem 0 1rem;
+            background: linear-gradient(135deg, #2ecc71, #f1c40f, #e67e22);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            margin: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            padding: 0.5rem;
+        }
+        .message {
+            max-width: 80%;
+            padding: 0.8rem 1rem;
+            border-radius: 24px;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        .user-message {
+            align-self: flex-end;
+            background: #2ecc71;
+            color: #0A0A0C;
+            border-bottom-right-radius: 4px;
+        }
+        .ai-message {
+            align-self: flex-start;
+            background: #1E1E2A;
+            border: 1px solid #2ecc71;
+            border-bottom-left-radius: 4px;
+            color: #FFFFFF;
+        }
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+            background: #111116;
+            border-radius: 60px;
+            padding: 0.3rem 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .input-area input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0.8rem;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        .icon-btn {
+            background: #2C2C3A;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+        .icon-btn:hover {
+            background: #2ecc71;
+            color: #0A0A0C;
+        }
+        .file-label {
+            cursor: pointer;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .typing {
+            font-style: italic;
+            color: #aaa;
+            font-size: 0.8rem;
+            padding: 0.3rem 1rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(46, 204, 113, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px 20px;
+            z-index: 30;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+        .nav-item:hover { transform: translateY(-3px); }
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            filter: brightness(0.8);
+        }
+        .nav-label {
+            font-size: 0.7rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .nav-item.active .nav-label { color: #2ecc71; }
+        @media (max-width: 600px) {
+            .message { max-width: 90%; }
+            .input-area input { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
+    <div class="animated-title">🤖 Pureore African Assistant</div>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Ask me anything about Pureore Capital...">
+        <label class="icon-btn file-label" id="imageBtn">📷</label>
+        <input type="file" id="imageUpload" accept="image/*">
+        <button class="icon-btn" id="voiceBtn">🎤</button>
+        <button class="icon-btn" id="sendBtn">➡️</button>
+    </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+    <div class="nav-item" data-page="dashboard.html">
+        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" data-page="mkvip.html">
+        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
+    </div>
+    <div class="nav-item" data-page="jproduct.html">
+        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
+    </div>
+    <div class="nav-item" data-page="income.html">
+        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
+    </div>
+    <div class="nav-item" data-page="team.html">
+        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
+    </div>
+    <div class="nav-item" data-page="me.html">
+        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
+    </div>
+</div>
+
+<script src="js/firebase-config.js"></script>
+<script>
+    // Auth check
+    auth.onAuthStateChanged(user => {
+        if (!user) window.location.href = 'login.html';
+    });
+
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const voiceBtn = document.getElementById('voiceBtn');
+    const imageUpload = document.getElementById('imageUpload');
+    const imageBtn = document.getElementById('imageBtn');
+
+    function addMessage(text, isUser = false) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+        msgDiv.innerText = text;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showTyping() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing';
+        typingDiv.id = 'typingIndicator';
+        typingDiv.innerText = 'Pureore African is thinking...';
+        chatBox.appendChild(typingDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    function hideTyping() {
+        const typing = document.getElementById('typingIndicator');
+        if (typing) typing.remove();
+    }
+
+    // AI response logic
+    function getAIResponse(userMessage) {
+        const msg = userMessage.toLowerCase();
+        if (msg.includes('deposit') || msg.includes('how to deposit')) {
+            return "To deposit, go to Dashboard and tap the green 'Deposit' button. Choose your network (MTN, Airtel, Zamtel), enter your phone number (+260...), select amount (min 70 ZMW), then click 'Pay Now'. You'll see agent details. Send money to that agent, paste the SMS and upload screenshot. After admin approval, your balance will increase.";
+        }
+        else if (msg.includes('withdraw') || msg.includes('withdrawal')) {
+            return "To withdraw, go to Dashboard and tap the red 'Withdraw' button. Choose network or bank, enter contact details, enter amount (min 20 ZMW). A 20% fee applies. After you meet requirements (completed deposit + active investment), submit request. Admin approves within 24 hours.";
+        }
+        else if (msg.includes('invest') || msg.includes('investment plan')) {
+            return "On Dashboard, scroll to 'Investment Plans'. Choose a plan (Starter, Pro, Premium). Tap 'Invest Now', enter amount within plan limits. Your balance will be deducted, and you'll earn daily returns. You can see your active investments in the 'Income' page.";
+        }
+        else if (msg.includes('claim') || msg.includes('daily income')) {
+            return "Go to the 'Income' page. Under 'Normal' tab, you'll see your active plans. After 24 hours, the 'Claim Daily Income' button becomes green. Tap it to receive that day's profit directly into your balance. You can claim once every 24 hours.";
+        }
+        else if (msg.includes('rule') || msg.includes('rules') || msg.includes('policy')) {
+            return "Pureore Capital rules: 1. Minimum deposit 70 ZMW. 2. Minimum withdrawal 20 ZMW (20% fee). 3. Withdrawals allowed only after first deposit and investment. 4. Loans: 15% interest over 14 days. 5. Daily income claim available every 24h. 6. Referral bonus: 5% of first deposit from your team. 7. No fraudulent activity. Read full Terms on the footer.";
+        }
+        else if (msg.includes('referral') || msg.includes('team') || msg.includes('bonus')) {
+            return "Your referral code is in the 'Team' page. Share your unique link. When someone registers using your code, makes their first deposit (min 70) AND invests, you get 5% of that deposit as bonus. There's no limit on team size.";
+        }
+        else if (msg.includes('loan')) {
+            return "Loans are available from the dashboard middle icon. Minimum loan 50 ZMW, 15% interest, due in 14 days. You must have a positive balance and active account to request.";
+        }
+        else if (msg.includes('voucher') || msg.includes('treasure')) {
+            return "Vouchers and treasure codes are special promotions. Enter codes in 'Voucher' or 'Treasure' pages. Codes are shared on our WhatsApp group/channel. Each code can be used once.";
+        }
+        else if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
+            return "Hello! I'm Pureore African, your investment assistant. How can I help you today? You can ask about deposits, withdrawals, investments, daily income, rules, or referral bonuses.";
+        }
+        else if (msg.includes('admin') || msg.includes('owner') || msg.includes('pathy') || msg.includes('danger')) {
+            return "I cannot share admin or owner information for security reasons. Please contact customer support via the floating chat button for account issues.";
+        }
+        else {
+            return "I'm sorry, I didn't understand that. Please ask about deposits, withdrawals, investments, daily income, rules, or referral bonuses. You can also describe a problem and I'll try to help.";
+        }
+    }
+
+    async function sendMessage(text) {
+        if (!text.trim()) return;
+        addMessage(text, true);
+        userInput.value = '';
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            const reply = getAIResponse(text);
+            addMessage(reply, false);
+        }, 800);
+    }
+
+    sendBtn.addEventListener('click', () => sendMessage(userInput.value));
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage(userInput.value);
+    });
+
+    // Voice input with microphone permission
+    let recognition = null;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+            sendMessage(transcript);
+        };
+        recognition.onerror = (event) => {
+            if (event.error === 'not-allowed') {
+                addMessage("Microphone access denied. Please allow microphone in browser settings.", false);
+            } else {
+                addMessage("Voice recognition error. Please type your question.", false);
+            }
+        };
+        voiceBtn.addEventListener('click', () => {
+            // Request microphone permission explicitly
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(() => {
+                    recognition.start();
+                    addMessage("🎤 Listening... Speak now.", false);
+                })
+                .catch(() => {
+                    addMessage("Microphone access denied. Please allow microphone in browser settings.", false);
+                });
+        });
+    } else {
+        voiceBtn.style.opacity = '0.5';
+        voiceBtn.disabled = true;
+        voiceBtn.title = "Voice not supported in this browser";
+    }
+
+    // Image upload – opens file manager, only images
+    imageBtn.addEventListener('click', () => imageUpload.click());
+    imageUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            addMessage("Please upload an image file (PNG, JPG, etc.).", false);
+            imageUpload.value = '';
+            return;
+        }
+        addMessage("📷 I've uploaded a screenshot. Let me analyze...", true);
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            const fileName = file.name.toLowerCase();
+            let reply = "";
+            if (fileName.includes('deposit') || fileName.includes('payment') || fileName.includes('screenshot')) {
+                reply = "This looks like a deposit screenshot. Ensure you have pasted the SMS and uploaded the screenshot correctly. After sending money to the agent, go to the verification step and click 'Verify'. If you have issues, contact support.";
+            } else if (fileName.includes('dashboard') || fileName.includes('balance')) {
+                reply = "This seems to be your dashboard. Your balance is shown at the top. Use the Deposit and Withdraw buttons below. Investment plans are under the middle row.";
+            } else if (fileName.includes('withdraw') || fileName.includes('withdrawal')) {
+                reply = "This is the withdrawal page. Select network or bank, enter amount, and confirm. Remember you need at least one completed deposit and one active investment to withdraw.";
+            } else if (fileName.includes('income') || fileName.includes('claim')) {
+                reply = "Income page shows your active investments. The green Claim button appears after 24 hours. Tap it to receive daily profit.";
+            } else if (fileName.includes('history')) {
+                reply = "History page shows your past deposits, withdrawals, and loans. Pending items are marked in yellow. Once admin approves, status changes to completed.";
+            } else {
+                reply = "I cannot clearly identify this screenshot. Could you describe what page it is from? I can help with deposit, withdrawal, investment, income, history, or dashboard views.";
+            }
+            addMessage(reply, false);
+        }, 1500);
+        imageUpload.value = '';
+    });
+
+    // Bottom navigation active highlight
+    const navItems = document.querySelectorAll('.nav-item');
+    const currentPage = window.location.pathname.split('/').pop() || 'chat.html';
+    navItems.forEach(item => {
+        const targetPage = item.getAttribute('data-page');
+        if (currentPage === targetPage) item.classList.add('active');
+        item.addEventListener('click', () => {
+            if (targetPage && !window.location.pathname.includes(targetPage)) {
+                window.location.href = targetPage;
+            }
+        });
+    });
+
+    // Welcome message
+    setTimeout(() => {
+        addMessage("Hello! I'm Pureore African, your personal assistant. Ask me anything about deposits, withdrawals, investments, daily income, platform rules, or referral bonuses. How can I help you today?", false);
+    }, 500);
+</script>
+</body>
+</html>

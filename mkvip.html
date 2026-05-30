@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Mk Vip | Pureore Capital</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0A0A0C;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            color: #FFFFFF;
+            padding: 1rem;
+            padding-bottom: 85px;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 25% 40%, rgba(46, 204, 113, 0.03) 1.5px, transparent 1.5px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(30,30,42,0.8);
+            border-radius: 40px;
+            padding: 8px 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #2ecc71;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(46,204,113,0.3);
+            z-index: 20;
+        }
+        .back-arrow:hover {
+            background: #2ecc71;
+            color: #0A0A0C;
+            transform: translateX(-3px);
+        }
+        .animated-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 2rem 0 1rem;
+            background: linear-gradient(135deg, #2ecc71, #f1c40f, #e67e22);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: gradientFlow 3s ease infinite;
+        }
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .carousel-container {
+            position: relative;
+            margin: 1rem 0 2rem;
+        }
+        .carousel {
+            overflow: hidden;
+            border-radius: 32px;
+        }
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+        .plan-card {
+            flex: 0 0 100%;
+            background: rgba(18, 18, 24, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            overflow: hidden;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            transition: transform 0.2s;
+        }
+        .plan-card:hover {
+            border-color: #f1c40f;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        .plan-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid rgba(46,204,113,0.2);
+        }
+        .plan-content {
+            padding: 1.5rem;
+        }
+        .plan-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+            color: #f1c40f;
+        }
+        .plan-lock {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+        .plan-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+            background: #111116;
+            padding: 1rem;
+            border-radius: 24px;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+        }
+        .detail-label {
+            color: #aaa;
+        }
+        .detail-value {
+            font-weight: 600;
+            color: #2ecc71;
+        }
+        .total-income {
+            background: rgba(46,204,113,0.1);
+            border-radius: 24px;
+            padding: 0.8rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #f1c40f;
+        }
+        .invest-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #2ecc71, #239b56);
+            border: none;
+            padding: 0.8rem;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .invest-btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.05);
+        }
+        .invest-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #2C2C3A;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .dot.active {
+            background: #2ecc71;
+            transform: scale(1.2);
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(46, 204, 113, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px 20px;
+            z-index: 30;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .nav-item:hover {
+            transform: translateY(-3px);
+        }
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            filter: brightness(0.8);
+        }
+        .nav-label {
+            font-size: 0.7rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .nav-item.active .nav-label {
+            color: #2ecc71;
+        }
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2ecc71;
+            color: #0A0A0C;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            z-index: 1001;
+            animation: fadeUpOut 2s ease forwards;
+        }
+        .toast.error {
+            background: #ef4444;
+            color: white;
+        }
+        @keyframes fadeUpOut {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            70% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+        .fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        @media (max-width: 600px) {
+            .plan-image { height: 150px; }
+            .plan-title { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
+    <div class="animated-title">⭐ Mk Vip Plans</div>
+
+    <div class="carousel-container">
+        <div class="carousel" id="carousel">
+            <div class="carousel-track" id="carouselTrack"></div>
+        </div>
+        <div class="dots" id="dotsContainer"></div>
+    </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+    <div class="nav-item" data-page="dashboard.html">
+        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" data-page="mkvip.html">
+        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
+    </div>
+    <div class="nav-item" data-page="jproduct.html">
+        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
+    </div>
+    <div class="nav-item" data-page="income.html">
+        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
+    </div>
+    <div class="nav-item" data-page="team.html">
+        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
+    </div>
+    <div class="nav-item" data-page="me.html">
+        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
+    </div>
+</div>
+
+<canvas id="fireworksCanvas" class="fireworks-canvas"></canvas>
+
+<script src="js/firebase-config.js"></script>
+<script>
+    // Plan data
+    const plans = [
+        {
+            name: "Premium Plan",
+            lock: "Purchased 4 times and locked",
+            image: "https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg",
+            invest: 3200,
+            days: 40,
+            daily: 255,
+            expiry: "Auto",
+            totalIncome: 10200,
+            description: ""
+        },
+        {
+            name: "Silver Plus",
+            lock: "Purchased 2 times and locked",
+            image: "https://i.ibb.co/35L37GN4/IMG-20260525-113139.jpg",
+            invest: 6000,
+            days: 40,
+            daily: 320,
+            expiry: "Auto",
+            totalIncome: 12800,
+            description: ""
+        },
+        {
+            name: "Gold Plan",
+            lock: "Purchased 3 times and locked",
+            image: "https://i.ibb.co/HffGKF69/IMG-20260525-112940.jpg",
+            invest: 9500,
+            days: 40,
+            daily: 500,
+            expiry: "Auto",
+            totalIncome: 20000,
+            description: ""
+        },
+        {
+            name: "Diamond Plus",
+            lock: "Purchased 4 times and locked",
+            image: "https://i.ibb.co/Q7F1GNPM/IMG-20260525-113204.jpg",
+            invest: 15000,
+            days: 40,
+            daily: 1000,
+            expiry: "Auto",
+            totalIncome: 40000,
+            description: ""
+        },
+        {
+            name: "VIP Elite",
+            lock: "Purchased 5 times and locked",
+            image: "https://i.ibb.co/JF5hBTFF/IMG-20260525-113004.jpg",
+            invest: 20000,
+            days: 40,
+            daily: 2000,
+            expiry: "Auto",
+            totalIncome: 50000,
+            description: ""
+        },
+        {
+            name: "Ultimate VIP",
+            lock: "Purchased 2 times and locked",
+            image: "https://i.ibb.co/33vscGg/IMG-20260525-113101.jpg",
+            invest: 30000,
+            days: 40,
+            daily: 3200,
+            expiry: "Auto",
+            totalIncome: 80000,
+            description: ""
+        }
+    ];
+
+    // Helper: check if a date is weekend
+    function isWeekend(date) {
+        const day = date.getDay();
+        return day === 0 || day === 6;
+    }
+
+    // Helper: add weekdays to a start date (skip weekends)
+    function addWeekdays(startDate, days) {
+        let result = new Date(startDate);
+        let added = 0;
+        while (added < days) {
+            result.setDate(result.getDate() + 1);
+            if (!isWeekend(result)) added++;
+        }
+        return result;
+    }
+
+    let currentIndex = 0;
+    let autoInterval = null;
+    const track = document.getElementById('carouselTrack');
+    const dotsContainer = document.getElementById('dotsContainer');
+
+    function showToast(message, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${isError ? 'error' : ''}`;
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+    }
+
+    function showFireworks() {
+        const canvas = document.getElementById('fireworksCanvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        for (let i = 0; i < 120; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 5,
+                vy: (Math.random() - 0.5) * 5 - 2,
+                life: 1,
+                color: `hsl(${Math.random() * 360}, 100%, 60%)`
+            });
+        }
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let allDead = true;
+            for (let p of particles) {
+                if (p.life <= 0) continue;
+                allDead = false;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            }
+            if (!allDead) requestAnimationFrame(animate);
+            else ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        animate();
+        setTimeout(() => ctx.clearRect(0, 0, canvas.width, canvas.height), 2000);
+    }
+
+    function renderPlanCard(plan) {
+        return `
+            <div class="plan-card">
+                <img class="plan-image" src="${plan.image}" alt="${plan.name}">
+                <div class="plan-content">
+                    <div class="plan-title">${plan.name}</div>
+                    <div class="plan-lock">${plan.lock}</div>
+                    <div class="plan-details">
+                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${plan.invest.toLocaleString()} ZMW</span></div>
+                        <div class="detail-item"><span class="detail-label">Days:</span><span class="detail-value">${plan.days} Days</span></div>
+                        <div class="detail-item"><span class="detail-label">Daily:</span><span class="detail-value">${plan.daily} ZMW</span></div>
+                        <div class="detail-item"><span class="detail-label">Expiry:</span><span class="detail-value">${plan.expiry}</span></div>
+                    </div>
+                    <div class="total-income">💰 TOTAL INCOME: ${plan.totalIncome.toLocaleString()} ZMW</div>
+                    <button class="invest-btn" data-plan='${JSON.stringify(plan)}'>💎 INVEST ${plan.invest.toLocaleString()} NOW</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function buildCarousel() {
+        track.innerHTML = '';
+        plans.forEach(plan => {
+            const cardDiv = document.createElement('div');
+            cardDiv.style.flex = '0 0 100%';
+            cardDiv.innerHTML = renderPlanCard(plan);
+            track.appendChild(cardDiv);
+        });
+        dotsContainer.innerHTML = '';
+        plans.forEach((_, idx) => {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            if (idx === currentIndex) dot.classList.add('active');
+            dot.addEventListener('click', () => goToSlide(idx));
+            dotsContainer.appendChild(dot);
+        });
+        updateCarousel();
+    }
+
+    function updateCarousel() {
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+        document.querySelectorAll('.dot').forEach((dot, idx) => {
+            dot.classList.toggle('active', idx === currentIndex);
+        });
+    }
+
+    function goToSlide(index) {
+        if (index < 0) index = plans.length - 1;
+        if (index >= plans.length) index = 0;
+        currentIndex = index;
+        updateCarousel();
+        resetAutoSlide();
+    }
+
+    function nextSlide() {
+        goToSlide(currentIndex + 1);
+    }
+
+    function startAutoSlide() {
+        if (autoInterval) clearInterval(autoInterval);
+        autoInterval = setInterval(() => nextSlide(), 4000);
+    }
+
+    function resetAutoSlide() {
+        if (autoInterval) clearInterval(autoInterval);
+        startAutoSlide();
+    }
+
+    // Investment logic with business‑day support
+    async function investInPlan(plan) {
+        const user = auth.currentUser;
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        const userId = user.uid;
+        const investAmount = plan.invest;
+
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            showToast('User data not found.', true);
+            return;
+        }
+        const currentBalance = userDoc.data().balance || 0;
+        if (currentBalance < investAmount) {
+            showToast(`Insufficient balance! You need ${investAmount} ZMW.`, true);
+            return;
+        }
+
+        const allBtns = document.querySelectorAll('.invest-btn');
+        allBtns.forEach(btn => btn.disabled = true);
+
+        try {
+            // Compute startDate: if weekend, move to next Monday
+            let startDate = new Date();
+            if (isWeekend(startDate)) {
+                // move to next Monday (day = 1)
+                startDate.setDate(startDate.getDate() + (8 - startDate.getDay()));
+                startDate.setHours(0, 0, 0, 0);
+            }
+            const businessDays = plan.days;
+            const businessEndDate = addWeekdays(startDate, businessDays);
+
+            await db.runTransaction(async (transaction) => {
+                const userRef = db.collection('users').doc(userId);
+                const userSnap = await transaction.get(userRef);
+                const newBalance = userSnap.data().balance - investAmount;
+                if (newBalance < 0) throw new Error('Insufficient balance');
+                transaction.update(userRef, { balance: newBalance });
+
+                const investmentRef = db.collection('investments').doc();
+                transaction.set(investmentRef, {
+                    userId: userId,
+                    planName: plan.name,
+                    investAmount: investAmount,
+                    dailyReturn: (plan.daily / plan.invest) * 100, // percentage
+                    days: plan.days,
+                    businessDays: businessDays,
+                    startDate: firebase.firestore.Timestamp.fromDate(startDate),
+                    businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),
+                    status: 'active',
+                    totalReturn: 0
+                });
+            });
+
+            await db.collection('transactions').add({
+                userId: userId,
+                type: 'investment',
+                amount: investAmount,
+                description: `Purchased ${plan.name} (MK VIP)`,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showFireworks();
+            showToast(`✅ Success! Invested ${investAmount} ZMW in ${plan.name}. Redirecting...`);
+            setTimeout(() => {
+                window.location.href = 'history.html';
+            }, 2000);
+        } catch (err) {
+            showToast(err.message, true);
+            allBtns.forEach(btn => btn.disabled = false);
+        }
+    }
+
+    function attachInvestHandlers() {
+        document.querySelectorAll('.invest-btn').forEach(btn => {
+            btn.removeEventListener('click', investHandler);
+            btn.addEventListener('click', investHandler);
+        });
+    }
+
+    function investHandler(e) {
+        const btn = e.currentTarget;
+        const plan = JSON.parse(btn.dataset.plan);
+        investInPlan(plan);
+    }
+
+    auth.onAuthStateChanged(user => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        buildCarousel();
+        attachInvestHandlers();
+        startAutoSlide();
+    });
+
+    // Bottom navigation active highlight
+    const navItems = document.querySelectorAll('.nav-item');
+    const currentPage = window.location.pathname.split('/').pop() || 'mkvip.html';
+    navItems.forEach(item => {
+        const targetPage = item.getAttribute('data-page');
+        if (currentPage === targetPage) item.classList.add('active');
+        item.addEventListener('click', () => {
+            if (targetPage && !window.location.pathname.includes(targetPage)) {
+                window.location.href = targetPage;
+            }
+        });
+    });
+</script>
+</body>
+</html>
