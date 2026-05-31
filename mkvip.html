@@ -469,32 +469,42 @@
     }
 
     function renderPlanCard(plan) {
-        // Calculate total income (daily * days) if not provided
-        const totalIncome = plan.totalIncome || (plan.daily * plan.days);
+        // Use minAmount and maxAmount from admin plan
+        const minAmount = plan.minAmount || 0;
+        const maxAmount = plan.maxAmount || 0;
+        const investRange = (minAmount === maxAmount) ? `${minAmount} ZMW` : `${minAmount} - ${maxAmount} ZMW`;
+        const dailyReturnPercent = plan.dailyReturn || 0;
+        const days = plan.days || 0;
+        // Example total income based on max amount
+        const exampleDaily = maxAmount * (dailyReturnPercent / 100);
+        const exampleTotal = exampleDaily * days;
+        const lockText = plan.lock || 'Purchased 1 time and locked';
+        const imageUrl = plan.image || 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
+
         return `
             <div class="plan-card">
-                <img class="plan-image" src="${plan.image || 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg'}" alt="${escapeHtml(plan.name)}">
+                <img class="plan-image" src="${imageUrl}" alt="${escapeHtml(plan.name)}">
                 <div class="plan-content">
                     <div class="plan-title">${escapeHtml(plan.name)}</div>
-                    <div class="plan-lock">${escapeHtml(plan.lock || 'Purchased 1 time and locked')}</div>
+                    <div class="plan-lock">${escapeHtml(lockText)}</div>
                     <div class="plan-details">
-                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${(plan.investAmount || plan.invest).toLocaleString()} ZMW</span></div>
-                        <div class="detail-item"><span class="detail-label">Days:</span><span class="detail-value">${plan.days} Days</span></div>
-                        <div class="detail-item"><span class="detail-label">Daily:</span><span class="detail-value">${plan.daily} ZMW</span></div>
+                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${investRange}</span></div>
+                        <div class="detail-item"><span class="detail-label">Days:</span><span class="detail-value">${days} Days</span></div>
+                        <div class="detail-item"><span class="detail-label">Daily Return:</span><span class="detail-value">${dailyReturnPercent}%</span></div>
                         <div class="detail-item"><span class="detail-label">Expiry:</span><span class="detail-value">${escapeHtml(plan.expiry || 'Auto')}</span></div>
                     </div>
-                    <div class="total-income">💰 TOTAL INCOME: ${totalIncome.toLocaleString()} ZMW</div>
+                    <div class="total-income">💰 Example total income (max): ${exampleTotal.toFixed(2)} ZMW</div>
                     <button class="invest-btn" data-plan='${JSON.stringify({
                         name: plan.name,
-                        invest: plan.investAmount || plan.invest,
-                        days: plan.days,
-                        daily: plan.daily,
-                        dailyReturnPercent: plan.dailyReturn,
-                        image: plan.image,
-                        lock: plan.lock,
+                        minAmount: minAmount,
+                        maxAmount: maxAmount,
+                        days: days,
+                        dailyReturnPercent: dailyReturnPercent,
+                        image: imageUrl,
+                        lock: lockText,
                         expiry: plan.expiry,
-                        totalIncome: totalIncome
-                    })}'>💎 INVEST ${(plan.investAmount || plan.invest).toLocaleString()} NOW</button>
+                        description: plan.description || ''
+                    })}'>💎 INVEST NOW</button>
                 </div>
             </div>
         `;
@@ -556,7 +566,7 @@
         startAutoSlide();
     }
 
-    // Investment logic
+    // Investment logic (range‑based)
     async function investInPlan(plan) {
         const user = auth.currentUser;
         if (!user) {
@@ -564,7 +574,20 @@
             return;
         }
         const userId = user.uid;
-        const investAmount = plan.invest;
+        const minAmount = plan.minAmount;
+        const maxAmount = plan.maxAmount;
+        const days = plan.days;
+        const dailyReturnPercent = plan.dailyReturnPercent;
+
+        let investAmount = parseFloat(prompt(`Enter amount (${minAmount} - ${maxAmount} ZMW):`));
+        if (isNaN(investAmount)) {
+            showToast('Invalid amount.', true);
+            return;
+        }
+        if (investAmount < minAmount || investAmount > maxAmount) {
+            showToast(`Amount must be between ${minAmount} and ${maxAmount} ZMW.`, true);
+            return;
+        }
 
         const userDoc = await db.collection('users').doc(userId).get();
         if (!userDoc.exists) {
@@ -586,9 +609,9 @@
                 startDate.setDate(startDate.getDate() + (8 - startDate.getDay()));
                 startDate.setHours(0, 0, 0, 0);
             }
-            const businessDays = plan.days;
+            const businessDays = days;
             const businessEndDate = addWeekdays(startDate, businessDays);
-            const dailyReturnPercent = (plan.daily / plan.invest) * 100;
+            const dailyAmount = investAmount * (dailyReturnPercent / 100);
 
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(userId);
@@ -603,7 +626,7 @@
                     planName: plan.name,
                     investAmount: investAmount,
                     dailyReturn: dailyReturnPercent,
-                    days: plan.days,
+                    days: days,
                     businessDays: businessDays,
                     startDate: firebase.firestore.Timestamp.fromDate(startDate),
                     businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),

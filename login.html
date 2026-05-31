@@ -78,6 +78,7 @@
             transition: transform 0.2s;
             display: inline-block;
             width: 100%;
+            color: #f1c40f;
         }
         .admin-toggle:hover { transform: scale(1.1); }
         a { color: #6C47FF; text-decoration: none; }
@@ -101,6 +102,7 @@
         <p style="text-align: center; margin-top: 1rem;">
             Don't have an account? <a href="register.html">Register</a>
         </p>
+        <!-- Admin toggle – clear crown icon, no confusing text -->
         <div class="admin-toggle" id="adminToggle" aria-label="Admin access"></div>
     </div>
 </div>
@@ -111,7 +113,7 @@
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.appspot.com",  //  Fixed
+        storageBucket: "pureore-capital-zambia.appspot.com",
         messagingSenderId: "78967797858",
         appId: "1:78967797858:web:379b9692951429c345793b",
         measurementId: "G-FQKC29NYE9"
@@ -138,12 +140,11 @@
             // Disable button to prevent double submission
             loginBtn.disabled = true;
             loginBtn.textContent = 'Logging in...';
-            messageDiv.innerHTML = ''; // clear previous messages
+            messageDiv.innerHTML = '';
             
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             
-            // Basic validation
             if (!email || !password) {
                 messageDiv.innerHTML = '<div class="error">Please enter both email and password.</div>';
                 loginBtn.disabled = false;
@@ -152,16 +153,11 @@
             }
             
             try {
-                // Sign in
                 const userCred = await auth.signInWithEmailAndPassword(email, password);
                 const user = userCred.user;
-                
-                // Fetch user document from Firestore
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 
-                // Check if user document exists (should, but handle gracefully)
                 if (!userDoc.exists) {
-                    // This should not happen if registration worked, but just in case
                     await auth.signOut();
                     messageDiv.innerHTML = '<div class="error">Account data missing. Please contact support.</div>';
                     loginBtn.disabled = false;
@@ -171,7 +167,6 @@
                 
                 const userData = userDoc.data();
                 
-                // Check if account is blocked
                 if (userData.isBlocked === true) {
                     await auth.signOut();
                     messageDiv.innerHTML = '<div class="error">Your account has been blocked. Contact support.</div>';
@@ -180,7 +175,6 @@
                     return;
                 }
                 
-                // Redirect based on role
                 const role = userData.role || 'user';
                 if (role === 'admin') {
                     window.location.href = 'admin-dashboard.html';
@@ -202,11 +196,11 @@
         });
     }
 
-    // Admin emoji toggle – redirects to admin-login.html
+    // Admin toggle – now uses a crown , prompt is clear about admin access
     const adminToggle = document.getElementById('adminToggle');
     if (adminToggle) {
         adminToggle.addEventListener('click', () => {
-            const password = prompt(" Enter admin password:");
+            const password = prompt(" Enter admin password (admin access only):");
             if (password === "SAJERE") {
                 window.location.href = "admin-login.html";
             } else if (password !== null) {

@@ -9,14 +9,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             color: #FFFFFF;
             padding: 1rem;
             padding-bottom: 85px;
@@ -440,34 +436,43 @@
         const grid = document.getElementById('plansGrid');
         grid.innerHTML = '';
         plans.forEach(plan => {
-            // Compute total income as daily * days
-            const totalIncome = (plan.dailyReturn ? (plan.investAmount * plan.dailyReturn / 100 * plan.days) : plan.totalIncome) || (plan.daily * plan.days);
-            const dailyAmount = plan.dailyReturn ? (plan.investAmount * plan.dailyReturn / 100) : plan.daily;
+            // Use minAmount and maxAmount from the plan document
+            const minAmount = plan.minAmount || plan.minInvest || 0;
+            const maxAmount = plan.maxAmount || plan.maxInvest || 0;
+            const days = plan.days || 0;
+            const dailyReturnPercent = plan.dailyReturn || 0;
+            // For display, we show the range
+            const investRange = (minAmount === maxAmount) ? `${minAmount} ZMW` : `${minAmount} - ${maxAmount} ZMW`;
+            // Example total income based on max amount (or could show a range)
+            const exampleDaily = (maxAmount * dailyReturnPercent / 100);
+            const exampleTotal = exampleDaily * days;
+            const lockText = plan.lock || 'Purchased 1 time and locked';
+            const imageUrl = plan.image || 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
+
             const card = document.createElement('div');
             card.className = 'plan-card';
             card.innerHTML = `
-                <img class="plan-image" src="${plan.image || 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'}" alt="${escapeHtml(plan.name)}">
+                <img class="plan-image" src="${imageUrl}" alt="${escapeHtml(plan.name)}">
                 <div class="plan-content">
                     <div class="plan-title">${escapeHtml(plan.name)}</div>
-                    <div class="plan-lock">${escapeHtml(plan.lock || 'Purchased 1 time and locked')}</div>
+                    <div class="plan-lock">${escapeHtml(lockText)}</div>
                     <div class="plan-details">
-                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${plan.investAmount || plan.invest} ZMW</span></div>
-                        <div class="detail-item"><span class="detail-label">Days:</span><span class="detail-value">${plan.days} Days</span></div>
-                        <div class="detail-item"><span class="detail-label">Daily:</span><span class="detail-value">${dailyAmount} ZMW</span></div>
-                        <div class="detail-item"><span class="detail-label">Expiry:</span><span class="detail-value">${plan.expiry || 'Auto'}</span></div>
+                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${investRange}</span></div>
+                        <div class="detail-item"><span class="detail-label">Days:</span><span class="detail-value">${days} Days</span></div>
+                        <div class="detail-item"><span class="detail-label">Daily Return:</span><span class="detail-value">${dailyReturnPercent}%</span></div>
+                        <div class="detail-item"><span class="detail-label">Expiry:</span><span class="detail-value">${escapeHtml(plan.expiry || 'Auto')}</span></div>
                     </div>
-                    <div class="total-income">💰 TOTAL INCOME: ${totalIncome} ZMW</div>
+                    <div class="total-income">💰 Example total income (max): ${exampleTotal.toFixed(2)} ZMW</div>
                     <div class="plan-description">${escapeHtml(plan.description || '')}</div>
                     <button class="invest-btn" data-plan='${JSON.stringify({
                         name: plan.name,
-                        invest: plan.investAmount || plan.invest,
-                        days: plan.days,
-                        daily: dailyAmount,
-                        dailyReturnPercent: plan.dailyReturn,
-                        image: plan.image,
-                        lock: plan.lock,
+                        minAmount: minAmount,
+                        maxAmount: maxAmount,
+                        days: days,
+                        dailyReturnPercent: dailyReturnPercent,
+                        image: imageUrl,
+                        lock: lockText,
                         expiry: plan.expiry,
-                        totalIncome: totalIncome,
                         description: plan.description
                     })}'>💎 INVEST NOW</button>
                 </div>
@@ -490,7 +495,22 @@
             return;
         }
         const userId = user.uid;
-        const investAmount = plan.invest;
+        const minAmount = plan.minAmount;
+        const maxAmount = plan.maxAmount;
+        const days = plan.days;
+        const dailyReturnPercent = plan.dailyReturnPercent;
+
+        // Ask user for amount
+        let investAmount = parseFloat(prompt(`Enter investment amount (${minAmount} - ${maxAmount} ZMW):`));
+        if (isNaN(investAmount)) {
+            showToast('Invalid amount.', true);
+            return;
+        }
+        if (investAmount < minAmount || investAmount > maxAmount) {
+            showToast(`Amount must be between ${minAmount} and ${maxAmount} ZMW.`, true);
+            return;
+        }
+
         const userDoc = await db.collection('users').doc(userId).get();
         if (!userDoc.exists) {
             showToast('User data not found.', true);
@@ -509,22 +529,25 @@
                 startDate.setDate(startDate.getDate() + (8 - startDate.getDay()));
                 startDate.setHours(0, 0, 0, 0);
             }
-            const businessDays = plan.days;
+            const businessDays = days;
             const businessEndDate = addWeekdays(startDate, businessDays);
-            const dailyReturnPercent = (plan.daily / plan.invest) * 100;
+            // daily return amount = investAmount * (dailyReturnPercent / 100)
+            const dailyAmount = investAmount * (dailyReturnPercent / 100);
+
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(userId);
                 const userSnap = await transaction.get(userRef);
                 const newBalance = userSnap.data().balance - investAmount;
                 if (newBalance < 0) throw new Error('Insufficient balance');
                 transaction.update(userRef, { balance: newBalance });
+
                 const investmentRef = db.collection('investments').doc();
                 transaction.set(investmentRef, {
                     userId: userId,
                     planName: plan.name,
                     investAmount: investAmount,
                     dailyReturn: dailyReturnPercent,
-                    days: plan.days,
+                    days: days,
                     businessDays: businessDays,
                     startDate: firebase.firestore.Timestamp.fromDate(startDate),
                     businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),
@@ -536,7 +559,7 @@
                 userId: userId,
                 type: 'investment',
                 amount: investAmount,
-                description: `Purchased ${plan.name}`,
+                description: `Purchased ${plan.name} (J Product)`,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             showFireworks();
