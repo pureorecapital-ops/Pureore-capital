@@ -327,8 +327,81 @@
 </div>
 <canvas id="fireworks" class="hidden"></canvas>
 
-<script src="js/firebase-config.js"></script>
 <script>
+    // ==================== FIREBASE INIT (CORRECTED) ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+    // Helper: show fireworks
+    let fireworksAnimationId = null;
+    function showFireworks() {
+        const canvas = document.getElementById('fireworks');
+        if (!canvas) return;
+        if (fireworksAnimationId) cancelAnimationFrame(fireworksAnimationId);
+        canvas.classList.remove('hidden');
+        const ctx = canvas.getContext('2d');
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        resize();
+        window.addEventListener('resize', resize);
+        let particles = [];
+        for (let i = 0; i < 100; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 5,
+                vy: (Math.random() - 0.5) * 5 - 2,
+                life: 1,
+                color: `hsl(${Math.random() * 360}, 100%, 60%)`
+            });
+        }
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let anyAlive = false;
+            for (let p of particles) {
+                if (p.life <= 0) continue;
+                anyAlive = true;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            }
+            if (anyAlive) {
+                fireworksAnimationId = requestAnimationFrame(animate);
+            } else {
+                canvas.classList.add('hidden');
+                window.removeEventListener('resize', resize);
+                fireworksAnimationId = null;
+            }
+        }
+        fireworksAnimationId = requestAnimationFrame(animate);
+        setTimeout(() => {
+            if (fireworksAnimationId) {
+                cancelAnimationFrame(fireworksAnimationId);
+                fireworksAnimationId = null;
+                canvas.classList.add('hidden');
+                window.removeEventListener('resize', resize);
+            }
+        }, 3000);
+    }
+
+    // DOM elements
     const step1Card = document.getElementById('step1Card');
     const step2Card = document.getElementById('step2Card');
     const customAmountInput = document.getElementById('customAmount');
@@ -352,7 +425,7 @@
     let selectedNetwork = null;
     let currentAgent = null;
 
-    // Set default date/time to current moment (user can adjust)
+    // Set default date/time to current moment
     const now = new Date();
     const defaultDate = now.toISOString().split('T')[0];
     const defaultTime = now.toTimeString().slice(0,5);
@@ -483,16 +556,14 @@
             return;
         }
 
-        // Combine date and time into a timestamp
         const transactionTimestamp = new Date(`${userDate}T${userTime}:00`);
         if (isNaN(transactionTimestamp.getTime())) {
             verifyMessage.innerHTML = '<div class="error-msg">Invalid date/time format.</div>';
             return;
         }
 
-        // Check if transaction is older than 24 hours
-        const now = new Date();
-        const hoursDiff = (now - transactionTimestamp) / (1000 * 60 * 60);
+        const nowTime = new Date();
+        const hoursDiff = (nowTime - transactionTimestamp) / (1000 * 60 * 60);
         if (hoursDiff > 24) {
             verifyMessage.innerHTML = '<div class="error-msg">❌ This transaction is more than 24 hours old. Please contact support or initiate a new deposit.</div>';
             return;
@@ -502,6 +573,10 @@
 
         const amount = parseFloat(sessionStorage.getItem('depositAmount'));
         const agent = currentAgent;
+        if (!agent) {
+            verifyMessage.innerHTML = '<div class="error-msg">❌ Agent data missing. Please go back and select payment method again.</div>';
+            return;
+        }
 
         const smsLower = sms.toLowerCase();
         const amountMatch = smsLower.includes(amount.toString());
@@ -542,49 +617,10 @@
             verifyMessage.innerHTML = '<div class="success-msg">🎉 Your deposit is successful! Wait for admin approval. Redirecting...</div>';
             setTimeout(() => window.location.href = 'history.html', 3000);
         } catch (err) {
+            console.error(err);
             verifyMessage.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
         }
     });
-
-    function showFireworks() {
-        const canvas = document.getElementById('fireworks');
-        canvas.classList.remove('hidden');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        let particles = [];
-        for (let i = 0; i < 100; i++) {
-            particles.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                vx: (Math.random() - 0.5) * 5,
-                vy: (Math.random() - 0.5) * 5 - 2,
-                life: 1,
-                color: `hsl(${Math.random() * 360}, 100%, 60%)`
-            });
-        }
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let allDead = true;
-            for (let p of particles) {
-                if (p.life <= 0) continue;
-                allDead = false;
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= 0.02;
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.fillRect(p.x, p.y, 4, 4);
-            }
-            if (!allDead) requestAnimationFrame(animate);
-            else {
-                canvas.classList.add('hidden');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-        }
-        animate();
-        setTimeout(() => canvas.classList.add('hidden'), 2000);
-    }
 </script>
 </body>
 </html>

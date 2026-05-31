@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Dashboard | Pureore Capital</title>
+    <!-- Firebase SDKs (compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -410,7 +411,7 @@
         </div>
     </div>
 
-    <!-- Corrected middle icons: Treasure gets voucher image, Loan gets treasure image, Voucher gets loan image -->
+    <!-- Middle icons -->
     <div class="middle-row">
         <div class="middle-item" onclick="location.href='treasure.html';">
             <div class="middle-icon"><img src="https://i.ibb.co/zhHL7zW5/IMG-20260527-204336.jpg" alt="Treasure"></div>
@@ -449,14 +450,12 @@
     </div>
 </div>
 
-<!-- Floating Support Button & Modal (redesigned with WhatsApp Group/Channel & Telegram) -->
+<!-- Floating Support Button & Modal -->
 <div class="support-float" id="supportFloatBtn">💬</div>
 <div id="supportModal" class="modal-overlay">
     <div class="support-modal">
         <button class="close-modal" id="closeModalBtn">&times;</button>
         <h3>📢 Support & Community</h3>
-        
-        <!-- Direct WhatsApp Contacts -->
         <div class="support-line">
             <strong>📞 Assistant (Deposit/Withdraw)</strong>
             <span>0961391022</span><br>
@@ -467,29 +466,22 @@
             <span>0951359357</span><br>
             <button class="support-btn" onclick="window.open('https://wa.me/260951359357', '_blank')">💬 WhatsApp Manager</button>
         </div>
-
-        <!-- WhatsApp Group -->
         <div class="support-line">
             <strong>👥 WhatsApp Group</strong>
             <span>Join our investor community</span><br>
             <button class="support-btn whatsapp-group" onclick="window.open('https://chat.whatsapp.com/KnggKPDuxj98Wxo1HAE6FP', '_blank')">📱 Join Group</button>
         </div>
-
-        <!-- WhatsApp Channel -->
         <div class="support-line">
             <strong>📢 WhatsApp Channel</strong>
             <span>Get news & updates</span><br>
             <button class="support-btn whatsapp-channel" onclick="window.open('https://whatsapp.com/channel/0029VbCoP1qFcowAHv8uFV2Y', '_blank')">🔔 Follow Channel</button>
         </div>
-
-        <!-- Telegram (placeholder – replace with actual invite link) -->
         <div class="support-line">
             <strong>✈️ Telegram Community</strong>
             <span>Stay connected</span><br>
             <button class="support-btn telegram" onclick="window.open('https://t.me/pureorecapital', '_blank')">📨 Join Telegram</button>
             <div style="font-size: 0.7rem; margin-top: 5px; color: #aaa;">(Official link – coming soon)</div>
         </div>
-
         <div style="font-size: 11px; margin-top: 12px; text-align:center;">We're here 24/7 to help you grow.</div>
     </div>
 </div>
@@ -501,8 +493,22 @@
     <span>© Pureore Capital 2025</span>
 </div>
 
-<script src="js/firebase-config.js"></script>
 <script>
+    // ==================== FIREBASE INIT (CORRECTED) ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
     // Build flags marquee
     const countries = [
         { name: "UK", emoji: "🇬🇧" },
@@ -515,47 +521,49 @@
     const marquee = document.getElementById('flagsMarquee');
     function buildMarquee() {
         let html = '';
-        // Double for seamless scroll
         for (let i = 0; i < 2; i++) {
             countries.forEach(country => {
-                html += `
-                    <div class="flag-item">
-                        <div class="flag-icon">${country.emoji}</div>
-                        <div class="flag-name">${country.name}</div>
-                    </div>
-                `;
+                html += `<div class="flag-item"><div class="flag-icon">${country.emoji}</div><div class="flag-name">${country.name}</div></div>`;
             });
         }
         marquee.innerHTML = html;
     }
     buildMarquee();
 
+    // Authentication state & real‑time balance
     auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const userId = user.uid;
-            db.collection('users').doc(userId).onSnapshot((doc) => {
-                if (doc.exists) {
-                    let balance = doc.data().balance || 0;
-                    document.getElementById('userBalanceSpan').innerHTML = balance.toFixed(2) + ' ZMW';
-                } else {
-                    document.getElementById('userBalanceSpan').innerHTML = '0.00 ZMW';
-                }
-            });
-        } else {
+        if (!user) {
             window.location.href = 'login.html';
+            return;
         }
+        const userId = user.uid;
+        // Real‑time listener for balance
+        db.collection('users').doc(userId).onSnapshot((doc) => {
+            if (doc.exists) {
+                let balance = doc.data().balance || 0;
+                document.getElementById('userBalanceSpan').innerHTML = balance.toFixed(2) + ' ZMW';
+            } else {
+                document.getElementById('userBalanceSpan').innerHTML = '0.00 ZMW';
+            }
+        }, (error) => {
+            console.error("Balance listener error:", error);
+            document.getElementById('userBalanceSpan').innerHTML = '0.00 ZMW';
+        });
     });
 
+    // Deposit / Withdraw buttons
     document.getElementById('depositBtn')?.addEventListener('click', () => window.location.href = 'deposit.html');
     document.getElementById('withdrawBtn')?.addEventListener('click', () => window.location.href = 'withdraw.html');
 
+    // Support modal logic
     const modal = document.getElementById('supportModal');
     const supportBtn = document.getElementById('supportFloatBtn');
-    const closeModal = document.getElementById('closeModalBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
     supportBtn?.addEventListener('click', () => modal.classList.add('active'));
-    closeModal?.addEventListener('click', () => modal.classList.remove('active'));
+    closeModalBtn?.addEventListener('click', () => modal.classList.remove('active'));
     modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
+    // Bottom navigation active state and navigation
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
     navItems.forEach(item => {

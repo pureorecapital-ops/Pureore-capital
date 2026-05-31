@@ -150,7 +150,7 @@
             color: #ccc;
             flex-wrap: wrap;
         }
-        .hourly-progress {
+        .claim-info {
             margin: 0.8rem 0;
         }
         .progress-bar {
@@ -172,7 +172,8 @@
             text-align: right;
         }
         .pending-amount {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            font-weight: bold;
             color: #2ecc71;
             margin-top: 0.3rem;
         }
@@ -259,13 +260,13 @@
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">💰 INCOME</div>
 
-    <!-- Total hourly pending amount across all active plans -->
+    <!-- Total pending (daily earnings ready to claim) -->
     <div class="total-hourly" id="totalHourlyBox">
-        📈 Total hourly pending: <span id="totalPending">0.00</span> ZMW
+        📈 Total pending daily earnings: <span id="totalPending">0.00</span> ZMW
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" data-tab="normal">📈 Normal</button>
+        <button class="tab-btn active" data-tab="normal">📈 Active</button>
         <button class="tab-btn" data-tab="expired">⏰ Expired</button>
     </div>
 
@@ -299,9 +300,23 @@
     </div>
 </div>
 
-<script src="js/firebase-config.js"></script>
 <script>
-    // ========== HELPER FUNCTIONS ==========
+    // ==================== FIREBASE INIT (CORRECTED) ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+    // Helper functions
     function formatMoney(amount) {
         return 'K' + parseFloat(amount).toFixed(2);
     }
@@ -323,13 +338,11 @@
         setTimeout(() => toast.remove(), 3000);
     }
 
-    // Check if a date is weekend (Saturday or Sunday)
     function isWeekend(date) {
         const day = date.getDay();
         return day === 0 || day === 6;
     }
 
-    // Add weekdays to a date (skip weekends)
     function addWeekdays(startDate, days) {
         let result = new Date(startDate);
         let added = 0;
@@ -340,8 +353,8 @@
         return result;
     }
 
-    // Calculate business days elapsed between two dates (only weekdays)
-    function businessDaysBetween(startDate, endDate) {
+    // Calculate elapsed business days (only weekdays) – used for progress bar
+    function businessDaysElapsed(startDate, endDate) {
         let count = 0;
         let current = new Date(startDate);
         while (current <= endDate) {
@@ -351,33 +364,34 @@
         return count;
     }
 
-    // Compute the pending claimable amount for a single investment
-    // based on lastClaimed (or startDate) and daily rate
-    function getPendingAmount(inv, now) {
-        const dailyAmount = inv.investAmount * (inv.dailyReturn / 100);
+    // For an active investment, determine if a daily claim is available (24h passed since lastClaim or startDate)
+    // Returns: { available: boolean, hoursSince: number, dailyAmount: number, nextClaimDate: Date }
+    function getClaimStatus(inv, now) {
         const lastClaim = inv.lastClaimed ? inv.lastClaimed.toDate() : inv.startDate.toDate();
         const hoursSince = (now - lastClaim) / (1000 * 60 * 60);
-        if (hoursSince >= 24) return dailyAmount;
-        return (hoursSince / 24) * dailyAmount;
+        const available = (!isWeekend(now) && hoursSince >= 24);
+        const nextClaimDate = new Date(lastClaim.getTime() + 24 * 60 * 60 * 1000);
+        return { available, hoursSince, dailyAmount: inv.dailyAmount, nextClaimDate };
     }
 
-    // ========== LOAD INVESTMENTS ==========
+    // Global variables
     let currentUserId = null;
-    let updateInterval = null;
+    let refreshInterval = null;
 
+    // Main auth state
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
         currentUserId = user.uid;
-        loadInvestments();
-        // Update hourly display every minute
-        if (updateInterval) clearInterval(updateInterval);
-        updateInterval = setInterval(() => {
+        await loadInvestments();
+        // Refresh every 60 seconds to update "hours since" counters
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(() => {
             const normalTab = document.getElementById('normalTab');
             if (normalTab && normalTab.classList.contains('active')) {
-                refreshPendingAmounts();
+                loadInvestments(); // re‑fetch and re‑render (Firestore listener would be better, but this is fine)
             }
         }, 60000);
     });
@@ -395,57 +409,60 @@
 
         for (const doc of snapshot.docs) {
             const inv = doc.data();
-            let startDate = inv.startDate.toDate();
-            let businessDays = inv.businessDays || inv.days;
-            let endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addWeekdays(startDate, businessDays);
-
+            const startDate = inv.startDate.toDate();
+            const businessDays = inv.businessDays || inv.days;
+            const endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addWeekdays(startDate, businessDays);
+            const dailyAmount = inv.investAmount * (inv.dailyReturn / 100);
             const today = new Date();
             today.setHours(0,0,0,0);
             const isExpired = inv.status !== 'active' || today > endDate;
 
+            const investment = {
+                id: doc.id,
+                ...inv,
+                startDate,
+                businessDays,
+                endDate,
+                dailyAmount,
+                status: inv.status,
+                lastClaimed: inv.lastClaimed
+            };
             if (!isExpired) {
-                active.push({ id: doc.id, ...inv, startDate, businessDays, endDate, dailyAmount: inv.investAmount * (inv.dailyReturn / 100) });
+                active.push(investment);
             } else {
-                expired.push({ id: doc.id, ...inv, startDate, businessDays, endDate, dailyAmount: inv.investAmount * (inv.dailyReturn / 100) });
+                expired.push(investment);
             }
         }
 
         renderActive(active);
         renderExpired(expired);
-        refreshTotalPending(active);
+        updateTotalPending(active);
     }
 
     function renderActive(investments) {
         const container = document.getElementById('activeInvestments');
         if (!investments.length) {
             container.innerHTML = '<div class="empty-msg">📭 No active investment plans.</div>';
-            refreshTotalPending([]);
             return;
         }
-        let html = '';
         const now = new Date();
-
+        let html = '';
         for (const inv of investments) {
-            const elapsedBusinessDays = businessDaysBetween(inv.startDate, now);
-            const totalBusinessDays = inv.businessDays;
-            const progressPercent = Math.min(100, (elapsedBusinessDays / totalBusinessDays) * 100);
-            const daysLeft = Math.max(0, totalBusinessDays - elapsedBusinessDays);
+            const elapsedDays = businessDaysElapsed(inv.startDate, now);
+            const totalDays = inv.businessDays;
+            const progressPercent = Math.min(100, (elapsedDays / totalDays) * 100);
+            const daysLeft = Math.max(0, totalDays - elapsedDays);
 
-            const lastClaim = inv.lastClaimed ? inv.lastClaimed.toDate() : inv.startDate.toDate();
-            const hoursSince = (now - lastClaim) / (1000 * 60 * 60);
-            const hourlyRate = inv.dailyAmount / 24;
-            const pending = getPendingAmount(inv, now);
-            const hoursLeft = Math.max(0, 24 - hoursSince);
-            const progressHours = Math.min(24, hoursSince);
-
-            // Claim button logic: can claim only if 24h passed and today is weekday
-            const canClaim = (!isWeekend(now) && hoursSince >= 24);
-            const todayIsWeekend = isWeekend(now);
+            const claimStatus = getClaimStatus(inv, now);
+            const canClaim = claimStatus.available;
+            const hoursSince = claimStatus.hoursSince;
+            const nextClaim = claimStatus.nextClaimDate;
+            const hoursToNext = Math.max(0, 24 - hoursSince);
 
             html += `
                 <div class="plan-card" data-id="${inv.id}">
                     <div class="plan-header">
-                        <span class="plan-name">${inv.planName}</span>
+                        <span class="plan-name">${escapeHtml(inv.planName)}</span>
                         <span class="plan-amount">${formatMoney(inv.investAmount)}</span>
                     </div>
                     <div class="plan-details">
@@ -453,22 +470,24 @@
                         <span>💰 Daily: ${inv.dailyReturn}% (${formatMoney(inv.dailyAmount)})</span>
                         <span>⏱️ Days left: ${daysLeft}</span>
                     </div>
-                    <div class="hourly-progress">
+                    <div class="claim-info">
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${(progressHours/24)*100}%;"></div>
+                            <div class="progress-fill" style="width: ${(hoursSince / 24) * 100}%;"></div>
                         </div>
-                        <div class="progress-text">⏱️ ${Math.floor(hoursSince)}h ${Math.floor((hoursSince%1)*60)}m / 24h to next claim</div>
-                        <div class="pending-amount">💰 Pending: ${formatMoney(pending)}</div>
+                        <div class="progress-text">⏱️ Next claim in ${Math.floor(hoursToNext)}h ${Math.floor((hoursToNext % 1) * 60)}m</div>
+                        ${!canClaim && !isWeekend(now) ? `<div class="pending-amount">⏳ Ready in ${Math.floor(hoursToNext)} hours</div>` : ''}
+                        ${canClaim ? `<div class="pending-amount">💰 Ready to claim: ${formatMoney(inv.dailyAmount)}</div>` : ''}
                     </div>
                     <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${inv.dailyAmount}">
-                        💰 Claim Daily Income (${formatMoney(inv.dailyAmount)})
+                        ${canClaim ? '💰 Claim Daily Income' : '⏳ Wait for next claim'}
                     </button>
-                    ${todayIsWeekend ? '<div class="weekend-warning">⛔ Claiming only available Monday–Friday. Come back on weekday.</div>' : ''}
+                    ${isWeekend(now) ? '<div class="weekend-warning">⛔ Claiming only available Monday–Friday. Come back on a weekday.</div>' : ''}
                 </div>
             `;
         }
         container.innerHTML = html;
 
+        // Attach claim button listeners
         document.querySelectorAll('.claim-btn.active').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -477,7 +496,6 @@
                 await claimDailyIncome(invId, dailyAmount);
             });
         });
-        refreshTotalPending(investments);
     }
 
     async function claimDailyIncome(investmentId, dailyAmount) {
@@ -513,32 +531,21 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             });
-            showToast(`✅ K${dailyAmount.toFixed(2)} claimed!`, false);
-            loadInvestments(); // refresh
+            showToast(`✅ ${formatMoney(dailyAmount)} claimed!`, false);
+            await loadInvestments(); // refresh
         } catch (err) {
             showToast(err.message || 'Claim failed', true);
         }
     }
 
-    function refreshPendingAmounts() {
-        const activeCards = document.querySelectorAll('#activeInvestments .plan-card');
-        if (!activeCards.length) return;
-        const now = new Date();
-        let totalPending = 0;
-        activeCards.forEach(card => {
-            const id = card.dataset.id;
-            // We need to fetch the investment data from the stored array? Simpler: re-run renderActive logic? 
-            // Instead we can recalculate from memory. We'll store investments in a variable.
-        });
-        // For simplicity, we call loadInvestments again (it's fine, minimal cost)
-        loadInvestments();
-    }
-
-    function refreshTotalPending(investments) {
+    function updateTotalPending(investments) {
         const now = new Date();
         let total = 0;
         for (const inv of investments) {
-            total += getPendingAmount(inv, now);
+            const claimStatus = getClaimStatus(inv, now);
+            if (claimStatus.available) {
+                total += claimStatus.dailyAmount;
+            }
         }
         document.getElementById('totalPending').innerText = total.toFixed(2);
     }
@@ -551,21 +558,32 @@
         }
         let html = '';
         for (const inv of investments) {
+            const statusText = inv.status === 'completed' ? 'Completed' : 'Expired';
             html += `
                 <div class="plan-card">
                     <div class="plan-header">
-                        <span class="plan-name">${inv.planName}</span>
+                        <span class="plan-name">${escapeHtml(inv.planName)}</span>
                         <span class="plan-amount">${formatMoney(inv.investAmount)}</span>
                     </div>
                     <div class="plan-details">
                         <span>📅 Started: ${inv.startDate.toLocaleDateString()}</span>
                         <span>💰 Daily: ${inv.dailyReturn}% (${formatMoney(inv.dailyAmount)})</span>
-                        <span>⏱️ Status: ${inv.status === 'completed' ? 'Completed' : 'Expired'}</span>
+                        <span>⏱️ Status: ${statusText}</span>
                     </div>
                 </div>
             `;
         }
         container.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
     }
 
     // Tab switching
@@ -585,7 +603,7 @@
         });
     });
 
-    // Bottom navigation
+    // Bottom navigation active state
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'income.html';
     navItems.forEach(item => {

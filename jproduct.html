@@ -9,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        /* (your existing styles – keep as is) */
         * {
             margin: 0;
             padding: 0;
@@ -77,6 +76,19 @@
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
+        }
+        .loader {
+            border: 3px solid #2C2C3A;
+            border-top: 3px solid #2ecc71;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         .plans-grid {
             display: flex;
@@ -253,6 +265,11 @@
             70% { opacity: 1; }
             100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
+        .empty-msg {
+            text-align: center;
+            color: #aaa;
+            padding: 2rem;
+        }
         @media (max-width: 600px) {
             .plan-image { height: 120px; }
             .plan-title { font-size: 1.2rem; }
@@ -263,7 +280,7 @@
 <div class="container">
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">📦 J Product Plans</div>
-
+    <div id="loadingIndicator" class="loader"></div>
     <div class="plans-grid" id="plansGrid"></div>
 </div>
 
@@ -291,107 +308,50 @@
 
 <canvas id="fireworksCanvas" class="fireworks-canvas"></canvas>
 
-<script src="js/firebase-config.js"></script>
 <script>
-    // Plan data (as per user specifications)
-    const plans = [
-        {
-            name: "Starter Plan",
-            lock: "Purchased 1 time and locked",
-            image: "https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg",
-            invest: 70,
-            days: 5,
-            daily: 25,
-            expiry: "5 Days",
-            totalIncome: 125,
-            description: "Safe start. Small plan, fast gain"
-        },
-        {
-            name: "Bronze Plan",
-            lock: "Purchased 1 time and locked",
-            image: "https://i.ibb.co/gLTc2HTW/IMG-20260525-112037.jpg",
-            invest: 120,
-            days: 40,
-            daily: 5.7,
-            expiry: "Auto",
-            totalIncome: 224,
-            description: "Build your balance every day"
-        },
-        {
-            name: "Silver Plan",
-            lock: "Purchased 1 time and locked",
-            image: "https://i.ibb.co/BW1p1h4/IMG-20260525-112023.jpg",
-            invest: 280,
-            days: 40,
-            daily: 11.4,
-            expiry: "Auto",
-            totalIncome: 456,
-            description: "Bigger rewards with steady income"
-        },
-        {
-            name: "Gold Plan",
-            lock: "Purchased 2 times and locked",
-            image: "https://i.ibb.co/3m8CyfgC/IMG-20260525-112901.jpg",
-            invest: 480,
-            days: 40,
-            daily: 23,
-            expiry: "Auto",
-            totalIncome: 920,
-            description: "Grow stronger with more returns"
-        },
-        {
-            name: "Diamond Plan",
-            lock: "Purchased 3 times and locked",
-            image: "https://i.ibb.co/dJjqbDrG/IMG-20260525-112918.jpg",
-            invest: 960,
-            days: 40,
-            daily: 52,
-            expiry: "Auto",
-            totalIncome: 2080,
-            description: "Premium income for bigger goals"
-        },
-        {
-            name: "VIP Plan",
-            lock: "Purchased 3 times and locked",
-            image: "https://i.ibb.co/svb4pywz/IMG-20260525-113221.jpg",
-            invest: 1600,
-            days: 40,
-            daily: 150,
-            expiry: "Auto",
-            totalIncome: 6000,
-            description: "Maximum earnings and top rewards"
-        }
-    ];
+    // ==================== FIREBASE INIT ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com",
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper: check if a date is weekend (Saturday or Sunday)
-    function isWeekend(date) {
-        const day = date.getDay();
-        return day === 0 || day === 6;
+    // Helper functions
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
     }
 
-    // Helper: add weekdays to a start date (skip weekends)
-    function addWeekdays(startDate, days) {
-        let result = new Date(startDate);
-        let added = 0;
-        while (added < days) {
-            result.setDate(result.getDate() + 1);
-            if (!isWeekend(result)) added++;
-        }
-        return result;
-    }
-
-    // Helper: show toast message
     function showToast(message, isError = false) {
+        const oldToast = document.querySelector('.toast');
+        if (oldToast) oldToast.remove();
         const toast = document.createElement('div');
         toast.className = `toast ${isError ? 'error' : ''}`;
         toast.innerText = message;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
+        setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+        }, 2500);
     }
 
-    // Fireworks effect
+    let fireworksAnimationId = null;
     function showFireworks() {
         const canvas = document.getElementById('fireworksCanvas');
+        if (!canvas) return;
+        if (fireworksAnimationId) cancelAnimationFrame(fireworksAnimationId);
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         const ctx = canvas.getContext('2d');
@@ -408,10 +368,10 @@
         }
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let allDead = true;
+            let anyAlive = false;
             for (let p of particles) {
                 if (p.life <= 0) continue;
-                allDead = false;
+                anyAlive = true;
                 p.x += p.vx;
                 p.y += p.vy;
                 p.life -= 0.02;
@@ -419,41 +379,101 @@
                 ctx.fillStyle = p.color;
                 ctx.fillRect(p.x, p.y, 4, 4);
             }
-            if (!allDead) requestAnimationFrame(animate);
-            else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (anyAlive) {
+                fireworksAnimationId = requestAnimationFrame(animate);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                fireworksAnimationId = null;
+            }
         }
-        animate();
+        fireworksAnimationId = requestAnimationFrame(animate);
         setTimeout(() => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }, 2000);
+            if (fireworksAnimationId) {
+                cancelAnimationFrame(fireworksAnimationId);
+                fireworksAnimationId = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }, 2500);
     }
 
-    // Render all plans
-    function renderPlans() {
+    function isWeekend(date) {
+        const day = date.getDay();
+        return day === 0 || day === 6;
+    }
+
+    function addWeekdays(startDate, days) {
+        let result = new Date(startDate);
+        let added = 0;
+        while (added < days) {
+            result.setDate(result.getDate() + 1);
+            if (!isWeekend(result)) added++;
+        }
+        return result;
+    }
+
+    // Load plans from Firestore (jproductPlans collection)
+    async function loadPlans() {
+        const loadingDiv = document.getElementById('loadingIndicator');
+        const grid = document.getElementById('plansGrid');
+        try {
+            loadingDiv.style.display = 'block';
+            grid.innerHTML = '';
+            const snapshot = await db.collection('jproductPlans').orderBy('createdAt', 'desc').get();
+            loadingDiv.style.display = 'none';
+            if (snapshot.empty) {
+                grid.innerHTML = '<div class="empty-msg">No investment plans available. Please check back later.</div>';
+                return;
+            }
+            const plans = [];
+            snapshot.forEach(doc => {
+                plans.push({ id: doc.id, ...doc.data() });
+            });
+            renderPlans(plans);
+        } catch (err) {
+            console.error(err);
+            loadingDiv.style.display = 'none';
+            grid.innerHTML = '<div class="empty-msg">Failed to load plans. Please refresh.</div>';
+        }
+    }
+
+    function renderPlans(plans) {
         const grid = document.getElementById('plansGrid');
         grid.innerHTML = '';
         plans.forEach(plan => {
+            // Compute total income as daily * days
+            const totalIncome = (plan.dailyReturn ? (plan.investAmount * plan.dailyReturn / 100 * plan.days) : plan.totalIncome) || (plan.daily * plan.days);
+            const dailyAmount = plan.dailyReturn ? (plan.investAmount * plan.dailyReturn / 100) : plan.daily;
             const card = document.createElement('div');
             card.className = 'plan-card';
             card.innerHTML = `
-                <img class="plan-image" src="${plan.image}" alt="${plan.name}">
+                <img class="plan-image" src="${plan.image || 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'}" alt="${escapeHtml(plan.name)}">
                 <div class="plan-content">
-                    <div class="plan-title">${plan.name}</div>
-                    <div class="plan-lock">${plan.lock}</div>
+                    <div class="plan-title">${escapeHtml(plan.name)}</div>
+                    <div class="plan-lock">${escapeHtml(plan.lock || 'Purchased 1 time and locked')}</div>
                     <div class="plan-details">
-                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${plan.invest} ZMW</span></div>
+                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${plan.investAmount || plan.invest} ZMW</span></div>
                         <div class="detail-item"><span class="detail-label">Days:</span><span class="detail-value">${plan.days} Days</span></div>
-                        <div class="detail-item"><span class="detail-label">Daily:</span><span class="detail-value">${plan.daily} ZMW</span></div>
-                        <div class="detail-item"><span class="detail-label">Expiry:</span><span class="detail-value">${plan.expiry}</span></div>
+                        <div class="detail-item"><span class="detail-label">Daily:</span><span class="detail-value">${dailyAmount} ZMW</span></div>
+                        <div class="detail-item"><span class="detail-label">Expiry:</span><span class="detail-value">${plan.expiry || 'Auto'}</span></div>
                     </div>
-                    <div class="total-income">💰 TOTAL INCOME: ${plan.totalIncome} ZMW</div>
-                    <div class="plan-description">${plan.description}</div>
-                    <button class="invest-btn" data-plan='${JSON.stringify(plan)}'>💎 INVEST NOW</button>
+                    <div class="total-income">💰 TOTAL INCOME: ${totalIncome} ZMW</div>
+                    <div class="plan-description">${escapeHtml(plan.description || '')}</div>
+                    <button class="invest-btn" data-plan='${JSON.stringify({
+                        name: plan.name,
+                        invest: plan.investAmount || plan.invest,
+                        days: plan.days,
+                        daily: dailyAmount,
+                        dailyReturnPercent: plan.dailyReturn,
+                        image: plan.image,
+                        lock: plan.lock,
+                        expiry: plan.expiry,
+                        totalIncome: totalIncome,
+                        description: plan.description
+                    })}'>💎 INVEST NOW</button>
                 </div>
             `;
             grid.appendChild(card);
         });
-
         // Attach invest handlers
         document.querySelectorAll('.invest-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -463,18 +483,14 @@
         });
     }
 
-    // Investment logic with business‑day support
     async function investInPlan(plan) {
         const user = auth.currentUser;
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
-
         const userId = user.uid;
         const investAmount = plan.invest;
-
-        // Get current user balance
         const userDoc = await db.collection('users').doc(userId).get();
         if (!userDoc.exists) {
             showToast('User data not found.', true);
@@ -485,35 +501,29 @@
             showToast(`Insufficient balance! You need ${investAmount} ZMW.`, true);
             return;
         }
-
-        // Disable button to prevent double-click
         const btns = document.querySelectorAll('.invest-btn');
         btns.forEach(btn => btn.disabled = true);
-
         try {
-            // Compute startDate: if weekend, move to next Monday
             let startDate = new Date();
             if (isWeekend(startDate)) {
-                // move to next Monday (day = 1)
                 startDate.setDate(startDate.getDate() + (8 - startDate.getDay()));
                 startDate.setHours(0, 0, 0, 0);
             }
             const businessDays = plan.days;
             const businessEndDate = addWeekdays(startDate, businessDays);
-
+            const dailyReturnPercent = (plan.daily / plan.invest) * 100;
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(userId);
                 const userSnap = await transaction.get(userRef);
                 const newBalance = userSnap.data().balance - investAmount;
                 if (newBalance < 0) throw new Error('Insufficient balance');
                 transaction.update(userRef, { balance: newBalance });
-
                 const investmentRef = db.collection('investments').doc();
                 transaction.set(investmentRef, {
                     userId: userId,
                     planName: plan.name,
                     investAmount: investAmount,
-                    dailyReturn: (plan.daily / plan.invest) * 100, // convert to percentage
+                    dailyReturn: dailyReturnPercent,
                     days: plan.days,
                     businessDays: businessDays,
                     startDate: firebase.firestore.Timestamp.fromDate(startDate),
@@ -522,8 +532,6 @@
                     totalReturn: 0
                 });
             });
-
-            // Log transaction history
             await db.collection('transactions').add({
                 userId: userId,
                 type: 'investment',
@@ -531,7 +539,6 @@
                 description: `Purchased ${plan.name}`,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-
             showFireworks();
             showToast(`✅ Success! Invested ${investAmount} ZMW in ${plan.name}. Redirecting...`);
             setTimeout(() => {
@@ -543,16 +550,16 @@
         }
     }
 
-    // Authentication check
+    // Auth check and load plans
     auth.onAuthStateChanged(user => {
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
-        renderPlans();
+        loadPlans();
     });
 
-    // Bottom navigation active state and redirection
+    // Bottom navigation active state
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'jproduct.html';
     navItems.forEach(item => {

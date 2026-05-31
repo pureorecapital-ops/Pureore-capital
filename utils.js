@@ -2,7 +2,9 @@
 
 // Format number as ZMW currency
 function formatMoney(amount) {
-    return 'K' + parseFloat(amount).toFixed(2);
+    let parsed = parseFloat(amount);
+    if (isNaN(parsed)) return 'K0.00';
+    return 'K' + parsed.toFixed(2);
 }
 
 // Format a Firestore timestamp or Date object to local string
@@ -12,9 +14,11 @@ function formatDate(timestamp) {
     return date.toLocaleString();
 }
 
-// Validate Zambian mobile phone number (9 digits after +260)
+// Validate Zambian mobile phone number 
+// Expects exactly 9 digits (without country code). E.g., "966123456"
 function validateZambianPhone(phone, network = null) {
     const digits = phone.replace(/\D/g, '');
+    // Must be exactly 9 digits (Zambian local number)
     if (digits.length !== 9) return false;
     if (!network) return true;
     const prefix = digits.substring(0, 2);
@@ -45,9 +49,8 @@ function showToast(message, isError = false) {
     toast.style.zIndex = '9999';
     toast.style.fontSize = '0.9rem';
     toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-    toast.style.whiteSpace = 'nowrap';
     toast.style.maxWidth = '90%';
-    toast.style.whiteSpace = 'normal';
+    toast.style.whiteSpace = 'normal';   // was duplicated, now fixed
     toast.style.textAlign = 'center';
     document.body.appendChild(toast);
     setTimeout(() => {
@@ -55,17 +58,27 @@ function showToast(message, isError = false) {
     }, 4000);
 }
 
-// Simple rate limiter (prevents rapid repeated actions)
+// Simple rate limiter with automatic cleanup of old entries
 const rateLimitStore = new Map();
 function checkRateLimit(key, limit = 5, windowMs = 60000) {
     const now = Date.now();
-    const records = rateLimitStore.get(key) || [];
-    const recent = records.filter(time => now - time < windowMs);
-    if (recent.length >= limit) return false;
-    recent.push(now);
-    rateLimitStore.set(key, recent);
+    let records = rateLimitStore.get(key) || [];
+    // Remove entries older than windowMs
+    records = records.filter(time => now - time < windowMs);
+    if (records.length >= limit) return false;
+    records.push(now);
+    rateLimitStore.set(key, records);
     return true;
 }
+// Optional: periodically clean the entire map (every hour)
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, times] of rateLimitStore.entries()) {
+        const filtered = times.filter(t => now - t < 60000); // keep last 60 seconds
+        if (filtered.length === 0) rateLimitStore.delete(key);
+        else rateLimitStore.set(key, filtered);
+    }
+}, 3600000); // every hour
 
 // Sanitize user input (remove potential HTML tags)
 function sanitizeInput(str) {
@@ -73,8 +86,9 @@ function sanitizeInput(str) {
     return str.replace(/[<>]/g, '').trim();
 }
 
-// Validate email format
+// Validate email format (simple but effective)
 function isValidEmail(email) {
+    if (typeof email !== 'string') return false;
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 }
@@ -85,16 +99,31 @@ function extractNumbers(str) {
     return matches ? matches.map(Number) : [];
 }
 
-// Simple firework effect (canvas)
+// Simple firework effect using canvas (with proper resize handling)
+let fireworksAnimationId = null;
 function showFireworks(duration = 2000) {
     const canvas = document.getElementById('fireworks');
     if (!canvas) return;
+    
+    // Stop any existing fireworks animation
+    if (fireworksAnimationId) {
+        cancelAnimationFrame(fireworksAnimationId);
+        fireworksAnimationId = null;
+    }
+    
     canvas.classList.remove('hidden');
     const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
     let particles = [];
-    for (let i = 0; i < 100; i++) {
+    const particleCount = 100;
+    for (let i = 0; i < particleCount; i++) {
         particles.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
@@ -104,27 +133,51 @@ function showFireworks(duration = 2000) {
             color: `hsl(${Math.random() * 360}, 100%, 60%)`
         });
     }
-    function animate() {
+    
+    let startTime = performance.now();
+    function animate(now) {
+        const elapsed = now - startTime;
+        if (elapsed >= duration) {
+            // Time's up – clear canvas and hide
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.classList.add('hidden');
+            window.removeEventListener('resize', resizeCanvas);
+            fireworksAnimationId = null;
+            return;
+        }
+        
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let allDead = true;
+        let anyAlive = false;
         for (let p of particles) {
             if (p.life <= 0) continue;
-            allDead = false;
+            anyAlive = true;
             p.x += p.vx;
             p.y += p.vy;
-            p.life -= 0.02;
+            p.life -= 0.02; // fade out
             ctx.globalAlpha = p.life;
             ctx.fillStyle = p.color;
             ctx.fillRect(p.x, p.y, 4, 4);
         }
-        if (!allDead) requestAnimationFrame(animate);
-        else {
+        if (anyAlive) {
+            fireworksAnimationId = requestAnimationFrame(animate);
+        } else {
+            // All particles dead
             canvas.classList.add('hidden');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            window.removeEventListener('resize', resizeCanvas);
+            fireworksAnimationId = null;
         }
     }
-    animate();
-    setTimeout(() => canvas.classList.add('hidden'), duration);
+    fireworksAnimationId = requestAnimationFrame(animate);
+    
+    // Fallback: ensure canvas is hidden after duration + 1s
+    setTimeout(() => {
+        if (fireworksAnimationId) {
+            cancelAnimationFrame(fireworksAnimationId);
+            fireworksAnimationId = null;
+        }
+        canvas.classList.add('hidden');
+        window.removeEventListener('resize', resizeCanvas);
+    }, duration + 1000);
 }
 
 // ========== BUSINESS DAY HELPERS (weekday calculations) ==========
@@ -156,20 +209,19 @@ function businessDaysBetween(startDate, endDate) {
     return count;
 }
 
-// Export for module usage (if needed, but works globally)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        formatMoney,
-        formatDate,
-        validateZambianPhone,
-        showToast,
-        checkRateLimit,
-        sanitizeInput,
-        isValidEmail,
-        extractNumbers,
-        showFireworks,
-        isWeekend,
-        addWeekdays,
-        businessDaysBetween
-    };
+// ========== EXPOSE FUNCTIONS GLOBALLY (for browser) ==========
+// Attach all public functions to window so they can be called from HTML event handlers
+if (typeof window !== 'undefined') {
+    window.formatMoney = formatMoney;
+    window.formatDate = formatDate;
+    window.validateZambianPhone = validateZambianPhone;
+    window.showToast = showToast;
+    window.checkRateLimit = checkRateLimit;
+    window.sanitizeInput = sanitizeInput;
+    window.isValidEmail = isValidEmail;
+    window.extractNumbers = extractNumbers;
+    window.showFireworks = showFireworks;
+    window.isWeekend = isWeekend;
+    window.addWeekdays = addWeekdays;
+    window.businessDaysBetween = businessDaysBetween;
 }

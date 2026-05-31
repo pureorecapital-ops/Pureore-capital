@@ -15,6 +15,7 @@
             font-family: 'Inter', system-ui, sans-serif;
             color: #FFFFFF;
             padding: 1rem;
+            padding-bottom: 85px;
             min-height: 100vh;
         }
         .container {
@@ -59,6 +60,40 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+        /* Flag marquee styles */
+        .flags-container {
+            background: rgba(18, 18, 24, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 0.8rem 0;
+            margin: 1rem 0 2rem;
+            border: 1px solid rgba(46,204,113,0.2);
+            overflow: hidden;
+        }
+        .flags-marquee {
+            display: flex;
+            animation: scrollFlags 20s linear infinite;
+            width: fit-content;
+        }
+        .flag-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+            margin: 0 1rem;
+        }
+        .flag-icon {
+            font-size: 2.5rem;
+        }
+        .flag-name {
+            font-size: 0.75rem;
+            margin-top: 0.2rem;
+            color: #ccc;
+        }
+        @keyframes scrollFlags {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
         .card {
             background: rgba(18, 18, 24, 0.9);
             backdrop-filter: blur(10px);
@@ -99,9 +134,54 @@
             border-color: #2C2C3A;
             margin: 1rem 0;
         }
+        /* Bottom navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(46, 204, 113, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px 20px;
+            z-index: 30;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .nav-item:hover {
+            transform: translateY(-3px);
+        }
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            filter: brightness(0.8);
+            transition: 0.2s;
+        }
+        .nav-label {
+            font-size: 0.7rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .nav-item.active .nav-label {
+            color: #2ecc71;
+        }
         @media (max-width: 600px) {
             .card { padding: 1.2rem; }
             .animated-title { font-size: 1.5rem; }
+            .flag-item { min-width: 70px; }
+            .flag-icon { font-size: 1.8rem; }
         }
     </style>
 </head>
@@ -109,6 +189,12 @@
 <div class="container">
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">⚠️ Risk Disclaimer</div>
+
+    <!-- 6‑country flag marquee (including Zambia) -->
+    <div class="flags-container">
+        <div class="flags-marquee" id="flagsMarquee"></div>
+    </div>
+
     <div class="card">
         <p><strong>Last updated:</strong> May 26, 2025</p>
         <p>Investing with Pureore Capital involves significant risk. All investment activities are subject to market fluctuations, liquidity risks, and potential loss of capital. By using our platform, you acknowledge and accept the following:</p>
@@ -139,5 +225,64 @@
         <a href="risk-disclaimer.html">Risk Disclaimer</a>
     </div>
 </div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+    <div class="nav-item" data-page="dashboard.html">
+        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" data-page="mkvip.html">
+        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
+    </div>
+    <div class="nav-item" data-page="jproduct.html">
+        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
+    </div>
+    <div class="nav-item" data-page="income.html">
+        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
+    </div>
+    <div class="nav-item" data-page="team.html">
+        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
+    </div>
+    <div class="nav-item" data-page="me.html">
+        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
+    </div>
+</div>
+
+<script>
+    // Build the flag marquee with the 6 countries (including Zambia)
+    const countries = [
+        { name: "UK", emoji: "🇬🇧" },
+        { name: "Congo", emoji: "🇨🇬" },
+        { name: "Tanzania", emoji: "🇹🇿" },
+        { name: "Ghana", emoji: "🇬🇭" },
+        { name: "Zimbabwe", emoji: "🇿🇼" },
+        { name: "Zambia", emoji: "🇿🇲" }
+    ];
+    const marquee = document.getElementById('flagsMarquee');
+    function buildMarquee() {
+        let html = '';
+        // Double the items for seamless infinite scroll
+        for (let i = 0; i < 2; i++) {
+            countries.forEach(country => {
+                html += `<div class="flag-item"><div class="flag-icon">${country.emoji}</div><div class="flag-name">${country.name}</div></div>`;
+            });
+        }
+        marquee.innerHTML = html;
+    }
+    buildMarquee();
+
+    // Bottom navigation active highlight and redirection
+    const navItems = document.querySelectorAll('.nav-item');
+    const currentPage = window.location.pathname.split('/').pop() || 'risk-disclaimer.html';
+    navItems.forEach(item => {
+        const targetPage = item.getAttribute('data-page');
+        if (currentPage === targetPage) item.classList.add('active');
+        item.addEventListener('click', () => {
+            if (targetPage && !window.location.pathname.includes(targetPage)) {
+                window.location.href = targetPage;
+            }
+        });
+    });
+</script>
 </body>
 </html>

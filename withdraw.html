@@ -266,8 +266,22 @@
 </div>
 <canvas id="fireworks" class="hidden"></canvas>
 
-<script src="js/firebase-config.js"></script>
 <script>
+    // ==================== FIREBASE INIT (CORRECTED) ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
     // DOM elements
     const networkSelect = document.getElementById('networkSelect');
     const mobileGroup = document.getElementById('mobileInputGroup');
@@ -450,6 +464,69 @@
         confirmBtn.disabled = !(networkOk && contactOk && amountOk);
     }
 
+    // Fireworks effect (with cleanup)
+    let fireworksAnimationId = null;
+    function showFireworks() {
+        const canvas = document.getElementById('fireworks');
+        if (!canvas) return;
+        if (fireworksAnimationId) cancelAnimationFrame(fireworksAnimationId);
+        canvas.classList.remove('hidden');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        const handleResize = () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        };
+        window.addEventListener('resize', handleResize);
+        let particles = [];
+        for (let i = 0; i < 120; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6 - 2,
+                life: 1,
+                color: `hsl(${Math.random() * 360}, 100%, 60%)`
+            });
+        }
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            let anyAlive = false;
+            for (let p of particles) {
+                if (p.life <= 0) continue;
+                anyAlive = true;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 5, 5);
+            }
+            if (anyAlive) {
+                fireworksAnimationId = requestAnimationFrame(animate);
+            } else {
+                canvas.classList.add('hidden');
+                window.removeEventListener('resize', handleResize);
+                fireworksAnimationId = null;
+                ctx.clearRect(0, 0, width, height);
+            }
+        }
+        fireworksAnimationId = requestAnimationFrame(animate);
+        setTimeout(() => {
+            if (fireworksAnimationId) {
+                cancelAnimationFrame(fireworksAnimationId);
+                fireworksAnimationId = null;
+                canvas.classList.add('hidden');
+                window.removeEventListener('resize', handleResize);
+            }
+        }, 3000);
+    }
+
     // Main withdrawal action
     confirmBtn.addEventListener('click', async () => {
         if (confirmBtn.disabled) return;
@@ -523,48 +600,6 @@
             confirmBtn.innerText = 'Confirm Withdrawal';
         }
     });
-
-    function showFireworks() {
-        const canvas = document.getElementById('fireworks');
-        canvas.classList.remove('hidden');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        let particles = [];
-        for (let i = 0; i < 120; i++) {
-            particles.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                vx: (Math.random() - 0.5) * 6,
-                vy: (Math.random() - 0.5) * 6 - 2,
-                life: 1,
-                color: `hsl(${Math.random() * 360}, 100%, 60%)`
-            });
-        }
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let allDead = true;
-            for (let p of particles) {
-                if (p.life <= 0) continue;
-                allDead = false;
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= 0.02;
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.fillRect(p.x, p.y, 5, 5);
-            }
-            if (!allDead) requestAnimationFrame(animate);
-            else {
-                canvas.classList.add('hidden');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-        }
-        animate();
-        setTimeout(() => {
-            canvas.classList.add('hidden');
-        }, 2500);
-    }
 </script>
 </body>
 </html>

@@ -99,6 +99,7 @@
             border-radius: 40px;
             font-weight: bold;
             cursor: pointer;
+            color: #0A0A0C;
         }
         .stats {
             display: flex;
@@ -187,6 +188,11 @@
             .animated-title { font-size: 1.5rem; }
             .referral-code { font-size: 0.9rem; }
         }
+        .error-msg {
+            color: #ef4444;
+            text-align: center;
+            padding: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -232,7 +238,169 @@
     </div>
 </div>
 
-<script src="js/firebase-config.js"></script>
-<script src="js/team.js"></script>
+<script>
+    // ==================== FIREBASE INIT (CORRECTED) ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+    // Helper: escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // DOM elements
+    const referralCodeSpan = document.getElementById('referralCodeDisplay');
+    const copyBtn = document.getElementById('copyReferralBtn');
+    const teamCountSpan = document.getElementById('teamCount');
+    const totalBonusSpan = document.getElementById('totalBonus');
+    const teamListDiv = document.getElementById('teamList');
+
+    let currentUserId = null;
+    let currentReferralCode = null;
+
+    // Load user's referral code and team data
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        currentUserId = user.uid;
+        await loadUserData();
+        await loadTeamData();
+    });
+
+    async function loadUserData() {
+        try {
+            const userDoc = await db.collection('users').doc(currentUserId).get();
+            if (userDoc.exists) {
+                const data = userDoc.data();
+                currentReferralCode = data.referralCode;
+                if (referralCodeSpan) {
+                    referralCodeSpan.innerText = currentReferralCode || 'N/A';
+                }
+            } else {
+                referralCodeSpan.innerText = 'Error: No profile';
+            }
+        } catch (err) {
+            console.error(err);
+            referralCodeSpan.innerText = 'Error loading code';
+        }
+    }
+
+    async function loadTeamData() {
+        if (!currentReferralCode) {
+            teamListDiv.innerHTML = '<div class="error-msg">Referral code not available yet.</div>';
+            return;
+        }
+
+        try {
+            // Get all users who were referred by this user
+            const referredQuery = await db.collection('users')
+                .where('referredBy', '==', currentReferralCode)
+                .get();
+
+            const teamMembers = [];
+            let totalBonus = 0;
+
+            // For each referred user, get their referral earnings (from referralEarnings collection)
+            for (const doc of referredQuery.docs) {
+                const memberData = doc.data();
+                const memberId = doc.id;
+                const earningsQuery = await db.collection('referralEarnings')
+                    .where('referrerId', '==', currentUserId)
+                    .where('referredUserId', '==', memberId)
+                    .get();
+                let memberBonus = 0;
+                if (!earningsQuery.empty) {
+                    earningsQuery.forEach(earn => {
+                        memberBonus += earn.data().amount || 0;
+                    });
+                }
+                totalBonus += memberBonus;
+
+                teamMembers.push({
+                    name: memberData.fullName || 'Anonymous',
+                    email: memberData.email,
+                    joinedAt: memberData.createdAt ? memberData.createdAt.toDate() : null,
+                    bonus: memberBonus
+                });
+            }
+
+            // Update stats
+            teamCountSpan.innerText = teamMembers.length;
+            totalBonusSpan.innerText = totalBonus.toFixed(2);
+
+            // Render team list
+            if (teamMembers.length === 0) {
+                teamListDiv.innerHTML = '<p>No team members yet. Share your referral link!</p>';
+                return;
+            }
+
+            let html = '';
+            for (const member of teamMembers) {
+                const joinedDate = member.joinedAt ? member.joinedAt.toLocaleDateString() : 'Unknown';
+                html += `
+                    <div class="team-member">
+                        <div>
+                            <div class="member-name">${escapeHtml(member.name)}</div>
+                            <div class="member-email" style="font-size:0.7rem; color:#aaa;">${escapeHtml(member.email)}</div>
+                            <div style="font-size:0.7rem;">Joined: ${joinedDate}</div>
+                        </div>
+                        <div class="member-status status-bonus">+${member.bonus.toFixed(2)} ZMW</div>
+                    </div>
+                `;
+            }
+            teamListDiv.innerHTML = html;
+        } catch (err) {
+            console.error(err);
+            teamListDiv.innerHTML = '<div class="error-msg">Error loading team data.</div>';
+        }
+    }
+
+    // Copy referral link to clipboard
+    copyBtn.addEventListener('click', () => {
+        if (!currentReferralCode) {
+            alert('Referral code not loaded yet.');
+            return;
+        }
+        const baseUrl = window.location.origin;
+        const registerUrl = `${baseUrl}/register.html?ref=${currentReferralCode}`;
+        navigator.clipboard.writeText(registerUrl).then(() => {
+            alert('Referral link copied to clipboard!');
+        }).catch(() => {
+            alert('Could not copy. Please copy manually: ' + registerUrl);
+        });
+    });
+
+    // Bottom navigation active state
+    const navItems = document.querySelectorAll('.nav-item');
+    const currentPage = window.location.pathname.split('/').pop() || 'team.html';
+    navItems.forEach(item => {
+        const targetPage = item.getAttribute('data-page');
+        if (currentPage === targetPage) item.classList.add('active');
+        item.addEventListener('click', () => {
+            if (targetPage && !window.location.pathname.includes(targetPage)) {
+                window.location.href = targetPage;
+            }
+        });
+    });
+</script>
 </body>
 </html>

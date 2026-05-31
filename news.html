@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>News | Pureore Capital</title>
-    <!-- Firebase SDKs (for auth check) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -146,6 +146,24 @@
             color: #ddd;
             line-height: 1.6;
         }
+        .loader {
+            border: 3px solid #2C2C3A;
+            border-top: 3px solid #2ecc71;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .empty-msg {
+            text-align: center;
+            color: #aaa;
+            padding: 2rem;
+        }
         /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
@@ -209,45 +227,9 @@
         </div>
     </div>
 
-    <!-- News Articles -->
-    <div class="news-card">
-        <img class="news-image" src="https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png" alt="DR Congo Community">
-        <div class="news-content">
-            <div class="news-title">📍 DR Congo Community Market Support</div>
-            <div class="news-description">
-                Pureore Capital members gathered in a busy local market in DR Congo, helping families with essential support. Men and women wearing Pureore Capital t‑shirts and caps welcomed community members with smiles while sharing mealie meal and cooking oil. The market was full of life as people came together in unity, showing Pureore Capital’s commitment to helping communities grow stronger through care and support.
-            </div>
-        </div>
-    </div>
-
-    <div class="news-card">
-        <img class="news-image" src="https://i.ibb.co/DPVJnzTT/file-000000000da472438ebd83841715ab80.png" alt="Bus Outreach">
-        <div class="news-content">
-            <div class="news-title">🚌 Pureore Capital Community Bus Outreach</div>
-            <div class="news-description">
-                A large Pureore Capital bus moved through the community while people stood outside waving goodbye with excitement and joy. The bus carried support and outreach materials while members of the community watched and celebrated. This moment showed Pureore Capital reaching people directly and building stronger connections across different places.
-            </div>
-        </div>
-    </div>
-
-    <div class="news-card">
-        <img class="news-image" src="https://i.ibb.co/JRFRBHCz/file-000000007eec7243a7fece111ff00de4.png" alt="UK Community">
-        <div class="news-content">
-            <div class="news-title">🇬🇧 United Kingdom Community Support</div>
-            <div class="news-description">
-                In a small community in the United Kingdom, Pureore Capital members came together to support local families. Wearing company colors, the team distributed mealie meal and cooking oil while speaking with residents and sharing encouragement. The scene reflected Pureore Capital’s international mission of bringing support and practical help to communities in different countries.
-            </div>
-        </div>
-    </div>
-
-    <div class="news-card">
-        <img class="news-image" src="https://i.ibb.co/rR4zT1Xp/file-00000000a3f8724389f6b3fe5429d0b5.png" alt="Business Offices">
-        <div class="news-content">
-            <div class="news-title">🏢 Pureore Capital Business Offices</div>
-            <div class="news-description">
-                Pureore Capital offices showed different teams working in business and sales. In one office, members helped customers with bicycles. In another, staff sold solar panels and explained clean energy solutions. A third office displayed jewelry including necklaces and rings with team members assisting customers. The final office showed workers focused at their desks, managing company operations and supporting Pureore Capital’s daily work.
-            </div>
-        </div>
+    <!-- News Articles (dynamic from Firestore) -->
+    <div id="newsContainer">
+        <div class="loader"></div>
     </div>
 </div>
 
@@ -273,16 +255,74 @@
     </div>
 </div>
 
-<script src="js/firebase-config.js"></script>
 <script>
-    // Auth check: redirect to login if not authenticated
+    // ==================== FIREBASE INIT ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com",
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+    // Helper: escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Auth check and load news
     auth.onAuthStateChanged(user => {
         if (!user) {
             window.location.href = 'login.html';
+            return;
         }
+        loadNews();
     });
 
-    // Auto-scrolling flags (6 countries)
+    async function loadNews() {
+        const container = document.getElementById('newsContainer');
+        try {
+            const snapshot = await db.collection('news').orderBy('createdAt', 'desc').get();
+            if (snapshot.empty) {
+                container.innerHTML = '<div class="empty-msg">No news posts available at the moment.</div>';
+                return;
+            }
+            let html = '';
+            snapshot.forEach(doc => {
+                const news = doc.data();
+                // Use a placeholder image if none provided
+                const imageUrl = news.imageUrl || 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png';
+                html += `
+                    <div class="news-card">
+                        <img class="news-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(news.title)}">
+                        <div class="news-content">
+                            <div class="news-title">${escapeHtml(news.title)}</div>
+                            <div class="news-description">${escapeHtml(news.content).replace(/\n/g, '<br>')}</div>
+                            <div style="font-size:0.7rem; color:#aaa; margin-top:0.5rem;">📅 ${news.createdAt ? news.createdAt.toDate().toLocaleDateString() : 'Recently'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = '<div class="empty-msg">Error loading news. Please refresh.</div>';
+        }
+    }
+
+    // Build flags marquee (6 countries, double for seamless scroll)
     const countries = [
         { name: "UK", emoji: "🇬🇧" },
         { name: "Congo", emoji: "🇨🇬" },
@@ -291,20 +331,12 @@
         { name: "Zimbabwe", emoji: "🇿🇼" },
         { name: "Zambia", emoji: "🇿🇲" }
     ];
-
-    // Build marquee with two sets for seamless scrolling
     const marquee = document.getElementById('flagsMarquee');
     function buildMarquee() {
         let html = '';
-        // Double the items for continuous scroll
         for (let i = 0; i < 2; i++) {
             countries.forEach(country => {
-                html += `
-                    <div class="flag-item">
-                        <div class="flag-icon">${country.emoji}</div>
-                        <div class="flag-name">${country.name}</div>
-                    </div>
-                `;
+                html += `<div class="flag-item"><div class="flag-icon">${country.emoji}</div><div class="flag-name">${country.name}</div></div>`;
             });
         }
         marquee.innerHTML = html;

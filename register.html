@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Register – Pureore Capital</title>
-    <!-- Firebase SDKs -->
+    <!-- Preconnect to Firebase -->
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <!-- Firebase SDKs (compat version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -56,8 +58,9 @@
             width: 100%; padding: 0.9rem; margin: 0.6rem 0;
             border-radius: 40px; border: 1px solid #2C2C3A; background: #1E1E2A;
             color: white; font-size: 1rem;
+            transition: 0.2s;
         }
-        input:focus { outline: none; border-color: #2ecc71; }
+        input:focus { outline: none; border-color: #2ecc71; box-shadow: 0 0 0 2px rgba(46,204,113,0.2); }
         .btn {
             width: 100%; background: linear-gradient(135deg,#6C47FF,#8a6aff);
             padding: 0.9rem; border: none; border-radius: 40px;
@@ -79,25 +82,28 @@
             margin-top: 0.2rem;
         }
         a { color: #6C47FF; text-decoration: none; }
+        a:hover { text-decoration: underline; }
         @keyframes fadeSlideUp {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* Disable button while loading */
+        .btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
     </style>
 </head>
 <body>
 <div class="auth-container">
     <div class="auth-card">
         <h2>Create Account</h2>
-        <div class="bonus-notice">🎁 Welcome bonus: 20 ZMW credited instantly!</div>
+        <div class="bonus-notice">🎁 Welcome bonus: <strong>20 ZMW</strong> credited instantly!</div>
         <form id="registerForm">
-            <input type="text" id="regFullName" placeholder="Full Name" required>
-            <input type="email" id="regEmail" placeholder="Email" required>
-            <input type="password" id="regPassword" placeholder="Password (min 6 chars)" required>
-            <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
-            <input type="text" id="regReferralCode" placeholder="Referral Code (optional)">
+            <input type="text" id="regFullName" placeholder="Full Name" required autocomplete="name">
+            <input type="email" id="regEmail" placeholder="Email" required autocomplete="email">
+            <input type="password" id="regPassword" placeholder="Password (min 6 characters)" required autocomplete="new-password">
+            <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required autocomplete="off">
+            <input type="text" id="regReferralCode" placeholder="Referral Code (optional)" autocomplete="off">
             <div class="note">💡 If someone invited you, enter their code. Otherwise leave blank.</div>
-            <button type="submit" class="btn">Register & Get 20 ZMW</button>
+            <button type="submit" class="btn" id="submitBtn">Register & Get 20 ZMW</button>
         </form>
         <div id="message"></div>
         <p style="text-align: center; margin-top: 1rem;">
@@ -107,47 +113,109 @@
 </div>
 
 <script>
-    // Self-contained Firebase configuration
+    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.firebasestorage.app",
+        storageBucket: "pureore-capital-zambia.appspot.com",
         messagingSenderId: "78967797858",
         appId: "1:78967797858:web:379b9692951429c345793b",
         measurementId: "G-FQKC29NYE9"
     };
+    
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     const auth = firebase.auth();
     const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
+    // ==================== READ REFERRAL CODE FROM URL ====================
+    function getReferralCodeFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('ref');
+    }
+
+    // Auto‑fill referral code field if present in URL
+    const urlReferralCode = getReferralCodeFromUrl();
+    if (urlReferralCode) {
+        const referralInput = document.getElementById('regReferralCode');
+        if (referralInput) {
+            referralInput.value = urlReferralCode;
+            // Optional: show a small message that it was auto‑filled
+            const note = document.querySelector('.note');
+            if (note) {
+                note.innerHTML = '💡 Referral code automatically filled from your invitation link.';
+            }
+        }
+    }
+
+    // ==================== REGISTRATION LOGIC ====================
     const registerForm = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating account...';
+            
             const fullName = document.getElementById('regFullName').value.trim();
-            const email = document.getElementById('regEmail').value;
+            const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirm = document.getElementById('regConfirmPassword').value;
             const referralCode = document.getElementById('regReferralCode').value.trim();
             const messageDiv = document.getElementById('message');
-
+            
+            messageDiv.innerHTML = '';
+            
+            if (!fullName) {
+                messageDiv.innerHTML = '<div class="error">Please enter your full name.</div>';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register & Get 20 ZMW';
+                return;
+            }
+            if (!email) {
+                messageDiv.innerHTML = '<div class="error">Please enter your email address.</div>';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register & Get 20 ZMW';
+                return;
+            }
             if (password.length < 6) {
                 messageDiv.innerHTML = '<div class="error">Password must be at least 6 characters.</div>';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register & Get 20 ZMW';
                 return;
             }
             if (password !== confirm) {
                 messageDiv.innerHTML = '<div class="error">Passwords do not match.</div>';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register & Get 20 ZMW';
                 return;
             }
-
+            
+            // Validate referral code if provided
+            if (referralCode) {
+                try {
+                    const referrerQuery = await db.collection('users').where('referralCode', '==', referralCode).get();
+                    if (referrerQuery.empty) {
+                        messageDiv.innerHTML = '<div class="error">❌ Invalid referral code. Please check and try again.</div>';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Register & Get 20 ZMW';
+                        return;
+                    }
+                } catch (err) {
+                    console.warn("Referral check failed:", err);
+                }
+            }
+            
             try {
                 const userCred = await auth.createUserWithEmailAndPassword(email, password);
                 const uid = userCred.user.uid;
                 const generatedReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-
+                
                 await db.collection('users').doc(uid).set({
                     fullName: fullName,
                     email: email,
@@ -158,25 +226,30 @@
                     isBlocked: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
+                
                 await db.collection('transactions').add({
                     userId: uid,
                     type: 'bonus',
                     amount: 20,
-                    description: 'Welcome bonus',
+                    description: 'Welcome bonus 20 ZMW',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
-                messageDiv.innerHTML = '<div class="success">✅ Registration successful! Redirecting...</div>';
+                
+                messageDiv.innerHTML = '<div class="success">✅ Registration successful! Redirecting to dashboard...</div>';
+                
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1500);
+                
             } catch (error) {
+                console.error("Registration error:", error);
                 let errorMsg = error.message;
-                if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered.';
+                if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered. Please login.';
                 if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
-                if (error.code === 'auth/weak-password') errorMsg = 'Password is too weak.';
-                messageDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
+                if (error.code === 'auth/weak-password') errorMsg = 'Password is too weak. Use at least 6 characters.';
+                messageDiv.innerHTML = `<div class="error">❌ ${errorMsg}</div>`;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register & Get 20 ZMW';
             }
         });
     }

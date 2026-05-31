@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>My Profile | Pureore Capital</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        /* (keep all existing styles, no changes needed) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
@@ -182,6 +182,7 @@
             transition: 0.2s;
         }
         .nav-label { font-size: 0.7rem; color: #aaa; font-weight: 500; }
+        .nav-item.active .nav-label { color: #2ecc71; }
     </style>
 </head>
 <body>
@@ -198,22 +199,20 @@
     </div>
 
     <div class="menu-grid">
-        <div class="menu-card" onclick="location.href='news.html'"><div class="menu-icon"></div><div class="menu-text">News</div><div class="menu-arrow"></div></div>
-        <div class="menu-card" onclick="location.href='chat.html'"><div class="menu-icon"></div><div class="menu-text">Chat</div><div class="menu-arrow"></div></div>
-        <!-- Download APK – now triggers actual download -->
-        <div class="menu-card" id="downloadApkBtn"><div class="menu-icon"></div><div class="menu-text">Download APK</div><div class="menu-arrow"></div></div>
-        <div class="menu-card" id="changePasswordBtn"><div class="menu-icon"></div><div class="menu-text">Change Password</div><div class="menu-arrow"></div></div>
-        <!-- Customer Service now points to support.html -->
-        <div class="menu-card" onclick="location.href='support.html'"><div class="menu-icon"></div><div class="menu-text">Customer Service</div><div class="menu-arrow"></div></div>
-        <div class="menu-card" id="logoutBtn"><div class="menu-icon"></div><div class="menu-text">Logout</div><div class="menu-arrow"></div></div>
+        <div class="menu-card" onclick="location.href='news.html'"><div class="menu-icon"></div><div class="menu-text">News</div><div class="menu-arrow"></div></div>
+        <div class="menu-card" onclick="location.href='chat.html'"><div class="menu-icon"></div><div class="menu-text">Chat</div><div class="menu-arrow"></div></div>
+        <div class="menu-card" id="downloadApkBtn"><div class="menu-icon"></div><div class="menu-text">Download APK</div><div class="menu-arrow"></div></div>
+        <div class="menu-card" id="changePasswordBtn"><div class="menu-icon"></div><div class="menu-text">Change Password</div><div class="menu-arrow"></div></div>
+        <div class="menu-card" onclick="location.href='support.html'"><div class="menu-icon"></div><div class="menu-text">Customer Service</div><div class="menu-arrow"></div></div>
+        <div class="menu-card" id="logoutBtn"><div class="menu-icon"></div><div class="menu-text">Logout</div><div class="menu-arrow"></div></div>
     </div>
 </div>
 
-<!-- Password Change Modal (unchanged) -->
+<!-- Password Change Modal -->
 <div id="passwordModal" class="modal-overlay">
     <div class="modal-card">
         <h3>Change Password</h3>
-        <input type="email" id="modalEmail" placeholder="Email">
+        <input type="email" id="modalEmail" placeholder="Email" readonly>
         <input type="password" id="oldPassword" placeholder="Old Password">
         <input type="password" id="newPassword" placeholder="New Password (min 6)">
         <input type="password" id="confirmPassword" placeholder="Confirm New Password">
@@ -226,48 +225,76 @@
 
 <!-- Bottom Navigation -->
 <div class="bottom-nav">
-    <div class="nav-item" onclick="window.location.href='dashboard.html'">
+    <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
     </div>
-    <div class="nav-item" onclick="window.location.href='mkvip.html'">
+    <div class="nav-item" data-page="mkvip.html">
         <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
     </div>
-    <div class="nav-item" onclick="window.location.href='jproduct.html'">
+    <div class="nav-item" data-page="jproduct.html">
         <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
     </div>
-    <div class="nav-item" onclick="window.location.href='income.html'">
+    <div class="nav-item" data-page="income.html">
         <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
     </div>
-    <div class="nav-item" onclick="window.location.href='team.html'">
+    <div class="nav-item" data-page="team.html">
         <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
     </div>
-    <div class="nav-item" onclick="window.location.href='me.html'">
+    <div class="nav-item" data-page="me.html">
         <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
     </div>
 </div>
 
-<script src="js/firebase-config.js"></script>
 <script>
+    // ==================== FIREBASE INIT ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com",
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+    // Helper: escape HTML to prevent XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Load user profile
     auth.onAuthStateChanged(async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
         try {
             const userDoc = await db.collection('users').doc(user.uid).get();
             if (userDoc.exists) {
                 const data = userDoc.data();
-                document.getElementById('userName').innerText = data.fullName || 'User';
-                document.getElementById('userEmail').innerText = data.email || user.email;
+                document.getElementById('userName').innerText = escapeHtml(data.fullName || 'User');
+                document.getElementById('userEmail').innerText = escapeHtml(data.email || user.email);
             } else {
-                document.getElementById('userName').innerText = user.displayName || 'Investor';
-                document.getElementById('userEmail').innerText = user.email;
+                document.getElementById('userName').innerText = escapeHtml(user.displayName || 'Investor');
+                document.getElementById('userEmail').innerText = escapeHtml(user.email);
             }
             document.getElementById('modalEmail').value = user.email;
         } catch (err) {
+            console.error(err);
             document.getElementById('userName').innerText = 'User';
-            document.getElementById('userEmail').innerText = user.email;
+            document.getElementById('userEmail').innerText = escapeHtml(user.email);
+            document.getElementById('modalEmail').value = user.email;
         }
     });
 
-    // Online/Offline toggle
+    // Online/Offline toggle (frontend only)
     let isOnline = true;
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
@@ -287,7 +314,7 @@
     updateOnlineStatus();
     onlineToggle.addEventListener('click', () => { isOnline = !isOnline; updateOnlineStatus(); });
 
-    // Change password modal (unchanged)
+    // Password change modal logic
     const modal = document.getElementById('passwordModal');
     const changePwdBtn = document.getElementById('changePasswordBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -304,7 +331,7 @@
     closeModalBtn.addEventListener('click', () => modal.classList.remove('active'));
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
     forgotLink.addEventListener('click', () => {
-        modalMessage.innerHTML = '<div class="msg"> Contact admin: 0951359357 (Manager) for account recovery.</div>';
+        modalMessage.innerHTML = '<div class="msg"> Contact admin: +260 95 135 9357 (Manager) for account recovery.</div>';
     });
 
     document.getElementById('submitPasswordChange').addEventListener('click', async () => {
@@ -314,7 +341,7 @@
         const confirmPwd = document.getElementById('confirmPassword').value;
         const user = auth.currentUser;
         if (!user || user.email !== email) {
-            modalMessage.innerHTML = '<div class="msg error">Email does not match loggedin account.</div>';
+            modalMessage.innerHTML = '<div class="msg error">Email does not match logged-in account.</div>';
             return;
         }
         if (newPwd.length < 6) {
@@ -330,33 +357,44 @@
             await user.reauthenticateWithCredential(credential);
             await user.updatePassword(newPwd);
             modalMessage.innerHTML = '<div class="msg success">Password changed successfully! You will be logged out.</div>';
-            setTimeout(async () => { await auth.signOut(); window.location.href = 'register.html'; }, 2000);
+            setTimeout(async () => { await auth.signOut(); window.location.href = 'login.html'; }, 2000);
         } catch (err) {
             let msg = err.message;
             if (err.code === 'auth/wrong-password') msg = 'Old password is incorrect.';
-            modalMessage.innerHTML = `<div class="msg error">${msg}</div>`;
+            modalMessage.innerHTML = `<div class="msg error">${escapeHtml(msg)}</div>`;
         }
     });
 
-    // Logout button – redirect to register.html
+    // Logout button – redirect to login page
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         await auth.signOut();
-        window.location.href = 'register.html';
+        window.location.href = 'login.html';
     });
 
-    // APK download – trigger download of actual APK file
+    // APK download – replace with your actual APK URL before going live
     document.getElementById('downloadApkBtn').addEventListener('click', () => {
-        // Replace this URL with your actual APK file URL when ready
+        //  IMPORTANT: Replace this URL with your actual APK file location
         const apkUrl = 'https://your-server.com/pureore-capital.apk'; // CHANGE THIS
-        // Force download
         const link = document.createElement('a');
         link.href = apkUrl;
         link.download = 'pureore-capital.apk';
         link.click();
-        // If the URL is not accessible, show fallback message
         setTimeout(() => {
             alert('If download does not start automatically, please contact support.');
         }, 1000);
+    });
+
+    // Bottom navigation active highlight
+    const navItems = document.querySelectorAll('.nav-item');
+    const currentPage = window.location.pathname.split('/').pop() || 'me.html';
+    navItems.forEach(item => {
+        const targetPage = item.getAttribute('data-page');
+        if (currentPage === targetPage) item.classList.add('active');
+        item.addEventListener('click', () => {
+            if (targetPage && !window.location.pathname.includes(targetPage)) {
+                window.location.href = targetPage;
+            }
+        });
     });
 </script>
 </body>

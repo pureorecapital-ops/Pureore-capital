@@ -161,6 +161,11 @@
             font-size: 0.7rem;
             color: #6B6F85;
         }
+        .error-msg {
+            color: #ef4444;
+            text-align: center;
+            padding: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -194,19 +199,31 @@
     </div>
 </div>
 
-<script src="js/firebase-config.js"></script>
 <script>
-    // Wait for auth
-    auth.onAuthStateChanged((user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
-        }
-        // Real-time listeners for each collection
-        listenDeposits(user.uid);
-        listenWithdrawals(user.uid);
-        listenLoans(user.uid);
-    });
+    // ==================== FIREBASE INIT (CORRECTED) ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+    // Helper functions
+    function formatDate(timestamp) {
+        if (!timestamp) return 'N/A';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toLocaleString();
+    }
+    function formatMoney(amount) {
+        return 'K' + parseFloat(amount).toFixed(2);
+    }
 
     // Tab switching
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -218,35 +235,41 @@
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const tabId = btn.dataset.tab;
-            // Update active class on buttons
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            // Show selected tab
             Object.values(tabs).forEach(tab => tab.classList.remove('active'));
-            tabs[tabId].classList.add('active');
+            if (tabs[tabId]) tabs[tabId].classList.add('active');
         });
     });
 
-    // Format date from Firestore timestamp
-    function formatDate(timestamp) {
-        if (!timestamp) return 'N/A';
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleString();
-    }
+    // Real-time listeners (with cleanup on page unload)
+    let unsubDeposits = null;
+    let unsubWithdrawals = null;
+    let unsubLoans = null;
 
-    // Format money
-    function formatMoney(amount) {
-        return 'K' + parseFloat(amount).toFixed(2);
-    }
+    auth.onAuthStateChanged((user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        // Unsubscribe previous listeners if any
+        if (unsubDeposits) unsubDeposits();
+        if (unsubWithdrawals) unsubWithdrawals();
+        if (unsubLoans) unsubLoans();
 
-    // Render deposit list with real-time updates
+        // Start listeners
+        unsubDeposits = listenDeposits(user.uid);
+        unsubWithdrawals = listenWithdrawals(user.uid);
+        unsubLoans = listenLoans(user.uid);
+    });
+
     function listenDeposits(userId) {
         const depositsList = document.getElementById('depositsList');
-        let initialLoad = true;
         const q = db.collection('deposits').where('userId', '==', userId).orderBy('createdAt', 'desc');
-        const unsubscribe = q.onSnapshot((snapshot) => {
-            if (snapshot.empty && !initialLoad) {
+        return q.onSnapshot((snapshot) => {
+            if (snapshot.empty) {
                 depositsList.innerHTML = '<div class="empty-msg">No deposit records found.</div>';
+                updateTabBadge('deposits', 0);
                 return;
             }
             let html = '';
@@ -255,8 +278,9 @@
                 const data = doc.data();
                 if (data.status === 'pending') pendingCount++;
                 const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
+                const borderColor = data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444');
                 html += `
-                    <div class="history-card" style="border-left-color: ${data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444')}">
+                    <div class="history-card" style="border-left-color: ${borderColor}">
                         <div class="card-header">
                             <span class="amount">${formatMoney(data.amount)}</span>
                             <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
@@ -270,30 +294,21 @@
                     </div>
                 `;
             });
-            if (pendingCount > 0 && !initialLoad) {
-                // Optional: show a small badge on the deposits tab
-                const depositTabBtn = document.querySelector('.tab-btn[data-tab="deposits"]');
-                depositTabBtn.innerHTML = `💸 Deposits <span class="pending-badge">${pendingCount}</span>`;
-            } else {
-                const depositTabBtn = document.querySelector('.tab-btn[data-tab="deposits"]');
-                depositTabBtn.innerHTML = `💸 Deposits`;
-            }
-            depositsList.innerHTML = html || '<div class="empty-msg">No deposit records found.</div>';
-            initialLoad = false;
+            depositsList.innerHTML = html;
+            updateTabBadge('deposits', pendingCount);
         }, (error) => {
             console.error("Deposit listener error:", error);
             depositsList.innerHTML = '<div class="error-msg">Error loading deposits.</div>';
         });
-        // Store unsubscribe if needed (optional)
     }
 
     function listenWithdrawals(userId) {
         const withdrawalsList = document.getElementById('withdrawalsList');
-        let initialLoad = true;
         const q = db.collection('withdrawals').where('userId', '==', userId).orderBy('createdAt', 'desc');
-        const unsubscribe = q.onSnapshot((snapshot) => {
-            if (snapshot.empty && !initialLoad) {
+        return q.onSnapshot((snapshot) => {
+            if (snapshot.empty) {
                 withdrawalsList.innerHTML = '<div class="empty-msg">No withdrawal records found.</div>';
+                updateTabBadge('withdrawals', 0);
                 return;
             }
             let html = '';
@@ -302,8 +317,9 @@
                 const data = doc.data();
                 if (data.status === 'pending') pendingCount++;
                 const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
+                const borderColor = data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444');
                 html += `
-                    <div class="history-card" style="border-left-color: ${data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444')}">
+                    <div class="history-card" style="border-left-color: ${borderColor}">
                         <div class="card-header">
                             <span class="amount">${formatMoney(data.amount)}</span>
                             <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
@@ -317,15 +333,8 @@
                     </div>
                 `;
             });
-            if (pendingCount > 0 && !initialLoad) {
-                const withdrawTabBtn = document.querySelector('.tab-btn[data-tab="withdrawals"]');
-                withdrawTabBtn.innerHTML = `💳 Withdrawals <span class="pending-badge">${pendingCount}</span>`;
-            } else {
-                const withdrawTabBtn = document.querySelector('.tab-btn[data-tab="withdrawals"]');
-                withdrawTabBtn.innerHTML = `💳 Withdrawals`;
-            }
-            withdrawalsList.innerHTML = html || '<div class="empty-msg">No withdrawal records found.</div>';
-            initialLoad = false;
+            withdrawalsList.innerHTML = html;
+            updateTabBadge('withdrawals', pendingCount);
         }, (error) => {
             console.error("Withdrawal listener error:", error);
             withdrawalsList.innerHTML = '<div class="error-msg">Error loading withdrawals.</div>';
@@ -334,21 +343,32 @@
 
     function listenLoans(userId) {
         const loansList = document.getElementById('loansList');
-        let initialLoad = true;
         const q = db.collection('loans').where('userId', '==', userId).orderBy('createdAt', 'desc');
-        const unsubscribe = q.onSnapshot((snapshot) => {
-            if (snapshot.empty && !initialLoad) {
+        return q.onSnapshot((snapshot) => {
+            if (snapshot.empty) {
                 loansList.innerHTML = '<div class="empty-msg">No loan records found.</div>';
+                updateTabBadge('loans', 0);
                 return;
             }
             let html = '';
-            let pendingCount = 0;
+            let activeCount = 0;
             snapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.status === 'active') pendingCount++;
-                const statusClass = data.status === 'active' ? 'active' : (data.status === 'paid' ? 'paid' : 'overdue');
+                if (data.status === 'active') activeCount++;
+                let statusClass = 'active';
+                let borderColor = '#f1c40f';
+                if (data.status === 'paid') {
+                    statusClass = 'paid';
+                    borderColor = '#2ecc71';
+                } else if (data.status === 'overdue') {
+                    statusClass = 'overdue';
+                    borderColor = '#ef4444';
+                } else if (data.status === 'pending') {
+                    statusClass = 'pending';
+                    borderColor = '#f1c40f';
+                }
                 html += `
-                    <div class="history-card" style="border-left-color: ${data.status === 'paid' ? '#2ecc71' : (data.status === 'active' ? '#f1c40f' : '#ef4444')}">
+                    <div class="history-card" style="border-left-color: ${borderColor}">
                         <div class="card-header">
                             <span class="amount">${formatMoney(data.amount)}</span>
                             <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
@@ -361,19 +381,27 @@
                     </div>
                 `;
             });
-            if (pendingCount > 0 && !initialLoad) {
-                const loanTabBtn = document.querySelector('.tab-btn[data-tab="loans"]');
-                loanTabBtn.innerHTML = `🏦 Loans <span class="pending-badge">${pendingCount}</span>`;
-            } else {
-                const loanTabBtn = document.querySelector('.tab-btn[data-tab="loans"]');
-                loanTabBtn.innerHTML = `🏦 Loans`;
-            }
-            loansList.innerHTML = html || '<div class="empty-msg">No loan records found.</div>';
-            initialLoad = false;
+            loansList.innerHTML = html;
+            updateTabBadge('loans', activeCount);
         }, (error) => {
             console.error("Loan listener error:", error);
             loansList.innerHTML = '<div class="error-msg">Error loading loans.</div>';
         });
+    }
+
+    function updateTabBadge(tabName, count) {
+        const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+        if (!btn) return;
+        const baseText = {
+            deposits: '💸 Deposits',
+            withdrawals: '💳 Withdrawals',
+            loans: '🏦 Loans'
+        }[tabName];
+        if (count > 0) {
+            btn.innerHTML = `${baseText} <span class="pending-badge">${count}</span>`;
+        } else {
+            btn.innerHTML = baseText;
+        }
     }
 </script>
 </body>

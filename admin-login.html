@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Admin Login – Pureore Capital</title>
+    <!-- Preconnect to Firebase -->
+    <link rel="preconnect" href="https://www.gstatic.com">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -11,7 +13,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -57,8 +59,9 @@
             width: 100%; padding: 0.9rem; margin: 0.6rem 0;
             border-radius: 40px; border: 1px solid #2C2C3A; background: #1E1E2A;
             color: white; font-size: 1rem; text-align: center;
+            transition: 0.2s;
         }
-        input:focus { outline: none; border-color: #2ecc71; }
+        input:focus { outline: none; border-color: #2ecc71; box-shadow: 0 0 0 2px rgba(46,204,113,0.2); }
         .btn {
             width: 100%; background: linear-gradient(135deg,#6C47FF,#8a6aff);
             padding: 0.9rem; border: none; border-radius: 40px;
@@ -66,6 +69,7 @@
             transition: 0.2s; margin-top: 0.5rem;
         }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+        .btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
         .error { background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #ef4444; padding: 0.6rem; border-radius: 20px; text-align: center; margin-top: 1rem; }
         .back-link { margin-top: 1rem; display: inline-block; color: #6C47FF; text-decoration: none; }
         .back-link:hover { text-decoration: underline; }
@@ -76,8 +80,8 @@
     <div class="auth-card">
         <h2>🔐 Admin Access</h2>
         <p style="margin-bottom: 1rem;">Login with your admin credentials</p>
-        <input type="email" id="adminEmail" placeholder="Email" autofocus>
-        <input type="password" id="adminPassword" placeholder="Password">
+        <input type="email" id="adminEmail" placeholder="Email" autocomplete="email" autofocus>
+        <input type="password" id="adminPassword" placeholder="Password" autocomplete="current-password">
         <button id="loginBtn" class="btn">Login</button>
         <div id="message" style="margin-top: 1rem;"></div>
         <a href="login.html" class="back-link">← Back to user login</a>
@@ -85,45 +89,96 @@
 </div>
 
 <script>
-    // ===== SELF-CONTAINED FIREBASE CONFIGURATION =====
+    // Firebase configuration – corrected storageBucket
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.firebasestorage.app",
+        storageBucket: "pureore-capital-zambia.appspot.com",  // ✅ Fixed
         messagingSenderId: "78967797858",
         appId: "1:78967797858:web:379b9692951429c345793b",
         measurementId: "G-FQKC29NYE9"
     };
+    
+    // Initialize Firebase only once
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     const auth = firebase.auth();
     const db = firebase.firestore();
-
+    
+    // Set persistence
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+    
+    // Check if already logged in as admin – redirect immediately
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            try {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().role === 'admin' && userDoc.data().isBlocked !== true) {
+                    window.location.href = 'admin-dashboard.html';
+                }
+            } catch (err) {
+                console.warn("Auth check error:", err);
+            }
+        }
+    });
+    
     const loginBtn = document.getElementById('loginBtn');
     const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const messageDiv = document.getElementById('message');
-
+    
     async function adminLogin(email, password) {
+        // Disable button and show loading state
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Logging in...';
+        messageDiv.innerHTML = '';
+        
         try {
+            // Sign in
             const userCred = await auth.signInWithEmailAndPassword(email, password);
             const user = userCred.user;
+            
+            // Fetch user document
             const userDoc = await db.collection('users').doc(user.uid).get();
-            if (!userDoc.exists) throw new Error('No user profile found.');
-            if (userDoc.data().role !== 'admin') throw new Error('You do not have admin privileges.');
+            
+            if (!userDoc.exists) {
+                await auth.signOut();
+                throw new Error('No user profile found. Please contact support.');
+            }
+            
+            const userData = userDoc.data();
+            
+            // Check if account is blocked
+            if (userData.isBlocked === true) {
+                await auth.signOut();
+                throw new Error('Your account has been blocked. Contact support.');
+            }
+            
+            // Check admin role
+            if (userData.role !== 'admin') {
+                await auth.signOut();
+                throw new Error('You do not have admin privileges.');
+            }
+            
+            // Success – redirect to admin dashboard
             window.location.href = 'admin-dashboard.html';
+            
         } catch (error) {
+            console.error("Admin login error:", error);
             let errorMsg = error.message;
             if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
             if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
             if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
+            if (error.code === 'auth/too-many-requests') errorMsg = 'Too many failed attempts. Try again later.';
             messageDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
-            passwordInput.value = '';
+            passwordInput.value = ''; // clear password field
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login';
         }
     }
-
+    
     loginBtn.addEventListener('click', () => {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
@@ -133,11 +188,11 @@
         }
         adminLogin(email, password);
     });
-
+    
     passwordInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') loginBtn.click();
     });
-    emailInput.addEventListener('keypress', (e) => {
+    emailInput.addEventListener('keypress', (e) {
         if (e.key === 'Enter') loginBtn.click();
     });
 </script>

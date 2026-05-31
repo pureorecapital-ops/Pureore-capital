@@ -1,61 +1,120 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAuthenticated() { return request.auth != null; }
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
     }
-    function isOwner(userId) { return request.auth.uid == userId; }
+    function isAdmin() {
+      // Check if the user document has role 'admin'
+      // Note: This causes one extra read per rule evaluation.
+      // For high‑scale, consider using custom claims instead.
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
+    // ========== USERS ==========
     match /users/{userId} {
       allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow delete: false;
     }
+
+    // ========== INVESTMENTS ==========
     match /investments/{docId} {
       allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
       allow delete: false;
     }
+
+    // ========== DEPOSITS ==========
     match /deposits/{docId} {
       allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAdmin();
+      allow update: if isAdmin();   // Only admin can approve/reject
       allow delete: false;
     }
+
+    // ========== WITHDRAWALS ==========
     match /withdrawals/{docId} {
       allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: false;
     }
+
+    // ========== LOANS ==========
     match /loans/{docId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();   // Admin approves or marks paid
+      allow delete: false;
+    }
+
+    // ========== TREASURE CODES ==========
+    match /treasureCodes/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();    // Only admin creates/deletes codes
+    }
+
+    // ========== VOUCHERS ==========
+    match /vouchers/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ========== AGENTS ==========
+    match /agents/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ========== SYSTEM SETTINGS ==========
+    match /systemSettings/{docId} {
+      allow read: if true;          // Public settings (e.g., deposit enabled)
+      allow write: if isAdmin();
+    }
+
+    // ========== TRANSACTIONS ==========
+    match /transactions/{docId} {
       allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: false;
     }
-    match /treasureCodes/{docId} {
-      allow read: if isAuthenticated();
+
+    // ========== NEWS ==========
+    match /news/{docId} {
+      allow read: if true;          // Anyone can read news
+      allow write: if isAdmin();    // Only admin posts news
+    }
+
+    // ========== INVESTMENT PLANS (Mk Vip & J Product) ==========
+    match /mkvipPlans/{docId} {
+      allow read: if true;          // All users can see available plans
       allow write: if isAdmin();
     }
-    match /vouchers/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-    match /agents/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-    match /systemSettings/{docId} {
+    match /jproductPlans/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /transactions/{docId} {
-      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
-      allow write: if isAuthenticated();
+
+    // ========== REFERRAL EARNINGS ==========
+    match /referralEarnings/{docId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.referrerId) || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.referrerId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ========== CATCH‑ALL (optional, for future collections) ==========
+    // Prevent accidental creation of other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -77,6 +77,19 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+        .loader {
+            border: 3px solid #2C2C3A;
+            border-top: 3px solid #2ecc71;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         .carousel-container {
             position: relative;
             margin: 1rem 0 2rem;
@@ -264,6 +277,11 @@
             pointer-events: none;
             z-index: 1000;
         }
+        .empty-msg {
+            text-align: center;
+            color: #aaa;
+            padding: 2rem;
+        }
         @media (max-width: 600px) {
             .plan-image { height: 150px; }
             .plan-title { font-size: 1.3rem; }
@@ -275,12 +293,14 @@
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">⭐ Mk Vip Plans</div>
 
-    <div class="carousel-container">
+    <div id="loadingIndicator" class="loader"></div>
+    <div class="carousel-container" style="display: none;" id="carouselContainer">
         <div class="carousel" id="carousel">
             <div class="carousel-track" id="carouselTrack"></div>
         </div>
         <div class="dots" id="dotsContainer"></div>
     </div>
+    <div id="emptyMessage" class="empty-msg" style="display: none;">No investment plans available. Please check back later.</div>
 </div>
 
 <!-- Bottom Navigation -->
@@ -307,110 +327,50 @@
 
 <canvas id="fireworksCanvas" class="fireworks-canvas"></canvas>
 
-<script src="js/firebase-config.js"></script>
 <script>
-    // Plan data
-    const plans = [
-        {
-            name: "Premium Plan",
-            lock: "Purchased 4 times and locked",
-            image: "https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg",
-            invest: 3200,
-            days: 40,
-            daily: 255,
-            expiry: "Auto",
-            totalIncome: 10200,
-            description: ""
-        },
-        {
-            name: "Silver Plus",
-            lock: "Purchased 2 times and locked",
-            image: "https://i.ibb.co/35L37GN4/IMG-20260525-113139.jpg",
-            invest: 6000,
-            days: 40,
-            daily: 320,
-            expiry: "Auto",
-            totalIncome: 12800,
-            description: ""
-        },
-        {
-            name: "Gold Plan",
-            lock: "Purchased 3 times and locked",
-            image: "https://i.ibb.co/HffGKF69/IMG-20260525-112940.jpg",
-            invest: 9500,
-            days: 40,
-            daily: 500,
-            expiry: "Auto",
-            totalIncome: 20000,
-            description: ""
-        },
-        {
-            name: "Diamond Plus",
-            lock: "Purchased 4 times and locked",
-            image: "https://i.ibb.co/Q7F1GNPM/IMG-20260525-113204.jpg",
-            invest: 15000,
-            days: 40,
-            daily: 1000,
-            expiry: "Auto",
-            totalIncome: 40000,
-            description: ""
-        },
-        {
-            name: "VIP Elite",
-            lock: "Purchased 5 times and locked",
-            image: "https://i.ibb.co/JF5hBTFF/IMG-20260525-113004.jpg",
-            invest: 20000,
-            days: 40,
-            daily: 2000,
-            expiry: "Auto",
-            totalIncome: 50000,
-            description: ""
-        },
-        {
-            name: "Ultimate VIP",
-            lock: "Purchased 2 times and locked",
-            image: "https://i.ibb.co/33vscGg/IMG-20260525-113101.jpg",
-            invest: 30000,
-            days: 40,
-            daily: 3200,
-            expiry: "Auto",
-            totalIncome: 80000,
-            description: ""
-        }
-    ];
+    // ==================== FIREBASE INIT ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com",
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper: check if a date is weekend
-    function isWeekend(date) {
-        const day = date.getDay();
-        return day === 0 || day === 6;
+    // Helper functions
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
     }
-
-    // Helper: add weekdays to a start date (skip weekends)
-    function addWeekdays(startDate, days) {
-        let result = new Date(startDate);
-        let added = 0;
-        while (added < days) {
-            result.setDate(result.getDate() + 1);
-            if (!isWeekend(result)) added++;
-        }
-        return result;
-    }
-
-    let currentIndex = 0;
-    let autoInterval = null;
-    const track = document.getElementById('carouselTrack');
-    const dotsContainer = document.getElementById('dotsContainer');
 
     function showToast(message, isError = false) {
+        const oldToast = document.querySelector('.toast');
+        if (oldToast) oldToast.remove();
         const toast = document.createElement('div');
         toast.className = `toast ${isError ? 'error' : ''}`;
         toast.innerText = message;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
+        setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+        }, 2500);
     }
 
+    let fireworksAnimationId = null;
     function showFireworks() {
         const canvas = document.getElementById('fireworksCanvas');
+        if (!canvas) return;
+        if (fireworksAnimationId) cancelAnimationFrame(fireworksAnimationId);
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         const ctx = canvas.getContext('2d');
@@ -427,10 +387,10 @@
         }
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let allDead = true;
+            let anyAlive = false;
             for (let p of particles) {
                 if (p.life <= 0) continue;
-                allDead = false;
+                anyAlive = true;
                 p.x += p.vx;
                 p.y += p.vy;
                 p.life -= 0.02;
@@ -438,62 +398,145 @@
                 ctx.fillStyle = p.color;
                 ctx.fillRect(p.x, p.y, 4, 4);
             }
-            if (!allDead) requestAnimationFrame(animate);
-            else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (anyAlive) {
+                fireworksAnimationId = requestAnimationFrame(animate);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                fireworksAnimationId = null;
+            }
         }
-        animate();
-        setTimeout(() => ctx.clearRect(0, 0, canvas.width, canvas.height), 2000);
+        fireworksAnimationId = requestAnimationFrame(animate);
+        setTimeout(() => {
+            if (fireworksAnimationId) {
+                cancelAnimationFrame(fireworksAnimationId);
+                fireworksAnimationId = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }, 2500);
+    }
+
+    function isWeekend(date) {
+        const day = date.getDay();
+        return day === 0 || day === 6;
+    }
+
+    function addWeekdays(startDate, days) {
+        let result = new Date(startDate);
+        let added = 0;
+        while (added < days) {
+            result.setDate(result.getDate() + 1);
+            if (!isWeekend(result)) added++;
+        }
+        return result;
+    }
+
+    // Carousel variables
+    let currentIndex = 0;
+    let autoInterval = null;
+    let currentPlans = [];
+
+    const track = document.getElementById('carouselTrack');
+    const dotsContainer = document.getElementById('dotsContainer');
+    const carouselContainer = document.getElementById('carouselContainer');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const emptyMessageDiv = document.getElementById('emptyMessage');
+
+    // Load plans from Firestore
+    async function loadPlans() {
+        try {
+            loadingIndicator.style.display = 'block';
+            carouselContainer.style.display = 'none';
+            emptyMessageDiv.style.display = 'none';
+            const snapshot = await db.collection('mkvipPlans').orderBy('createdAt', 'desc').get();
+            loadingIndicator.style.display = 'none';
+            if (snapshot.empty) {
+                emptyMessageDiv.style.display = 'block';
+                carouselContainer.style.display = 'none';
+                return;
+            }
+            currentPlans = [];
+            snapshot.forEach(doc => {
+                currentPlans.push({ id: doc.id, ...doc.data() });
+            });
+            buildCarousel();
+            carouselContainer.style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            loadingIndicator.style.display = 'none';
+            emptyMessageDiv.style.display = 'block';
+            emptyMessageDiv.innerText = 'Failed to load plans. Please refresh.';
+        }
     }
 
     function renderPlanCard(plan) {
+        // Calculate total income (daily * days) if not provided
+        const totalIncome = plan.totalIncome || (plan.daily * plan.days);
         return `
             <div class="plan-card">
-                <img class="plan-image" src="${plan.image}" alt="${plan.name}">
+                <img class="plan-image" src="${plan.image || 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg'}" alt="${escapeHtml(plan.name)}">
                 <div class="plan-content">
-                    <div class="plan-title">${plan.name}</div>
-                    <div class="plan-lock">${plan.lock}</div>
+                    <div class="plan-title">${escapeHtml(plan.name)}</div>
+                    <div class="plan-lock">${escapeHtml(plan.lock || 'Purchased 1 time and locked')}</div>
                     <div class="plan-details">
-                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${plan.invest.toLocaleString()} ZMW</span></div>
+                        <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${(plan.investAmount || plan.invest).toLocaleString()} ZMW</span></div>
                         <div class="detail-item"><span class="detail-label">Days:</span><span class="detail-value">${plan.days} Days</span></div>
                         <div class="detail-item"><span class="detail-label">Daily:</span><span class="detail-value">${plan.daily} ZMW</span></div>
-                        <div class="detail-item"><span class="detail-label">Expiry:</span><span class="detail-value">${plan.expiry}</span></div>
+                        <div class="detail-item"><span class="detail-label">Expiry:</span><span class="detail-value">${escapeHtml(plan.expiry || 'Auto')}</span></div>
                     </div>
-                    <div class="total-income">💰 TOTAL INCOME: ${plan.totalIncome.toLocaleString()} ZMW</div>
-                    <button class="invest-btn" data-plan='${JSON.stringify(plan)}'>💎 INVEST ${plan.invest.toLocaleString()} NOW</button>
+                    <div class="total-income">💰 TOTAL INCOME: ${totalIncome.toLocaleString()} ZMW</div>
+                    <button class="invest-btn" data-plan='${JSON.stringify({
+                        name: plan.name,
+                        invest: plan.investAmount || plan.invest,
+                        days: plan.days,
+                        daily: plan.daily,
+                        dailyReturnPercent: plan.dailyReturn,
+                        image: plan.image,
+                        lock: plan.lock,
+                        expiry: plan.expiry,
+                        totalIncome: totalIncome
+                    })}'>💎 INVEST ${(plan.investAmount || plan.invest).toLocaleString()} NOW</button>
                 </div>
             </div>
         `;
     }
 
     function buildCarousel() {
+        if (!track) return;
         track.innerHTML = '';
-        plans.forEach(plan => {
+        currentPlans.forEach(plan => {
             const cardDiv = document.createElement('div');
             cardDiv.style.flex = '0 0 100%';
             cardDiv.innerHTML = renderPlanCard(plan);
             track.appendChild(cardDiv);
         });
-        dotsContainer.innerHTML = '';
-        plans.forEach((_, idx) => {
-            const dot = document.createElement('div');
-            dot.classList.add('dot');
-            if (idx === currentIndex) dot.classList.add('active');
-            dot.addEventListener('click', () => goToSlide(idx));
-            dotsContainer.appendChild(dot);
-        });
+        if (dotsContainer) {
+            dotsContainer.innerHTML = '';
+            currentPlans.forEach((_, idx) => {
+                const dot = document.createElement('div');
+                dot.classList.add('dot');
+                if (idx === currentIndex) dot.classList.add('active');
+                dot.addEventListener('click', () => goToSlide(idx));
+                dotsContainer.appendChild(dot);
+            });
+        }
         updateCarousel();
+        startAutoSlide();
     }
 
     function updateCarousel() {
+        if (!track) return;
         track.style.transform = `translateX(-${currentIndex * 100}%)`;
-        document.querySelectorAll('.dot').forEach((dot, idx) => {
-            dot.classList.toggle('active', idx === currentIndex);
-        });
+        if (dotsContainer) {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === currentIndex);
+            });
+        }
     }
 
     function goToSlide(index) {
-        if (index < 0) index = plans.length - 1;
-        if (index >= plans.length) index = 0;
+        if (index < 0) index = currentPlans.length - 1;
+        if (index >= currentPlans.length) index = 0;
         currentIndex = index;
         updateCarousel();
         resetAutoSlide();
@@ -513,7 +556,7 @@
         startAutoSlide();
     }
 
-    // Investment logic with business‑day support
+    // Investment logic
     async function investInPlan(plan) {
         const user = auth.currentUser;
         if (!user) {
@@ -538,15 +581,14 @@
         allBtns.forEach(btn => btn.disabled = true);
 
         try {
-            // Compute startDate: if weekend, move to next Monday
             let startDate = new Date();
             if (isWeekend(startDate)) {
-                // move to next Monday (day = 1)
                 startDate.setDate(startDate.getDate() + (8 - startDate.getDay()));
                 startDate.setHours(0, 0, 0, 0);
             }
             const businessDays = plan.days;
             const businessEndDate = addWeekdays(startDate, businessDays);
+            const dailyReturnPercent = (plan.daily / plan.invest) * 100;
 
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(userId);
@@ -560,7 +602,7 @@
                     userId: userId,
                     planName: plan.name,
                     investAmount: investAmount,
-                    dailyReturn: (plan.daily / plan.invest) * 100, // percentage
+                    dailyReturn: dailyReturnPercent,
                     days: plan.days,
                     businessDays: businessDays,
                     startDate: firebase.firestore.Timestamp.fromDate(startDate),
@@ -602,17 +644,16 @@
         investInPlan(plan);
     }
 
+    // Auth state
     auth.onAuthStateChanged(user => {
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
-        buildCarousel();
-        attachInvestHandlers();
-        startAutoSlide();
+        loadPlans();
     });
 
-    // Bottom navigation active highlight
+    // Bottom navigation active state
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'mkvip.html';
     navItems.forEach(item => {

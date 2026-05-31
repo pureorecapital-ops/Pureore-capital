@@ -269,13 +269,27 @@
     </div>
 </div>
 
-<script src="js/firebase-config.js"></script>
 <script>
+    // ==================== FIREBASE INIT (CORRECTED) ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
     // Helper functions
     function showMessage(elementId, msg, isError = true) {
         const el = document.getElementById(elementId);
         if (el) {
-            el.innerHTML = `<div class="${isError ? 'eligibility-fail' : 'success'}" style="margin-top:0.5rem;">${msg}</div>`;
+            el.innerHTML = `<div class="${isError ? 'eligibility-fail' : ''}" style="margin-top:0.5rem; color:${isError ? '#ef4444' : '#2ecc71'};">${msg}</div>`;
             setTimeout(() => { if (el.innerHTML.includes(msg)) el.innerHTML = ''; }, 5000);
         }
     }
@@ -283,6 +297,7 @@
     // Generate loan amount buttons from 6000 to 100000 step 6000
     function generateLoanButtons() {
         const container = document.getElementById('loanAmountBtns');
+        if (!container) return;
         const amounts = [];
         for (let i = 6000; i <= 100000; i += 6000) amounts.push(i);
         amounts.forEach(amt => {
@@ -293,7 +308,8 @@
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.loan-amount-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                document.getElementById('loanAmountInput').value = amt;
+                const loanInput = document.getElementById('loanAmountInput');
+                if (loanInput) loanInput.value = amt;
                 calculatePayback(amt);
             });
             container.appendChild(btn);
@@ -302,26 +318,35 @@
 
     // Calculate payback amount (15% interest)
     function calculatePayback(amount) {
-        if (!amount || amount < 6000) return;
+        const resultDiv = document.getElementById('paybackResult');
+        if (!resultDiv) return;
+        if (!amount || amount < 6000) {
+            resultDiv.innerHTML = '';
+            return;
+        }
         const interest = amount * 0.15;
         const total = amount + interest;
-        document.getElementById('paybackResult').innerHTML = `You need to pay back: ${total.toFixed(2)} ZMW after 15 days`;
+        resultDiv.innerHTML = `You need to pay back: ${total.toFixed(2)} ZMW after 15 days`;
     }
 
     // Eligibility checks for new loan
     async function checkEligibility(userId) {
-        // 1. Balance > 10000
         const userDoc = await db.collection('users').doc(userId).get();
         const balance = userDoc.exists ? userDoc.data().balance || 0 : 0;
-        if (balance < 10000) return { eligible: false, reason: '❌ Balance must be at least 10,000 ZMW to request a loan.' };
+        if (balance < 10000) {
+            return { eligible: false, reason: '❌ Balance must be at least 10,000 ZMW to request a loan.' };
+        }
 
-        // 2. Has at least one investment (any status)
         const investments = await db.collection('investments').where('userId', '==', userId).limit(1).get();
-        if (investments.empty) return { eligible: false, reason: '❌ You must purchase at least one investment plan before applying for a loan.' };
+        if (investments.empty) {
+            return { eligible: false, reason: '❌ You must purchase at least one investment plan before applying for a loan.' };
+        }
 
-        // 3. Referred at least 15 members who have deposited & invested
         const userData = userDoc.data();
         const referralCode = userData.referralCode;
+        if (!referralCode) {
+            return { eligible: false, reason: '❌ Referral code missing. Please contact support.' };
+        }
         const referredUsers = await db.collection('users').where('referredBy', '==', referralCode).get();
         let qualifiedReferred = 0;
         for (const doc of referredUsers.docs) {
@@ -332,23 +357,25 @@
             const hasInvestment = !inv.empty;
             if (hasDeposit && hasInvestment) qualifiedReferred++;
         }
-        if (qualifiedReferred < 15) return { eligible: false, reason: `❌ You need at least 15 team members who have both deposited and invested. Current: ${qualifiedReferred}/15` };
-
+        if (qualifiedReferred < 15) {
+            return { eligible: false, reason: `❌ You need at least 15 team members who have both deposited and invested. Current: ${qualifiedReferred}/15` };
+        }
         return { eligible: true, balance, qualifiedReferred };
     }
 
-    // Check if account is restricted (admin toggled red)
+    // Check if account is restricted (admin toggled restricted flag)
     async function isAccountRestricted(userId) {
         const userDoc = await db.collection('users').doc(userId).get();
         return userDoc.exists && userDoc.data().restricted === true;
     }
 
-    // Show restriction alert
+    // Show restriction alert and hide loan sections
     async function showRestrictionAlert(userId) {
         const restricted = await isAccountRestricted(userId);
         const alertContainer = document.getElementById('alertContainer');
         const loanContent = document.getElementById('loanContent');
         const repaySection = document.getElementById('repaySection');
+        if (!alertContainer || !loanContent || !repaySection) return;
         if (restricted) {
             alertContainer.innerHTML = `
                 <div class="alert-card">
@@ -360,9 +387,10 @@
             `;
             loanContent.style.display = 'none';
             repaySection.style.display = 'none';
-            document.getElementById('talkToAdminBtn')?.addEventListener('click', () => {
-                window.open('https://wa.me/260951359357', '_blank');
-            });
+            const talkBtn = document.getElementById('talkToAdminBtn');
+            if (talkBtn) {
+                talkBtn.addEventListener('click', () => window.open('https://wa.me/260951359357', '_blank'));
+            }
         } else {
             alertContainer.innerHTML = '';
             loanContent.style.display = 'block';
@@ -378,6 +406,7 @@
             .orderBy('dueDate', 'asc')
             .get();
         const container = document.getElementById('activeLoansList');
+        if (!container) return;
         if (snapshot.empty) {
             container.innerHTML = '<p>No active loans to repay.</p>';
             return;
@@ -385,7 +414,7 @@
         let html = '';
         snapshot.forEach(doc => {
             const loan = doc.data();
-            const dueDate = loan.dueDate.toDate().toLocaleDateString();
+            const dueDate = loan.dueDate ? loan.dueDate.toDate().toLocaleDateString() : 'N/A';
             html += `
                 <div class="loan-item">
                     <div class="loan-details">
@@ -430,7 +459,6 @@
                 const loanRef = db.collection('loans').doc(loanId);
                 transaction.update(loanRef, { status: 'paid' });
 
-                // Record transaction
                 const txRef = db.collection('transactions').doc();
                 transaction.set(txRef, {
                     userId: user.uid,
@@ -441,9 +469,7 @@
                 });
             });
             showMessage('repayMessage', '✅ Loan repaid successfully!', false);
-            // Refresh active loans list
-            loadActiveLoans(user.uid);
-            // Also refresh any other UI if needed
+            await loadActiveLoans(user.uid);
         } catch (err) {
             showMessage('repayMessage', err.message, true);
         }
@@ -464,63 +490,72 @@
         const paybackInput = document.getElementById('paybackInput');
         const requestBtn = document.getElementById('requestLoanBtn');
 
-        loanAmountInput.addEventListener('input', () => {
-            let val = parseFloat(loanAmountInput.value);
-            if (!isNaN(val) && val >= 6000) {
-                calculatePayback(val);
-            } else {
-                document.getElementById('paybackResult').innerHTML = '';
-            }
-        });
+        if (loanAmountInput) {
+            loanAmountInput.addEventListener('input', () => {
+                let val = parseFloat(loanAmountInput.value);
+                if (!isNaN(val) && val >= 6000) {
+                    calculatePayback(val);
+                } else {
+                    const resultDiv = document.getElementById('paybackResult');
+                    if (resultDiv) resultDiv.innerHTML = '';
+                }
+            });
+        }
 
-        paybackInput.addEventListener('input', () => {
-            let val = parseFloat(paybackInput.value);
-            if (!isNaN(val) && val >= 6000) {
-                const interest = val * 0.15;
-                const total = val + interest;
-                document.getElementById('paybackResult').innerHTML = `You need to pay back: ${total.toFixed(2)} ZMW after 15 days`;
-            } else {
-                document.getElementById('paybackResult').innerHTML = '';
-            }
-        });
+        if (paybackInput) {
+            paybackInput.addEventListener('input', () => {
+                let val = parseFloat(paybackInput.value);
+                if (!isNaN(val) && val >= 6000) {
+                    const interest = val * 0.15;
+                    const total = val + interest;
+                    const resultDiv = document.getElementById('paybackResult');
+                    if (resultDiv) resultDiv.innerHTML = `You need to pay back: ${total.toFixed(2)} ZMW after 15 days`;
+                } else {
+                    const resultDiv = document.getElementById('paybackResult');
+                    if (resultDiv) resultDiv.innerHTML = '';
+                }
+            });
+        }
 
-        requestBtn.addEventListener('click', async () => {
-            const loanAmount = parseFloat(loanAmountInput.value);
-            if (isNaN(loanAmount) || loanAmount < 6000 || loanAmount > 100000) {
-                showMessage('loanMessage', 'Enter a loan amount between 6,000 and 100,000 ZMW (in multiples of 6,000).');
-                return;
-            }
-            const eligibility = await checkEligibility(userId);
-            if (!eligibility.eligible) {
-                showMessage('loanMessage', eligibility.reason);
-                return;
-            }
-            const restricted = await isAccountRestricted(userId);
-            if (restricted) {
-                showMessage('loanMessage', 'Your account is restricted. Contact admin first.');
-                return;
-            }
-            const repayTotal = loanAmount * 1.15;
-            const dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 15);
-            try {
-                await db.collection('loans').add({
-                    userId: userId,
-                    amount: loanAmount,
-                    repayTotal: repayTotal,
-                    status: 'pending', // admin will approve
-                    dueDate: firebase.firestore.Timestamp.fromDate(dueDate),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                showMessage('loanMessage', `✅ Loan request submitted for ${loanAmount} ZMW. Admin will review.`, false);
-                loanAmountInput.value = '';
-                document.getElementById('paybackResult').innerHTML = '';
-                // Reset active button highlight
-                document.querySelectorAll('.loan-amount-btn').forEach(b => b.classList.remove('active'));
-            } catch (err) {
-                showMessage('loanMessage', 'Error: ' + err.message);
-            }
-        });
+        if (requestBtn) {
+            requestBtn.addEventListener('click', async () => {
+                const loanAmount = parseFloat(loanAmountInput ? loanAmountInput.value : '');
+                if (isNaN(loanAmount) || loanAmount < 6000 || loanAmount > 100000 || loanAmount % 6000 !== 0) {
+                    showMessage('loanMessage', 'Enter a loan amount between 6,000 and 100,000 ZMW (in multiples of 6,000).');
+                    return;
+                }
+                const eligibility = await checkEligibility(userId);
+                if (!eligibility.eligible) {
+                    showMessage('loanMessage', eligibility.reason);
+                    return;
+                }
+                const restricted = await isAccountRestricted(userId);
+                if (restricted) {
+                    showMessage('loanMessage', 'Your account is restricted. Contact admin first.');
+                    return;
+                }
+                const repayTotal = loanAmount * 1.15;
+                const dueDate = new Date();
+                dueDate.setDate(dueDate.getDate() + 15);
+                try {
+                    await db.collection('loans').add({
+                        userId: userId,
+                        amount: loanAmount,
+                        repayTotal: repayTotal,
+                        status: 'pending', // admin will approve
+                        dueDate: firebase.firestore.Timestamp.fromDate(dueDate),
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    showMessage('loanMessage', `✅ Loan request submitted for ${loanAmount} ZMW. Admin will review.`, false);
+                    if (loanAmountInput) loanAmountInput.value = '';
+                    const resultDiv = document.getElementById('paybackResult');
+                    if (resultDiv) resultDiv.innerHTML = '';
+                    document.querySelectorAll('.loan-amount-btn').forEach(b => b.classList.remove('active'));
+                } catch (err) {
+                    showMessage('loanMessage', 'Error: ' + err.message);
+                }
+            });
+        }
     });
 
     // Bottom navigation active state and redirection
