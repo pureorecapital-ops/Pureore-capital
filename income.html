@@ -301,12 +301,12 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT (CORRECTED) ====================
+    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        storageBucket: "pureore-capital-zambia.appspot.com",
         messagingSenderId: "78967797858",
         appId: "1:78967797858:web:379b9692951429c345793b",
         measurementId: "G-FQKC29NYE9"
@@ -314,6 +314,10 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    
+    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data
+    db.settings({ persistence: false });
+    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
     // Helper functions
@@ -353,7 +357,6 @@
         return result;
     }
 
-    // Calculate elapsed business days (only weekdays) – used for progress bar
     function businessDaysElapsed(startDate, endDate) {
         let count = 0;
         let current = new Date(startDate);
@@ -364,8 +367,6 @@
         return count;
     }
 
-    // For an active investment, determine if a daily claim is available (24h passed since lastClaim or startDate)
-    // Returns: { available: boolean, hoursSince: number, dailyAmount: number, nextClaimDate: Date }
     function getClaimStatus(inv, now) {
         const lastClaim = inv.lastClaimed ? inv.lastClaimed.toDate() : inv.startDate.toDate();
         const hoursSince = (now - lastClaim) / (1000 * 60 * 60);
@@ -374,11 +375,14 @@
         return { available, hoursSince, dailyAmount: inv.dailyAmount, nextClaimDate };
     }
 
-    // Global variables
     let currentUserId = null;
     let refreshInterval = null;
 
-    // Main auth state
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+        if (refreshInterval) clearInterval(refreshInterval);
+    });
+
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             window.location.href = 'login.html';
@@ -386,12 +390,11 @@
         }
         currentUserId = user.uid;
         await loadInvestments();
-        // Refresh every 60 seconds to update "hours since" counters
         if (refreshInterval) clearInterval(refreshInterval);
         refreshInterval = setInterval(() => {
             const normalTab = document.getElementById('normalTab');
             if (normalTab && normalTab.classList.contains('active')) {
-                loadInvestments(); // re‑fetch and re‑render (Firestore listener would be better, but this is fine)
+                loadInvestments();
             }
         }, 60000);
     });
@@ -441,6 +444,7 @@
 
     function renderActive(investments) {
         const container = document.getElementById('activeInvestments');
+        if (!container) return;
         if (!investments.length) {
             container.innerHTML = '<div class="empty-msg">📭 No active investment plans.</div>';
             return;
@@ -450,13 +454,11 @@
         for (const inv of investments) {
             const elapsedDays = businessDaysElapsed(inv.startDate, now);
             const totalDays = inv.businessDays;
-            const progressPercent = Math.min(100, (elapsedDays / totalDays) * 100);
             const daysLeft = Math.max(0, totalDays - elapsedDays);
 
             const claimStatus = getClaimStatus(inv, now);
             const canClaim = claimStatus.available;
             const hoursSince = claimStatus.hoursSince;
-            const nextClaim = claimStatus.nextClaimDate;
             const hoursToNext = Math.max(0, 24 - hoursSince);
 
             html += `
@@ -487,7 +489,6 @@
         }
         container.innerHTML = html;
 
-        // Attach claim button listeners
         document.querySelectorAll('.claim-btn.active').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -532,7 +533,7 @@
                 });
             });
             showToast(`✅ ${formatMoney(dailyAmount)} claimed!`, false);
-            await loadInvestments(); // refresh
+            await loadInvestments();
         } catch (err) {
             showToast(err.message || 'Claim failed', true);
         }
@@ -547,11 +548,13 @@
                 total += claimStatus.dailyAmount;
             }
         }
-        document.getElementById('totalPending').innerText = total.toFixed(2);
+        const totalSpan = document.getElementById('totalPending');
+        if (totalSpan) totalSpan.innerText = total.toFixed(2);
     }
 
     function renderExpired(investments) {
         const container = document.getElementById('expiredInvestments');
+        if (!container) return;
         if (!investments.length) {
             container.innerHTML = '<div class="empty-msg">📭 No expired or completed plans.</div>';
             return;
@@ -598,17 +601,19 @@
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             Object.values(tabs).forEach(tab => tab.classList.remove('active'));
-            tabs[tabId].classList.add('active');
+            if (tabs[tabId]) tabs[tabId].classList.add('active');
             if (tabId === 'normal') loadInvestments();
         });
     });
 
-    // Bottom navigation active state
+    // Bottom navigation active state and redirection
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'income.html';
     navItems.forEach(item => {
         const targetPage = item.getAttribute('data-page');
-        if (currentPage === targetPage) item.classList.add('active');
+        if (currentPage === targetPage) {
+            item.classList.add('active');
+        }
         item.addEventListener('click', () => {
             if (targetPage && !window.location.pathname.includes(targetPage)) {
                 window.location.href = targetPage;

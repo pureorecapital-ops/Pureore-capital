@@ -270,12 +270,12 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT (CORRECTED) ====================
+    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.appspot.com", // ✅ fixed
+        storageBucket: "pureore-capital-zambia.appspot.com",
         messagingSenderId: "78967797858",
         appId: "1:78967797858:web:379b9692951429c345793b",
         measurementId: "G-FQKC29NYE9"
@@ -283,6 +283,10 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+
+    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data
+    db.settings({ persistence: false });
+
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
     // Helper functions
@@ -329,24 +333,61 @@
         resultDiv.innerHTML = `You need to pay back: ${total.toFixed(2)} ZMW after 15 days`;
     }
 
+    // ✅ NEW: Check if user already has a pending or active loan
+    async function hasExistingActiveOrPendingLoan(userId) {
+        const loansSnapshot = await db.collection('loans')
+            .where('userId', '==', userId)
+            .where('status', 'in', ['pending', 'active'])
+            .limit(1)
+            .get();
+        return !loansSnapshot.empty;
+    }
+
+    // ✅ NEW: Calculate total invested amount (sum of all investments)
+    async function getTotalInvested(userId) {
+        const snapshot = await db.collection('investments')
+            .where('userId', '==', userId)
+            .get();
+        let total = 0;
+        snapshot.forEach(doc => {
+            total += doc.data().investAmount || 0;
+        });
+        return total;
+    }
+
     // Eligibility checks for new loan
     async function checkEligibility(userId) {
         const userDoc = await db.collection('users').doc(userId).get();
-        const balance = userDoc.exists ? userDoc.data().balance || 0 : 0;
+        if (!userDoc.exists) {
+            return { eligible: false, reason: '❌ User profile not found.' };
+        }
+        const userData = userDoc.data();
+        const balance = userData.balance || 0;
+        
+        // 1. Balance check
         if (balance < 10000) {
             return { eligible: false, reason: '❌ Balance must be at least 10,000 ZMW to request a loan.' };
         }
 
-        const investments = await db.collection('investments').where('userId', '==', userId).limit(1).get();
-        if (investments.empty) {
+        // 2. At least one investment plan purchased
+        const investmentsAny = await db.collection('investments').where('userId', '==', userId).limit(1).get();
+        if (investmentsAny.empty) {
             return { eligible: false, reason: '❌ You must purchase at least one investment plan before applying for a loan.' };
         }
 
-        const userData = userDoc.data();
+        // 3. Total invested amount >= 15,000 ZMW
+        const totalInvested = await getTotalInvested(userId);
+        if (totalInvested < 15000) {
+            return { eligible: false, reason: `❌ Your total invested amount must be at least 15,000 ZMW. Current total: ${totalInvested.toFixed(2)} ZMW` };
+        }
+
+        // 4. Referral code exists
         const referralCode = userData.referralCode;
         if (!referralCode) {
             return { eligible: false, reason: '❌ Referral code missing. Please contact support.' };
         }
+
+        // 5. Team members: at least 15 who have both deposited and invested
         const referredUsers = await db.collection('users').where('referredBy', '==', referralCode).get();
         let qualifiedReferred = 0;
         for (const doc of referredUsers.docs) {
@@ -360,7 +401,13 @@
         if (qualifiedReferred < 15) {
             return { eligible: false, reason: `❌ You need at least 15 team members who have both deposited and invested. Current: ${qualifiedReferred}/15` };
         }
-        return { eligible: true, balance, qualifiedReferred };
+
+        // 6. Check if user is allowed to request a loan (admin-controlled flag)
+        if (userData.canRequestLoan === false) {
+            return { eligible: false, reason: '❌ You are not currently allowed to request a new loan. Please contact admin after repaying your previous loan.' };
+        }
+
+        return { eligible: true, balance, qualifiedReferred, totalInvested };
     }
 
     // Check if account is restricted (admin toggled restricted flag)
@@ -438,7 +485,7 @@
         });
     }
 
-    // Repay loan function
+    // Repay loan function – after repayment, disables further loan requests (set canRequestLoan = false)
     async function repayLoan(loanId, repayAmount) {
         const user = auth.currentUser;
         if (!user) {
@@ -454,10 +501,14 @@
                     throw new Error('Insufficient balance to repay this loan.');
                 }
                 const newBalance = currentBalance - repayAmount;
-                transaction.update(userRef, { balance: newBalance });
+                // Update user: deduct balance and disable new loan requests until admin approval
+                transaction.update(userRef, { 
+                    balance: newBalance,
+                    canRequestLoan: false   // 🔒 Lock new loan requests after repayment
+                });
 
                 const loanRef = db.collection('loans').doc(loanId);
-                transaction.update(loanRef, { status: 'paid' });
+                transaction.update(loanRef, { status: 'paid', repaidAt: firebase.firestore.FieldValue.serverTimestamp() });
 
                 const txRef = db.collection('transactions').doc();
                 transaction.set(txRef, {
@@ -468,7 +519,7 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             });
-            showMessage('repayMessage', '✅ Loan repaid successfully!', false);
+            showMessage('repayMessage', '✅ Loan repaid successfully! You cannot request a new loan until admin approves. Please contact admin.', false);
             await loadActiveLoans(user.uid);
         } catch (err) {
             showMessage('repayMessage', err.message, true);
@@ -524,6 +575,14 @@
                     showMessage('loanMessage', 'Enter a loan amount between 6,000 and 100,000 ZMW (in multiples of 6,000).');
                     return;
                 }
+
+                // ✅ Check for existing pending/active loan
+                const hasLoan = await hasExistingActiveOrPendingLoan(userId);
+                if (hasLoan) {
+                    showMessage('loanMessage', '❌ You already have a pending or active loan. Please wait for approval or repay the existing loan first.');
+                    return;
+                }
+
                 const eligibility = await checkEligibility(userId);
                 if (!eligibility.eligible) {
                     showMessage('loanMessage', eligibility.reason);

@@ -4,46 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Admin Dashboard | Pureore Capital</title>
-    <!-- Firebase SDKs (compat) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        /* ============================================
-           Pureore Capital - Admin Panel Styles
-           Dynamic variables (overridden by JS)
-           ============================================ */
-        :root {
-            --admin-primary: #00D4FF;
-            --admin-primary-dark: #00B4D4;
-            --admin-secondary: #FFB347;
-            --admin-success: #00E676;
-            --admin-danger: #FF5252;
-            --admin-bg: #0A0E17;
-            --admin-card: #141B2B;
-            --admin-border: #1F2A3E;
-            --admin-text: #E2E8F0;
-            --admin-text-muted: #94A3B8;
-            --admin-glow: 0 0 10px rgba(0, 212, 255, 0.5);
-            --admin-gradient: linear-gradient(135deg, #00D4FF, #7C3AED);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: var(--admin-bg);
             font-family: 'Inter', system-ui, sans-serif;
+            background: var(--admin-bg);
             color: var(--admin-text);
             padding: 1rem;
-            min-height: 100vh;
-            transition: background 0.3s, color 0.3s;
+            transition: var(--transition);
         }
-
-        /* Admin Header with notification badges */
+        :root {
+            --admin-primary: #00D4FF;
+            --admin-bg: #0A0E17;
+            --admin-card: #141B2B;
+            --admin-text: #E2E8F0;
+            --admin-border: #1F2A3E;
+            --admin-gradient: linear-gradient(135deg, #00D4FF, #7C3AED);
+            --admin-glow: 0 0 10px rgba(0,212,255,0.5);
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
         .admin-header {
             display: flex;
             justify-content: space-between;
@@ -53,227 +37,87 @@
             margin-bottom: 2rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--admin-border);
-            position: relative;
         }
-        .admin-title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: var(--admin-gradient);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-        .notification-badge {
-            background: var(--admin-danger);
-            color: white;
-            border-radius: 30px;
-            padding: 0.2rem 0.6rem;
-            font-size: 0.7rem;
-            font-weight: bold;
-            margin-left: 0.3rem;
-            vertical-align: middle;
-        }
-        .header-stats {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        .logout-btn {
-            background: var(--admin-danger);
-            border: none;
-            padding: 0.5rem 1.2rem;
-            border-radius: 40px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .logout-btn:hover {
-            transform: scale(1.02);
-            filter: brightness(1.05);
-        }
-
-        /* Stats Grid */
+        .admin-title { font-size: 1.8rem; font-weight: 800; background: var(--admin-gradient); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .header-stats { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .badge { background: #FF5252; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .logout-btn { background: #FF5252; border: none; padding: 0.5rem 1.2rem; border-radius: 40px; color: white; font-weight: bold; cursor: pointer; transition: var(--transition); }
+        .logout-btn:hover { transform: scale(1.02); filter: brightness(1.05); }
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
         }
         .stat-card {
-            background: linear-gradient(135deg, var(--admin-card), #0F172A);
-            border-radius: 24px;
-            padding: 1.5rem;
+            background: var(--admin-card);
+            border-radius: 20px;
+            padding: 1rem;
             text-align: center;
             border: 1px solid var(--admin-border);
-            transition: 0.3s;
+            transition: var(--transition);
         }
-        .stat-card:hover {
-            border-color: var(--admin-primary);
-            transform: translateY(-5px);
-        }
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--admin-primary);
-            margin: 0.5rem 0;
-        }
-        .stat-label {
-            color: var(--admin-text-muted);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Tabs */
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--admin-primary); box-shadow: var(--admin-glow); }
+        .stat-number { font-size: 2rem; font-weight: 800; color: var(--admin-primary); }
         .admin-tabs {
             display: flex;
-            gap: 0.8rem;
-            margin-bottom: 2rem;
             flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
             border-bottom: 1px solid var(--admin-border);
             padding-bottom: 0.5rem;
         }
         .tab-btn {
             background: transparent;
-            color: var(--admin-text-muted);
+            color: #94A3B8;
             border: none;
-            padding: 0.7rem 1.5rem;
+            padding: 0.6rem 1.2rem;
             border-radius: 40px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
+            transition: var(--transition);
         }
-        .tab-btn:hover {
-            color: var(--admin-primary);
-            background: rgba(0, 212, 255, 0.1);
-        }
-        .tab-btn.active {
-            background: var(--admin-gradient);
-            color: white;
-            box-shadow: var(--admin-glow);
-        }
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 20%;
-            width: 60%;
-            height: 3px;
-            background: var(--admin-primary);
-            border-radius: 3px;
-        }
-
-        /* Cards */
+        .tab-btn:hover { color: var(--admin-primary); background: rgba(0,212,255,0.1); }
+        .tab-btn.active { background: var(--admin-gradient); color: white; box-shadow: var(--admin-glow); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .admin-card {
             background: var(--admin-card);
             border-radius: 20px;
-            padding: 1.5rem;
+            padding: 1.2rem;
             margin-bottom: 1.5rem;
             border: 1px solid var(--admin-border);
-            transition: all 0.3s;
-            animation: fadeSlideUp 0.4s ease;
+            transition: var(--transition);
         }
-        .admin-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--admin-primary);
-            box-shadow: 0 10px 25px -5px rgba(0, 212, 255, 0.2);
-        }
-        .card-title {
-            color: var(--admin-primary);
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--admin-primary);
-            padding-left: 12px;
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        /* Tables, Buttons, etc. (same as before) */
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--admin-card);
-            border-radius: 16px;
-            overflow-x: auto;
-            display: block;
-        }
-        .admin-table th, .admin-table td {
-            padding: 0.9rem;
-            text-align: left;
-            border-bottom: 1px solid var(--admin-border);
-        }
-        .admin-table th {
-            background: rgba(0, 212, 255, 0.15);
-            color: var(--admin-primary);
-            font-weight: 600;
-        }
-        .admin-table tr:hover {
-            background: rgba(0, 212, 255, 0.05);
-        }
+        .admin-card:hover { transform: translateY(-3px); border-color: var(--admin-primary); box-shadow: var(--admin-glow); }
+        .card-title { color: var(--admin-primary); margin-bottom: 1rem; border-left: 4px solid var(--admin-primary); padding-left: 12px; font-size: 1.2rem; font-weight: 700; }
+        table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
+        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid var(--admin-border); }
+        th { background: rgba(0,212,255,0.1); color: var(--admin-primary); }
         .btn-small {
             background: var(--admin-primary);
             color: #0A0E17;
             border: none;
-            padding: 0.4rem 1rem;
+            padding: 0.3rem 1rem;
             border-radius: 30px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: var(--transition);
             display: inline-block;
             margin: 0.2rem;
         }
-        .btn-small:hover {
-            background: var(--admin-primary-dark);
-            transform: scale(1.02);
-            box-shadow: 0 0 8px var(--admin-primary);
-        }
-        .btn-small.warning { background: var(--admin-secondary); color: #0A0E17; }
-        .btn-small.danger { background: var(--admin-danger); color: white; }
-        .btn-small.success { background: var(--admin-success); color: #0A0E17; }
-        .edit-balance, .plan-form, .news-form, .code-form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-        }
-        .edit-balance input, .plan-form input, .news-form input, .news-form textarea,
-        .code-form input, .code-form select {
+        .btn-small:hover { transform: scale(1.02); box-shadow: var(--admin-glow); }
+        .btn-small.warning { background: #FFB347; color: #0A0E17; }
+        .btn-small.danger { background: #FF5252; color: white; }
+        .btn-small.success { background: #00E676; color: #0A0E17; }
+        .edit-balance { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .edit-balance input, .plan-form input, .news-form input, .news-form textarea, .code-form input, .support-reply textarea {
             background: var(--admin-bg);
             border: 1px solid var(--admin-border);
             border-radius: 40px;
             padding: 0.4rem 0.8rem;
             color: var(--admin-text);
-        }
-        .toggle-switch {
-            width: 40px;
-            height: 20px;
-            background: var(--admin-border);
-            border-radius: 20px;
-            display: inline-block;
-            position: relative;
-            cursor: pointer;
-        }
-        .toggle-switch.active { background: var(--admin-success); }
-        .toggle-switch::after {
-            content: '';
-            width: 16px;
-            height: 16px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 3px;
-            transition: 0.2s;
-        }
-        .toggle-switch.active::after { left: 21px; }
-        .user-row, .plan-row, .news-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            padding: 0.8rem;
-            border-bottom: 1px solid var(--admin-border);
         }
         .modal {
             display: none;
@@ -295,31 +139,19 @@
             max-width: 500px;
             border: 1px solid var(--admin-primary);
         }
-        .modal-content input, .modal-content select {
+        .modal-content input, .modal-content select, .modal-content textarea {
             width: 100%;
-            padding: 0.5rem;
+            padding: 0.6rem;
             margin: 0.5rem 0;
             border-radius: 30px;
             background: var(--admin-bg);
             border: 1px solid var(--admin-border);
             color: white;
         }
-        .color-preview {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 0.5rem;
-        }
-        @keyframes fadeSlideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .color-preview { width: 40px; height: 40px; border-radius: 8px; display: inline-block; margin-left: 0.5rem; vertical-align: middle; border: 1px solid var(--admin-border); }
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
-            .tab-btn { padding: 0.5rem 1rem; font-size: 0.8rem; }
+            .tab-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
             .admin-card { padding: 1rem; }
         }
     </style>
@@ -329,101 +161,162 @@
     <div class="admin-header">
         <h1 class="admin-title">🍏 Pureore Admin Panel</h1>
         <div class="header-stats">
-            <span id="pendingDepositsCount" style="background:var(--admin-danger); padding:0.2rem 0.6rem; border-radius:20px;">Deposits: 0</span>
-            <span id="pendingWithdrawalsCount" style="background:var(--admin-danger); padding:0.2rem 0.6rem; border-radius:20px;">Withdrawals: 0</span>
+            <span class="badge" id="pendingDepositsBadge">Deposits: 0</span>
+            <span class="badge" id="pendingWithdrawalsBadge">Withdrawals: 0</span>
             <button id="adminLogoutBtn" class="logout-btn">Logout</button>
         </div>
     </div>
 
     <div class="stats-grid" id="statsGrid">
         <div class="stat-card"><div class="stat-number" id="totalUsers">0</div><div class="stat-label">Total Users</div></div>
-        <div class="stat-card"><div class="stat-number" id="pendingDeposits">0</div><div class="stat-label">Pending Deposits</div></div>
-        <div class="stat-card"><div class="stat-number" id="pendingWithdrawals">0</div><div class="stat-label">Pending Withdrawals</div></div>
-        <div class="stat-card"><div class="stat-number" id="pendingLoans">0</div><div class="stat-label">Active Loans</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalDeposits">0</div><div class="stat-label">Total Deposits (ZMW)</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalWithdrawals">0</div><div class="stat-label">Total Withdrawals (ZMW)</div></div>
+        <div class="stat-card"><div class="stat-number" id="pendingCount">0</div><div class="stat-label">Pending Approvals</div></div>
     </div>
 
     <div class="admin-tabs">
-        <button class="tab-btn active" data-tab="deposits">💸 Deposits</button>
-        <button class="tab-btn" data-tab="withdrawals">💳 Withdrawals</button>
-        <button class="tab-btn" data-tab="loans">🏦 Loans</button>
+        <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
         <button class="tab-btn" data-tab="users">👥 Users</button>
+        <button class="tab-btn" data-tab="deposits">💰 Deposits</button>
+        <button class="tab-btn" data-tab="withdrawals">💸 Withdrawals</button>
+        <button class="tab-btn" data-tab="investments">📈 Investment Plans</button>
+        <button class="tab-btn" data-tab="transactions">📋 Transactions</button>
+        <button class="tab-btn" data-tab="announcements">📢 Announcements</button>
+        <button class="tab-btn" data-tab="support">🎧 Support</button>
         <button class="tab-btn" data-tab="treasure">🎁 Treasure Codes</button>
-        <button class="tab-btn" data-tab="mkvip">⭐ Mk Vip Plans</button>
-        <button class="tab-btn" data-tab="jproduct">📦 J Product Plans</button>
-        <button class="tab-btn" data-tab="news">📰 News</button>
+        <button class="tab-btn" data-tab="vouchers">🎫 Vouchers</button>
         <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+        <button class="tab-btn" data-tab="admins">🛡️ Admins</button>
         <button class="tab-btn" data-tab="appearance">🎨 Appearance</button>
     </div>
 
-    <!-- Existing tabs (deposits, withdrawals, loans, users, treasure, mkvip, jproduct, news, settings) - unchanged content -->
-    <div id="depositsTab" class="tab-content active">...</div>
-    <!-- ... (all existing tab content remains the same; I omit it for brevity but will include in final answer) ... -->
+    <!-- Dashboard Tab -->
+    <div id="dashboardTab" class="tab-content active">
+        <div class="admin-card">
+            <div class="card-title">📊 Recent Activities</div>
+            <div id="recentActivities">Loading...</div>
+        </div>
+    </div>
 
-    <!-- NEW: Appearance Tab -->
+    <!-- Users Tab -->
+    <div id="usersTab" class="tab-content">
+        <div class="admin-card">
+            <div class="card-title">👥 All Users</div>
+            <div id="usersList">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Deposits Tab -->
+    <div id="depositsTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">💰 Pending Deposits</div><div id="pendingDepositsList">Loading...</div></div>
+        <div class="admin-card"><div class="card-title">📜 Deposit History</div><div id="depositsHistory">Loading...</div></div>
+    </div>
+
+    <!-- Withdrawals Tab -->
+    <div id="withdrawalsTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">💸 Pending Withdrawals</div><div id="pendingWithdrawalsList">Loading...</div></div>
+        <div class="admin-card"><div class="card-title">📜 Withdrawal History</div><div id="withdrawalsHistory">Loading...</div></div>
+    </div>
+
+    <!-- Investment Plans Tab -->
+    <div id="investmentsTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">⭐ Mk Vip Plans</div><button class="btn-small success" onclick="openAddPlanModal('mkvip')">+ Add Mk Vip Plan</button><div id="mkvipPlansList">Loading...</div></div>
+        <div class="admin-card"><div class="card-title">📦 J Product Plans</div><button class="btn-small success" onclick="openAddPlanModal('jproduct')">+ Add J Product Plan</button><div id="jproductPlansList">Loading...</div></div>
+    </div>
+
+    <!-- Transactions Tab -->
+    <div id="transactionsTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">📋 All Transactions</div><input type="text" id="txSearchInput" placeholder="Search by user email or ID..." style="width:100%; margin-bottom:1rem;"><div id="transactionsList">Loading...</div></div>
+    </div>
+
+    <!-- Announcements (News) Tab -->
+    <div id="announcementsTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">📢 Manage News</div><button class="btn-small success" onclick="openAddNewsModal()">+ Post News</button><div id="newsList">Loading...</div></div>
+    </div>
+
+    <!-- Support Tab -->
+    <div id="supportTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">🎧 Support Tickets</div><div id="supportTicketsList">Loading...</div></div>
+    </div>
+
+    <!-- Treasure Codes Tab -->
+    <div id="treasureTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">🎁 Treasure Codes (7 digits, unique)</div><button class="btn-small success" onclick="openAddTreasureModal()">+ Create Treasure Code</button><div id="treasureCodesList">Loading...</div></div>
+    </div>
+
+    <!-- Vouchers Tab -->
+    <div id="vouchersTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">🎫 Voucher Codes (10 chars, first 6 = amount, last 4 letters)</div><button class="btn-small success" onclick="openAddVoucherModal()">+ Create Voucher</button><div id="vouchersList">Loading...</div></div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settingsTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">⚙️ System Settings</div>
+            <div><label>Website Name</label> <input type="text" id="websiteName" style="width:100%;"></div>
+            <div><label>Contact Email</label> <input type="email" id="contactEmail" style="width:100%;"></div>
+            <div><label>Contact Phone</label> <input type="text" id="contactPhone" style="width:100%;"></div>
+            <div><label>Payment Methods Info</label> <textarea id="paymentMethods" rows="3" style="width:100%;"></textarea></div>
+            <button id="saveSettingsBtn" class="btn-small success">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- Admins Tab -->
+    <div id="adminsTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">🛡️ Admin Accounts</div><button class="btn-small success" onclick="openAddAdminModal()">+ Add Admin</button><div id="adminsList">Loading...</div></div>
+    </div>
+
+    <!-- Appearance Tab -->
     <div id="appearanceTab" class="tab-content">
+        <!-- Admin Panel Colors -->
         <div class="admin-card">
             <div class="card-title">🎨 Admin Panel Colors</div>
             <div style="display: grid; gap: 1rem;">
-                <div><label>Primary Color</label> <input type="color" id="primaryColor" value="#00D4FF"> <span id="primaryColorPreview" class="color-preview" style="background:#00D4FF"></span></div>
+                <div><label>Primary Color</label> <input type="color" id="primaryColor" value="#00D4FF"> <span class="color-preview" id="primaryColorPreview" style="background:#00D4FF"></span></div>
                 <div><label>Background Color</label> <input type="color" id="bgColor" value="#0A0E17"> <span class="color-preview" style="background:#0A0E17"></span></div>
                 <div><label>Card Background</label> <input type="color" id="cardColor" value="#141B2B"> <span class="color-preview" style="background:#141B2B"></span></div>
                 <div><label>Text Color</label> <input type="color" id="textColor" value="#E2E8F0"> <span class="color-preview" style="background:#E2E8F0"></span></div>
-                <div><label>Gradient Direction (deg)</label> <input type="number" id="gradientDeg" value="135" step="1"> <small>e.g., 135</small></div>
-                <div><label>Glow Effect</label> <input type="checkbox" id="glowEffect" checked> <span>Enable neon glow</span></div>
-                <div><label>Animation Speed (ms)</label> <input type="range" id="animSpeed" min="0" max="1000" value="400" step="10"> <span id="animSpeedVal">400ms</span></div>
-                <button id="applyAppearanceBtn" class="btn-small success">Apply to Admin Panel</button>
+                <div><label>Gradient Direction (deg)</label> <input type="number" id="gradientDeg" value="135" step="1"></div>
+                <div><label>Glow Effect</label> <input type="checkbox" id="glowEffect" checked></div>
+                <div><label>Animation Speed (ms)</label> <input type="range" id="animSpeed" min="0" max="1000" value="300" step="10"> <span id="animSpeedVal">300ms</span></div>
+                <button id="applyAppearanceBtn" class="btn-small success">Apply & Save Appearance</button>
             </div>
         </div>
+
+        <!-- NEW: User Page Colors (applies to all user‑facing pages) -->
         <div class="admin-card">
-            <div class="card-title">🖼️ Background Image for All Pages</div>
-            <p>Paste an image URL (must be publicly accessible). This will be applied as background image to all user pages (dashboard, deposit, withdraw, etc.).</p>
-            <input type="text" id="globalBgImage" placeholder="https://example.com/background.jpg" style="width:100%; margin-bottom:1rem;">
-            <button id="setGlobalBgBtn" class="btn-small">Set Background Image</button>
-            <div id="bgImageStatus" class="small" style="margin-top:0.5rem;"></div>
-            <hr style="margin:1rem 0;">
-            <p><strong>How to apply to user pages:</strong> Add this code to the &lt;head&gt; of every HTML page (dashboard, deposit, etc.):</p>
-            <pre style="background:#000; padding:0.5rem; border-radius:8px; overflow-x:auto;"><code>&lt;script&gt;
-  // Load global background from Firestore
-  db.collection('systemSettings').doc('appearance').onSnapshot((doc) => {
-    if(doc.exists && doc.data().globalBgImage) {
-      document.body.style.backgroundImage = 'url('+doc.data().globalBgImage+')';
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'center';
-      document.body.style.backgroundAttachment = 'fixed';
-    }
-  });
-&lt;/script&gt;</code></pre>
-        </div>
-        <div class="admin-card">
-            <div class="card-title">📝 Register/Login Page Customization</div>
+            <div class="card-title">🎨 User Page Colors (register, login, dashboard, deposit, withdraw, etc.)</div>
             <div style="display: grid; gap: 1rem;">
-                <div><label>Login/Register Background Image URL</label> <input type="text" id="authBgImage" placeholder="Background image URL"></div>
-                <div><label>Login/Register Button Color</label> <input type="color" id="authBtnColor" value="#6C47FF"></div>
-                <div><label>Login/Register Heading Text</label> <input type="text" id="authHeadingText" placeholder="Welcome Back" value="Welcome Back"></div>
-                <button id="saveAuthSettingsBtn" class="btn-small success">Save Auth Page Settings</button>
+                <div><label>User Primary Color</label> <input type="color" id="userPrimaryColor" value="#2ecc71"> <span class="color-preview" id="userPrimaryPreview" style="background:#2ecc71"></span></div>
+                <div><label>User Background Color</label> <input type="color" id="userBgColor" value="#0A0A0C"> <span class="color-preview" style="background:#0A0A0C"></span></div>
+                <div><label>User Card Background</label> <input type="color" id="userCardColor" value="#111116"> <span class="color-preview" style="background:#111116"></span></div>
+                <div><label>User Text Color</label> <input type="color" id="userTextColor" value="#FFFFFF"> <span class="color-preview" style="background:#FFFFFF"></span></div>
+                <div><label>User Accent Color</label> <input type="color" id="userAccentColor" value="#e67e22"> <span class="color-preview" style="background:#e67e22"></span></div>
+                <div><label>User Gradient Start / End</label> <input type="color" id="userGradStart" value="#2ecc71"> <input type="color" id="userGradEnd" value="#f1c40f"></div>
+                <button id="saveUserAppearanceBtn" class="btn-small success">Save User Page Colors</button>
+                <small class="note" style="color: #aaa;">These colors will be applied to all user pages that include the universal script.</small>
             </div>
-        </div>
-        <div class="admin-card">
-            <div class="card-title">📎 Image URL for Editable Items</div>
-            <p>When creating/editing plans or news, you can now paste an image URL directly. All forms already have an "Image URL" field.</p>
         </div>
     </div>
 </div>
 
-<!-- Modals (Edit Plan & Add Investment) - unchanged -->
-<div id="editPlanModal" class="modal">...</div>
-<div id="addInvestmentModal" class="modal">...</div>
+<!-- Modals (unchanged) -->
+<div id="addPlanModal" class="modal"><div class="modal-content"><h3>Add Investment Plan</h3><input type="text" id="planName" placeholder="Plan Name"><input type="number" id="planMin" placeholder="Min Amount"><input type="number" id="planMax" placeholder="Max Amount"><input type="number" id="planDays" placeholder="Days"><input type="number" id="planDailyReturn" placeholder="Daily Return (%)"><input type="text" id="planImage" placeholder="Image URL"><input type="text" id="planLock" placeholder="Lock Text (optional)"><input type="text" id="planExpiry" placeholder="Expiry (Auto or date)"><textarea id="planDesc" placeholder="Description"></textarea><input type="hidden" id="planType"><button id="savePlanBtn" class="btn-small success">Save</button><button class="btn-small" onclick="closeModal('addPlanModal')">Cancel</button></div></div>
+<div id="editPlanModal" class="modal"><div class="modal-content"><h3>Edit Plan</h3><input type="hidden" id="editPlanId"><input type="hidden" id="editPlanType"><input type="text" id="editPlanName" placeholder="Name"><input type="number" id="editPlanMin" placeholder="Min"><input type="number" id="editPlanMax" placeholder="Max"><input type="number" id="editPlanDays" placeholder="Days"><input type="number" id="editPlanDailyReturn" placeholder="Daily Return %"><input type="text" id="editPlanImage" placeholder="Image URL"><input type="text" id="editPlanLock" placeholder="Lock Text"><input type="text" id="editPlanExpiry" placeholder="Expiry"><textarea id="editPlanDesc" placeholder="Description"></textarea><button id="updatePlanBtn" class="btn-small success">Update</button><button class="btn-small" onclick="closeModal('editPlanModal')">Cancel</button></div></div>
+<div id="addNewsModal" class="modal"><div class="modal-content"><h3>Add News</h3><input type="text" id="newsTitle" placeholder="Title"><textarea id="newsContent" rows="4" placeholder="Content"></textarea><input type="text" id="newsImage" placeholder="Image URL (optional)"><button id="saveNewsBtn" class="btn-small success">Post</button><button class="btn-small" onclick="closeModal('addNewsModal')">Cancel</button></div></div>
+<div id="addTreasureModal" class="modal"><div class="modal-content"><h3>Create Treasure Code</h3><input type="text" id="treasureCode" placeholder="7 characters (letters+numbers)" maxlength="7"><input type="number" id="treasureAmount" placeholder="Amount (ZMW)"><button id="saveTreasureBtn" class="btn-small success">Create</button><button class="btn-small" onclick="closeModal('addTreasureModal')">Cancel</button></div></div>
+<div id="addVoucherModal" class="modal"><div class="modal-content"><h3>Create Voucher Code</h3><input type="text" id="voucherCode" placeholder="10 characters (e.g., 001250ABCD)" maxlength="10"><input type="number" id="voucherAmount" placeholder="Amount (ZMW)"><button id="saveVoucherBtn" class="btn-small success">Create</button><button class="btn-small" onclick="closeModal('addVoucherModal')">Cancel</button></div></div>
+<div id="addAdminModal" class="modal"><div class="modal-content"><h3>Add Admin</h3><input type="email" id="adminEmail" placeholder="Admin Email"><input type="password" id="adminPassword" placeholder="Password (min 6)"><button id="createAdminBtn" class="btn-small success">Create Admin</button><button class="btn-small" onclick="closeModal('addAdminModal')">Cancel</button></div></div>
+<div id="supportReplyModal" class="modal"><div class="modal-content"><h3>Reply to Ticket</h3><input type="hidden" id="replyTicketId"><textarea id="replyMessage" rows="4" placeholder="Your reply..."></textarea><button id="sendReplyBtn" class="btn-small success">Send Reply</button><button class="btn-small" onclick="closeModal('supportReplyModal')">Cancel</button></div></div>
 
 <script>
-    // Firebase init (same as before)
+    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
         storageBucket: "pureore-capital-zambia.appspot.com",
         messagingSenderId: "78967797858",
-        appId: "1:78967797858:web:379b9692951429c345793b",
-        measurementId: "G-FQKC29NYE9"
+        appId: "1:78967797858:web:379b9692951429c345793b"
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -431,33 +324,348 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
     // Helper functions
-    function escapeHtml(str) { /* same */ return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-    function showToast(msg, isError = false) { /* existing toast */ }
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    function formatMoney(amt) { return 'K' + parseFloat(amt).toFixed(2); }
+    function showToast(msg, isError = false) { alert(msg); } // simple
 
-    // --- Load appearance settings and apply to admin panel ---
-    async function loadAppearanceSettings() {
-        const doc = await db.collection('systemSettings').doc('appearance').get();
-        if (doc.exists) {
-            const data = doc.data();
-            if (data.primaryColor) document.getElementById('primaryColor').value = data.primaryColor;
-            if (data.bgColor) document.getElementById('bgColor').value = data.bgColor;
-            if (data.cardColor) document.getElementById('cardColor').value = data.cardColor;
-            if (data.textColor) document.getElementById('textColor').value = data.textColor;
-            if (data.gradientDeg) document.getElementById('gradientDeg').value = data.gradientDeg;
-            if (data.glowEffect !== undefined) document.getElementById('glowEffect').checked = data.glowEffect;
-            if (data.animSpeed) document.getElementById('animSpeed').value = data.animSpeed;
-            if (data.globalBgImage) document.getElementById('globalBgImage').value = data.globalBgImage;
-        }
-        const authDoc = await db.collection('systemSettings').doc('pageCustomization').get();
-        if (authDoc.exists) {
-            const authData = authDoc.data();
-            if (authData.authBgImage) document.getElementById('authBgImage').value = authData.authBgImage;
-            if (authData.authBtnColor) document.getElementById('authBtnColor').value = authData.authBtnColor;
-            if (authData.authHeadingText) document.getElementById('authHeadingText').value = authData.authHeadingText;
-        }
-        applyAdminColors();
+    // Global variables
+    let currentPlanType = '';
+
+    // ==================== AUTH & INIT ====================
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) { window.location.href = 'admin-login.html'; return; }
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (!userDoc.exists || userDoc.data().role !== 'admin') { showToast('Access denied', true); setTimeout(() => window.location.href = 'admin-login.html', 1500); return; }
+        if (userDoc.data().isBlocked === true) { await auth.signOut(); showToast('Admin account blocked', true); window.location.href = 'admin-login.html'; return; }
+        // Load all sections
+        loadStats(); loadRecentActivities(); loadUsers(); loadPendingDeposits(); loadDepositsHistory(); loadPendingWithdrawals(); loadWithdrawalsHistory(); loadMkvipPlans(); loadJproductPlans(); loadTransactions(); loadNews(); loadSupportTickets(); loadTreasureCodes(); loadVouchers(); loadSettings(); loadAdmins(); loadAppearanceSettings(); loadUserAppearanceSettings();
+        setupPendingListeners();
+    });
+
+    function setupPendingListeners() {
+        db.collection('deposits').where('status', '==', 'pending').onSnapshot(snap => { document.getElementById('pendingDepositsBadge').innerHTML = `Deposits: ${snap.size}`; document.getElementById('pendingCount').innerText = snap.size + (parseInt(document.getElementById('pendingWithdrawalsBadge').innerText.match(/\d+/) || 0)); });
+        db.collection('withdrawals').where('status', '==', 'pending').onSnapshot(snap => { document.getElementById('pendingWithdrawalsBadge').innerHTML = `Withdrawals: ${snap.size}`; document.getElementById('pendingCount').innerText = snap.size + (parseInt(document.getElementById('pendingDepositsBadge').innerText.match(/\d+/) || 0)); });
     }
 
+    // Stats
+    async function loadStats() {
+        const usersSnap = await db.collection('users').get();
+        document.getElementById('totalUsers').innerText = usersSnap.size;
+        const depositsSnap = await db.collection('deposits').where('status', '==', 'completed').get();
+        let totalDep = 0; depositsSnap.forEach(d => totalDep += d.data().amount);
+        document.getElementById('totalDeposits').innerText = totalDep.toFixed(2);
+        const withdrawalsSnap = await db.collection('withdrawals').where('status', '==', 'completed').get();
+        let totalWith = 0; withdrawalsSnap.forEach(w => totalWith += w.data().amount);
+        document.getElementById('totalWithdrawals').innerText = totalWith.toFixed(2);
+    }
+
+    // Recent Activities
+    async function loadRecentActivities() {
+        const activities = [];
+        const deposits = await db.collection('deposits').orderBy('createdAt', 'desc').limit(5).get();
+        deposits.forEach(d => activities.push(`💰 Deposit ${d.data().amount} ZMW from ${d.data().userId?.slice(0,8)} - ${d.data().status}`));
+        const withdrawals = await db.collection('withdrawals').orderBy('createdAt', 'desc').limit(5).get();
+        withdrawals.forEach(w => activities.push(`💸 Withdrawal ${w.data().amount} ZMW from ${w.data().userId?.slice(0,8)} - ${w.data().status}`));
+        const users = await db.collection('users').orderBy('createdAt', 'desc').limit(5).get();
+        users.forEach(u => activities.push(`👤 New user: ${u.data().fullName || u.data().email}`));
+        document.getElementById('recentActivities').innerHTML = activities.slice(0,10).map(a => `<div>• ${a}</div>`).join('') || '<div>No recent activity</div>';
+    }
+
+    // ==================== USERS ====================
+    async function loadUsers() {
+        const users = await db.collection('users').get();
+        let html = '<table><tr><th>Name</th><th>Email</th><th>Balance</th><th>Role</th><th>Blocked</th><th>Can Request Loan</th><th>Actions</th></tr>';
+        for (const doc of users.docs) {
+            const u = doc.data();
+            html += `<tr>
+                <td>${escapeHtml(u.fullName || '-')}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td>${formatMoney(u.balance)}</td>
+                <td><select class="role-select" data-id="${doc.id}"><option ${u.role==='admin'?'selected':''}>admin</option><option ${u.role==='user'?'selected':''}>user</option></select></td>
+                <td><button class="btn-small ${u.isBlocked ? 'warning' : 'danger'}" onclick="toggleBlock('${doc.id}', ${u.isBlocked})">${u.isBlocked ? 'Unblock' : 'Block'}</button></td>
+                <td><button class="btn-small ${u.canRequestLoan===false ? 'warning' : 'success'}" onclick="toggleLoanFlag('${doc.id}', ${u.canRequestLoan===false})">${u.canRequestLoan===false ? 'Allow Loan' : 'Disable Loan'}</button></td>
+                <td><div class="edit-balance"><input type="number" id="bal_${doc.id}" placeholder="New balance"><button class="btn-small" onclick="updateBalance('${doc.id}')">Set</button></div></td>
+            </tr>`;
+        }
+        html += '</table>';
+        document.getElementById('usersList').innerHTML = html;
+        document.querySelectorAll('.role-select').forEach(sel => sel.addEventListener('change', async (e) => { await db.collection('users').doc(sel.dataset.id).update({ role: sel.value }); showToast('Role updated'); loadUsers(); }));
+    }
+    window.toggleBlock = async (uid, isBlocked) => { await db.collection('users').doc(uid).update({ isBlocked: !isBlocked }); loadUsers(); };
+    window.toggleLoanFlag = async (uid, isDisabled) => { await db.collection('users').doc(uid).update({ canRequestLoan: isDisabled }); loadUsers(); };
+    window.updateBalance = async (uid) => { const newBal = parseFloat(document.getElementById(`bal_${uid}`).value); if(isNaN(newBal)) return; await db.collection('users').doc(uid).update({ balance: newBal }); showToast('Balance updated'); loadUsers(); loadStats(); };
+
+    // ==================== DEPOSITS ====================
+    async function loadPendingDeposits() {
+        const pending = await db.collection('deposits').where('status', '==', 'pending').get();
+        let html = '<table><tr><th>User</th><th>Amount</th><th>Method</th><th>Screenshot</th><th>Actions</th></tr>';
+        for (const doc of pending.docs) {
+            const d = doc.data();
+            const user = await db.collection('users').doc(d.userId).get();
+            html += `<tr>
+                <td>${escapeHtml(user.data()?.fullName || d.userId)}</td>
+                <td>${formatMoney(d.amount)}</td>
+                <td>${d.paymentMethod}</td>
+                <td>${d.screenshotUrl ? `<a href="${d.screenshotUrl}" target="_blank">View</a>` : '-'}</td>
+                <td><button class="btn-small success" onclick="approveDeposit('${doc.id}', '${d.userId}', ${d.amount})">Approve</button> <button class="btn-small danger" onclick="rejectDeposit('${doc.id}')">Reject</button></td>
+            </tr>`;
+        }
+        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="5">No pending deposits</td></tr>';
+    }
+    window.approveDeposit = async (depositId, userId, amount) => {
+        await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); t.update(userRef, { balance: (userSnap.data().balance || 0) + amount }); t.update(db.collection('deposits').doc(depositId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
+        showToast('Deposit approved'); loadPendingDeposits(); loadDepositsHistory(); loadStats(); loadUsers();
+    };
+    window.rejectDeposit = async (depositId) => { await db.collection('deposits').doc(depositId).update({ status: 'rejected' }); loadPendingDeposits(); loadDepositsHistory(); };
+    async function loadDepositsHistory() {
+        const all = await db.collection('deposits').orderBy('createdAt', 'desc').get();
+        let html = '<table><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>';
+        for (const doc of all.docs) {
+            const d = doc.data();
+            const user = await db.collection('users').doc(d.userId).get();
+            html += `<tr><td>${escapeHtml(user.data()?.fullName || d.userId)}</td><td>${formatMoney(d.amount)}</td><td>${d.status}</td><td>${d.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+        }
+        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td></tr>';
+    }
+
+    // ==================== WITHDRAWALS ====================
+    async function loadPendingWithdrawals() {
+        const pending = await db.collection('withdrawals').where('status', '==', 'pending').get();
+        let html = '<table><tr><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>';
+        for (const doc of pending.docs) {
+            const w = doc.data();
+            const user = await db.collection('users').doc(w.userId).get();
+            html += `<tr>
+                <td>${escapeHtml(user.data()?.fullName || w.userId)}</td>
+                <td>${formatMoney(w.amount)}</td>
+                <td>${formatMoney(w.netAmount)}</td>
+                <td>${w.network}</td>
+                <td>${w.phone || w.cardNumber}</td>
+                <td><button class="btn-small success" onclick="approveWithdrawal('${doc.id}', '${w.userId}', ${w.amount})">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal('${doc.id}')">Reject</button></td>
+            </tr>`;
+        }
+        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="6">No pending withdrawals</td></tr>';
+    }
+    window.approveWithdrawal = async (withdrawalId, userId, amount) => {
+        await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); if((userSnap.data().balance || 0) < amount) throw new Error('Insufficient balance'); t.update(userRef, { balance: userSnap.data().balance - amount }); t.update(db.collection('withdrawals').doc(withdrawalId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
+        showToast('Withdrawal approved'); loadPendingWithdrawals(); loadWithdrawalsHistory(); loadStats(); loadUsers();
+    };
+    window.rejectWithdrawal = async (withdrawalId) => { await db.collection('withdrawals').doc(withdrawalId).update({ status: 'rejected' }); loadPendingWithdrawals(); loadWithdrawalsHistory(); };
+    async function loadWithdrawalsHistory() {
+        const all = await db.collection('withdrawals').orderBy('createdAt', 'desc').get();
+        let html = '<table><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>';
+        for (const doc of all.docs) {
+            const w = doc.data();
+            const user = await db.collection('users').doc(w.userId).get();
+            html += `<tr><td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+        }
+        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td></tr>';
+    }
+
+    // ==================== INVESTMENT PLANS ====================
+    async function loadMkvipPlans() { loadPlans('mkvipPlans', 'mkvipPlansList'); }
+    async function loadJproductPlans() { loadPlans('jproductPlans', 'jproductPlansList'); }
+    async function loadPlans(collection, elementId) {
+        const snapshot = await db.collection(collection).orderBy('createdAt', 'desc').get();
+        let html = '<table><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily %</th><th>Actions</th></tr>';
+        snapshot.forEach(doc => {
+            const p = doc.data();
+            html += `<tr><td>${escapeHtml(p.name)}</td><td>${p.minAmount} - ${p.maxAmount}</td><td>${p.days}</td><td>${p.dailyReturn}%</td><td><button class="btn-small" onclick="openEditPlanModal('${doc.id}', '${collection}')">Edit</button> <button class="btn-small danger" onclick="deletePlan('${doc.id}', '${collection}')">Delete</button></td></tr>`;
+        });
+        document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td></tr>';
+    }
+    window.openAddPlanModal = (type) => { currentPlanType = type; document.getElementById('planType').value = type; document.getElementById('addPlanModal').style.display = 'flex'; };
+    document.getElementById('savePlanBtn').onclick = async () => {
+        const type = document.getElementById('planType').value;
+        const collection = type === 'mkvip' ? 'mkvipPlans' : 'jproductPlans';
+        const data = {
+            name: document.getElementById('planName').value,
+            minAmount: parseFloat(document.getElementById('planMin').value),
+            maxAmount: parseFloat(document.getElementById('planMax').value),
+            days: parseInt(document.getElementById('planDays').value),
+            dailyReturn: parseFloat(document.getElementById('planDailyReturn').value),
+            image: document.getElementById('planImage').value,
+            lock: document.getElementById('planLock').value,
+            expiry: document.getElementById('planExpiry').value,
+            description: document.getElementById('planDesc').value,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection(collection).add(data);
+        closeModal('addPlanModal'); if(type === 'mkvip') loadMkvipPlans(); else loadJproductPlans();
+        showToast('Plan added');
+    };
+    window.openEditPlanModal = async (id, collection) => {
+        const doc = await db.collection(collection).doc(id).get();
+        const p = doc.data();
+        document.getElementById('editPlanId').value = id;
+        document.getElementById('editPlanType').value = collection;
+        document.getElementById('editPlanName').value = p.name;
+        document.getElementById('editPlanMin').value = p.minAmount;
+        document.getElementById('editPlanMax').value = p.maxAmount;
+        document.getElementById('editPlanDays').value = p.days;
+        document.getElementById('editPlanDailyReturn').value = p.dailyReturn;
+        document.getElementById('editPlanImage').value = p.image || '';
+        document.getElementById('editPlanLock').value = p.lock || '';
+        document.getElementById('editPlanExpiry').value = p.expiry || '';
+        document.getElementById('editPlanDesc').value = p.description || '';
+        document.getElementById('editPlanModal').style.display = 'flex';
+    };
+    document.getElementById('updatePlanBtn').onclick = async () => {
+        const id = document.getElementById('editPlanId').value;
+        const collection = document.getElementById('editPlanType').value;
+        const data = {
+            name: document.getElementById('editPlanName').value,
+            minAmount: parseFloat(document.getElementById('editPlanMin').value),
+            maxAmount: parseFloat(document.getElementById('editPlanMax').value),
+            days: parseInt(document.getElementById('editPlanDays').value),
+            dailyReturn: parseFloat(document.getElementById('editPlanDailyReturn').value),
+            image: document.getElementById('editPlanImage').value,
+            lock: document.getElementById('editPlanLock').value,
+            expiry: document.getElementById('editPlanExpiry').value,
+            description: document.getElementById('editPlanDesc').value
+        };
+        await db.collection(collection).doc(id).update(data);
+        closeModal('editPlanModal');
+        if(collection === 'mkvipPlans') loadMkvipPlans(); else loadJproductPlans();
+        showToast('Plan updated');
+    };
+    window.deletePlan = async (id, collection) => { if(confirm('Delete plan?')) { await db.collection(collection).doc(id).delete(); if(collection === 'mkvipPlans') loadMkvipPlans(); else loadJproductPlans(); showToast('Deleted'); } };
+
+    // ==================== TRANSACTIONS ====================
+    async function loadTransactions() {
+        const txns = await db.collection('transactions').orderBy('createdAt', 'desc').get();
+        let html = '<table><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>';
+        for (const doc of txns.docs) {
+            const t = doc.data();
+            const user = await db.collection('users').doc(t.userId).get();
+            html += `<tr><td>${escapeHtml(user.data()?.email || t.userId)}</td><td>${t.type}</td><td>${formatMoney(t.amount)}</td><td>${escapeHtml(t.description)}</td><td>${t.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+        }
+        document.getElementById('transactionsList').innerHTML = html || '<tr><td colspan="5">No transactions</td></tr>';
+        document.getElementById('txSearchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#transactionsList tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
+    }
+
+    // ==================== NEWS ====================
+    async function loadNews() {
+        const news = await db.collection('news').orderBy('createdAt', 'desc').get();
+        let html = '<table><tr><th>Title</th><th>Image</th><th>Actions</th></tr>';
+        news.forEach(doc => { const n = doc.data(); html += `<tr><td>${escapeHtml(n.title)}</td><td>${n.imageUrl ? '<a href="'+n.imageUrl+'" target="_blank">View</a>' : '-'}</td><td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td></tr>`; });
+        document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td></tr>';
+    }
+    window.openAddNewsModal = () => { document.getElementById('addNewsModal').style.display = 'flex'; };
+    document.getElementById('saveNewsBtn').onclick = async () => {
+        await db.collection('news').add({ title: document.getElementById('newsTitle').value, content: document.getElementById('newsContent').value, imageUrl: document.getElementById('newsImage').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        closeModal('addNewsModal'); loadNews(); showToast('News posted');
+    };
+    window.deleteNews = async (id) => { if(confirm('Delete news?')) { await db.collection('news').doc(id).delete(); loadNews(); } };
+
+    // ==================== SUPPORT TICKETS ====================
+    async function loadSupportTickets() {
+        const tickets = await db.collection('supportTickets').orderBy('createdAt', 'desc').get();
+        let html = '<table><tr><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>';
+        for (const doc of tickets.docs) {
+            const t = doc.data();
+            const user = await db.collection('users').doc(t.userId).get();
+            html += `<tr><td>${escapeHtml(user.data()?.email || t.userId)}</td><td>${escapeHtml(t.subject)}</td><td>${escapeHtml(t.message)}</td><td>${t.status}</td><td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td></tr>`;
+        }
+        document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td></tr>';
+    }
+    window.openReplyModal = (id) => { document.getElementById('replyTicketId').value = id; document.getElementById('supportReplyModal').style.display = 'flex'; };
+    document.getElementById('sendReplyBtn').onclick = async () => {
+        const ticketId = document.getElementById('replyTicketId').value;
+        const reply = document.getElementById('replyMessage').value;
+        await db.collection('supportTickets').doc(ticketId).update({ replies: firebase.firestore.FieldValue.arrayUnion({ reply, repliedAt: new Date(), admin: true }), status: 'replied' });
+        closeModal('supportReplyModal'); loadSupportTickets(); showToast('Reply sent');
+    };
+    window.closeTicket = async (id) => { await db.collection('supportTickets').doc(id).update({ status: 'closed' }); loadSupportTickets(); };
+
+    // ==================== TREASURE CODES ====================
+    async function loadTreasureCodes() {
+        const codes = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
+        let html = '<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>';
+        codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td><td>${c.amount}</td><td>${c.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td></tr>`; });
+        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td></tr>';
+    }
+    window.openAddTreasureModal = () => { document.getElementById('addTreasureModal').style.display = 'flex'; };
+    document.getElementById('saveTreasureBtn').onclick = async () => {
+        const code = document.getElementById('treasureCode').value.toUpperCase();
+        const amount = parseFloat(document.getElementById('treasureAmount').value);
+        if(code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 uppercase letters/numbers', true); return; }
+        await db.collection('treasureCodes').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        closeModal('addTreasureModal'); loadTreasureCodes(); showToast('Treasure code created');
+    };
+    window.deleteTreasureCode = async (id) => { if(confirm('Delete?')) { await db.collection('treasureCodes').doc(id).delete(); loadTreasureCodes(); } };
+
+    // ==================== VOUCHERS ====================
+    async function loadVouchers() {
+        const vouchers = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
+        let html = '<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>';
+        vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td><td>${v.amount}</td><td>${v.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td></tr>`; });
+        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td></tr>';
+    }
+    window.openAddVoucherModal = () => { document.getElementById('addVoucherModal').style.display = 'flex'; };
+    document.getElementById('saveVoucherBtn').onclick = async () => {
+        const code = document.getElementById('voucherCode').value.toUpperCase();
+        const amount = parseFloat(document.getElementById('voucherAmount').value);
+        if(code.length !== 10 || !/^\d{6}[A-Z]{4}$/.test(code)) { showToast('Code must be 6 digits + 4 letters', true); return; }
+        await db.collection('vouchers').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        closeModal('addVoucherModal'); loadVouchers(); showToast('Voucher created');
+    };
+    window.deleteVoucher = async (id) => { if(confirm('Delete?')) { await db.collection('vouchers').doc(id).delete(); loadVouchers(); } };
+
+    // ==================== SETTINGS ====================
+    async function loadSettings() {
+        const doc = await db.collection('systemSettings').doc('general').get();
+        if(doc.exists) {
+            document.getElementById('websiteName').value = doc.data().websiteName || '';
+            document.getElementById('contactEmail').value = doc.data().contactEmail || '';
+            document.getElementById('contactPhone').value = doc.data().contactPhone || '';
+            document.getElementById('paymentMethods').value = doc.data().paymentMethods || '';
+        }
+    }
+    document.getElementById('saveSettingsBtn').onclick = async () => {
+        await db.collection('systemSettings').doc('general').set({
+            websiteName: document.getElementById('websiteName').value,
+            contactEmail: document.getElementById('contactEmail').value,
+            contactPhone: document.getElementById('contactPhone').value,
+            paymentMethods: document.getElementById('paymentMethods').value
+        }, { merge: true });
+        showToast('Settings saved');
+    };
+
+    // ==================== ADMINS ====================
+    async function loadAdmins() {
+        const admins = await db.collection('users').where('role', '==', 'admin').get();
+        let html = '<table><tr><th>Email</th><th>Name</th><th>Actions</th></tr>';
+        admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.fullName || '-')}</td><td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td></tr>`; });
+        document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td></tr>';
+    }
+    window.openAddAdminModal = () => { document.getElementById('addAdminModal').style.display = 'flex'; };
+    document.getElementById('createAdminBtn').onclick = async () => {
+        const email = document.getElementById('adminEmail').value;
+        const password = document.getElementById('adminPassword').value;
+        try {
+            const userCred = await auth.createUserWithEmailAndPassword(email, password);
+            await db.collection('users').doc(userCred.user.uid).set({ email, role: 'admin', isBlocked: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            closeModal('addAdminModal'); loadAdmins(); showToast('Admin created');
+        } catch(e) { showToast(e.message, true); }
+    };
+    window.removeAdmin = async (uid) => { if(confirm('Remove admin?')) { await db.collection('users').doc(uid).delete(); loadAdmins(); } };
+
+    // ==================== APPEARANCE (Admin) ====================
+    async function loadAppearanceSettings() {
+        const doc = await db.collection('systemSettings').doc('appearance').get();
+        if(doc.exists) {
+            const data = doc.data();
+            if(data.primaryColor) document.getElementById('primaryColor').value = data.primaryColor;
+            if(data.bgColor) document.getElementById('bgColor').value = data.bgColor;
+            if(data.cardColor) document.getElementById('cardColor').value = data.cardColor;
+            if(data.textColor) document.getElementById('textColor').value = data.textColor;
+            if(data.gradientDeg) document.getElementById('gradientDeg').value = data.gradientDeg;
+            if(data.glowEffect !== undefined) document.getElementById('glowEffect').checked = data.glowEffect;
+            if(data.animSpeed) document.getElementById('animSpeed').value = data.animSpeed;
+            applyAdminColors();
+        }
+    }
     function applyAdminColors() {
         const primary = document.getElementById('primaryColor').value;
         const bg = document.getElementById('bgColor').value;
@@ -467,19 +675,17 @@
         const glow = document.getElementById('glowEffect').checked;
         const speed = document.getElementById('animSpeed').value;
         document.documentElement.style.setProperty('--admin-primary', primary);
-        document.documentElement.style.setProperty('--admin-primary-dark', primary);
         document.documentElement.style.setProperty('--admin-bg', bg);
         document.documentElement.style.setProperty('--admin-card', card);
         document.documentElement.style.setProperty('--admin-text', text);
         document.documentElement.style.setProperty('--admin-gradient', `linear-gradient(${gradDeg}deg, ${primary}, #7C3AED)`);
-        if (glow) document.documentElement.style.setProperty('--admin-glow', `0 0 10px ${primary}`);
+        if(glow) document.documentElement.style.setProperty('--admin-glow', `0 0 10px ${primary}`);
         else document.documentElement.style.setProperty('--admin-glow', 'none');
         document.documentElement.style.setProperty('--transition', `all ${speed/1000}s cubic-bezier(0.4,0,0.2,1)`);
         document.getElementById('primaryColorPreview').style.backgroundColor = primary;
         document.getElementById('animSpeedVal').innerText = speed + 'ms';
     }
-
-    document.getElementById('applyAppearanceBtn').addEventListener('click', async () => {
+    document.getElementById('applyAppearanceBtn').onclick = async () => {
         const settings = {
             primaryColor: document.getElementById('primaryColor').value,
             bgColor: document.getElementById('bgColor').value,
@@ -487,117 +693,70 @@
             textColor: document.getElementById('textColor').value,
             gradientDeg: parseInt(document.getElementById('gradientDeg').value),
             glowEffect: document.getElementById('glowEffect').checked,
-            animSpeed: parseInt(document.getElementById('animSpeed').value),
-            globalBgImage: document.getElementById('globalBgImage').value
+            animSpeed: parseInt(document.getElementById('animSpeed').value)
         };
         await db.collection('systemSettings').doc('appearance').set(settings, { merge: true });
         applyAdminColors();
-        showToast('Appearance settings saved', false);
-    });
+        showToast('Appearance saved');
+    };
+    document.getElementById('primaryColor').addEventListener('input', applyAdminColors);
+    document.getElementById('bgColor').addEventListener('input', applyAdminColors);
+    document.getElementById('cardColor').addEventListener('input', applyAdminColors);
+    document.getElementById('textColor').addEventListener('input', applyAdminColors);
+    document.getElementById('gradientDeg').addEventListener('input', applyAdminColors);
+    document.getElementById('glowEffect').addEventListener('change', applyAdminColors);
+    document.getElementById('animSpeed').addEventListener('input', (e) => { document.getElementById('animSpeedVal').innerText = e.target.value + 'ms'; applyAdminColors(); });
 
-    document.getElementById('setGlobalBgBtn').addEventListener('click', async () => {
-        const imgUrl = document.getElementById('globalBgImage').value.trim();
-        await db.collection('systemSettings').doc('appearance').set({ globalBgImage: imgUrl }, { merge: true });
-        showToast('Global background image saved', false);
-        document.getElementById('bgImageStatus').innerText = 'Saved. It will apply to all pages after adding the script snippet.';
-    });
-
-    document.getElementById('saveAuthSettingsBtn').addEventListener('click', async () => {
-        const authSettings = {
-            authBgImage: document.getElementById('authBgImage').value,
-            authBtnColor: document.getElementById('authBtnColor').value,
-            authHeadingText: document.getElementById('authHeadingText').value
-        };
-        await db.collection('systemSettings').doc('pageCustomization').set(authSettings, { merge: true });
-        showToast('Login/Register settings saved', false);
-    });
-
-    document.getElementById('animSpeed').addEventListener('input', (e) => {
-        document.getElementById('animSpeedVal').innerText = e.target.value + 'ms';
-        if (document.getElementById('glowEffect').checked) applyAdminColors();
-    });
-    document.getElementById('primaryColor').addEventListener('input', () => applyAdminColors());
-    document.getElementById('bgColor').addEventListener('input', () => applyAdminColors());
-    document.getElementById('cardColor').addEventListener('input', () => applyAdminColors());
-    document.getElementById('textColor').addEventListener('input', () => applyAdminColors());
-    document.getElementById('gradientDeg').addEventListener('input', () => applyAdminColors());
-    document.getElementById('glowEffect').addEventListener('change', () => applyAdminColors());
-
-    // Real-time notifications for pending deposits/withdrawals
-    function setupNotifications() {
-        db.collection('deposits').where('status', '==', 'pending').onSnapshot(snap => {
-            const count = snap.size;
-            document.getElementById('pendingDepositsCount').innerHTML = `Deposits: ${count}`;
-            document.getElementById('pendingDeposits').innerText = count;
-        });
-        db.collection('withdrawals').where('status', '==', 'pending').onSnapshot(snap => {
-            const count = snap.size;
-            document.getElementById('pendingWithdrawalsCount').innerHTML = `Withdrawals: ${count}`;
-            document.getElementById('pendingWithdrawals').innerText = count;
-        });
-    }
-
-    // Auth check and initial load (same as before, but add loadAppearanceSettings and setupNotifications)
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) { window.location.href = 'admin-login.html'; return; }
-        try {
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            if (!userDoc.exists || userDoc.data().role !== 'admin') {
-                showToast('Access denied. Admins only.', true);
-                setTimeout(() => window.location.href = 'admin-login.html', 1500);
-                return;
-            }
-            if (userDoc.data().isBlocked === true) {
-                await auth.signOut();
-                showToast('Your admin account has been blocked.', true);
-                setTimeout(() => window.location.href = 'admin-login.html', 1500);
-                return;
-            }
-            // Load all existing functions (loadStats, loadPendingDeposits, etc.) - same as before
-            // I'm calling them here; the actual function definitions are omitted for brevity but must be present.
-            // For the full code, all original functions (loadPendingDeposits, loadAllUsers, etc.) remain unchanged.
-            // ...
-            loadStats();
-            loadPendingDeposits();
-            loadCompletedDeposits();
-            loadPendingWithdrawals();
-            loadActiveLoans();
-            loadAllUsers();
-            loadTreasureCodes();
-            loadSettings();
-            loadInvestmentPlans();
-            loadMkVipPlans();
-            loadJProductPlans();
-            loadNews();
-            loadAppearanceSettings();
-            setupNotifications();
-        } catch (err) {
-            console.error(err);
-            showToast('Error loading admin data', true);
+    // ==================== USER PAGE APPEARANCE (NEW) ====================
+    async function loadUserAppearanceSettings() {
+        const doc = await db.collection('systemSettings').doc('userAppearance').get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.primaryColor) document.getElementById('userPrimaryColor').value = data.primaryColor;
+            if (data.bgColor) document.getElementById('userBgColor').value = data.bgColor;
+            if (data.cardColor) document.getElementById('userCardColor').value = data.cardColor;
+            if (data.textColor) document.getElementById('userTextColor').value = data.textColor;
+            if (data.accentColor) document.getElementById('userAccentColor').value = data.accentColor;
+            if (data.gradStart) document.getElementById('userGradStart').value = data.gradStart;
+            if (data.gradEnd) document.getElementById('userGradEnd').value = data.gradEnd;
         }
+        document.getElementById('userPrimaryPreview').style.backgroundColor = document.getElementById('userPrimaryColor').value;
+    }
+    document.getElementById('userPrimaryColor').addEventListener('input', (e) => {
+        document.getElementById('userPrimaryPreview').style.backgroundColor = e.target.value;
     });
+    document.getElementById('saveUserAppearanceBtn').onclick = async () => {
+        const settings = {
+            primaryColor: document.getElementById('userPrimaryColor').value,
+            bgColor: document.getElementById('userBgColor').value,
+            cardColor: document.getElementById('userCardColor').value,
+            textColor: document.getElementById('userTextColor').value,
+            accentColor: document.getElementById('userAccentColor').value,
+            gradStart: document.getElementById('userGradStart').value,
+            gradEnd: document.getElementById('userGradEnd').value,
+        };
+        await db.collection('systemSettings').doc('userAppearance').set(settings, { merge: true });
+        showToast('User page colors saved! They will apply to all pages that include the universal script.', false);
+    };
 
-    // Tab switching (add appearance tab)
+    // ==================== UTILITIES ====================
+    window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
+    document.querySelectorAll('.modal').forEach(modal => { modal.addEventListener('click', (e) => { if(e.target === modal) modal.style.display = 'none'; }); });
+
+    // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             const tabId = btn.dataset.tab + 'Tab';
-            const targetTab = document.getElementById(tabId);
-            if (targetTab) targetTab.classList.add('active');
+            const target = document.getElementById(tabId);
+            if(target) target.classList.add('active');
         });
     });
 
     // Logout
-    document.getElementById('adminLogoutBtn').addEventListener('click', async () => {
-        await auth.signOut();
-        window.location.href = 'admin-login.html';
-    });
-
-    // For brevity, I have omitted the full definitions of loadPendingDeposits, loadAllUsers, etc.
-    // They are exactly the same as in your original code. Please keep them.
-    // The above additions are the new features.
+    document.getElementById('adminLogoutBtn').addEventListener('click', async () => { await auth.signOut(); window.location.href = 'admin-login.html'; });
 </script>
 </body>
 </html>

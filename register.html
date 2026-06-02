@@ -87,7 +87,6 @@
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Disable button while loading */
         .btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
     </style>
 </head>
@@ -129,6 +128,10 @@
     }
     const auth = firebase.auth();
     const db = firebase.firestore();
+    
+    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data (as requested)
+    db.settings({ persistence: false });
+    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
     // ==================== READ REFERRAL CODE FROM URL ====================
@@ -143,7 +146,6 @@
         const referralInput = document.getElementById('regReferralCode');
         if (referralInput) {
             referralInput.value = urlReferralCode;
-            // Optional: show a small message that it was auto‑filled
             const note = document.querySelector('.note');
             if (note) {
                 note.innerHTML = '💡 Referral code automatically filled from your invitation link.';
@@ -196,7 +198,6 @@
                 return;
             }
             
-            // Validate referral code if provided
             if (referralCode) {
                 try {
                     const referrerQuery = await db.collection('users').where('referralCode', '==', referralCode).get();
@@ -224,6 +225,8 @@
                     referredBy: referralCode || null,
                     role: 'user',
                     isBlocked: false,
+                    canRequestLoan: true,
+                    referralBonusGiven: false,   // ✅ Prevents double bonus when first deposit + investment occurs
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 

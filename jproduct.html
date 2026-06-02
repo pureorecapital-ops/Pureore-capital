@@ -318,6 +318,10 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    
+    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data
+    db.settings({ persistence: false });
+    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
     // Helper functions
@@ -436,14 +440,12 @@
         const grid = document.getElementById('plansGrid');
         grid.innerHTML = '';
         plans.forEach(plan => {
-            // Use minAmount and maxAmount from the plan document
+            // Use minAmount and maxAmount from the plan document (created by admin)
             const minAmount = plan.minAmount || plan.minInvest || 0;
             const maxAmount = plan.maxAmount || plan.maxInvest || 0;
             const days = plan.days || 0;
             const dailyReturnPercent = plan.dailyReturn || 0;
-            // For display, we show the range
             const investRange = (minAmount === maxAmount) ? `${minAmount} ZMW` : `${minAmount} - ${maxAmount} ZMW`;
-            // Example total income based on max amount (or could show a range)
             const exampleDaily = (maxAmount * dailyReturnPercent / 100);
             const exampleTotal = exampleDaily * days;
             const lockText = plan.lock || 'Purchased 1 time and locked';
@@ -488,6 +490,7 @@
         });
     }
 
+    // ✅ UPDATED: investInPlan with referral bonus (5% of first deposit)
     async function investInPlan(plan) {
         const user = auth.currentUser;
         if (!user) {
@@ -500,7 +503,6 @@
         const days = plan.days;
         const dailyReturnPercent = plan.dailyReturnPercent;
 
-        // Ask user for amount
         let investAmount = parseFloat(prompt(`Enter investment amount (${minAmount} - ${maxAmount} ZMW):`));
         if (isNaN(investAmount)) {
             showToast('Invalid amount.', true);
@@ -521,8 +523,47 @@
             showToast(`Insufficient balance! You need ${investAmount} ZMW.`, true);
             return;
         }
+
+        // Check if this is the user's first investment (no previous investments)
+        const existingInvestments = await db.collection('investments')
+            .where('userId', '==', userId)
+            .limit(1)
+            .get();
+        const isFirstInvestment = existingInvestments.empty;
+
+        // Check if user was referred and bonus not yet given
+        const userData = userDoc.data();
+        const referredBy = userData.referredBy;
+        const bonusAlreadyGiven = userData.referralBonusGiven === true;
+        const canGiveBonus = referredBy && !bonusAlreadyGiven && isFirstInvestment;
+
+        let referrerId = null;
+        let firstDepositAmount = 0;
+
+        if (canGiveBonus) {
+            // Find the referrer's user document using the referral code
+            const referrerQuery = await db.collection('users')
+                .where('referralCode', '==', referredBy)
+                .limit(1)
+                .get();
+            if (!referrerQuery.empty) {
+                referrerId = referrerQuery.docs[0].id;
+                // Get the user's first completed deposit (oldest)
+                const depositsSnapshot = await db.collection('deposits')
+                    .where('userId', '==', userId)
+                    .where('status', '==', 'completed')
+                    .orderBy('createdAt', 'asc')
+                    .limit(1)
+                    .get();
+                if (!depositsSnapshot.empty) {
+                    firstDepositAmount = depositsSnapshot.docs[0].data().amount;
+                }
+            }
+        }
+
         const btns = document.querySelectorAll('.invest-btn');
         btns.forEach(btn => btn.disabled = true);
+
         try {
             let startDate = new Date();
             if (isWeekend(startDate)) {
@@ -531,16 +572,17 @@
             }
             const businessDays = days;
             const businessEndDate = addWeekdays(startDate, businessDays);
-            // daily return amount = investAmount * (dailyReturnPercent / 100)
             const dailyAmount = investAmount * (dailyReturnPercent / 100);
 
             await db.runTransaction(async (transaction) => {
+                // 1. Deduct investment amount from user's balance
                 const userRef = db.collection('users').doc(userId);
                 const userSnap = await transaction.get(userRef);
                 const newBalance = userSnap.data().balance - investAmount;
                 if (newBalance < 0) throw new Error('Insufficient balance');
                 transaction.update(userRef, { balance: newBalance });
 
+                // 2. Create investment document
                 const investmentRef = db.collection('investments').doc();
                 transaction.set(investmentRef, {
                     userId: userId,
@@ -551,10 +593,45 @@
                     businessDays: businessDays,
                     startDate: firebase.firestore.Timestamp.fromDate(startDate),
                     businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),
+                    lastClaimed: firebase.firestore.Timestamp.fromDate(startDate),
                     status: 'active',
                     totalReturn: 0
                 });
+
+                // 3. If eligible, give referral bonus (5% of first deposit) to referrer
+                if (canGiveBonus && referrerId && firstDepositAmount > 0) {
+                    const bonusAmount = firstDepositAmount * 0.05; // 5%
+                    const referrerRef = db.collection('users').doc(referrerId);
+                    const referrerSnap = await transaction.get(referrerRef);
+                    const newReferrerBalance = (referrerSnap.data().balance || 0) + bonusAmount;
+                    transaction.update(referrerRef, { balance: newReferrerBalance });
+
+                    // Mark that bonus has been given for this referred user
+                    transaction.update(userRef, { referralBonusGiven: true });
+
+                    // Record referral earning
+                    const earningRef = db.collection('referralEarnings').doc();
+                    transaction.set(earningRef, {
+                        referrerId: referrerId,
+                        referredUserId: userId,
+                        amount: bonusAmount,
+                        depositAmount: firstDepositAmount,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Record transaction for referrer
+                    const txRef = db.collection('transactions').doc();
+                    transaction.set(txRef, {
+                        userId: referrerId,
+                        type: 'referral_bonus',
+                        amount: bonusAmount,
+                        description: `Referral bonus from ${userData.fullName || user.email} (5% of K${firstDepositAmount})`,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
             });
+
+            // Record investment transaction (outside transaction because it's independent)
             await db.collection('transactions').add({
                 userId: userId,
                 type: 'investment',
@@ -562,8 +639,13 @@
                 description: `Purchased ${plan.name} (J Product)`,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+
             showFireworks();
-            showToast(`✅ Success! Invested ${investAmount} ZMW in ${plan.name}. Redirecting...`);
+            if (canGiveBonus && referrerId && firstDepositAmount > 0) {
+                showToast(`✅ Success! Invested ${investAmount} ZMW. Your referrer earned ${(firstDepositAmount * 0.05).toFixed(2)} ZMW bonus!`, false);
+            } else {
+                showToast(`✅ Success! Invested ${investAmount} ZMW in ${plan.name}. Redirecting...`);
+            }
             setTimeout(() => {
                 window.location.href = 'history.html';
             }, 2000);

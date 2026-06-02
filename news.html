@@ -77,7 +77,6 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        /* Flag Marquee */
         .flags-container {
             background: rgba(18, 18, 24, 0.7);
             backdrop-filter: blur(8px);
@@ -111,7 +110,6 @@
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
-        /* News Cards */
         .news-card {
             background: rgba(18, 18, 24, 0.9);
             backdrop-filter: blur(10px);
@@ -164,7 +162,6 @@
             color: #aaa;
             padding: 2rem;
         }
-        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -222,9 +219,7 @@
 
     <!-- Auto-scrolling flags -->
     <div class="flags-container">
-        <div class="flags-marquee" id="flagsMarquee">
-            <!-- Flags will be duplicated for seamless scroll -->
-        </div>
+        <div class="flags-marquee" id="flagsMarquee"></div>
     </div>
 
     <!-- News Articles (dynamic from Firestore) -->
@@ -269,6 +264,10 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    
+    // ✅ ENABLE OFFLINE PERSISTENCE (changed from false to true)
+    db.settings({ persistence: true });
+    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
     // Helper: escape HTML
@@ -302,7 +301,6 @@
             let html = '';
             snapshot.forEach(doc => {
                 const news = doc.data();
-                // Use a placeholder image if none provided
                 const imageUrl = news.imageUrl || 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png';
                 html += `
                     <div class="news-card">

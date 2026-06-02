@@ -4,12 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Admin Login – Pureore Capital</title>
-    <!-- Preconnect to Firebase -->
     <link rel="preconnect" href="https://www.gstatic.com">
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Universal Color Script (for user pages – optional here but safe) -->
+    <script>
+    (function() {
+        if (!firebase.apps.length) {
+            const firebaseConfig = {
+                apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+                authDomain: "pureore-capital-zambia.firebaseapp.com",
+                projectId: "pureore-capital-zambia",
+                storageBucket: "pureore-capital-zambia.appspot.com",
+                messagingSenderId: "78967797858",
+                appId: "1:78967797858:web:379b9692951429c345793b"
+            };
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        db.collection('systemSettings').doc('userAppearance').onSnapshot((doc) => {
+            if (doc.exists) {
+                const colors = doc.data();
+                document.documentElement.style.setProperty('--user-primary', colors.primaryColor || '#2ecc71');
+                document.documentElement.style.setProperty('--user-bg', colors.bgColor || '#0A0A0C');
+                document.documentElement.style.setProperty('--user-card', colors.cardColor || '#111116');
+                document.documentElement.style.setProperty('--user-text', colors.textColor || '#FFFFFF');
+                document.documentElement.style.setProperty('--user-accent', colors.accentColor || '#e67e22');
+                document.documentElement.style.setProperty('--user-gradient', `linear-gradient(135deg, ${colors.gradStart || '#2ecc71'}, ${colors.gradEnd || '#f1c40f'})`);
+            } else {
+                document.documentElement.style.setProperty('--user-primary', '#2ecc71');
+                document.documentElement.style.setProperty('--user-bg', '#0A0A0C');
+                document.documentElement.style.setProperty('--user-card', '#111116');
+                document.documentElement.style.setProperty('--user-text', '#FFFFFF');
+                document.documentElement.style.setProperty('--user-accent', '#e67e22');
+                document.documentElement.style.setProperty('--user-gradient', 'linear-gradient(135deg, #2ecc71, #f1c40f)');
+            }
+        });
+    })();
+    </script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -89,28 +124,20 @@
 </div>
 
 <script>
-    // Firebase configuration – corrected storageBucket
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.appspot.com",  // ✅ Fixed
+        storageBucket: "pureore-capital-zambia.appspot.com",
         messagingSenderId: "78967797858",
-        appId: "1:78967797858:web:379b9692951429c345793b",
-        measurementId: "G-FQKC29NYE9"
+        appId: "1:78967797858:web:379b9692951429c345793b"
     };
-    
-    // Initialize Firebase only once
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    
-    // Set persistence
+    db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
-    
-    // Check if already logged in as admin – redirect immediately
+
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             try {
@@ -118,83 +145,52 @@
                 if (userDoc.exists && userDoc.data().role === 'admin' && userDoc.data().isBlocked !== true) {
                     window.location.href = 'admin-dashboard.html';
                 }
-            } catch (err) {
-                console.warn("Auth check error:", err);
-            }
+            } catch (err) { console.warn(err); }
         }
     });
-    
+
     const loginBtn = document.getElementById('loginBtn');
     const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const messageDiv = document.getElementById('message');
-    
+
     async function adminLogin(email, password) {
-        // Disable button and show loading state
         loginBtn.disabled = true;
         loginBtn.textContent = 'Logging in...';
         messageDiv.innerHTML = '';
-        
         try {
-            // Sign in
             const userCred = await auth.signInWithEmailAndPassword(email, password);
             const user = userCred.user;
-            
-            // Fetch user document
             const userDoc = await db.collection('users').doc(user.uid).get();
-            
-            if (!userDoc.exists) {
-                await auth.signOut();
-                throw new Error('No user profile found. Please contact support.');
-            }
-            
+            if (!userDoc.exists) throw new Error('No profile');
             const userData = userDoc.data();
-            
-            // Check if account is blocked
-            if (userData.isBlocked === true) {
-                await auth.signOut();
-                throw new Error('Your account has been blocked. Contact support.');
-            }
-            
-            // Check admin role
-            if (userData.role !== 'admin') {
-                await auth.signOut();
-                throw new Error('You do not have admin privileges.');
-            }
-            
-            // Success – redirect to admin dashboard
+            if (userData.isBlocked === true) throw new Error('Blocked');
+            if (userData.role !== 'admin') throw new Error('Not admin');
             window.location.href = 'admin-dashboard.html';
-            
         } catch (error) {
-            console.error("Admin login error:", error);
             let errorMsg = error.message;
-            if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
+            if (error.code === 'auth/user-not-found') errorMsg = 'No account found.';
             if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
-            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
-            if (error.code === 'auth/too-many-requests') errorMsg = 'Too many failed attempts. Try again later.';
+            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email.';
+            if (error.code === 'auth/too-many-requests') errorMsg = 'Too many attempts.';
             messageDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
-            passwordInput.value = ''; // clear password field
+            passwordInput.value = '';
             loginBtn.disabled = false;
             loginBtn.textContent = 'Login';
         }
     }
-    
+
     loginBtn.addEventListener('click', () => {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
         if (!email || !password) {
-            messageDiv.innerHTML = '<div class="error">Please enter both email and password.</div>';
+            messageDiv.innerHTML = '<div class="error">Enter both email and password.</div>';
             return;
         }
         adminLogin(email, password);
     });
-    
-    passwordInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') loginBtn.click();
-    });
-    emailInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') loginBtn.click();
-    });
+    passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+    emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginBtn.click(); });
 </script>
 </body>
 </html>
