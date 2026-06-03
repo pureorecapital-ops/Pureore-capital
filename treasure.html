@@ -310,6 +310,7 @@
     });
 
     claimBtn.addEventListener('click', async () => {
+        // Trim and uppercase the code exactly
         let code = codeInput.value.trim().toUpperCase();
         if (code.length !== 7) {
             showMessage('Code must be exactly 7 characters (letters & numbers).', 'error');
@@ -330,13 +331,14 @@
         }
 
         try {
-            // Look for the code in Firestore
+            // Query Firestore for the exact code
             const codeQuery = await db.collection('treasureCodes')
                 .where('code', '==', code)
                 .limit(1)
                 .get();
 
             if (codeQuery.empty) {
+                console.log(`Treasure code not found: "${code}"`);
                 showMessage('❌ Invalid treasure code. No such code exists.', 'error');
                 claimBtn.disabled = false;
                 claimBtn.innerText = '🔓 Claim Treasure';
@@ -361,7 +363,7 @@
                 return;
             }
 
-            // Use transaction to add balance to user and mark code as used
+            // Use transaction to add balance and mark code as used
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(user.uid);
                 const userSnap = await transaction.get(userRef);
@@ -391,7 +393,7 @@
                 window.location.href = 'dashboard.html';
             }, 2000);
         } catch (err) {
-            console.error(err);
+            console.error('Treasure claim error:', err);
             showMessage('Server error. Please try again later.', 'error');
             claimBtn.disabled = false;
             claimBtn.innerText = '🔓 Claim Treasure';

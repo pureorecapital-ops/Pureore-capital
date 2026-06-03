@@ -128,6 +128,8 @@
             width: 100%;
             height: 280px;
             object-fit: cover;
+            background-color: #1a1a2a;
+            border-bottom: 1px solid rgba(46,204,113,0.2);
         }
         .news-content {
             padding: 1.5rem;
@@ -265,9 +267,8 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    // ✅ ENABLE OFFLINE PERSISTENCE (changed from false to true)
+    // Allow offline persistence (slightly better user experience)
     db.settings({ persistence: true });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
     // Helper: escape HTML
@@ -301,10 +302,14 @@
             let html = '';
             snapshot.forEach(doc => {
                 const news = doc.data();
-                const imageUrl = news.imageUrl || 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png';
+                let imageUrl = news.imageUrl;
+                // ✅ FIX: If imageUrl is missing, empty, or looks like a file path (contains 'file-'), use default placeholder
+                if (!imageUrl || imageUrl.trim() === '' || imageUrl.includes('file-000000')) {
+                    imageUrl = 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png';
+                }
                 html += `
                     <div class="news-card">
-                        <img class="news-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(news.title)}">
+                        <img class="news-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(news.title)}" onerror="this.src='https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png'">
                         <div class="news-content">
                             <div class="news-title">${escapeHtml(news.title)}</div>
                             <div class="news-description">${escapeHtml(news.content).replace(/\n/g, '<br>')}</div>

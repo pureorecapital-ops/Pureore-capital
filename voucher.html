@@ -130,19 +130,6 @@
             border: 1px solid #ef4444;
             color: #ef4444;
         }
-        .loader {
-            border: 3px solid #2C2C3A;
-            border-top: 3px solid #2ecc71;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 1rem auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -239,7 +226,6 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -253,9 +239,7 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    // 🔥 DISABLE OFFLINE PERSISTENCE – Only work online
     db.settings({ persistence: false });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
     const claimBtn = document.getElementById('claimBtn');
@@ -273,7 +257,10 @@
         const userPassword = document.getElementById('userPassword').value;
         const agentNumber = document.getElementById('agentNumber').value.trim();
         const agentName = document.getElementById('agentName').value.trim();
-        let voucherCode = document.getElementById('voucherCode').value.trim();
+        let voucherCodeRaw = document.getElementById('voucherCode').value.trim();
+        
+        // ✅ Convert voucher code to UPPERCASE (case‑insensitive)
+        const voucherCode = voucherCodeRaw.toUpperCase();
 
         if (!userName || !userPassword || !agentNumber || !agentName || !voucherCode) {
             showMessage('Please fill in all fields.', true);
@@ -307,18 +294,22 @@
             return;
         }
 
-        // Verify agent
+        // ✅ Agent validation (case‑insensitive name)
         const agentQuery = await db.collection('agents')
             .where('number', '==', agentNumber)
-            .where('name', '==', agentName)
-            .limit(1)
             .get();
-        if (agentQuery.empty) {
+        let agentValid = false;
+        agentQuery.forEach(doc => {
+            if (doc.data().name.toLowerCase() === agentName.toLowerCase()) {
+                agentValid = true;
+            }
+        });
+        if (!agentValid) {
             showMessage('Agent not found. Please check the number and name.', true);
             return;
         }
 
-        // Voucher code format: 10 chars, first 6 = amount (digits + optional dot), last 4 = letters
+        // Voucher code format: 10 chars, first 6 = amount (digits only), last 4 = letters
         if (voucherCode.length !== 10) {
             showMessage('Voucher code must be exactly 10 characters.', true);
             return;
@@ -327,15 +318,15 @@
         const suffix = voucherCode.substring(6, 10);
         const amountValue = parseFloat(amountPart);
         if (isNaN(amountValue) || amountValue <= 0) {
-            showMessage('Invalid amount in voucher code (first 6 characters).', true);
+            showMessage('Invalid amount in voucher code (first 6 characters must be digits).', true);
             return;
         }
-        if (!/^[A-Za-z]{4}$/.test(suffix)) {
+        if (!/^[A-Z]{4}$/.test(suffix)) {
             showMessage('Last 4 characters must be letters (A-Z).', true);
             return;
         }
 
-        // Check voucher code in Firestore
+        // Check voucher code in Firestore (already uppercase)
         const codeQuery = await db.collection('vouchers')
             .where('code', '==', voucherCode)
             .limit(1)
@@ -377,7 +368,7 @@
                 description: `Voucher code: ${voucherCode} (Agent: ${agentName} ${agentNumber})`,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            showMessage(`✅ Success! K${amountValue.toFixed(2)} added to your balance.`, false);
+            showMessage(`✅ Success! K${amountValue.toFixed(2)} added to your balance. Redirecting...`, false);
             setTimeout(() => {
                 window.location.href = 'dashboard.html';
             }, 2000);

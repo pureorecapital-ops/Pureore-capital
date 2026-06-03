@@ -19,12 +19,33 @@
             font-family: 'Inter', system-ui, sans-serif;
             color: #FFFFFF;
             padding: 1rem;
-            padding-bottom: 85px;
             min-height: 100vh;
         }
         .container {
             max-width: 600px;
             margin: 0 auto;
+            position: relative;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(30,30,42,0.8);
+            border-radius: 40px;
+            padding: 8px 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #2ecc71;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(46,204,113,0.3);
+            z-index: 20;
+        }
+        .back-arrow:hover {
+            background: #2ecc71;
+            color: #0A0A0C;
+            transform: translateX(-3px);
         }
         .animated-title {
             text-align: center;
@@ -190,44 +211,6 @@
             pointer-events: none;
             z-index: 1000;
         }
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(15, 15, 20, 0.95);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(46, 204, 113, 0.2);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 8px 12px 20px;
-            z-index: 30;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            flex: 1;
-            text-align: center;
-        }
-        .nav-item:hover { transform: translateY(-3px); }
-        .nav-icon {
-            width: 28px;
-            height: 28px;
-            object-fit: contain;
-            filter: brightness(0.8);
-        }
-        .nav-label {
-            font-size: 0.7rem;
-            color: #aaa;
-            font-weight: 500;
-        }
-        .nav-item.active .nav-label { color: #2ecc71; }
         @media (max-width: 600px) {
             .btn-withdraw { font-size: 1rem; }
         }
@@ -235,11 +218,12 @@
 </head>
 <body>
 <div class="container">
-    <div class="animated-title"> Withdraw your money</div>
+    <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
+    <div class="animated-title">💰 Withdraw your money</div>
     <div class="card">
         <!-- Network dropdown -->
         <div class="form-group">
-            <label> Choose network</label>
+            <label>📡 Choose network</label>
             <select id="networkSelect">
                 <option value="">-- Select network --</option>
                 <option value="mtn">MTN Mobile Money</option>
@@ -251,7 +235,7 @@
 
         <!-- Mobile network phone input (with +260 prefix) -->
         <div id="mobileInputGroup" class="form-group hidden">
-            <label> Phone number</label>
+            <label>📞 Phone number</label>
             <div class="phone-prefix">
                 <span>+260</span>
                 <input type="tel" id="phoneNumber" placeholder="Phone number" maxlength="9">
@@ -261,7 +245,7 @@
 
         <!-- Bank selection & card number input -->
         <div id="bankInputGroup" class="form-group hidden">
-            <label> Choose bank</label>
+            <label>🏦 Choose bank</label>
             <div class="bank-options" id="bankOptions">
                 <div class="bank-chip" data-bank="ecobank">EcoBank</div>
                 <div class="bank-chip" data-bank="zanaco">Zanaco</div>
@@ -269,7 +253,7 @@
                 <div class="bank-chip" data-bank="stanbic">Stanbic Bank</div>
             </div>
             <div id="bankCardGroup" class="form-group" style="margin-top: 1rem;">
-                <label> Bank card number (16 digits)</label>
+                <label>💳 Bank card number (16 digits)</label>
                 <input type="text" id="bankCardNumber" placeholder="Card number" maxlength="16">
                 <div id="cardError" class="error-msg"></div>
             </div>
@@ -277,14 +261,14 @@
 
         <!-- Amount input -->
         <div class="form-group">
-            <label> Amount to withdraw (min 20 ZMW)</label>
+            <label>💰 Amount to withdraw (min 20 ZMW)</label>
             <input type="number" id="withdrawAmount" placeholder="Enter amount" min="20" step="1">
             <div id="amountError" class="error-msg"></div>
         </div>
 
         <!-- Discount calculation -->
         <div id="discountCard" class="discount-card hidden">
-            <div> 20% processing fee</div>
+            <div>⚡ 20% processing fee</div>
             <div>Discount: <span id="discountValue">0.00</span> ZMW</div>
             <div>You will receive: <span id="netAmount" class="net-amount">0.00</span> ZMW</div>
         </div>
@@ -293,49 +277,23 @@
         <button id="confirmWithdrawBtn" class="btn-withdraw" disabled>Confirm Withdrawal</button>
         <div id="generalError" class="error-msg" style="text-align: center; margin-top: 1rem;"></div>
 
-        <!-- Rules note (updated with weekend restriction) -->
+        <!-- Rules note -->
         <div class="rule-text">
-             Withdrawal rules:<br>
-            � You must have made at least one completed deposit.<br>
-            � You must have purchased at least one investment plan.<br>
-            � You must have no active loans.<br>
-            � Your balance must be at least the withdrawal amount.<br>
-            � 20% fee applies on all withdrawals.<br>
-            � Minimum withdrawal: 20 ZMW.<br>
-            � Withdrawals allowed only Monday�Friday (no weekends).<br>
-            �  Withdrawals take up to 24 hours to be approved by admin.
+            📌 Withdrawal rules:<br>
+            • 20% fee applies on all withdrawals.<br>
+            • Minimum withdrawal: 20 ZMW.<br>
+            • Withdrawals allowed only Monday–Friday (no weekends).<br>
+            • ⏱️ Withdrawals take up to 24 hours to be approved by admin.<br>
+            • <span id="dynamicRulesMsg">Requirements checked by admin settings.</span>
         </div>
-    </div>
-</div>
-
-<!-- Bottom Navigation (6 icons) -->
-<div class="bottom-nav">
-    <div class="nav-item" data-page="dashboard.html">
-        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
-    </div>
-    <div class="nav-item" data-page="mkvip.html">
-        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
-    </div>
-    <div class="nav-item" data-page="jproduct.html">
-        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
-    </div>
-    <div class="nav-item" data-page="income.html">
-        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
-    </div>
-    <div class="nav-item" data-page="team.html">
-        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
-    </div>
-    <div class="nav-item" data-page="me.html">
-        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
     </div>
 </div>
 
 <canvas id="fireworks" class="hidden"></canvas>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
-        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        apiKey: "AIzaSyALbWDHrhratYCCqWpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
         storageBucket: "pureore-capital-zambia.appspot.com",
@@ -347,16 +305,11 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    //  DISABLE OFFLINE PERSISTENCE � Only work online
     db.settings({ persistence: false });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    //  Authentication guard � redirect to login if not logged in
     auth.onAuthStateChanged((user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-        }
+        if (!user) window.location.href = 'login.html';
     });
 
     // DOM elements
@@ -374,14 +327,39 @@
     const cardErrorDiv = document.getElementById('cardError');
     const amountErrorDiv = document.getElementById('amountError');
     const generalErrorDiv = document.getElementById('generalError');
+    const dynamicRulesMsg = document.getElementById('dynamicRulesMsg');
 
     let selectedNetwork = '';
     let selectedBank = '';
     let currentAmount = 0;
     let netAfterFee = 0;
     let currentBalance = 0;
+    let withdrawRules = { requireDeposit: true, requireInvestment: true };
 
-    // Bank chip selection
+    // Load withdrawal rules from Firestore
+    async function loadWithdrawalRules() {
+        const doc = await db.collection('systemSettings').doc('withdrawalRules').get();
+        if (doc.exists) {
+            withdrawRules.requireDeposit = doc.data().requireDeposit !== false;
+            withdrawRules.requireInvestment = doc.data().requireInvestment !== false;
+        } else {
+            withdrawRules.requireDeposit = true;
+            withdrawRules.requireInvestment = true;
+        }
+        // Update dynamic rule text
+        let ruleText = '';
+        if (!withdrawRules.requireDeposit && !withdrawRules.requireInvestment) {
+            ruleText = '✅ No deposit or investment required to withdraw (admin relaxed rules).';
+        } else if (!withdrawRules.requireDeposit) {
+            ruleText = '✅ Deposit not required, but you must have at least one active investment.';
+        } else if (!withdrawRules.requireInvestment) {
+            ruleText = '✅ Investment not required, but you must have made a completed deposit.';
+        } else {
+            ruleText = '⚠️ You need at least one completed deposit AND one active investment to withdraw.';
+        }
+        dynamicRulesMsg.innerText = ruleText;
+    }
+
     const bankChips = document.querySelectorAll('.bank-chip');
     bankChips.forEach(chip => {
         chip.addEventListener('click', () => {
@@ -393,7 +371,6 @@
         });
     });
 
-    // Show/hide network fields
     networkSelect.addEventListener('change', () => {
         selectedNetwork = networkSelect.value;
         if (selectedNetwork === 'bank') {
@@ -412,7 +389,6 @@
         validateForm();
     });
 
-    // Phone validation (9 digits, prefix checks per network)
     function validatePhone() {
         if (!selectedNetwork || selectedNetwork === 'bank') return true;
         const digits = phoneInput.value.trim();
@@ -425,11 +401,10 @@
         if (selectedNetwork === 'mtn') valid = (prefix === '96' || prefix === '76');
         else if (selectedNetwork === 'airtel') valid = (prefix === '97' || prefix === '77' || prefix === '57');
         else if (selectedNetwork === 'zamtel') valid = (prefix === '95' || prefix === '75');
-        phoneErrorDiv.innerText = valid ? '' : `Invalid prefix for ${selectedNetwork.toUpperCase()}. Must start with appropriate prefix.`;
+        phoneErrorDiv.innerText = valid ? '' : `Invalid prefix for ${selectedNetwork.toUpperCase()}.`;
         return valid;
     }
 
-    // Bank card validation: exactly 16 digits
     function validateBankCard() {
         if (selectedNetwork !== 'bank') return true;
         const card = bankCardInput.value.trim();
@@ -456,7 +431,6 @@
         validateForm();
     });
 
-    // Amount + discount calculation
     withdrawAmountInput.addEventListener('input', () => {
         let amount = parseFloat(withdrawAmountInput.value);
         if (isNaN(amount)) amount = 0;
@@ -481,7 +455,6 @@
         validateForm();
     });
 
-    // Check if user has any active loan
     async function hasActiveLoan(userId) {
         const loansSnapshot = await db.collection('loans')
             .where('userId', '==', userId)
@@ -491,35 +464,37 @@
         return !loansSnapshot.empty;
     }
 
-    // Check if today is weekend (Saturday or Sunday)
     function isWeekend() {
         const today = new Date();
-        const day = today.getDay(); // 0 = Sunday, 6 = Saturday
+        const day = today.getDay();
         return day === 0 || day === 6;
     }
 
-    // Eligibility check: deposit, investment, no active loan, and sufficient balance
     async function checkEligibility(userId) {
         try {
-            // Get current balance
             const userDoc = await db.collection('users').doc(userId).get();
             if (!userDoc.exists) {
                 return { hasDeposit: false, hasInvestment: false, activeLoan: false, hasBalance: false };
             }
             currentBalance = userDoc.data().balance || 0;
 
-            const depositsQuery = await db.collection('deposits')
-                .where('userId', '==', userId)
-                .where('status', '==', 'completed')
-                .limit(1)
-                .get();
-            const hasDeposit = !depositsQuery.empty;
-
-            const investmentsQuery = await db.collection('investments')
-                .where('userId', '==', userId)
-                .limit(1)
-                .get();
-            const hasInvestment = !investmentsQuery.empty;
+            let hasDeposit = true;
+            let hasInvestment = true;
+            if (withdrawRules.requireDeposit) {
+                const depositsQuery = await db.collection('deposits')
+                    .where('userId', '==', userId)
+                    .where('status', '==', 'completed')
+                    .limit(1)
+                    .get();
+                hasDeposit = !depositsQuery.empty;
+            }
+            if (withdrawRules.requireInvestment) {
+                const investmentsQuery = await db.collection('investments')
+                    .where('userId', '==', userId)
+                    .limit(1)
+                    .get();
+                hasInvestment = !investmentsQuery.empty;
+            }
 
             const activeLoan = await hasActiveLoan(userId);
             const hasBalance = (currentBalance >= currentAmount);
@@ -531,7 +506,6 @@
         }
     }
 
-    // Validate entire form
     function validateForm() {
         const networkOk = selectedNetwork !== '';
         let contactOk = false;
@@ -546,7 +520,6 @@
         confirmBtn.disabled = !(networkOk && contactOk && amountOk);
     }
 
-    // Fireworks effect (with cleanup)
     let fireworksAnimationId = null;
     function showFireworks() {
         const canvas = document.getElementById('fireworks');
@@ -609,16 +582,17 @@
         }, 3000);
     }
 
-    // Main withdrawal action
     confirmBtn.addEventListener('click', async () => {
         if (confirmBtn.disabled) return;
         generalErrorDiv.innerText = '';
         confirmBtn.disabled = true;
         confirmBtn.innerText = 'Checking eligibility...';
 
-        // Weekend check
+        // Load latest withdrawal rules
+        await loadWithdrawalRules();
+
         if (isWeekend()) {
-            generalErrorDiv.innerText = ' Withdrawals are only allowed Monday�Friday. Please try again on a weekday.';
+            generalErrorDiv.innerText = '⛔ Withdrawals are only allowed Monday–Friday. Please try again on a weekday.';
             confirmBtn.disabled = false;
             confirmBtn.innerText = 'Confirm Withdrawal';
             return;
@@ -632,26 +606,26 @@
         const userId = user.uid;
 
         const { hasDeposit, hasInvestment, activeLoan, hasBalance } = await checkEligibility(userId);
-        if (!hasDeposit) {
-            generalErrorDiv.innerText = ' You must make a completed deposit before withdrawing.';
+        if (!hasDeposit && withdrawRules.requireDeposit) {
+            generalErrorDiv.innerText = '❌ You must make a completed deposit before withdrawing. (Requirement set by admin)';
             confirmBtn.disabled = false;
             confirmBtn.innerText = 'Confirm Withdrawal';
             return;
         }
-        if (!hasInvestment) {
-            generalErrorDiv.innerText = ' You must purchase at least one investment plan before withdrawing.';
+        if (!hasInvestment && withdrawRules.requireInvestment) {
+            generalErrorDiv.innerText = '❌ You must purchase at least one investment plan before withdrawing. (Requirement set by admin)';
             confirmBtn.disabled = false;
             confirmBtn.innerText = 'Confirm Withdrawal';
             return;
         }
         if (activeLoan) {
-            generalErrorDiv.innerText = ' You have an active loan. You must repay it before withdrawing.';
+            generalErrorDiv.innerText = '❌ You have an active loan. You must repay it before withdrawing.';
             confirmBtn.disabled = false;
             confirmBtn.innerText = 'Confirm Withdrawal';
             return;
         }
         if (!hasBalance) {
-            generalErrorDiv.innerText = ` Insufficient balance. Your balance is ${currentBalance.toFixed(2)} ZMW, but you requested ${currentAmount.toFixed(2)} ZMW.`;
+            generalErrorDiv.innerText = `❌ Insufficient balance. Your balance is ${currentBalance.toFixed(2)} ZMW, but you requested ${currentAmount.toFixed(2)} ZMW.`;
             confirmBtn.disabled = false;
             confirmBtn.innerText = 'Confirm Withdrawal';
             return;
@@ -677,7 +651,7 @@
             await db.collection('withdrawals').add(withdrawData);
             showFireworks();
             generalErrorDiv.style.color = '#2ecc71';
-            generalErrorDiv.innerText = ' Withdrawal request submitted! Redirecting to history...';
+            generalErrorDiv.innerText = '✅ Withdrawal request submitted! Redirecting to history...';
             setTimeout(() => {
                 window.location.href = 'history.html';
             }, 3000);
@@ -689,18 +663,8 @@
         }
     });
 
-    // Bottom navigation active state and redirection
-    const navItems = document.querySelectorAll('.nav-item');
-    const currentPage = window.location.pathname.split('/').pop() || 'withdraw.html';
-    navItems.forEach(item => {
-        const targetPage = item.getAttribute('data-page');
-        if (currentPage === targetPage) item.classList.add('active');
-        item.addEventListener('click', () => {
-            if (targetPage && !window.location.pathname.includes(targetPage)) {
-                window.location.href = targetPage;
-            }
-        });
-    });
+    // Initial load of withdrawal rules
+    loadWithdrawalRules();
 </script>
 </body>
 </html>

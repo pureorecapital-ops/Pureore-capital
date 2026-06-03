@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -18,14 +19,27 @@
             transition: var(--transition);
         }
         :root {
-            --admin-primary: #00D4FF;
-            --admin-bg: #0A0E17;
-            --admin-card: #141B2B;
-            --admin-text: #E2E8F0;
-            --admin-border: #1F2A3E;
-            --admin-gradient: linear-gradient(135deg, #00D4FF, #7C3AED);
-            --admin-glow: 0 0 10px rgba(0,212,255,0.5);
+            --admin-primary: #ff4d4d;
+            --admin-bg: #0a0a0f;
+            --admin-card: #1a1a2e;
+            --admin-text: #f0f0f0;
+            --admin-border: #2d2d44;
+            --admin-gradient: linear-gradient(135deg, #ff4d4d, #9b59b6, #2ecc71);
+            --admin-glow: 0 0 12px rgba(255,77,77,0.6);
             --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .admin-title {
+            background: linear-gradient(270deg, #ff4d4d, #9b59b6, #2ecc71);
+            background-size: 600% 600%;
+            animation: gradientShift 6s ease infinite;
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         .container { max-width: 1400px; margin: 0 auto; }
         .admin-header {
@@ -38,10 +52,10 @@
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--admin-border);
         }
-        .admin-title { font-size: 1.8rem; font-weight: 800; background: var(--admin-gradient); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .admin-title { font-size: 1.8rem; font-weight: 800; }
         .header-stats { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
-        .badge { background: #FF5252; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-        .logout-btn { background: #FF5252; border: none; padding: 0.5rem 1.2rem; border-radius: 40px; color: white; font-weight: bold; cursor: pointer; transition: var(--transition); }
+        .badge { background: #ff4d4d; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .logout-btn { background: #ff4d4d; border: none; padding: 0.5rem 1.2rem; border-radius: 40px; color: white; font-weight: bold; cursor: pointer; transition: var(--transition); }
         .logout-btn:hover { transform: scale(1.02); filter: brightness(1.05); }
         .stats-grid {
             display: grid;
@@ -77,7 +91,7 @@
             cursor: pointer;
             transition: var(--transition);
         }
-        .tab-btn:hover { color: var(--admin-primary); background: rgba(0,212,255,0.1); }
+        .tab-btn:hover { color: #ff4d4d; background: rgba(255,77,77,0.1); }
         .tab-btn.active { background: var(--admin-gradient); color: white; box-shadow: var(--admin-glow); }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
@@ -91,13 +105,13 @@
             transition: var(--transition);
         }
         .admin-card:hover { transform: translateY(-3px); border-color: var(--admin-primary); box-shadow: var(--admin-glow); }
-        .card-title { color: var(--admin-primary); margin-bottom: 1rem; border-left: 4px solid var(--admin-primary); padding-left: 12px; font-size: 1.2rem; font-weight: 700; }
+        .card-title { color: #ff4d4d; margin-bottom: 1rem; border-left: 4px solid #ff4d4d; padding-left: 12px; font-size: 1.2rem; font-weight: 700; }
         table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
         th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid var(--admin-border); }
-        th { background: rgba(0,212,255,0.1); color: var(--admin-primary); }
+        th { background: rgba(255,77,77,0.1); color: #ff4d4d; }
         .btn-small {
-            background: var(--admin-primary);
-            color: #0A0E17;
+            background: #ff4d4d;
+            color: white;
             border: none;
             padding: 0.3rem 1rem;
             border-radius: 30px;
@@ -109,8 +123,8 @@
         }
         .btn-small:hover { transform: scale(1.02); box-shadow: var(--admin-glow); }
         .btn-small.warning { background: #FFB347; color: #0A0E17; }
-        .btn-small.danger { background: #FF5252; color: white; }
-        .btn-small.success { background: #00E676; color: #0A0E17; }
+        .btn-small.danger { background: #ff3333; color: white; }
+        .btn-small.success { background: #2ecc71; color: #0A0E17; }
         .edit-balance { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .edit-balance input, .plan-form input, .news-form input, .news-form textarea, .code-form input, .support-reply textarea {
             background: var(--admin-bg);
@@ -137,7 +151,7 @@
             padding: 1.5rem;
             width: 90%;
             max-width: 500px;
-            border: 1px solid var(--admin-primary);
+            border: 1px solid #ff4d4d;
         }
         .modal-content input, .modal-content select, .modal-content textarea {
             width: 100%;
@@ -149,6 +163,7 @@
             color: white;
         }
         .color-preview { width: 40px; height: 40px; border-radius: 8px; display: inline-block; margin-left: 0.5rem; vertical-align: middle; border: 1px solid var(--admin-border); }
+        .image-upload-preview { max-width: 100px; max-height: 100px; margin-top: 0.5rem; border-radius: 12px; }
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .tab-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
@@ -251,12 +266,29 @@
 
     <!-- Settings Tab -->
     <div id="settingsTab" class="tab-content">
-        <div class="admin-card"><div class="card-title">⚙️ System Settings</div>
+        <div class="admin-card">
+            <div class="card-title">⚙️ General Settings</div>
             <div><label>Website Name</label> <input type="text" id="websiteName" style="width:100%;"></div>
             <div><label>Contact Email</label> <input type="email" id="contactEmail" style="width:100%;"></div>
             <div><label>Contact Phone</label> <input type="text" id="contactPhone" style="width:100%;"></div>
             <div><label>Payment Methods Info</label> <textarea id="paymentMethods" rows="3" style="width:100%;"></textarea></div>
             <button id="saveSettingsBtn" class="btn-small success">Save Settings</button>
+        </div>
+
+        <!-- NEW: Withdrawal Rules -->
+        <div class="admin-card">
+            <div class="card-title">💸 Withdrawal Rules</div>
+            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="withdrawRequireDeposit" checked> Require at least one completed deposit before withdrawal
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="withdrawRequireInvestment" checked> Require at least one investment plan before withdrawal
+                </label>
+                <p class="note" style="font-size: 0.8rem; color: #aaa;">If unchecked, users can withdraw without meeting those requirements.</p>
+                <button id="saveWithdrawRulesBtn" class="btn-small success">Save Withdrawal Rules</button>
+                <div id="withdrawRulesMsg" style="margin-top: 0.5rem;"></div>
+            </div>
         </div>
     </div>
 
@@ -267,14 +299,13 @@
 
     <!-- Appearance Tab -->
     <div id="appearanceTab" class="tab-content">
-        <!-- Admin Panel Colors -->
         <div class="admin-card">
             <div class="card-title">🎨 Admin Panel Colors</div>
             <div style="display: grid; gap: 1rem;">
-                <div><label>Primary Color</label> <input type="color" id="primaryColor" value="#00D4FF"> <span class="color-preview" id="primaryColorPreview" style="background:#00D4FF"></span></div>
-                <div><label>Background Color</label> <input type="color" id="bgColor" value="#0A0E17"> <span class="color-preview" style="background:#0A0E17"></span></div>
-                <div><label>Card Background</label> <input type="color" id="cardColor" value="#141B2B"> <span class="color-preview" style="background:#141B2B"></span></div>
-                <div><label>Text Color</label> <input type="color" id="textColor" value="#E2E8F0"> <span class="color-preview" style="background:#E2E8F0"></span></div>
+                <div><label>Primary Color</label> <input type="color" id="primaryColor" value="#ff4d4d"> <span class="color-preview" id="primaryColorPreview" style="background:#ff4d4d"></span></div>
+                <div><label>Background Color</label> <input type="color" id="bgColor" value="#0a0a0f"> <span class="color-preview" style="background:#0a0a0f"></span></div>
+                <div><label>Card Background</label> <input type="color" id="cardColor" value="#1a1a2e"> <span class="color-preview" style="background:#1a1a2e"></span></div>
+                <div><label>Text Color</label> <input type="color" id="textColor" value="#f0f0f0"> <span class="color-preview" style="background:#f0f0f0"></span></div>
                 <div><label>Gradient Direction (deg)</label> <input type="number" id="gradientDeg" value="135" step="1"></div>
                 <div><label>Glow Effect</label> <input type="checkbox" id="glowEffect" checked></div>
                 <div><label>Animation Speed (ms)</label> <input type="range" id="animSpeed" min="0" max="1000" value="300" step="10"> <span id="animSpeedVal">300ms</span></div>
@@ -282,9 +313,8 @@
             </div>
         </div>
 
-        <!-- NEW: User Page Colors (applies to all user‑facing pages) -->
         <div class="admin-card">
-            <div class="card-title">🎨 User Page Colors (register, login, dashboard, deposit, withdraw, etc.)</div>
+            <div class="card-title">🎨 User Page Colors</div>
             <div style="display: grid; gap: 1rem;">
                 <div><label>User Primary Color</label> <input type="color" id="userPrimaryColor" value="#2ecc71"> <span class="color-preview" id="userPrimaryPreview" style="background:#2ecc71"></span></div>
                 <div><label>User Background Color</label> <input type="color" id="userBgColor" value="#0A0A0C"> <span class="color-preview" style="background:#0A0A0C"></span></div>
@@ -293,23 +323,21 @@
                 <div><label>User Accent Color</label> <input type="color" id="userAccentColor" value="#e67e22"> <span class="color-preview" style="background:#e67e22"></span></div>
                 <div><label>User Gradient Start / End</label> <input type="color" id="userGradStart" value="#2ecc71"> <input type="color" id="userGradEnd" value="#f1c40f"></div>
                 <button id="saveUserAppearanceBtn" class="btn-small success">Save User Page Colors</button>
-                <small class="note" style="color: #aaa;">These colors will be applied to all user pages that include the universal script.</small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modals (unchanged) -->
-<div id="addPlanModal" class="modal"><div class="modal-content"><h3>Add Investment Plan</h3><input type="text" id="planName" placeholder="Plan Name"><input type="number" id="planMin" placeholder="Min Amount"><input type="number" id="planMax" placeholder="Max Amount"><input type="number" id="planDays" placeholder="Days"><input type="number" id="planDailyReturn" placeholder="Daily Return (%)"><input type="text" id="planImage" placeholder="Image URL"><input type="text" id="planLock" placeholder="Lock Text (optional)"><input type="text" id="planExpiry" placeholder="Expiry (Auto or date)"><textarea id="planDesc" placeholder="Description"></textarea><input type="hidden" id="planType"><button id="savePlanBtn" class="btn-small success">Save</button><button class="btn-small" onclick="closeModal('addPlanModal')">Cancel</button></div></div>
-<div id="editPlanModal" class="modal"><div class="modal-content"><h3>Edit Plan</h3><input type="hidden" id="editPlanId"><input type="hidden" id="editPlanType"><input type="text" id="editPlanName" placeholder="Name"><input type="number" id="editPlanMin" placeholder="Min"><input type="number" id="editPlanMax" placeholder="Max"><input type="number" id="editPlanDays" placeholder="Days"><input type="number" id="editPlanDailyReturn" placeholder="Daily Return %"><input type="text" id="editPlanImage" placeholder="Image URL"><input type="text" id="editPlanLock" placeholder="Lock Text"><input type="text" id="editPlanExpiry" placeholder="Expiry"><textarea id="editPlanDesc" placeholder="Description"></textarea><button id="updatePlanBtn" class="btn-small success">Update</button><button class="btn-small" onclick="closeModal('editPlanModal')">Cancel</button></div></div>
+<!-- Modals -->
+<div id="addPlanModal" class="modal"><div class="modal-content"><h3>Add Investment Plan</h3><input type="text" id="planName" placeholder="Plan Name"><input type="number" id="planMin" placeholder="Min Amount"><input type="number" id="planMax" placeholder="Max Amount"><input type="number" id="planDays" placeholder="Days"><input type="number" id="planDailyReturn" placeholder="Daily Return (%)"><input type="text" id="planImage" placeholder="Image URL (or upload below)"><div><label>Upload Image (max 200px)</label><input type="file" id="planImageFile" accept="image/*"><div id="planImagePreview"></div></div><input type="text" id="planLock" placeholder="Lock Text (optional)"><input type="text" id="planExpiry" placeholder="Expiry (Auto or date)"><textarea id="planDesc" placeholder="Description"></textarea><input type="hidden" id="planType"><button id="savePlanBtn" class="btn-small success">Save</button><button class="btn-small" onclick="closeModal('addPlanModal')">Cancel</button></div></div>
+<div id="editPlanModal" class="modal"><div class="modal-content"><h3>Edit Plan</h3><input type="hidden" id="editPlanId"><input type="hidden" id="editPlanType"><input type="text" id="editPlanName" placeholder="Name"><input type="number" id="editPlanMin" placeholder="Min"><input type="number" id="editPlanMax" placeholder="Max"><input type="number" id="editPlanDays" placeholder="Days"><input type="number" id="editPlanDailyReturn" placeholder="Daily Return %"><input type="text" id="editPlanImage" placeholder="Image URL"><div><label>Upload New Image (optional)</label><input type="file" id="editPlanImageFile" accept="image/*"><div id="editPlanImagePreview"></div></div><input type="text" id="editPlanLock" placeholder="Lock Text"><input type="text" id="editPlanExpiry" placeholder="Expiry"><textarea id="editPlanDesc" placeholder="Description"></textarea><button id="updatePlanBtn" class="btn-small success">Update</button><button class="btn-small" onclick="closeModal('editPlanModal')">Cancel</button></div></div>
 <div id="addNewsModal" class="modal"><div class="modal-content"><h3>Add News</h3><input type="text" id="newsTitle" placeholder="Title"><textarea id="newsContent" rows="4" placeholder="Content"></textarea><input type="text" id="newsImage" placeholder="Image URL (optional)"><button id="saveNewsBtn" class="btn-small success">Post</button><button class="btn-small" onclick="closeModal('addNewsModal')">Cancel</button></div></div>
 <div id="addTreasureModal" class="modal"><div class="modal-content"><h3>Create Treasure Code</h3><input type="text" id="treasureCode" placeholder="7 characters (letters+numbers)" maxlength="7"><input type="number" id="treasureAmount" placeholder="Amount (ZMW)"><button id="saveTreasureBtn" class="btn-small success">Create</button><button class="btn-small" onclick="closeModal('addTreasureModal')">Cancel</button></div></div>
-<div id="addVoucherModal" class="modal"><div class="modal-content"><h3>Create Voucher Code</h3><input type="text" id="voucherCode" placeholder="10 characters (e.g., 001250ABCD)" maxlength="10"><input type="number" id="voucherAmount" placeholder="Amount (ZMW)"><button id="saveVoucherBtn" class="btn-small success">Create</button><button class="btn-small" onclick="closeModal('addVoucherModal')">Cancel</button></div></div>
+<div id="addVoucherModal" class="modal"><div class="modal-content"><h3>Create Voucher Code</h3><p>Code will be generated automatically: first 6 digits = amount (with leading zeros), last 4 random letters.</p><input type="number" id="voucherAmountInput" placeholder="Amount (ZMW)" step="1"><button id="generateVoucherBtn" class="btn-small success">Generate & Create</button><div id="generatedVoucherCode" style="margin-top:0.5rem; font-weight:bold;"></div><button class="btn-small" onclick="closeModal('addVoucherModal')">Cancel</button></div></div>
 <div id="addAdminModal" class="modal"><div class="modal-content"><h3>Add Admin</h3><input type="email" id="adminEmail" placeholder="Admin Email"><input type="password" id="adminPassword" placeholder="Password (min 6)"><button id="createAdminBtn" class="btn-small success">Create Admin</button><button class="btn-small" onclick="closeModal('addAdminModal')">Cancel</button></div></div>
 <div id="supportReplyModal" class="modal"><div class="modal-content"><h3>Reply to Ticket</h3><input type="hidden" id="replyTicketId"><textarea id="replyMessage" rows="4" placeholder="Your reply..."></textarea><button id="sendReplyBtn" class="btn-small success">Send Reply</button><button class="btn-small" onclick="closeModal('supportReplyModal')">Cancel</button></div></div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -321,24 +349,60 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const storage = firebase.storage();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper functions
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
     function formatMoney(amt) { return 'K' + parseFloat(amt).toFixed(2); }
-    function showToast(msg, isError = false) { alert(msg); } // simple
+    function showToast(msg, isError = false) { alert(msg); }
 
-    // Global variables
-    let currentPlanType = '';
+    async function uploadPlanImage(file, pathPrefix) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = async function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxSize = 200;
+                    if (width > height) {
+                        if (width > maxSize) {
+                            height = (height * maxSize) / width;
+                            width = maxSize;
+                        }
+                    } else {
+                        if (height > maxSize) {
+                            width = (width * maxSize) / height;
+                            height = maxSize;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(async (blob) => {
+                        const storageRef = storage.ref(`${pathPrefix}/${Date.now()}_${file.name}`);
+                        try {
+                            await storageRef.put(blob);
+                            const url = await storageRef.getDownloadURL();
+                            resolve(url);
+                        } catch (err) { reject(err); }
+                    }, 'image/jpeg', 0.8);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 
-    // ==================== AUTH & INIT ====================
     auth.onAuthStateChanged(async (user) => {
         if (!user) { window.location.href = 'admin-login.html'; return; }
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (!userDoc.exists || userDoc.data().role !== 'admin') { showToast('Access denied', true); setTimeout(() => window.location.href = 'admin-login.html', 1500); return; }
         if (userDoc.data().isBlocked === true) { await auth.signOut(); showToast('Admin account blocked', true); window.location.href = 'admin-login.html'; return; }
-        // Load all sections
         loadStats(); loadRecentActivities(); loadUsers(); loadPendingDeposits(); loadDepositsHistory(); loadPendingWithdrawals(); loadWithdrawalsHistory(); loadMkvipPlans(); loadJproductPlans(); loadTransactions(); loadNews(); loadSupportTickets(); loadTreasureCodes(); loadVouchers(); loadSettings(); loadAdmins(); loadAppearanceSettings(); loadUserAppearanceSettings();
+        loadWithdrawalRules();  // <-- NEW
         setupPendingListeners();
     });
 
@@ -347,7 +411,6 @@
         db.collection('withdrawals').where('status', '==', 'pending').onSnapshot(snap => { document.getElementById('pendingWithdrawalsBadge').innerHTML = `Withdrawals: ${snap.size}`; document.getElementById('pendingCount').innerText = snap.size + (parseInt(document.getElementById('pendingDepositsBadge').innerText.match(/\d+/) || 0)); });
     }
 
-    // Stats
     async function loadStats() {
         const usersSnap = await db.collection('users').get();
         document.getElementById('totalUsers').innerText = usersSnap.size;
@@ -359,7 +422,6 @@
         document.getElementById('totalWithdrawals').innerText = totalWith.toFixed(2);
     }
 
-    // Recent Activities
     async function loadRecentActivities() {
         const activities = [];
         const deposits = await db.collection('deposits').orderBy('createdAt', 'desc').limit(5).get();
@@ -384,7 +446,11 @@
                 <td><select class="role-select" data-id="${doc.id}"><option ${u.role==='admin'?'selected':''}>admin</option><option ${u.role==='user'?'selected':''}>user</option></select></td>
                 <td><button class="btn-small ${u.isBlocked ? 'warning' : 'danger'}" onclick="toggleBlock('${doc.id}', ${u.isBlocked})">${u.isBlocked ? 'Unblock' : 'Block'}</button></td>
                 <td><button class="btn-small ${u.canRequestLoan===false ? 'warning' : 'success'}" onclick="toggleLoanFlag('${doc.id}', ${u.canRequestLoan===false})">${u.canRequestLoan===false ? 'Allow Loan' : 'Disable Loan'}</button></td>
-                <td><div class="edit-balance"><input type="number" id="bal_${doc.id}" placeholder="New balance"><button class="btn-small" onclick="updateBalance('${doc.id}')">Set</button></div></td>
+                <td>
+                    <div class="edit-balance"><input type="number" id="bal_${doc.id}" placeholder="New balance"><button class="btn-small" onclick="updateBalance('${doc.id}')">Set</button></div>
+                    <button class="btn-small warning" onclick="resetUserPassword('${u.email}')">Reset Password</button>
+                    <button class="btn-small danger" onclick="deleteUserAccount('${doc.id}', '${u.email}')">Delete Account</button>
+                </td>
             </tr>`;
         }
         html += '</table>';
@@ -394,8 +460,37 @@
     window.toggleBlock = async (uid, isBlocked) => { await db.collection('users').doc(uid).update({ isBlocked: !isBlocked }); loadUsers(); };
     window.toggleLoanFlag = async (uid, isDisabled) => { await db.collection('users').doc(uid).update({ canRequestLoan: isDisabled }); loadUsers(); };
     window.updateBalance = async (uid) => { const newBal = parseFloat(document.getElementById(`bal_${uid}`).value); if(isNaN(newBal)) return; await db.collection('users').doc(uid).update({ balance: newBal }); showToast('Balance updated'); loadUsers(); loadStats(); };
+    window.resetUserPassword = async (email) => {
+        try {
+            await auth.sendPasswordResetEmail(email);
+            showToast(`Password reset email sent to ${email}`, false);
+        } catch (err) { showToast(err.message, true); }
+    };
+    window.deleteUserAccount = async (uid, email) => {
+        if (!confirm(`Permanently delete user ${email}? This will remove all their data and cannot be undone.`)) return;
+        try {
+            const batch = db.batch();
+            const investments = await db.collection('investments').where('userId', '==', uid).get();
+            investments.forEach(doc => batch.delete(doc.ref));
+            const deposits = await db.collection('deposits').where('userId', '==', uid).get();
+            deposits.forEach(doc => batch.delete(doc.ref));
+            const withdrawals = await db.collection('withdrawals').where('userId', '==', uid).get();
+            withdrawals.forEach(doc => batch.delete(doc.ref));
+            const loans = await db.collection('loans').where('userId', '==', uid).get();
+            loans.forEach(doc => batch.delete(doc.ref));
+            const transactions = await db.collection('transactions').where('userId', '==', uid).get();
+            transactions.forEach(doc => batch.delete(doc.ref));
+            const referrals = await db.collection('referralEarnings').where('referrerId', '==', uid).get();
+            referrals.forEach(doc => batch.delete(doc.ref));
+            batch.delete(db.collection('users').doc(uid));
+            await batch.commit();
+            await db.collection('users').doc(uid).set({ deleted: true }, { merge: true });
+            showToast(`User ${email} deleted (Firestore data removed).`, false);
+            loadUsers(); loadStats();
+        } catch (err) { showToast(err.message, true); }
+    };
 
-    // ==================== DEPOSITS ====================
+    // ==================== DEPOSITS, WITHDRAWALS, PLANS ====================
     async function loadPendingDeposits() {
         const pending = await db.collection('deposits').where('status', '==', 'pending').get();
         let html = '<table><tr><th>User</th><th>Amount</th><th>Method</th><th>Screenshot</th><th>Actions</th></tr>';
@@ -428,7 +523,6 @@
         document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td></tr>';
     }
 
-    // ==================== WITHDRAWALS ====================
     async function loadPendingWithdrawals() {
         const pending = await db.collection('withdrawals').where('status', '==', 'pending').get();
         let html = '<table><tr><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>';
@@ -474,17 +568,24 @@
         });
         document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td></tr>';
     }
-    window.openAddPlanModal = (type) => { currentPlanType = type; document.getElementById('planType').value = type; document.getElementById('addPlanModal').style.display = 'flex'; };
+    window.openAddPlanModal = (type) => { currentPlanType = type; document.getElementById('planType').value = type; document.getElementById('addPlanModal').style.display = 'flex'; document.getElementById('planImagePreview').innerHTML = ''; document.getElementById('planImageFile').value = ''; };
     document.getElementById('savePlanBtn').onclick = async () => {
         const type = document.getElementById('planType').value;
         const collection = type === 'mkvip' ? 'mkvipPlans' : 'jproductPlans';
+        let imageUrl = document.getElementById('planImage').value.trim();
+        const imageFile = document.getElementById('planImageFile').files[0];
+        if (imageFile) {
+            try {
+                imageUrl = await uploadPlanImage(imageFile, `plan_images/${collection}`);
+            } catch(err) { showToast('Image upload failed', true); return; }
+        }
         const data = {
             name: document.getElementById('planName').value,
             minAmount: parseFloat(document.getElementById('planMin').value),
             maxAmount: parseFloat(document.getElementById('planMax').value),
             days: parseInt(document.getElementById('planDays').value),
             dailyReturn: parseFloat(document.getElementById('planDailyReturn').value),
-            image: document.getElementById('planImage').value,
+            image: imageUrl,
             lock: document.getElementById('planLock').value,
             expiry: document.getElementById('planExpiry').value,
             description: document.getElementById('planDesc').value,
@@ -508,18 +609,26 @@
         document.getElementById('editPlanLock').value = p.lock || '';
         document.getElementById('editPlanExpiry').value = p.expiry || '';
         document.getElementById('editPlanDesc').value = p.description || '';
+        document.getElementById('editPlanImagePreview').innerHTML = p.image ? `<img src="${p.image}" style="max-width:100px;">` : '';
         document.getElementById('editPlanModal').style.display = 'flex';
     };
     document.getElementById('updatePlanBtn').onclick = async () => {
         const id = document.getElementById('editPlanId').value;
         const collection = document.getElementById('editPlanType').value;
+        let imageUrl = document.getElementById('editPlanImage').value;
+        const imageFile = document.getElementById('editPlanImageFile').files[0];
+        if (imageFile) {
+            try {
+                imageUrl = await uploadPlanImage(imageFile, `plan_images/${collection}`);
+            } catch(err) { showToast('Image upload failed', true); return; }
+        }
         const data = {
             name: document.getElementById('editPlanName').value,
             minAmount: parseFloat(document.getElementById('editPlanMin').value),
             maxAmount: parseFloat(document.getElementById('editPlanMax').value),
             days: parseInt(document.getElementById('editPlanDays').value),
             dailyReturn: parseFloat(document.getElementById('editPlanDailyReturn').value),
-            image: document.getElementById('editPlanImage').value,
+            image: imageUrl,
             lock: document.getElementById('editPlanLock').value,
             expiry: document.getElementById('editPlanExpiry').value,
             description: document.getElementById('editPlanDesc').value
@@ -531,7 +640,7 @@
     };
     window.deletePlan = async (id, collection) => { if(confirm('Delete plan?')) { await db.collection(collection).doc(id).delete(); if(collection === 'mkvipPlans') loadMkvipPlans(); else loadJproductPlans(); showToast('Deleted'); } };
 
-    // ==================== TRANSACTIONS ====================
+    // ==================== TRANSACTIONS, NEWS, SUPPORT, TREASURE, VOUCHERS, SETTINGS, ADMINS, APPEARANCE ====================
     async function loadTransactions() {
         const txns = await db.collection('transactions').orderBy('createdAt', 'desc').get();
         let html = '<table><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>';
@@ -544,7 +653,6 @@
         document.getElementById('txSearchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#transactionsList tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
     }
 
-    // ==================== NEWS ====================
     async function loadNews() {
         const news = await db.collection('news').orderBy('createdAt', 'desc').get();
         let html = '<table><tr><th>Title</th><th>Image</th><th>Actions</th></tr>';
@@ -558,7 +666,6 @@
     };
     window.deleteNews = async (id) => { if(confirm('Delete news?')) { await db.collection('news').doc(id).delete(); loadNews(); } };
 
-    // ==================== SUPPORT TICKETS ====================
     async function loadSupportTickets() {
         const tickets = await db.collection('supportTickets').orderBy('createdAt', 'desc').get();
         let html = '<table><tr><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>';
@@ -578,7 +685,6 @@
     };
     window.closeTicket = async (id) => { await db.collection('supportTickets').doc(id).update({ status: 'closed' }); loadSupportTickets(); };
 
-    // ==================== TREASURE CODES ====================
     async function loadTreasureCodes() {
         const codes = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
         let html = '<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>';
@@ -595,24 +701,30 @@
     };
     window.deleteTreasureCode = async (id) => { if(confirm('Delete?')) { await db.collection('treasureCodes').doc(id).delete(); loadTreasureCodes(); } };
 
-    // ==================== VOUCHERS ====================
     async function loadVouchers() {
         const vouchers = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
         let html = '<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>';
         vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td><td>${v.amount}</td><td>${v.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td></tr>`; });
         document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td></tr>';
     }
-    window.openAddVoucherModal = () => { document.getElementById('addVoucherModal').style.display = 'flex'; };
-    document.getElementById('saveVoucherBtn').onclick = async () => {
-        const code = document.getElementById('voucherCode').value.toUpperCase();
-        const amount = parseFloat(document.getElementById('voucherAmount').value);
-        if(code.length !== 10 || !/^\d{6}[A-Z]{4}$/.test(code)) { showToast('Code must be 6 digits + 4 letters', true); return; }
+    window.openAddVoucherModal = () => { document.getElementById('addVoucherModal').style.display = 'flex'; document.getElementById('generatedVoucherCode').innerHTML = ''; };
+    document.getElementById('generateVoucherBtn').onclick = async () => {
+        const amount = parseFloat(document.getElementById('voucherAmountInput').value);
+        if (isNaN(amount) || amount <= 0 || !Number.isInteger(amount)) { showToast('Amount must be a positive whole number', true); return; }
+        const amountStr = amount.toString().padStart(6, '0');
+        if (amountStr.length > 6) { showToast('Amount too large (max 6 digits)', true); return; }
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let suffix = '';
+        for (let i = 0; i < 4; i++) suffix += letters[Math.floor(Math.random() * letters.length)];
+        const code = amountStr + suffix;
+        document.getElementById('generatedVoucherCode').innerHTML = `Generated code: <strong>${code}</strong>`;
         await db.collection('vouchers').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-        closeModal('addVoucherModal'); loadVouchers(); showToast('Voucher created');
+        showToast('Voucher created');
+        loadVouchers();
+        closeModal('addVoucherModal');
     };
     window.deleteVoucher = async (id) => { if(confirm('Delete?')) { await db.collection('vouchers').doc(id).delete(); loadVouchers(); } };
 
-    // ==================== SETTINGS ====================
     async function loadSettings() {
         const doc = await db.collection('systemSettings').doc('general').get();
         if(doc.exists) {
@@ -632,7 +744,33 @@
         showToast('Settings saved');
     };
 
-    // ==================== ADMINS ====================
+    // ==================== WITHDRAWAL RULES ====================
+    async function loadWithdrawalRules() {
+        const doc = await db.collection('systemSettings').doc('withdrawalRules').get();
+        if (doc.exists) {
+            const data = doc.data();
+            document.getElementById('withdrawRequireDeposit').checked = data.requireDeposit !== false;
+            document.getElementById('withdrawRequireInvestment').checked = data.requireInvestment !== false;
+        } else {
+            document.getElementById('withdrawRequireDeposit').checked = true;
+            document.getElementById('withdrawRequireInvestment').checked = true;
+        }
+    }
+
+    document.getElementById('saveWithdrawRulesBtn').onclick = async () => {
+        const requireDeposit = document.getElementById('withdrawRequireDeposit').checked;
+        const requireInvestment = document.getElementById('withdrawRequireInvestment').checked;
+        await db.collection('systemSettings').doc('withdrawalRules').set({
+            requireDeposit: requireDeposit,
+            requireInvestment: requireInvestment,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        const msgDiv = document.getElementById('withdrawRulesMsg');
+        msgDiv.innerHTML = '<span style="color:#2ecc71;">✅ Withdrawal rules saved</span>';
+        setTimeout(() => msgDiv.innerHTML = '', 3000);
+    };
+
+    // ==================== ADMINS, APPEARANCE ====================
     async function loadAdmins() {
         const admins = await db.collection('users').where('role', '==', 'admin').get();
         let html = '<table><tr><th>Email</th><th>Name</th><th>Actions</th></tr>';
@@ -651,7 +789,6 @@
     };
     window.removeAdmin = async (uid) => { if(confirm('Remove admin?')) { await db.collection('users').doc(uid).delete(); loadAdmins(); } };
 
-    // ==================== APPEARANCE (Admin) ====================
     async function loadAppearanceSettings() {
         const doc = await db.collection('systemSettings').doc('appearance').get();
         if(doc.exists) {
@@ -678,7 +815,7 @@
         document.documentElement.style.setProperty('--admin-bg', bg);
         document.documentElement.style.setProperty('--admin-card', card);
         document.documentElement.style.setProperty('--admin-text', text);
-        document.documentElement.style.setProperty('--admin-gradient', `linear-gradient(${gradDeg}deg, ${primary}, #7C3AED)`);
+        document.documentElement.style.setProperty('--admin-gradient', `linear-gradient(${gradDeg}deg, ${primary}, #9b59b6, #2ecc71)`);
         if(glow) document.documentElement.style.setProperty('--admin-glow', `0 0 10px ${primary}`);
         else document.documentElement.style.setProperty('--admin-glow', 'none');
         document.documentElement.style.setProperty('--transition', `all ${speed/1000}s cubic-bezier(0.4,0,0.2,1)`);
@@ -707,7 +844,6 @@
     document.getElementById('glowEffect').addEventListener('change', applyAdminColors);
     document.getElementById('animSpeed').addEventListener('input', (e) => { document.getElementById('animSpeedVal').innerText = e.target.value + 'ms'; applyAdminColors(); });
 
-    // ==================== USER PAGE APPEARANCE (NEW) ====================
     async function loadUserAppearanceSettings() {
         const doc = await db.collection('systemSettings').doc('userAppearance').get();
         if (doc.exists) {
@@ -722,9 +858,7 @@
         }
         document.getElementById('userPrimaryPreview').style.backgroundColor = document.getElementById('userPrimaryColor').value;
     }
-    document.getElementById('userPrimaryColor').addEventListener('input', (e) => {
-        document.getElementById('userPrimaryPreview').style.backgroundColor = e.target.value;
-    });
+    document.getElementById('userPrimaryColor').addEventListener('input', (e) => { document.getElementById('userPrimaryPreview').style.backgroundColor = e.target.value; });
     document.getElementById('saveUserAppearanceBtn').onclick = async () => {
         const settings = {
             primaryColor: document.getElementById('userPrimaryColor').value,
@@ -736,14 +870,12 @@
             gradEnd: document.getElementById('userGradEnd').value,
         };
         await db.collection('systemSettings').doc('userAppearance').set(settings, { merge: true });
-        showToast('User page colors saved! They will apply to all pages that include the universal script.', false);
+        showToast('User page colors saved!', false);
     };
 
-    // ==================== UTILITIES ====================
     window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
     document.querySelectorAll('.modal').forEach(modal => { modal.addEventListener('click', (e) => { if(e.target === modal) modal.style.display = 'none'; }); });
 
-    // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -755,7 +887,6 @@
         });
     });
 
-    // Logout
     document.getElementById('adminLogoutBtn').addEventListener('click', async () => { await auth.signOut(); window.location.href = 'admin-login.html'; });
 </script>
 </body>

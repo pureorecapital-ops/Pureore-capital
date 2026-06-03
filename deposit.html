@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Deposit | Pureore Capital</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -253,62 +252,13 @@
         }
         .error-msg { color: #ef4444; font-size: 0.8rem; margin-top: 0.3rem; }
         .success-msg { color: #2ecc71; text-align: center; font-weight: bold; }
-        .loader {
-            border: 3px solid #2C2C3A;
-            border-top: 3px solid #2ecc71;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 1rem auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
         #fireworks { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
-
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(15, 15, 20, 0.95);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(46, 204, 113, 0.2);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 8px 12px 20px;
-            z-index: 30;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            flex: 1;
-            text-align: center;
-        }
-        .nav-item:hover { transform: translateY(-3px); }
-        .nav-icon {
-            width: 28px;
-            height: 28px;
-            object-fit: contain;
-            filter: brightness(0.8);
-        }
-        .nav-label {
-            font-size: 0.7rem;
-            color: #aaa;
-            font-weight: 500;
-        }
-        .nav-item.active .nav-label { color: #2ecc71; }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
+    <div class="back-arrow" id="backArrow">← Back</div>
     <div class="animated-title">💰 Deposit to grow your balance</div>
 
     <!-- Step 1 -->
@@ -376,32 +326,9 @@
     </div>
 </div>
 
-<!-- Bottom Navigation -->
-<div class="bottom-nav">
-    <div class="nav-item" data-page="dashboard.html">
-        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
-    </div>
-    <div class="nav-item" data-page="mkvip.html">
-        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
-    </div>
-    <div class="nav-item" data-page="jproduct.html">
-        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
-    </div>
-    <div class="nav-item" data-page="income.html">
-        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
-    </div>
-    <div class="nav-item" data-page="team.html">
-        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
-    </div>
-    <div class="nav-item" data-page="me.html">
-        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
-    </div>
-</div>
-
 <canvas id="fireworks" class="hidden"></canvas>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -415,17 +342,11 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
-    
-    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data
     db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ✅ Authentication guard
-    auth.onAuthStateChanged((user) => {
-        if (!user) window.location.href = 'login.html';
-    });
+    auth.onAuthStateChanged(user => { if (!user) window.location.href = 'login.html'; });
 
-    // Fireworks effect (unchanged)
     let fireworksAnimationId = null;
     function showFireworks() {
         const canvas = document.getElementById('fireworks');
@@ -433,10 +354,7 @@
         if (fireworksAnimationId) cancelAnimationFrame(fireworksAnimationId);
         canvas.classList.remove('hidden');
         const ctx = canvas.getContext('2d');
-        const resize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
+        const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
         resize();
         window.addEventListener('resize', resize);
         let particles = [];
@@ -507,20 +425,16 @@
     let selectedNetwork = null;
     let currentAgent = null;
 
-    // Set default date/time
     const now = new Date();
-    const defaultDate = now.toISOString().split('T')[0];
-    const defaultTime = now.toTimeString().slice(0,5);
-    transactionDateInput.value = defaultDate;
-    transactionTimeInput.value = defaultTime;
+    transactionDateInput.value = now.toISOString().split('T')[0];
+    transactionTimeInput.value = now.toTimeString().slice(0,5);
 
-    // Screenshot preview
     screenshotUpload.addEventListener('change', () => {
         const file = screenshotUpload.files[0];
         if (file) {
             fileNameDisplay.textContent = file.name;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = e => {
                 imagePreviewDiv.innerHTML = `<img src="${e.target.result}" alt="Screenshot preview">`;
                 imagePreviewDiv.classList.remove('hidden');
             };
@@ -604,7 +518,6 @@
         payNowBtn.disabled = !(amountOk && networkOk && phoneOk && ready);
     }
 
-    // ----- Hardcoded agents for DISPLAY only (user sees who to pay) -----
     const mtnAgentsDisplay = [
         { number: '0961391022', name: 'John Kabwe' },
         { number: '0960338304', name: 'Getrude Sonpo' }
@@ -612,42 +525,6 @@
     const airtelAgentDisplay = { number: '0775552002', name: 'John Kabwe' };
     const zamtelAgentDisplay = { number: '0951359357', name: 'Jeremiah Ilunga' };
 
-    // ----- Fetch agents from Firestore for validation -----
-    async function getAgentsForNetwork(network) {
-        try {
-            const snapshot = await db.collection('agents').where('network', '==', network).get();
-            if (!snapshot.empty) {
-                const agents = [];
-                snapshot.forEach(doc => agents.push(doc.data()));
-                return agents;
-            }
-        } catch (err) {
-            console.warn("Could not fetch agents from Firestore, using fallback:", err);
-        }
-        // Fallback to hardcoded agents if Firestore collection empty or error
-        if (network === 'mtn') return mtnAgentsDisplay;
-        if (network === 'airtel') return [airtelAgentDisplay];
-        if (network === 'zamtel') return [zamtelAgentDisplay];
-        return [];
-    }
-
-    // ----- Network detection from SMS (keywords) -----
-    function detectNetworkFromSms(sms) {
-        const lower = sms.toLowerCase();
-        if (lower.includes('reference')) return 'mtn';
-        if (lower.includes('transfer') || lower.includes('tid')) return 'airtel';
-        if (lower.includes('successfully')) return 'zamtel';
-        return null; // unknown
-    }
-
-    // ----- Check if agent name exists in SMS (for selected network) -----
-    async function isAgentNameValid(sms, network) {
-        const agents = await getAgentsForNetwork(network);
-        const lowerSms = sms.toLowerCase();
-        return agents.some(agent => lowerSms.includes(agent.name.toLowerCase()));
-    }
-
-    // Pay Now button – move to step 2 (unchanged)
     payNowBtn.addEventListener('click', async () => {
         if (payNowBtn.disabled) return;
         sessionStorage.setItem('depositAmount', selectedAmount);
@@ -655,21 +532,17 @@
         sessionStorage.setItem('depositPhone', getFullPhone());
         sessionStorage.setItem('depositPhoneDigits', phoneInput.value);
 
-        let agent = null;
         let agentHtml = '';
         if (selectedNetwork === 'mtn') {
             const index = Math.floor(Date.now() / 60000) % 2;
-            agent = mtnAgentsDisplay[index];
-            currentAgent = agent;
-            agentHtml = `<div class="agent-card"><div class="agent-header">📌 AGENT (MTN)</div><div class="agent-name">${agent.name}</div><div><span class="agent-number">${agent.number}</span><button class="copy-number" data-number="${agent.number}">Copy</button></div></div>`;
+            currentAgent = mtnAgentsDisplay[index];
+            agentHtml = `<div class="agent-card"><div class="agent-header">📌 AGENT (MTN)</div><div class="agent-name">${currentAgent.name}</div><div><span class="agent-number">${currentAgent.number}</span><button class="copy-number" data-number="${currentAgent.number}">Copy</button></div></div>`;
         } else if (selectedNetwork === 'airtel') {
-            agent = airtelAgentDisplay;
-            currentAgent = agent;
-            agentHtml = `<div class="agent-card"><div class="agent-header">📡 AGENT (Airtel)</div><div class="agent-name">${agent.name}</div><div><span class="agent-number">${agent.number}</span><button class="copy-number" data-number="${agent.number}">Copy</button></div></div>`;
+            currentAgent = airtelAgentDisplay;
+            agentHtml = `<div class="agent-card"><div class="agent-header">📡 AGENT (Airtel)</div><div class="agent-name">${currentAgent.name}</div><div><span class="agent-number">${currentAgent.number}</span><button class="copy-number" data-number="${currentAgent.number}">Copy</button></div></div>`;
         } else if (selectedNetwork === 'zamtel') {
-            agent = zamtelAgentDisplay;
-            currentAgent = agent;
-            agentHtml = `<div class="agent-card"><div class="agent-header">📶 AGENT (Zamtel)</div><div class="agent-name">${agent.name}</div><div><span class="agent-number">${agent.number}</span><button class="copy-number" data-number="${agent.number}">Copy</button></div></div>`;
+            currentAgent = zamtelAgentDisplay;
+            agentHtml = `<div class="agent-card"><div class="agent-header">📶 AGENT (Zamtel)</div><div class="agent-name">${currentAgent.name}</div><div><span class="agent-number">${currentAgent.number}</span><button class="copy-number" data-number="${currentAgent.number}">Copy</button></div></div>`;
         }
         agentInfoDiv.innerHTML = agentHtml;
         document.querySelectorAll('.copy-number').forEach(btn => {
@@ -682,128 +555,94 @@
         step2Card.classList.remove('hidden');
     });
 
-    // Verify & Complete button
+    // Back arrow: step2 -> step1, step1 -> dashboard
+    const backArrow = document.getElementById('backArrow');
+    backArrow.addEventListener('click', () => {
+        if (!step2Card.classList.contains('hidden')) {
+            // Go back to step 1
+            step2Card.classList.add('hidden');
+            step1Card.classList.remove('hidden');
+        } else {
+            // Already on step1, go to dashboard
+            window.location.href = 'dashboard.html';
+        }
+    });
+
+    // Fast verification
     verifyBtn.addEventListener('click', async () => {
-        const sms = smsTextarea.value;
+        const sms = smsTextarea.value.trim();
         const screenshotFile = screenshotUpload.files[0];
         const userDate = transactionDateInput.value;
         const userTime = transactionTimeInput.value;
 
-        if (!sms || !screenshotFile) {
-            verifyMessage.innerHTML = '<div class="error-msg">Please paste SMS and upload screenshot.</div>';
+        if (!sms) {
+            verifyMessage.innerHTML = '<div class="error-msg">❌ Please paste the SMS.</div>';
+            return;
+        }
+        if (!screenshotFile) {
+            verifyMessage.innerHTML = '<div class="error-msg">❌ Please upload a screenshot.</div>';
             return;
         }
         if (!userDate || !userTime) {
-            verifyMessage.innerHTML = '<div class="error-msg">Please set the transaction date and time.</div>';
+            verifyMessage.innerHTML = '<div class="error-msg">❌ Please set transaction date/time.</div>';
             return;
         }
-
-        const transactionTimestamp = new Date(`${userDate}T${userTime}:00`);
-        if (isNaN(transactionTimestamp.getTime())) {
-            verifyMessage.innerHTML = '<div class="error-msg">Invalid date/time format.</div>';
-            return;
-        }
-
-        const nowTime = new Date();
-        const hoursDiff = (nowTime - transactionTimestamp) / (1000 * 60 * 60);
-        if (hoursDiff > 24) {
-            verifyMessage.innerHTML = '<div class="error-msg">❌ This transaction is more than 24 hours old. Please contact support or initiate a new deposit.</div>';
-            return;
-        }
-
-        verifyMessage.innerHTML = '<div class="loader"></div><div>Verifying...</div>';
 
         const amount = parseFloat(sessionStorage.getItem('depositAmount'));
         if (!amount) {
-            verifyMessage.innerHTML = '<div class="error-msg">❌ Amount missing. Please go back.</div>';
+            verifyMessage.innerHTML = '<div class="error-msg">Amount missing. Go back.</div>';
             return;
         }
 
-        // 1. Amount check
-        const smsLower = sms.toLowerCase();
-        if (!smsLower.includes(amount.toString())) {
-            verifyMessage.innerHTML = '<div class="error-msg">❌ SMS amount does not match your deposit amount.</div>';
+        // Quick amount check (optional but helpful)
+        if (!sms.toLowerCase().includes(amount.toString())) {
+            verifyMessage.innerHTML = '<div class="error-msg">SMS amount does not match your deposit amount.</div>';
             return;
         }
 
-        // 2. Network keyword check (mtn/airtel/zamtel)
-        let networkKeyword = '';
-        if (selectedNetwork === 'mtn') networkKeyword = 'mtn';
-        else if (selectedNetwork === 'airtel') networkKeyword = 'airtel';
-        else if (selectedNetwork === 'zamtel') networkKeyword = 'zamtel';
-        if (!smsLower.includes(networkKeyword)) {
-            verifyMessage.innerHTML = `<div class="error-msg">❌ SMS does not contain the network name (${networkKeyword.toUpperCase()}). Please paste the correct SMS.</div>`;
-            return;
-        }
-
-        // 3. Transaction keyword check (send, sent, received, deposit, paid, transfer, successful, payment)
-        const txKeywords = /send|sent|received|deposit|paid|transfer|successful|payment/i;
-        if (!txKeywords.test(sms)) {
-            verifyMessage.innerHTML = '<div class="error-msg">❌ SMS does not contain a recognised transaction keyword.</div>';
-            return;
-        }
-
-        // 4. Detect network from SMS and compare with selected network
-        const detectedNetwork = detectNetworkFromSms(sms);
-        if (detectedNetwork && detectedNetwork !== selectedNetwork) {
-            const networkName = { mtn: 'MTN', airtel: 'Airtel', zamtel: 'Zamtel' }[detectedNetwork];
-            verifyMessage.innerHTML = `<div class="error-msg">❌ The SMS appears to be from ${networkName}, but you selected ${selectedNetwork.toUpperCase()}. Please select the correct network.</div>`;
-            return;
-        }
-
-        // 5. Agent name validation (against Firestore or fallback)
-        const agentValid = await isAgentNameValid(sms, selectedNetwork);
-        if (!agentValid) {
-            verifyMessage.innerHTML = `<div class="error-msg">❌ Agent name not found for ${selectedNetwork.toUpperCase()} in the SMS. Please make sure you paid the correct agent.</div>`;
-            return;
-        }
-
-        // All checks passed – submit deposit
         const user = auth.currentUser;
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
 
-        try {
-            const storageRef = storage.ref(`deposits/${user.uid}/${Date.now()}_${screenshotFile.name}`);
-            await storageRef.put(screenshotFile);
-            const screenshotUrl = await storageRef.getDownloadURL();
+        verifyBtn.disabled = true;
+        verifyBtn.innerText = 'Submitting...';
+        verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Submitting deposit...</div>';
 
-            await db.collection('deposits').add({
+        try {
+            const depositRef = db.collection('deposits').doc();
+            const depositId = depositRef.id;
+            await depositRef.set({
                 userId: user.uid,
                 amount: amount,
                 paymentMethod: sessionStorage.getItem('depositNetwork'),
                 phone: sessionStorage.getItem('depositPhone'),
-                screenshotUrl: screenshotUrl,
+                screenshotUrl: '',
                 status: 'pending',
-                userProvidedTimestamp: firebase.firestore.Timestamp.fromDate(transactionTimestamp),
+                userProvidedTimestamp: firebase.firestore.Timestamp.fromDate(new Date(`${userDate}T${userTime}:00`)),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 smsText: sms
             });
 
+            // Background upload
+            const storageRef = storage.ref(`deposits/${user.uid}/${Date.now()}_${screenshotFile.name}`);
+            storageRef.put(screenshotFile).then(async (snapshot) => {
+                const url = await snapshot.ref.getDownloadURL();
+                await depositRef.update({ screenshotUrl: url });
+            }).catch(err => console.error('Background upload failed:', err));
+
             showFireworks();
-            verifyMessage.innerHTML = '<div class="success-msg">🎉 Deposit request submitted! Redirecting...</div>';
+            verifyMessage.innerHTML = '<div class="success-msg">✅ Deposit request submitted! Redirecting...</div>';
             setTimeout(() => {
                 window.location.href = 'history.html';
-            }, 1500);
+            }, 1000);
         } catch (err) {
             console.error(err);
             verifyMessage.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
+            verifyBtn.disabled = false;
+            verifyBtn.innerText = '🔍 Verify & Complete';
         }
-    });
-
-    // Bottom navigation active state
-    const navItems = document.querySelectorAll('.nav-item');
-    const currentPage = window.location.pathname.split('/').pop() || 'deposit.html';
-    navItems.forEach(item => {
-        const targetPage = item.getAttribute('data-page');
-        if (currentPage === targetPage) item.classList.add('active');
-        item.addEventListener('click', () => {
-            if (targetPage && !window.location.pathname.includes(targetPage)) {
-                window.location.href = targetPage;
-            }
-        });
     });
 </script>
 </body>
