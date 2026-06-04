@@ -19,7 +19,7 @@
             font-family: 'Inter', system-ui, sans-serif;
             color: #FFFFFF;
             padding: 1rem;
-            padding-bottom: 85px; /* space for bottom nav */
+            padding-bottom: 85px;
             min-height: 100vh;
         }
         .container {
@@ -46,7 +46,6 @@
             text-decoration: none;
             font-size: 0.9rem;
         }
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 0.5rem;
@@ -82,7 +81,6 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Cards */
         .history-card {
             background: rgba(18, 18, 24, 0.9);
             backdrop-filter: blur(8px);
@@ -143,31 +141,11 @@
             font-weight: bold;
             margin-left: 0.5rem;
         }
-        .loader {
-            border: 3px solid #2C2C3A;
-            border-top: 3px solid #2ecc71;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 2rem auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .footer {
-            text-align: center;
-            margin-top: 2rem;
-            font-size: 0.7rem;
-            color: #6B6F85;
-        }
         .error-msg {
             color: #ef4444;
             text-align: center;
             padding: 1rem;
         }
-        /* Bottom Navigation (added for consistency) */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -219,14 +197,12 @@
         <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
         <button class="tab-btn active" data-tab="deposits">💸 Deposits</button>
         <button class="tab-btn" data-tab="withdrawals">💳 Withdrawals</button>
         <button class="tab-btn" data-tab="loans">🏦 Loans</button>
     </div>
 
-    <!-- Tab Contents -->
     <div id="depositsTab" class="tab-content active">
         <div id="depositsList"></div>
     </div>
@@ -242,7 +218,6 @@
     </div>
 </div>
 
-<!-- Bottom Navigation -->
 <div class="bottom-nav">
     <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
@@ -265,7 +240,6 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -278,18 +252,21 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    
-    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data
     db.settings({ persistence: false });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper functions
     function formatDate(timestamp) {
         if (!timestamp) return 'N/A';
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleString();
+        return date.toLocaleDateString('en-GB'); // DD/MM/YYYY
     }
+
+    function formatDateTime(timestamp) {
+        if (!timestamp) return 'N/A';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toLocaleString('en-GB');
+    }
+
     function formatMoney(amount) {
         return 'K' + parseFloat(amount).toFixed(2);
     }
@@ -311,7 +288,6 @@
         });
     });
 
-    // Real-time listeners (with cleanup on page unload)
     let unsubDeposits = null;
     let unsubWithdrawals = null;
     let unsubLoans = null;
@@ -321,30 +297,40 @@
             window.location.href = 'login.html';
             return;
         }
-        // Unsubscribe previous listeners if any
         if (unsubDeposits) unsubDeposits();
         if (unsubWithdrawals) unsubWithdrawals();
         if (unsubLoans) unsubLoans();
 
-        // Start listeners
-        unsubDeposits = listenDeposits(user.uid);
-        unsubWithdrawals = listenWithdrawals(user.uid);
-        unsubLoans = listenLoans(user.uid);
+        // Simple queries without composite indexes (orderBy may require index, but we can remove orderBy temporarily)
+        // We'll use orderBy with createdAt which is common; if error, we'll fallback to no order.
+        try {
+            unsubDeposits = listenDeposits(user.uid);
+            unsubWithdrawals = listenWithdrawals(user.uid);
+            unsubLoans = listenLoans(user.uid);
+        } catch (err) {
+            console.error("Failed to start listeners", err);
+            document.getElementById('depositsList').innerHTML = '<div class="error-msg">Error connecting to database. Please refresh.</div>';
+        }
     });
 
     function listenDeposits(userId) {
         const depositsList = document.getElementById('depositsList');
-        const q = db.collection('deposits').where('userId', '==', userId).orderBy('createdAt', 'desc');
+        // Use a simple query without orderBy to avoid needing index (optional)
+        const q = db.collection('deposits').where('userId', '==', userId);
         return q.onSnapshot((snapshot) => {
             if (snapshot.empty) {
                 depositsList.innerHTML = '<div class="empty-msg">No deposit records found.</div>';
                 updateTabBadge('deposits', 0);
                 return;
             }
+            // Convert to array and sort manually by createdAt descending
+            const docs = [];
+            snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+            docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            
             let html = '';
             let pendingCount = 0;
-            snapshot.forEach(doc => {
-                const data = doc.data();
+            docs.forEach(data => {
                 if (data.status === 'pending') pendingCount++;
                 const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
                 const borderColor = data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444');
@@ -357,7 +343,7 @@
                         <div class="details">
                             <strong>Method:</strong> ${data.paymentMethod || 'N/A'}<br>
                             <strong>Phone/Card:</strong> ${data.phone || data.cardNumber || 'N/A'}<br>
-                            <strong>Date:</strong> ${formatDate(data.createdAt)}
+                            <strong>Date:</strong> ${formatDateTime(data.createdAt)}
                         </div>
                         ${data.screenshotUrl ? `<img src="${data.screenshotUrl}" class="screenshot-thumb" onclick="window.open('${data.screenshotUrl}','_blank')" alt="screenshot">` : ''}
                     </div>
@@ -367,23 +353,26 @@
             updateTabBadge('deposits', pendingCount);
         }, (error) => {
             console.error("Deposit listener error:", error);
-            depositsList.innerHTML = '<div class="error-msg">Error loading deposits.</div>';
+            depositsList.innerHTML = '<div class="error-msg">Error loading deposits. Check console for details.</div>';
         });
     }
 
     function listenWithdrawals(userId) {
         const withdrawalsList = document.getElementById('withdrawalsList');
-        const q = db.collection('withdrawals').where('userId', '==', userId).orderBy('createdAt', 'desc');
+        const q = db.collection('withdrawals').where('userId', '==', userId);
         return q.onSnapshot((snapshot) => {
             if (snapshot.empty) {
                 withdrawalsList.innerHTML = '<div class="empty-msg">No withdrawal records found.</div>';
                 updateTabBadge('withdrawals', 0);
                 return;
             }
+            const docs = [];
+            snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+            docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            
             let html = '';
             let pendingCount = 0;
-            snapshot.forEach(doc => {
-                const data = doc.data();
+            docs.forEach(data => {
                 if (data.status === 'pending') pendingCount++;
                 const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
                 const borderColor = data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444');
@@ -397,7 +386,7 @@
                             <strong>Network:</strong> ${data.network || 'N/A'}<br>
                             <strong>Contact:</strong> ${data.phone || data.cardNumber || 'N/A'}<br>
                             <strong>Received after fee:</strong> ${formatMoney(data.netAmount || data.amount)}<br>
-                            <strong>Date:</strong> ${formatDate(data.createdAt)}
+                            <strong>Date:</strong> ${formatDateTime(data.createdAt)}
                         </div>
                     </div>
                 `;
@@ -412,17 +401,20 @@
 
     function listenLoans(userId) {
         const loansList = document.getElementById('loansList');
-        const q = db.collection('loans').where('userId', '==', userId).orderBy('createdAt', 'desc');
+        const q = db.collection('loans').where('userId', '==', userId);
         return q.onSnapshot((snapshot) => {
             if (snapshot.empty) {
                 loansList.innerHTML = '<div class="empty-msg">No loan records found.</div>';
                 updateTabBadge('loans', 0);
                 return;
             }
+            const docs = [];
+            snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+            docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            
             let html = '';
             let activeCount = 0;
-            snapshot.forEach(doc => {
-                const data = doc.data();
+            docs.forEach(data => {
                 if (data.status === 'active') activeCount++;
                 let statusClass = 'active';
                 let borderColor = '#f1c40f';
@@ -445,7 +437,7 @@
                         <div class="details">
                             <strong>To repay:</strong> ${formatMoney(data.repayTotal)}<br>
                             <strong>Due date:</strong> ${formatDate(data.dueDate)}<br>
-                            <strong>Created:</strong> ${formatDate(data.createdAt)}
+                            <strong>Created:</strong> ${formatDateTime(data.createdAt)}
                         </div>
                     </div>
                 `;
@@ -473,7 +465,7 @@
         }
     }
 
-    // Bottom navigation active state and redirection
+    // Bottom navigation active state
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'history.html';
     navItems.forEach(item => {

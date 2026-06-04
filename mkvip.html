@@ -34,7 +34,7 @@
             z-index: 0;
         }
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             position: relative;
             z-index: 2;
@@ -91,7 +91,8 @@
         }
         .plans-grid {
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 1.5rem;
             margin: 1rem 0 2rem;
         }
@@ -102,6 +103,8 @@
             overflow: hidden;
             border: 1px solid rgba(46, 204, 113, 0.3);
             transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            max-width: 360px;
         }
         .plan-card:hover {
             transform: translateY(-5px);
@@ -110,13 +113,13 @@
         }
         .plan-image {
             width: 100%;
-            height: 200px;
+            height: 150px;
             object-fit: cover;
             background-color: #1a1a2a;
             border-bottom: 1px solid rgba(46,204,113,0.2);
         }
         .plan-content {
-            padding: 1.2rem;
+            padding: 20px;
         }
         .plan-title {
             font-size: 1.4rem;
@@ -129,6 +132,15 @@
             color: #aaa;
             margin-bottom: 1rem;
             font-style: italic;
+        }
+        .plan-limit {
+            font-size: 0.75rem;
+            color: #f1c40f;
+            background: rgba(241,196,15,0.2);
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            margin-bottom: 0.5rem;
         }
         .plan-details {
             display: grid;
@@ -172,6 +184,7 @@
             color: white;
             cursor: pointer;
             transition: 0.2s;
+            height: 48px;
         }
         .invest-btn:hover {
             transform: scale(1.02);
@@ -180,6 +193,8 @@
         .invest-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            background: #555;
+            transform: none;
         }
         .bottom-nav {
             position: fixed;
@@ -258,8 +273,19 @@
             color: #aaa;
             padding: 2rem;
         }
+        @media (min-width: 601px) and (max-width: 900px) {
+            .plan-card { max-width: 380px; }
+            .plan-image { height: 180px; }
+            .plan-content { padding: 24px; }
+        }
+        @media (min-width: 901px) {
+            .plan-card { max-width: 440px; }
+            .plan-image { height: 200px; }
+            .plan-content { padding: 28px 32px; }
+            .invest-btn { height: 52px; font-size: 1.1rem; }
+            .plan-title { font-size: 1.6rem; }
+        }
         @media (max-width: 600px) {
-            .plan-image { height: 150px; }
             .plan-title { font-size: 1.2rem; }
         }
     </style>
@@ -398,6 +424,9 @@
         return result;
     }
 
+    // Global map to store user's purchase count per plan name
+    let userPurchaseCounts = {};
+
     async function loadPlans() {
         const loadingDiv = document.getElementById('loadingIndicator');
         const grid = document.getElementById('plansGrid');
@@ -406,9 +435,11 @@
             loadingDiv.style.display = 'block';
             grid.innerHTML = '';
             emptyMsg.style.display = 'none';
+            
+            // 1. Fetch all plans
             const snapshot = await db.collection('mkvipPlans').orderBy('createdAt', 'desc').get();
-            loadingDiv.style.display = 'none';
             if (snapshot.empty) {
+                loadingDiv.style.display = 'none';
                 emptyMsg.style.display = 'block';
                 return;
             }
@@ -416,7 +447,23 @@
             snapshot.forEach(doc => {
                 plans.push({ id: doc.id, ...doc.data() });
             });
+
+            // 2. Fetch user's investments to determine purchase counts (if user is logged in)
+            const user = auth.currentUser;
+            if (user) {
+                const investmentsSnapshot = await db.collection('investments')
+                    .where('userId', '==', user.uid)
+                    .get();
+                // Count purchases per plan name
+                userPurchaseCounts = {};
+                investmentsSnapshot.forEach(doc => {
+                    const planName = doc.data().planName;
+                    userPurchaseCounts[planName] = (userPurchaseCounts[planName] || 0) + 1;
+                });
+            }
+
             renderPlans(plans);
+            loadingDiv.style.display = 'none';
         } catch (err) {
             console.error(err);
             loadingDiv.style.display = 'none';
@@ -437,16 +484,31 @@
             const exampleDaily = maxAmount * (dailyReturnPercent / 100);
             const exampleTotal = exampleDaily * days;
             const lockText = plan.lock || 'Purchased 1 time and locked';
+            const purchaseLimit = plan.purchaseLimit; // 0 = unlimited, positive = max allowed
+            const userPurchased = userPurchaseCounts[plan.name] || 0;
+            const limitReached = (purchaseLimit && purchaseLimit > 0 && userPurchased >= purchaseLimit);
+            let limitText = '';
+            if (purchaseLimit && purchaseLimit > 0) {
+                limitText = `<div class="plan-limit">🔒 Limit: ${purchaseLimit} per user (you have ${userPurchased})</div>`;
+                if (limitReached) {
+                    limitText = `<div class="plan-limit" style="background:#ef444420; color:#ef4444;">❌ Limit reached (${purchaseLimit}/${purchaseLimit})</div>`;
+                }
+            } else if (purchaseLimit === 0) {
+                limitText = `<div class="plan-limit">♾️ Unlimited</div>`;
+            }
             let imageUrl = plan.image;
             if (!imageUrl || imageUrl === '') {
                 imageUrl = 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
             }
             const card = document.createElement('div');
             card.className = 'plan-card';
+            // Button disabled if limit reached OR if not logged in (but we already check auth)
+            const disabledAttr = limitReached ? 'disabled' : '';
             card.innerHTML = `
                 <img class="plan-image" src="${imageUrl}" alt="${escapeHtml(plan.name)}" onerror="this.src='https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg'">
                 <div class="plan-content">
                     <div class="plan-title">${escapeHtml(plan.name)}</div>
+                    ${limitText}
                     <div class="plan-lock">${escapeHtml(lockText)}</div>
                     <div class="plan-details">
                         <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${investRange}</span></div>
@@ -463,8 +525,9 @@
                         image: imageUrl,
                         lock: lockText,
                         expiry: plan.expiry,
-                        description: plan.description || ''
-                    })}'>💎 INVEST NOW</button>
+                        description: plan.description || '',
+                        purchaseLimit: purchaseLimit
+                    })}' ${disabledAttr}>💎 INVEST NOW</button>
                 </div>
             `;
             grid.appendChild(card);
@@ -482,10 +545,38 @@
         const investAmount = plan.maxAmount;
         const days = plan.days;
         const dailyReturnPercent = plan.dailyReturnPercent;
+        const purchaseLimit = plan.purchaseLimit;
 
         if (!investAmount || investAmount <= 0) {
             showToast('Invalid investment amount for this plan.', true);
             return;
+        }
+
+        // Double-check purchase limit (in case button was somehow enabled)
+        if (purchaseLimit && purchaseLimit > 0) {
+            const existingCountQuery = await db.collection('investments')
+                .where('userId', '==', userId)
+                .where('planName', '==', plan.name)
+                .get();
+            const activeCount = existingCountQuery.size;
+            if (activeCount >= purchaseLimit) {
+                showToast(`❌ You have already reached the limit (${purchaseLimit}) for this plan.`, true);
+                // Disable the button on the card to prevent further attempts
+                const btns = document.querySelectorAll('.invest-btn');
+                btns.forEach(btn => {
+                    const btnPlan = JSON.parse(btn.dataset.plan);
+                    if (btnPlan.name === plan.name) {
+                        btn.disabled = true;
+                        // update limit text in card to show reached
+                        const parentCard = btn.closest('.plan-card');
+                        if (parentCard) {
+                            const limitDiv = parentCard.querySelector('.plan-limit');
+                            if (limitDiv) limitDiv.innerHTML = '❌ Limit reached';
+                        }
+                    }
+                });
+                return;
+            }
         }
 
         const userDoc = await db.collection('users').doc(userId).get();
@@ -607,7 +698,7 @@
             if (canGiveBonus && referrerId && firstDepositAmount > 0) {
                 showToast(`✅ Success! Invested ${investAmount} ZMW. Your referrer earned ${(firstDepositAmount * 0.05).toFixed(2)} ZMW bonus!`, false);
             } else {
-                showToast(`✅ Success! Invested ${investAmount} ZMW in ${plan.name}. Redirecting...`);
+                showToast(`✅ Success! Invested ${investAmount} ZMW in ${plan.name}. Redirecting...`, false);
             }
             setTimeout(() => {
                 window.location.href = 'history.html';
@@ -620,8 +711,11 @@
 
     function attachInvestHandlers() {
         document.querySelectorAll('.invest-btn').forEach(btn => {
+            // Remove previous listener to avoid duplicates
             btn.removeEventListener('click', investHandler);
-            btn.addEventListener('click', investHandler);
+            if (!btn.disabled) {
+                btn.addEventListener('click', investHandler);
+            }
         });
     }
 

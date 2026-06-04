@@ -260,7 +260,6 @@
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">💰 INCOME</div>
 
-    <!-- Total pending (daily earnings ready to claim) -->
     <div class="total-hourly" id="totalHourlyBox">
         📈 Total pending daily earnings: <span id="totalPending">0.00</span> ZMW
     </div>
@@ -278,7 +277,6 @@
     </div>
 </div>
 
-<!-- Bottom Navigation -->
 <div class="bottom-nav">
     <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
@@ -301,7 +299,6 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -314,13 +311,9 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    
-    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data
     db.settings({ persistence: false });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper functions
     function formatMoney(amount) {
         return 'K' + parseFloat(amount).toFixed(2);
     }
@@ -371,14 +364,12 @@
         const lastClaim = inv.lastClaimed ? inv.lastClaimed.toDate() : inv.startDate.toDate();
         const hoursSince = (now - lastClaim) / (1000 * 60 * 60);
         const available = (!isWeekend(now) && hoursSince >= 24);
-        const nextClaimDate = new Date(lastClaim.getTime() + 24 * 60 * 60 * 1000);
-        return { available, hoursSince, dailyAmount: inv.dailyAmount, nextClaimDate };
+        return { available, hoursSince, dailyAmount: inv.dailyAmount };
     }
 
     let currentUserId = null;
     let refreshInterval = null;
 
-    // Clean up on page unload
     window.addEventListener('beforeunload', () => {
         if (refreshInterval) clearInterval(refreshInterval);
     });
@@ -401,45 +392,56 @@
 
     async function loadInvestments() {
         if (!currentUserId) return;
-        const snapshot = await db.collection('investments')
-            .where('userId', '==', currentUserId)
-            .orderBy('startDate', 'desc')
-            .get();
+        try {
+            // Simple query without orderBy to avoid missing index
+            const snapshot = await db.collection('investments')
+                .where('userId', '==', currentUserId)
+                .get();
 
-        const active = [];
-        const expired = [];
-        const now = new Date();
+            const investments = [];
+            snapshot.forEach(doc => {
+                investments.push({ id: doc.id, ...doc.data() });
+            });
+            // Sort manually by startDate descending
+            investments.sort((a, b) => (b.startDate?.toMillis() || 0) - (a.startDate?.toMillis() || 0));
 
-        for (const doc of snapshot.docs) {
-            const inv = doc.data();
-            const startDate = inv.startDate.toDate();
-            const businessDays = inv.businessDays || inv.days;
-            const endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addWeekdays(startDate, businessDays);
-            const dailyAmount = inv.investAmount * (inv.dailyReturn / 100);
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const isExpired = inv.status !== 'active' || today > endDate;
+            const active = [];
+            const expired = [];
+            const now = new Date();
 
-            const investment = {
-                id: doc.id,
-                ...inv,
-                startDate,
-                businessDays,
-                endDate,
-                dailyAmount,
-                status: inv.status,
-                lastClaimed: inv.lastClaimed
-            };
-            if (!isExpired) {
-                active.push(investment);
-            } else {
-                expired.push(investment);
+            for (const inv of investments) {
+                const startDate = inv.startDate.toDate();
+                const businessDays = inv.businessDays || inv.days;
+                const endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addWeekdays(startDate, businessDays);
+                const dailyAmount = inv.investAmount * (inv.dailyReturn / 100);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const isExpired = inv.status !== 'active' || today > endDate;
+
+                const investment = {
+                    ...inv,
+                    startDate,
+                    businessDays,
+                    endDate,
+                    dailyAmount,
+                    status: inv.status,
+                    lastClaimed: inv.lastClaimed
+                };
+                if (!isExpired) {
+                    active.push(investment);
+                } else {
+                    expired.push(investment);
+                }
             }
-        }
 
-        renderActive(active);
-        renderExpired(expired);
-        updateTotalPending(active);
+            renderActive(active);
+            renderExpired(expired);
+            updateTotalPending(active);
+        } catch (err) {
+            console.error("Error loading investments:", err);
+            const container = document.getElementById('activeInvestments');
+            if (container) container.innerHTML = '<div class="empty-msg">Error loading investments. Please refresh.</div>';
+        }
     }
 
     function renderActive(investments) {
@@ -589,7 +591,6 @@
         });
     }
 
-    // Tab switching
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabs = {
         normal: document.getElementById('normalTab'),
@@ -606,14 +607,11 @@
         });
     });
 
-    // Bottom navigation active state and redirection
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'income.html';
     navItems.forEach(item => {
         const targetPage = item.getAttribute('data-page');
-        if (currentPage === targetPage) {
-            item.classList.add('active');
-        }
+        if (currentPage === targetPage) item.classList.add('active');
         item.addEventListener('click', () => {
             if (targetPage && !window.location.pathname.includes(targetPage)) {
                 window.location.href = targetPage;

@@ -559,16 +559,47 @@
     const backArrow = document.getElementById('backArrow');
     backArrow.addEventListener('click', () => {
         if (!step2Card.classList.contains('hidden')) {
-            // Go back to step 1
             step2Card.classList.add('hidden');
             step1Card.classList.remove('hidden');
         } else {
-            // Already on step1, go to dashboard
             window.location.href = 'dashboard.html';
         }
     });
 
-    // Fast verification
+    // Validation helpers
+    function validateSmsContent(sms, amount, network, agentName) {
+        const lowerSms = sms.toLowerCase();
+        
+        // 1. Check if the exact amount appears as a whole number (not inside another number)
+        const amountRegex = new RegExp(`\\b${amount}\\b`);
+        if (!amountRegex.test(sms)) {
+            return { valid: false, error: `SMS amount does not match your deposit amount (${amount} ZMW).` };
+        }
+        
+        // 2. Check network keyword
+        let networkKeyword = '';
+        if (network === 'mtn') networkKeyword = 'mtn';
+        else if (network === 'airtel') networkKeyword = 'airtel';
+        else if (network === 'zamtel') networkKeyword = 'zamtel';
+        if (!lowerSms.includes(networkKeyword)) {
+            return { valid: false, error: `SMS does not contain the network name (${network.toUpperCase()}). Please paste the correct SMS.` };
+        }
+        
+        // 3. Check agent name (case-insensitive)
+        if (!lowerSms.includes(agentName.toLowerCase())) {
+            return { valid: false, error: `SMS does not contain the agent name "${agentName}". Please make sure you paid the correct agent.` };
+        }
+        
+        // 4. Check transaction keywords
+        const txKeywords = /send|sent|received|deposit|paid|transfer|successful|payment/i;
+        if (!txKeywords.test(sms)) {
+            return { valid: false, error: 'SMS does not contain a recognised transaction keyword (send, sent, received, etc.).' };
+        }
+        
+        return { valid: true, error: null };
+    }
+
+    // Fast verification with strict SMS checks
     verifyBtn.addEventListener('click', async () => {
         const sms = smsTextarea.value.trim();
         const screenshotFile = screenshotUpload.files[0];
@@ -589,14 +620,27 @@
         }
 
         const amount = parseFloat(sessionStorage.getItem('depositAmount'));
-        if (!amount) {
-            verifyMessage.innerHTML = '<div class="error-msg">Amount missing. Go back.</div>';
+        const network = sessionStorage.getItem('depositNetwork');
+        if (!amount || !network) {
+            verifyMessage.innerHTML = '<div class="error-msg">Session expired. Please go back and start over.</div>';
             return;
         }
 
-        // Quick amount check (optional but helpful)
-        if (!sms.toLowerCase().includes(amount.toString())) {
-            verifyMessage.innerHTML = '<div class="error-msg">SMS amount does not match your deposit amount.</div>';
+        // Get agent name for the selected network
+        let agentName = '';
+        if (network === 'mtn') {
+            const index = Math.floor(Date.now() / 60000) % 2;
+            agentName = mtnAgentsDisplay[index].name;
+        } else if (network === 'airtel') {
+            agentName = airtelAgentDisplay.name;
+        } else if (network === 'zamtel') {
+            agentName = zamtelAgentDisplay.name;
+        }
+
+        // Validate SMS content
+        const validation = validateSmsContent(sms, amount, network, agentName);
+        if (!validation.valid) {
+            verifyMessage.innerHTML = `<div class="error-msg">${validation.error}</div>`;
             return;
         }
 
@@ -608,7 +652,7 @@
 
         verifyBtn.disabled = true;
         verifyBtn.innerText = 'Submitting...';
-        verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Submitting deposit...</div>';
+        verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Verifying and submitting...</div>';
 
         try {
             const depositRef = db.collection('deposits').doc();
@@ -616,7 +660,7 @@
             await depositRef.set({
                 userId: user.uid,
                 amount: amount,
-                paymentMethod: sessionStorage.getItem('depositNetwork'),
+                paymentMethod: network,
                 phone: sessionStorage.getItem('depositPhone'),
                 screenshotUrl: '',
                 status: 'pending',

@@ -31,7 +31,7 @@
             z-index: 0;
         }
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             position: relative;
             z-index: 2;
@@ -88,7 +88,8 @@
         }
         .plans-grid {
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 1.5rem;
             margin: 1rem 0 2rem;
         }
@@ -99,22 +100,23 @@
             overflow: hidden;
             border: 1px solid rgba(46, 204, 113, 0.3);
             transition: transform 0.2s, box-shadow 0.2s;
-            animation: fadeSlideUp 0.5s ease;
+            width: 100%;
+            max-width: 360px;
         }
         .plan-card:hover {
             transform: translateY(-5px);
             border-color: #f1c40f;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
         }
         .plan-image {
             width: 100%;
-            height: 160px;
+            height: 150px;
             object-fit: cover;
             background-color: #1a1a2a;
             border-bottom: 1px solid rgba(46,204,113,0.2);
         }
         .plan-content {
-            padding: 1.2rem;
+            padding: 20px;
         }
         .plan-title {
             font-size: 1.4rem;
@@ -127,6 +129,15 @@
             color: #aaa;
             margin-bottom: 1rem;
             font-style: italic;
+        }
+        .plan-limit {
+            font-size: 0.75rem;
+            color: #f1c40f;
+            background: rgba(241,196,15,0.2);
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            margin-bottom: 0.5rem;
         }
         .plan-details {
             display: grid;
@@ -156,14 +167,8 @@
             text-align: center;
             margin-bottom: 0.8rem;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: #f1c40f;
-        }
-        .plan-description {
-            font-size: 0.8rem;
-            color: #ccc;
-            text-align: center;
-            margin-bottom: 1rem;
         }
         .invest-btn {
             width: 100%;
@@ -176,6 +181,7 @@
             color: white;
             cursor: pointer;
             transition: 0.2s;
+            height: 48px;
         }
         .invest-btn:hover {
             transform: scale(1.02);
@@ -184,6 +190,8 @@
         .invest-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            background: #555;
+            transform: none;
         }
         .bottom-nav {
             position: fixed;
@@ -217,7 +225,6 @@
             height: 28px;
             object-fit: contain;
             filter: brightness(0.8);
-            transition: 0.2s;
         }
         .nav-label {
             font-size: 0.7rem;
@@ -226,19 +233,6 @@
         }
         .nav-item.active .nav-label {
             color: #2ecc71;
-        }
-        @keyframes fadeSlideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .fireworks-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
         }
         .toast {
             position: fixed;
@@ -262,13 +256,35 @@
             70% { opacity: 1; }
             100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
+        .fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
         .empty-msg {
             text-align: center;
             color: #aaa;
             padding: 2rem;
         }
+        /* Tablet */
+        @media (min-width: 601px) and (max-width: 900px) {
+            .plan-card { max-width: 380px; }
+            .plan-image { height: 180px; }
+            .plan-content { padding: 24px; }
+        }
+        /* Desktop */
+        @media (min-width: 901px) {
+            .plan-card { max-width: 440px; }
+            .plan-image { height: 200px; }
+            .plan-content { padding: 28px 32px; }
+            .invest-btn { height: 52px; font-size: 1.1rem; }
+            .plan-title { font-size: 1.6rem; }
+        }
         @media (max-width: 600px) {
-            .plan-image { height: 120px; }
             .plan-title { font-size: 1.2rem; }
         }
     </style>
@@ -279,9 +295,9 @@
     <div class="animated-title">📦 J Product Plans</div>
     <div id="loadingIndicator" class="loader"></div>
     <div class="plans-grid" id="plansGrid"></div>
+    <div id="emptyMessage" class="empty-msg" style="display: none;">No investment plans available. Please check back later.</div>
 </div>
 
-<!-- Bottom Navigation (6 icons) -->
 <div class="bottom-nav">
     <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
@@ -318,8 +334,6 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    
-    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data
     db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
@@ -409,27 +423,46 @@
         return result;
     }
 
+    let userPurchaseCounts = {};
+
     async function loadPlans() {
         const loadingDiv = document.getElementById('loadingIndicator');
         const grid = document.getElementById('plansGrid');
+        const emptyMsg = document.getElementById('emptyMessage');
         try {
             loadingDiv.style.display = 'block';
             grid.innerHTML = '';
+            emptyMsg.style.display = 'none';
             const snapshot = await db.collection('jproductPlans').orderBy('createdAt', 'desc').get();
-            loadingDiv.style.display = 'none';
             if (snapshot.empty) {
-                grid.innerHTML = '<div class="empty-msg">No investment plans available. Please check back later.</div>';
+                loadingDiv.style.display = 'none';
+                emptyMsg.style.display = 'block';
                 return;
             }
             const plans = [];
             snapshot.forEach(doc => {
                 plans.push({ id: doc.id, ...doc.data() });
             });
+
+            const user = auth.currentUser;
+            if (user) {
+                const investmentsSnapshot = await db.collection('investments')
+                    .where('userId', '==', user.uid)
+                    .get();
+                userPurchaseCounts = {};
+                investmentsSnapshot.forEach(doc => {
+                    const planName = doc.data().planName;
+                    userPurchaseCounts[planName] = (userPurchaseCounts[planName] || 0) + 1;
+                });
+            }
+
             renderPlans(plans);
+            loadingDiv.style.display = 'none';
         } catch (err) {
             console.error(err);
             loadingDiv.style.display = 'none';
-            grid.innerHTML = '<div class="empty-msg">Failed to load plans. Please refresh.</div>';
+            emptyMsg.style.display = 'block';
+            emptyMsg.innerText = 'Failed to load plans. Please refresh.';
         }
     }
 
@@ -445,16 +478,30 @@
             const exampleDaily = (maxAmount * dailyReturnPercent / 100);
             const exampleTotal = exampleDaily * days;
             const lockText = plan.lock || 'Purchased 1 time and locked';
+            const purchaseLimit = plan.purchaseLimit;
+            const userPurchased = userPurchaseCounts[plan.name] || 0;
+            const limitReached = (purchaseLimit && purchaseLimit > 0 && userPurchased >= purchaseLimit);
+            let limitText = '';
+            if (purchaseLimit && purchaseLimit > 0) {
+                limitText = `<div class="plan-limit">🔒 Limit: ${purchaseLimit} per user (you have ${userPurchased})</div>`;
+                if (limitReached) {
+                    limitText = `<div class="plan-limit" style="background:#ef444420; color:#ef4444;">❌ Limit reached (${purchaseLimit}/${purchaseLimit})</div>`;
+                }
+            } else if (purchaseLimit === 0) {
+                limitText = `<div class="plan-limit">♾️ Unlimited</div>`;
+            }
             let imageUrl = plan.image;
             if (!imageUrl || imageUrl === '') {
                 imageUrl = 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
             }
             const card = document.createElement('div');
             card.className = 'plan-card';
+            const disabledAttr = limitReached ? 'disabled' : '';
             card.innerHTML = `
                 <img class="plan-image" src="${imageUrl}" alt="${escapeHtml(plan.name)}" onerror="this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'">
                 <div class="plan-content">
                     <div class="plan-title">${escapeHtml(plan.name)}</div>
+                    ${limitText}
                     <div class="plan-lock">${escapeHtml(lockText)}</div>
                     <div class="plan-details">
                         <div class="detail-item"><span class="detail-label">Invest:</span><span class="detail-value">${investRange}</span></div>
@@ -472,8 +519,9 @@
                         image: imageUrl,
                         lock: lockText,
                         expiry: plan.expiry,
-                        description: plan.description
-                    })}'>💎 INVEST NOW</button>
+                        description: plan.description,
+                        purchaseLimit: purchaseLimit
+                    })}' ${disabledAttr}>💎 INVEST NOW</button>
                 </div>
             `;
             grid.appendChild(card);
@@ -488,13 +536,39 @@
             return;
         }
         const userId = user.uid;
-        const investAmount = plan.maxAmount;   // ✅ Automatically use max amount
+        const investAmount = plan.maxAmount;
         const days = plan.days;
         const dailyReturnPercent = plan.dailyReturnPercent;
+        const purchaseLimit = plan.purchaseLimit;
 
         if (!investAmount || investAmount <= 0) {
             showToast('Invalid investment amount for this plan.', true);
             return;
+        }
+
+        // Check purchase limit again
+        if (purchaseLimit && purchaseLimit > 0) {
+            const existingCountQuery = await db.collection('investments')
+                .where('userId', '==', userId)
+                .where('planName', '==', plan.name)
+                .get();
+            const activeCount = existingCountQuery.size;
+            if (activeCount >= purchaseLimit) {
+                showToast(`❌ You have already reached the limit (${purchaseLimit}) for this plan.`, true);
+                const btns = document.querySelectorAll('.invest-btn');
+                btns.forEach(btn => {
+                    const btnPlan = JSON.parse(btn.dataset.plan);
+                    if (btnPlan.name === plan.name) {
+                        btn.disabled = true;
+                        const parentCard = btn.closest('.plan-card');
+                        if (parentCard) {
+                            const limitDiv = parentCard.querySelector('.plan-limit');
+                            if (limitDiv) limitDiv.innerHTML = '❌ Limit reached';
+                        }
+                    }
+                });
+                return;
+            }
         }
 
         const userDoc = await db.collection('users').doc(userId).get();
@@ -630,7 +704,9 @@
     function attachInvestHandlers() {
         document.querySelectorAll('.invest-btn').forEach(btn => {
             btn.removeEventListener('click', investHandler);
-            btn.addEventListener('click', investHandler);
+            if (!btn.disabled) {
+                btn.addEventListener('click', investHandler);
+            }
         });
     }
 
