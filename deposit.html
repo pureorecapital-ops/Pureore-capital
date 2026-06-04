@@ -566,40 +566,7 @@
         }
     });
 
-    // Validation helpers
-    function validateSmsContent(sms, amount, network, agentName) {
-        const lowerSms = sms.toLowerCase();
-        
-        // 1. Check if the exact amount appears as a whole number (not inside another number)
-        const amountRegex = new RegExp(`\\b${amount}\\b`);
-        if (!amountRegex.test(sms)) {
-            return { valid: false, error: `SMS amount does not match your deposit amount (${amount} ZMW).` };
-        }
-        
-        // 2. Check network keyword
-        let networkKeyword = '';
-        if (network === 'mtn') networkKeyword = 'mtn';
-        else if (network === 'airtel') networkKeyword = 'airtel';
-        else if (network === 'zamtel') networkKeyword = 'zamtel';
-        if (!lowerSms.includes(networkKeyword)) {
-            return { valid: false, error: `SMS does not contain the network name (${network.toUpperCase()}). Please paste the correct SMS.` };
-        }
-        
-        // 3. Check agent name (case-insensitive)
-        if (!lowerSms.includes(agentName.toLowerCase())) {
-            return { valid: false, error: `SMS does not contain the agent name "${agentName}". Please make sure you paid the correct agent.` };
-        }
-        
-        // 4. Check transaction keywords
-        const txKeywords = /send|sent|received|deposit|paid|transfer|successful|payment/i;
-        if (!txKeywords.test(sms)) {
-            return { valid: false, error: 'SMS does not contain a recognised transaction keyword (send, sent, received, etc.).' };
-        }
-        
-        return { valid: true, error: null };
-    }
-
-    // Fast verification with strict SMS checks
+    // Simplified verification: only check agent name and date
     verifyBtn.addEventListener('click', async () => {
         const sms = smsTextarea.value.trim();
         const screenshotFile = screenshotUpload.files[0];
@@ -619,9 +586,15 @@
             return;
         }
 
-        const amount = parseFloat(sessionStorage.getItem('depositAmount'));
+        // Check that the transaction date is not in the future
+        const transactionTimestamp = new Date(`${userDate}T${userTime}:00`);
+        if (transactionTimestamp > new Date()) {
+            verifyMessage.innerHTML = '<div class="error-msg">❌ Transaction date/time cannot be in the future.</div>';
+            return;
+        }
+
         const network = sessionStorage.getItem('depositNetwork');
-        if (!amount || !network) {
+        if (!network) {
             verifyMessage.innerHTML = '<div class="error-msg">Session expired. Please go back and start over.</div>';
             return;
         }
@@ -637,10 +610,9 @@
             agentName = zamtelAgentDisplay.name;
         }
 
-        // Validate SMS content
-        const validation = validateSmsContent(sms, amount, network, agentName);
-        if (!validation.valid) {
-            verifyMessage.innerHTML = `<div class="error-msg">${validation.error}</div>`;
+        // Check if agent name appears in the SMS (case-insensitive)
+        if (!sms.toLowerCase().includes(agentName.toLowerCase())) {
+            verifyMessage.innerHTML = `<div class="error-msg">❌ SMS does not contain the agent name "${agentName}". Please make sure you paid the correct agent.</div>`;
             return;
         }
 
@@ -652,19 +624,19 @@
 
         verifyBtn.disabled = true;
         verifyBtn.innerText = 'Submitting...';
-        verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Verifying and submitting...</div>';
+        verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Submitting deposit...</div>';
 
         try {
             const depositRef = db.collection('deposits').doc();
             const depositId = depositRef.id;
             await depositRef.set({
                 userId: user.uid,
-                amount: amount,
+                amount: parseFloat(sessionStorage.getItem('depositAmount')) || 0,
                 paymentMethod: network,
                 phone: sessionStorage.getItem('depositPhone'),
                 screenshotUrl: '',
                 status: 'pending',
-                userProvidedTimestamp: firebase.firestore.Timestamp.fromDate(new Date(`${userDate}T${userTime}:00`)),
+                userProvidedTimestamp: firebase.firestore.Timestamp.fromDate(transactionTimestamp),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 smsText: sms
             });
