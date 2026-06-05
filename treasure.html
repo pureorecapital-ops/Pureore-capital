@@ -148,31 +148,15 @@
             margin-bottom: 0.5rem;
             color: #f1c40f;
         }
-        .join-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 1rem;
-            flex-wrap: wrap;
+        .info-text {
+            color: #ccc;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
         }
-        .join-btn {
-            background: #25D366;
-            padding: 0.6rem 1.2rem;
-            border-radius: 40px;
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: 0.2s;
-        }
-        .join-btn.telegram {
-            background: #0088cc;
-        }
-        .join-btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.05);
+        .info-note {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-top: 0.5rem;
         }
         .bottom-nav {
             position: fixed;
@@ -237,17 +221,14 @@
 
     <div class="info-card">
         <div class="info-title">📢 How to get Treasure Codes?</div>
-        <p>Join our official WhatsApp group and channel. We post exclusive treasure codes there daily! Missing out means losing free ZMW.</p>
-        <div class="join-buttons">
-            <a href="https://chat.whatsapp.com/KnggKPDuxj98Wxo1HAE6FP" target="_blank" class="join-btn">📱 WhatsApp Group</a>
-            <a href="https://whatsapp.com/channel/0029VbCoP1qFcowAHv8uFV2Y" target="_blank" class="join-btn">📢 WhatsApp Channel</a>
-            <a href="https://t.me/pureorecapital" target="_blank" class="join-btn telegram">✈️ Telegram</a>
+        <div class="info-text">
+            Join our official WhatsApp group and channel. We post exclusive treasure codes there daily! Missing out means losing free ZMW.
         </div>
-        <p style="margin-top: 0.8rem; font-size: 0.75rem; color: #aaa;">Codes are 7 characters (letters & numbers). Be fast – each code can be used only once!</p>
+        <div class="info-note">🔑 Codes are 7 characters (letters & numbers). Each code can be used only once – be fast!</div>
     </div>
 </div>
 
-<!-- Bottom Navigation -->
+<!-- Bottom Navigation (6 icons) – unchanged -->
 <div class="bottom-nav">
     <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
@@ -270,7 +251,6 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -283,13 +263,9 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    
-    // 🔥 DISABLE OFFLINE PERSISTENCE – Only work online
     db.settings({ persistence: false });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // DOM elements
     const claimBtn = document.getElementById('claimBtn');
     const codeInput = document.getElementById('treasureCode');
     const messageArea = document.getElementById('messageArea');
@@ -301,7 +277,6 @@
         }, 5000);
     }
 
-    // Check authentication
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             window.location.href = 'login.html';
@@ -310,7 +285,6 @@
     });
 
     claimBtn.addEventListener('click', async () => {
-        // Trim and uppercase the code exactly
         let code = codeInput.value.trim().toUpperCase();
         if (code.length !== 7) {
             showMessage('Code must be exactly 7 characters (letters & numbers).', 'error');
@@ -331,14 +305,12 @@
         }
 
         try {
-            // Query Firestore for the exact code
             const codeQuery = await db.collection('treasureCodes')
                 .where('code', '==', code)
                 .limit(1)
                 .get();
 
             if (codeQuery.empty) {
-                console.log(`Treasure code not found: "${code}"`);
                 showMessage('❌ Invalid treasure code. No such code exists.', 'error');
                 claimBtn.disabled = false;
                 claimBtn.innerText = '🔓 Claim Treasure';
@@ -363,7 +335,6 @@
                 return;
             }
 
-            // Use transaction to add balance and mark code as used
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(user.uid);
                 const userSnap = await transaction.get(userRef);
@@ -378,7 +349,6 @@
                 });
             });
 
-            // Record transaction
             await db.collection('transactions').add({
                 userId: user.uid,
                 type: 'treasure',

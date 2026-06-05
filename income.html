@@ -72,11 +72,37 @@
             text-align: center;
             margin-bottom: 1.5rem;
             border: 1px solid rgba(241,196,15,0.4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         .total-hourly span {
             font-size: 1.8rem;
             font-weight: 800;
             color: #f1c40f;
+        }
+        .claim-all-btn {
+            background: linear-gradient(135deg, #2ecc71, #239b56);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .claim-all-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #555;
+        }
+        .claim-all-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            filter: brightness(1.05);
         }
         .tabs {
             display: flex;
@@ -252,6 +278,8 @@
             .animated-title { font-size: 1.5rem; }
             .plan-name { font-size: 1rem; }
             .total-hourly span { font-size: 1.4rem; }
+            .total-hourly { flex-direction: column; align-items: stretch; }
+            .claim-all-btn { width: 100%; }
         }
     </style>
 </head>
@@ -261,7 +289,8 @@
     <div class="animated-title">💰 INCOME</div>
 
     <div class="total-hourly" id="totalHourlyBox">
-        📈 Total pending daily earnings: <span id="totalPending">0.00</span> ZMW
+        <div>📈 Total pending daily earnings: <span id="totalPending">0.00</span> ZMW</div>
+        <button id="claimAllBtn" class="claim-all-btn" disabled>💰 Claim All Available</button>
     </div>
 
     <div class="tabs">
@@ -363,12 +392,17 @@
     function getClaimStatus(inv, now) {
         const lastClaim = inv.lastClaimed ? inv.lastClaimed.toDate() : inv.startDate.toDate();
         const hoursSince = (now - lastClaim) / (1000 * 60 * 60);
+        const dailyAmount = inv.dailyAmount;
+        const hourlyRate = dailyAmount / 24;
+        const earnedSoFar = Math.min(dailyAmount, hourlyRate * hoursSince);
         const available = (!isWeekend(now) && hoursSince >= 24);
-        return { available, hoursSince, dailyAmount: inv.dailyAmount };
+        const hoursRemaining = Math.max(0, 24 - hoursSince);
+        return { available, hoursSince, dailyAmount, earnedSoFar, hoursRemaining };
     }
 
     let currentUserId = null;
     let refreshInterval = null;
+    let currentInvestments = [];
 
     window.addEventListener('beforeunload', () => {
         if (refreshInterval) clearInterval(refreshInterval);
@@ -393,7 +427,6 @@
     async function loadInvestments() {
         if (!currentUserId) return;
         try {
-            // Simple query without orderBy to avoid missing index
             const snapshot = await db.collection('investments')
                 .where('userId', '==', currentUserId)
                 .get();
@@ -402,7 +435,6 @@
             snapshot.forEach(doc => {
                 investments.push({ id: doc.id, ...doc.data() });
             });
-            // Sort manually by startDate descending
             investments.sort((a, b) => (b.startDate?.toMillis() || 0) - (a.startDate?.toMillis() || 0));
 
             const active = [];
@@ -413,12 +445,13 @@
                 const startDate = inv.startDate.toDate();
                 const businessDays = inv.businessDays || inv.days;
                 const endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addWeekdays(startDate, businessDays);
-                const dailyAmount = inv.investAmount * (inv.dailyReturn / 100);
+                const dailyAmount = inv.dailyReturn;
                 const today = new Date();
                 today.setHours(0,0,0,0);
                 const isExpired = inv.status !== 'active' || today > endDate;
 
                 const investment = {
+                    id: inv.id,
                     ...inv,
                     startDate,
                     businessDays,
@@ -434,9 +467,10 @@
                 }
             }
 
+            currentInvestments = active;
             renderActive(active);
             renderExpired(expired);
-            updateTotalPending(active);
+            updateTotalPendingAndClaimAll(active);
         } catch (err) {
             console.error("Error loading investments:", err);
             const container = document.getElementById('activeInvestments');
@@ -460,8 +494,10 @@
 
             const claimStatus = getClaimStatus(inv, now);
             const canClaim = claimStatus.available;
-            const hoursSince = claimStatus.hoursSince;
-            const hoursToNext = Math.max(0, 24 - hoursSince);
+            const hoursRemaining = claimStatus.hoursRemaining;
+            const earnedSoFar = claimStatus.earnedSoFar;
+            const dailyAmount = claimStatus.dailyAmount;
+            const progressPercent = claimStatus.hoursSince >= 24 ? 100 : (claimStatus.hoursSince / 24) * 100;
 
             html += `
                 <div class="plan-card" data-id="${inv.id}">
@@ -471,18 +507,21 @@
                     </div>
                     <div class="plan-details">
                         <span>📅 Started: ${inv.startDate.toLocaleDateString()}</span>
-                        <span>💰 Daily: ${inv.dailyReturn}% (${formatMoney(inv.dailyAmount)})</span>
+                        <span>💰 Daily: ${formatMoney(dailyAmount)}</span>
                         <span>⏱️ Days left: ${daysLeft}</span>
                     </div>
                     <div class="claim-info">
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${(hoursSince / 24) * 100}%;"></div>
+                            <div class="progress-fill" style="width: ${progressPercent}%;"></div>
                         </div>
-                        <div class="progress-text">⏱️ Next claim in ${Math.floor(hoursToNext)}h ${Math.floor((hoursToNext % 1) * 60)}m</div>
-                        ${!canClaim && !isWeekend(now) ? `<div class="pending-amount">⏳ Ready in ${Math.floor(hoursToNext)} hours</div>` : ''}
-                        ${canClaim ? `<div class="pending-amount">💰 Ready to claim: ${formatMoney(inv.dailyAmount)}</div>` : ''}
+                        <div class="progress-text">
+                            ${canClaim ? '✓ Ready to claim' : `⏱️ Next claim in ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`}
+                        </div>
+                        <div class="pending-amount">
+                            💰 Earned so far: ${formatMoney(earnedSoFar)} / ${formatMoney(dailyAmount)}
+                        </div>
                     </div>
-                    <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${inv.dailyAmount}">
+                    <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${dailyAmount}">
                         ${canClaim ? '💰 Claim Daily Income' : '⏳ Wait for next claim'}
                     </button>
                     ${isWeekend(now) ? '<div class="weekend-warning">⛔ Claiming only available Monday–Friday. Come back on a weekday.</div>' : ''}
@@ -496,18 +535,18 @@
                 e.stopPropagation();
                 const invId = btn.dataset.id;
                 const dailyAmount = parseFloat(btn.dataset.daily);
-                await claimDailyIncome(invId, dailyAmount);
+                await claimDailyIncome(invId, dailyAmount, true);
             });
         });
     }
 
-    async function claimDailyIncome(investmentId, dailyAmount) {
+    async function claimDailyIncome(investmentId, dailyAmount, refreshAfter = true) {
         const user = auth.currentUser;
         if (!user) return;
         const now = new Date();
         if (isWeekend(now)) {
             showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
-            return;
+            return false;
         }
         try {
             await db.runTransaction(async (transaction) => {
@@ -535,23 +574,78 @@
                 });
             });
             showToast(`✅ ${formatMoney(dailyAmount)} claimed!`, false);
-            await loadInvestments();
+            if (refreshAfter) await loadInvestments();
+            return true;
         } catch (err) {
             showToast(err.message || 'Claim failed', true);
+            return false;
         }
     }
 
-    function updateTotalPending(investments) {
+    async function claimAllAvailable() {
+        const user = auth.currentUser;
+        if (!user) return;
+        const now = new Date();
+        if (isWeekend(now)) {
+            showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
+            return;
+        }
+
+        const claimable = [];
+        for (const inv of currentInvestments) {
+            const status = getClaimStatus(inv, now);
+            if (status.available) {
+                claimable.push({ id: inv.id, dailyAmount: status.dailyAmount });
+            }
+        }
+
+        if (claimable.length === 0) {
+            showToast('No pending earnings to claim.', true);
+            return;
+        }
+
+        const claimBtn = document.getElementById('claimAllBtn');
+        claimBtn.disabled = true;
+        claimBtn.innerText = 'Claiming...';
+
+        let totalClaimed = 0;
+        let successCount = 0;
+        for (const item of claimable) {
+            const success = await claimDailyIncome(item.id, item.dailyAmount, false);
+            if (success) {
+                totalClaimed += item.dailyAmount;
+                successCount++;
+            }
+        }
+
+        await loadInvestments();
+        if (successCount > 0) {
+            showToast(`✅ Claimed ${formatMoney(totalClaimed)} from ${successCount} investment(s)!`, false);
+        } else {
+            showToast('No claims were successful. Please try again.', true);
+        }
+        claimBtn.disabled = false;
+        claimBtn.innerText = '💰 Claim All Available';
+    }
+
+    function updateTotalPendingAndClaimAll(investments) {
         const now = new Date();
         let total = 0;
+        let hasClaimable = false;
         for (const inv of investments) {
             const claimStatus = getClaimStatus(inv, now);
             if (claimStatus.available) {
                 total += claimStatus.dailyAmount;
+                hasClaimable = true;
             }
         }
         const totalSpan = document.getElementById('totalPending');
         if (totalSpan) totalSpan.innerText = total.toFixed(2);
+        
+        const claimAllBtn = document.getElementById('claimAllBtn');
+        if (claimAllBtn) {
+            claimAllBtn.disabled = !hasClaimable || isWeekend(now);
+        }
     }
 
     function renderExpired(investments) {
@@ -572,7 +666,7 @@
                     </div>
                     <div class="plan-details">
                         <span>📅 Started: ${inv.startDate.toLocaleDateString()}</span>
-                        <span>💰 Daily: ${inv.dailyReturn}% (${formatMoney(inv.dailyAmount)})</span>
+                        <span>💰 Daily: ${formatMoney(inv.dailyReturn)}</span>
                         <span>⏱️ Status: ${statusText}</span>
                     </div>
                 </div>
@@ -606,6 +700,8 @@
             if (tabId === 'normal') loadInvestments();
         });
     });
+
+    document.getElementById('claimAllBtn')?.addEventListener('click', claimAllAvailable);
 
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'income.html';

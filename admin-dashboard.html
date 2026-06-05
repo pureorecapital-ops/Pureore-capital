@@ -17,6 +17,49 @@
             color: var(--admin-text);
             padding: 1rem;
             transition: var(--transition);
+            position: relative;
+            overflow-x: hidden;
+        }
+        /* Starfield animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(2px 2px at 20% 30%, #fff, rgba(0,0,0,0)),
+                        radial-gradient(1px 1px at 60% 70%, #fff, rgba(0,0,0,0)),
+                        radial-gradient(3px 3px at 85% 15%, #fff, rgba(0,0,0,0));
+            background-size: 200px 200px, 150px 150px, 300px 300px;
+            background-repeat: no-repeat;
+            opacity: 0.3;
+            animation: starsMove 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes starsMove {
+            0% { background-position: 0% 0%, 0% 0%, 0% 0%; }
+            100% { background-position: 200px 200px, 150px 150px, 300px 300px; }
+        }
+        /* Moon glow */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255,255,200,0.2) 0%, rgba(255,255,200,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: moonGlow 6s ease-in-out infinite;
+        }
+        @keyframes moonGlow {
+            0% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 0.3; transform: scale(1); }
         }
         :root {
             --admin-primary: #2ecc71;      /* green */
@@ -43,7 +86,7 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 2; }
         .admin-header {
             display: flex;
             justify-content: space-between;
@@ -355,6 +398,20 @@
     <div id="settingsTab" class="tab-content">
         <div class="admin-card"><div class="card-title">⚙️ General Settings</div><div><label>Website Name</label> <input type="text" id="websiteName" style="width:100%;"></div><div><label>Contact Email</label> <input type="email" id="contactEmail" style="width:100%;"></div><div><label>Contact Phone</label> <input type="text" id="contactPhone" style="width:100%;"></div><div><label>Payment Methods Info</label> <textarea id="paymentMethods" rows="3" style="width:100%;"></textarea></div><button id="saveSettingsBtn" class="btn-small success">Save Settings</button></div>
         <div class="admin-card"><div class="card-title">💸 Withdrawal Rules</div><div style="display: flex; flex-direction: column; gap: 0.8rem;"><label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="withdrawRequireDeposit" checked> Require at least one completed deposit before withdrawal</label><label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="withdrawRequireInvestment" checked> Require at least one investment plan before withdrawal</label><p class="note" style="font-size: 0.8rem; color: #aaa;">If unchecked, users can withdraw without meeting those requirements.</p><button id="saveWithdrawRulesBtn" class="btn-small success">Save Withdrawal Rules</button><div id="withdrawRulesMsg" style="margin-top: 0.5rem;"></div></div></div>
+        <!-- NEW: Deposit Verification Rules -->
+        <div class="admin-card">
+            <div class="card-title">🔍 Deposit Verification Rules</div>
+            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="depositRequireAmountMatch" checked> Require SMS amount matches deposit amount</label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="depositRequireAgentName" checked> Require agent name in SMS</label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="depositRequireNetworkKeyword" checked> Require network keyword (mtn/airtel/zamtel)</label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="depositRequireTxKeyword" checked> Require transaction keyword (send/sent/received/paid/transfer/successful/payment)</label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="depositRequireFutureDate" checked> Reject future transaction date</label>
+                <p class="note" style="font-size: 0.8rem; color: #aaa;">If unchecked, those checks will be skipped in deposit verification.</p>
+                <button id="saveDepositRulesBtn" class="btn-small success">Save Deposit Rules</button>
+                <div id="depositRulesMsg" style="margin-top: 0.5rem;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Admins Tab -->
@@ -368,8 +425,8 @@
 </div>
 
 <!-- Modals -->
-<div id="addPlanModal" class="modal"><div class="modal-content"><h3>➕ Add Investment Plan</h3><div style="margin-bottom: 0.8rem;"><label>Plan Name</label><input type="text" id="planName" placeholder="e.g., Starter"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Min Amount (ZMW)</label><input type="number" id="planMin" placeholder="Min"></div><div><label>Max Amount (ZMW)</label><input type="number" id="planMax" placeholder="Max"></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Days</label><input type="number" id="planDays" placeholder="Days"></div><div><label>Daily Return (%)</label><input type="number" id="planDailyReturn" placeholder="%"></div></div><div><label>Image URL (or upload below)</label><input type="text" id="planImage" placeholder="https://..."><div style="margin-top: 0.5rem;"><label>Upload Image (max 150px)</label><input type="file" id="planImageFile" accept="image/*"><div id="planImagePreview" class="image-upload-preview"></div></div></div><div><label>Purchase Limit (0 = unlimited)</label><input type="number" id="planPurchaseLimit" value="0"></div><div><label>Lock Text (optional)</label><input type="text" id="planLock" placeholder="e.g., Purchased 1 time and locked"></div><div><label>Expiry</label><input type="text" id="planExpiry" placeholder="Auto or date"></div><div><label>Description</label><textarea id="planDesc" rows="2" placeholder="Plan description"></textarea></div><input type="hidden" id="planType"><div style="display: flex; gap: 1rem; margin-top: 1rem;"><button id="savePlanBtn" class="btn-small success" style="flex:1;">Save</button><button class="btn-small danger" onclick="closeModal('addPlanModal')" style="flex:1;">Cancel</button></div></div></div>
-<div id="editPlanModal" class="modal"><div class="modal-content"><h3>✏️ Edit Investment Plan</h3><input type="hidden" id="editPlanId"><input type="hidden" id="editPlanType"><div><label>Plan Name</label><input type="text" id="editPlanName"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Min Amount</label><input type="number" id="editPlanMin"></div><div><label>Max Amount</label><input type="number" id="editPlanMax"></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Days</label><input type="number" id="editPlanDays"></div><div><label>Daily Return %</label><input type="number" id="editPlanDailyReturn"></div></div><div><label>Image URL</label><input type="text" id="editPlanImage"><div><label>Upload New Image (optional)</label><input type="file" id="editPlanImageFile" accept="image/*"><div id="editPlanImagePreview" class="image-upload-preview"></div></div></div><div><label>Purchase Limit (0 = unlimited)</label><input type="number" id="editPlanPurchaseLimit" value="0"></div><div><label>Lock Text</label><input type="text" id="editPlanLock"></div><div><label>Expiry</label><input type="text" id="editPlanExpiry"></div><div><label>Description</label><textarea id="editPlanDesc" rows="2"></textarea></div><div style="display: flex; gap: 1rem; margin-top: 1rem;"><button id="updatePlanBtn" class="btn-small success" style="flex:1;">Update</button><button class="btn-small danger" onclick="closeModal('editPlanModal')" style="flex:1;">Cancel</button></div></div></div>
+<div id="addPlanModal" class="modal"><div class="modal-content"><h3>➕ Add Investment Plan</h3><div style="margin-bottom: 0.8rem;"><label>Plan Name</label><input type="text" id="planName" placeholder="e.g., Starter"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Min Amount (ZMW)</label><input type="number" id="planMin" placeholder="Min"></div><div><label>Max Amount (ZMW)</label><input type="number" id="planMax" placeholder="Max"></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Days</label><input type="number" id="planDays" placeholder="Days"></div><div><label>Daily Return (ZMW)</label><input type="number" id="planDailyReturn" placeholder="Absolute daily profit"></div></div><div><label>Image URL (or upload below)</label><input type="text" id="planImage" placeholder="https://..."><div style="margin-top: 0.5rem;"><label>Upload Image (max 150px)</label><input type="file" id="planImageFile" accept="image/*"><div id="planImagePreview" class="image-upload-preview"></div></div></div><div><label>Purchase Limit (0 = unlimited)</label><input type="number" id="planPurchaseLimit" value="0"></div><div><label>Lock Text (optional)</label><input type="text" id="planLock" placeholder="e.g., Purchased 1 time and locked"></div><div><label>Expiry</label><input type="text" id="planExpiry" placeholder="Auto or date"></div><div><label>Description</label><textarea id="planDesc" rows="2" placeholder="Plan description"></textarea></div><input type="hidden" id="planType"><div style="display: flex; gap: 1rem; margin-top: 1rem;"><button id="savePlanBtn" class="btn-small success" style="flex:1;">Save</button><button class="btn-small danger" onclick="closeModal('addPlanModal')" style="flex:1;">Cancel</button></div></div></div>
+<div id="editPlanModal" class="modal"><div class="modal-content"><h3>✏️ Edit Investment Plan</h3><input type="hidden" id="editPlanId"><input type="hidden" id="editPlanType"><div><label>Plan Name</label><input type="text" id="editPlanName"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Min Amount</label><input type="number" id="editPlanMin"></div><div><label>Max Amount</label><input type="number" id="editPlanMax"></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Days</label><input type="number" id="editPlanDays"></div><div><label>Daily Return (ZMW)</label><input type="number" id="editPlanDailyReturn"></div></div><div><label>Image URL</label><input type="text" id="editPlanImage"><div><label>Upload New Image (optional)</label><input type="file" id="editPlanImageFile" accept="image/*"><div id="editPlanImagePreview" class="image-upload-preview"></div></div></div><div><label>Purchase Limit (0 = unlimited)</label><input type="number" id="editPlanPurchaseLimit" value="0"></div><div><label>Lock Text</label><input type="text" id="editPlanLock"></div><div><label>Expiry</label><input type="text" id="editPlanExpiry"></div><div><label>Description</label><textarea id="editPlanDesc" rows="2"></textarea></div><div style="display: flex; gap: 1rem; margin-top: 1rem;"><button id="updatePlanBtn" class="btn-small success" style="flex:1;">Update</button><button class="btn-small danger" onclick="closeModal('editPlanModal')" style="flex:1;">Cancel</button></div></div></div>
 <div id="addNewsModal" class="modal"><div class="modal-content"><h3>Add News</h3><input type="text" id="newsTitle" placeholder="Title"><textarea id="newsContent" rows="4" placeholder="Content"></textarea><input type="text" id="newsImage" placeholder="Image URL (optional)"><button id="saveNewsBtn" class="btn-small success">Post</button><button class="btn-small" onclick="closeModal('addNewsModal')">Cancel</button></div></div>
 <div id="addTreasureModal" class="modal"><div class="modal-content"><h3>Create Treasure Code</h3><input type="text" id="treasureCode" placeholder="7 characters (letters+numbers)" maxlength="7"><input type="number" id="treasureAmount" placeholder="Amount (ZMW)"><button id="saveTreasureBtn" class="btn-small success">Create</button><button class="btn-small" onclick="closeModal('addTreasureModal')">Cancel</button></div></div>
 <div id="addAdminModal" class="modal"><div class="modal-content"><h3>Add Admin</h3><input type="email" id="adminEmail" placeholder="Admin Email"><input type="password" id="adminPassword" placeholder="Password (min 6)"><button id="createAdminBtn" class="btn-small success">Create Admin</button><button class="btn-small" onclick="closeModal('addAdminModal')">Cancel</button></div></div>
@@ -426,6 +483,7 @@
         if (userDoc.data().isBlocked === true) { await auth.signOut(); showToast('Admin account blocked', true); window.location.href = 'admin-login.html'; return; }
         loadStats(); loadRecentActivities(); loadUsers(); loadPendingDeposits(); loadDepositsHistory(); loadPendingWithdrawals(); loadWithdrawalsHistory(); loadMkvipPlans(); loadJproductPlans(); loadTransactions(); loadNews(); loadSupportTickets(); loadTreasureCodes(); loadVouchers(); loadSettings(); loadAdmins(); loadAppearanceSettings(); loadUserAppearanceSettings();
         loadWithdrawalRules();
+        loadDepositRules();
         setupPendingListeners();
         setupVoucherManualCreation();
     });
@@ -519,26 +577,29 @@
         } catch (err) { showToast(err.message, true); }
     };
 
-    // ==================== DEPOSITS ====================
+    // ==================== DEPOSITS with 150 char SMS preview ====================
     async function loadPendingDeposits() {
         const pending = await db.collection('deposits').where('status', '==', 'pending').get();
-        let html = '<table><tr><th>User</th><th>Amount</th><th>Method</th><th>Screenshot</th><th>SMS Preview</th><th>Date/Time</th><th>Actions</th></tr>';
+        let html = '</table><tr><th>User</th><th>Amount</th><th>Method</th><th>Screenshot</th><th>SMS Preview (150 chars)</th><th>Date/Time</th><th>Actions</th></tr>';
         for (const doc of pending.docs) {
             const d = doc.data();
             const user = await db.collection('users').doc(d.userId).get();
-            const smsPreview = d.smsText ? (d.smsText.length > 100 ? d.smsText.substring(0,100)+'...' : d.smsText) : 'N/A';
+            let smsPreview = 'N/A';
+            if (d.smsText) {
+                smsPreview = d.smsText.length > 150 ? d.smsText.substring(0,150)+'...' : d.smsText;
+            }
             const dateTime = d.createdAt ? d.createdAt.toDate().toLocaleString() : 'N/A';
             html += `<tr>
                 <td>${escapeHtml(user.data()?.fullName || d.userId)}</td>
                 <td>${formatMoney(d.amount)}</td>
                 <td>${d.paymentMethod}</td>
                 <td>${d.screenshotUrl ? `<a href="${d.screenshotUrl}" target="_blank">View</a>` : '-'}</td>
-                <td><div style="max-width:200px; overflow-x:auto;">${escapeHtml(smsPreview)}</div></td>
+                <td><div style="max-width:200px; overflow-x:auto; font-size:0.75rem;">${escapeHtml(smsPreview)}</div></td>
                 <td>${dateTime}</td>
                 <td><button class="btn-small success" onclick="approveDeposit('${doc.id}', '${d.userId}', ${d.amount})">Approve</button> <button class="btn-small danger" onclick="rejectDeposit('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td></tr>';
+        document.getElementById('pendingDepositsList').innerHTML = html || '<table><td colspan="7">No pending deposits</td></tr>';
     }
     window.approveDeposit = async (depositId, userId, amount) => {
         await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); t.update(userRef, { balance: (userSnap.data().balance || 0) + amount }); t.update(db.collection('deposits').doc(depositId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
@@ -547,19 +608,19 @@
     window.rejectDeposit = async (depositId) => { await db.collection('deposits').doc(depositId).update({ status: 'rejected' }); loadPendingDeposits(); loadDepositsHistory(); };
     async function loadDepositsHistory() {
         const all = await db.collection('deposits').orderBy('createdAt', 'desc').get();
-        let html = '<table><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>';
+        let html = '<tr><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>';
         for (const doc of all.docs) {
             const d = doc.data();
             const user = await db.collection('users').doc(d.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.fullName || d.userId)}</td><td>${formatMoney(d.amount)}</td><td>${d.status}</td><td>${d.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td></tr>';
+        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</tr></tr>';
     }
 
     // ==================== WITHDRAWALS ====================
     async function loadPendingWithdrawals() {
         const pending = await db.collection('withdrawals').where('status', '==', 'pending').get();
-        let html = '<table><tr><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>';
+        let html = '<tr><tr><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>';
         for (const doc of pending.docs) {
             const w = doc.data();
             const user = await db.collection('users').doc(w.userId).get();
@@ -581,29 +642,29 @@
     window.rejectWithdrawal = async (withdrawalId) => { await db.collection('withdrawals').doc(withdrawalId).update({ status: 'rejected' }); loadPendingWithdrawals(); loadWithdrawalsHistory(); };
     async function loadWithdrawalsHistory() {
         const all = await db.collection('withdrawals').orderBy('createdAt', 'desc').get();
-        let html = '<table><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>';
+        let html = '<tr><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>';
         for (const doc of all.docs) {
             const w = doc.data();
             const user = await db.collection('users').doc(w.userId).get();
-            html += `<tr><td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+            html += `<tr><tr>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
         document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td></tr>';
     }
 
-    // ==================== INVESTMENT PLANS (FIXED SAVE BUTTON) ====================
+    // ==================== INVESTMENT PLANS ====================
     let currentPlanType = '';
     async function loadMkvipPlans() { loadPlans('mkvipPlans', 'mkvipPlansList'); }
     async function loadJproductPlans() { loadPlans('jproductPlans', 'jproductPlansList'); }
     async function loadPlans(collection, elementId) {
         const snapshot = await db.collection(collection).orderBy('createdAt', 'desc').get();
-        let html = '<table><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily %</th><th>Actions</th></tr>';
+        let html = '<tr><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily (ZMW)</th><th>Actions</th></tr>';
         snapshot.forEach(doc => {
             const p = doc.data();
             html += `<tr>
                 <td>${escapeHtml(p.name)}</td>
                 <td>${p.minAmount} - ${p.maxAmount}</td>
                 <td>${p.days}</td>
-                <td>${p.dailyReturn}%</td>
+                <td>${p.dailyReturn} ZMW</td>
                 <td><button class="btn-small" onclick="openEditPlanModal('${doc.id}', '${collection}')">Edit</button> <button class="btn-small danger" onclick="deletePlan('${doc.id}', '${collection}')">Delete</button></td>
             </tr>`;
         });
@@ -631,7 +692,6 @@
         const type = document.getElementById('planType').value;
         const collection = type === 'mkvip' ? 'mkvipPlans' : 'jproductPlans';
         
-        // Get values
         const name = document.getElementById('planName').value.trim();
         const minAmount = parseFloat(document.getElementById('planMin').value);
         const maxAmount = parseFloat(document.getElementById('planMax').value);
@@ -643,15 +703,13 @@
         const expiry = document.getElementById('planExpiry').value;
         const description = document.getElementById('planDesc').value;
         
-        // Validation
         if (!name) { showToast('Plan name is required', true); return; }
         if (isNaN(minAmount) || minAmount <= 0) { showToast('Min Amount must be a positive number', true); return; }
         if (isNaN(maxAmount) || maxAmount <= 0) { showToast('Max Amount must be a positive number', true); return; }
         if (isNaN(days) || days <= 0) { showToast('Days must be a positive number', true); return; }
-        if (isNaN(dailyReturn) || dailyReturn <= 0) { showToast('Daily Return must be a positive number', true); return; }
+        if (isNaN(dailyReturn) || dailyReturn <= 0) { showToast('Daily Return (ZMW) must be a positive number', true); return; }
         if (minAmount > maxAmount) { showToast('Min Amount cannot be greater than Max Amount', true); return; }
         
-        // Upload image if selected
         const imageFile = document.getElementById('planImageFile').files[0];
         if (imageFile) {
             try {
@@ -718,10 +776,10 @@
     };
     window.deletePlan = async (id, collection) => { if(confirm('Delete plan?')) { await db.collection(collection).doc(id).delete(); if(collection === 'mkvipPlans') loadMkvipPlans(); else loadJproductPlans(); showToast('Deleted'); } };
 
-    // ==================== TRANSACTIONS ====================
+    // ==================== TRANSACTIONS, NEWS, SUPPORT, TREASURE ====================
     async function loadTransactions() {
         const txns = await db.collection('transactions').orderBy('createdAt', 'desc').get();
-        let html = '<table><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>';
+        let html = '<tr><td><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>';
         for (const doc of txns.docs) {
             const t = doc.data();
             const user = await db.collection('users').doc(t.userId).get();
@@ -731,10 +789,9 @@
         document.getElementById('txSearchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#transactionsList tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
     }
 
-    // ==================== NEWS ====================
     async function loadNews() {
         const news = await db.collection('news').orderBy('createdAt', 'desc').get();
-        let html = '<table><tr><th>Title</th><th>Image</th><th>Actions</th></tr>';
+        let html = '<tr><tr><th>Title</th><th>Image</th><th>Actions</th></tr>';
         news.forEach(doc => { const n = doc.data(); html += `<tr><td>${escapeHtml(n.title)}</td><td>${n.imageUrl ? '<a href="'+n.imageUrl+'" target="_blank">View</a>' : '-'}</td><td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td></tr>`; });
         document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td></tr>';
     }
@@ -742,14 +799,19 @@
     document.getElementById('saveNewsBtn').onclick = async () => { await db.collection('news').add({ title: document.getElementById('newsTitle').value, content: document.getElementById('newsContent').value, imageUrl: document.getElementById('newsImage').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addNewsModal'); loadNews(); showToast('News posted'); };
     window.deleteNews = async (id) => { if(confirm('Delete news?')) { await db.collection('news').doc(id).delete(); loadNews(); } };
 
-    // ==================== SUPPORT TICKETS ====================
     async function loadSupportTickets() {
         const tickets = await db.collection('supportTickets').orderBy('createdAt', 'desc').get();
-        let html = '<table><tr><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>';
+        let html = '<tr><tr><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>';
         for (const doc of tickets.docs) {
             const t = doc.data();
             const user = await db.collection('users').doc(t.userId).get();
-            html += `<tr><td>${escapeHtml(user.data()?.email || t.userId)}</td><td>${escapeHtml(t.subject)}</td><td>${escapeHtml(t.message)}</td><td>${t.status}</td><td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td></tr>`;
+            html += `<tr>
+                <td>${escapeHtml(user.data()?.email || t.userId)}</td>
+                <td>${escapeHtml(t.subject)}</td>
+                <td>${escapeHtml(t.message)}</td>
+                <td>${t.status}</td>
+                <td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td>
+            <tr>`;
         }
         document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td></tr>';
     }
@@ -757,12 +819,11 @@
     document.getElementById('sendReplyBtn').onclick = async () => { const ticketId = document.getElementById('replyTicketId').value; const reply = document.getElementById('replyMessage').value; await db.collection('supportTickets').doc(ticketId).update({ replies: firebase.firestore.FieldValue.arrayUnion({ reply, repliedAt: new Date(), admin: true }), status: 'replied' }); closeModal('supportReplyModal'); loadSupportTickets(); showToast('Reply sent'); };
     window.closeTicket = async (id) => { await db.collection('supportTickets').doc(id).update({ status: 'closed' }); loadSupportTickets(); };
 
-    // ==================== TREASURE CODES ====================
     async function loadTreasureCodes() {
         const codes = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
-        let html = '<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>';
-        codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td><td>${c.amount}</td><td>${c.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td></tr>';
+        let html = '<tr><td><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>';
+        codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td><td>${c.amount}</td><td>${c.used ? 'Yes' : 'No'}</td>}<button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td>`; });
+        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes subsets`;
     }
     window.openAddTreasureModal = () => { document.getElementById('addTreasureModal').style.display = 'flex'; };
     document.getElementById('saveTreasureBtn').onclick = async () => { const code = document.getElementById('treasureCode').value.toUpperCase(); const amount = parseFloat(document.getElementById('treasureAmount').value); if(code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 uppercase letters/numbers', true); return; } await db.collection('treasureCodes').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addTreasureModal'); loadTreasureCodes(); showToast('Treasure code created'); };
@@ -771,9 +832,9 @@
     // ==================== VOUCHERS ====================
     async function loadVouchers() {
         const vouchers = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
-        let html = '<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>';
-        vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td><td>${v.amount}</td><td>${v.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td></tr>';
+        let html = '</table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>';
+        vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td> Whether${v.amount}</td> Whether${v.used ? 'Yes' : 'No'}</td> Whether<button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td>`; });
+        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</tr></tr>';
     }
     window.deleteVoucher = async (id) => { if(confirm('Delete?')) { await db.collection('vouchers').doc(id).delete(); loadVouchers(); } };
 
@@ -881,11 +942,44 @@
         setTimeout(() => document.getElementById('withdrawRulesMsg').innerHTML = '', 3000);
     };
 
-    // ==================== ADMINS ====================
+    // ==================== DEPOSIT RULES ====================
+    async function loadDepositRules() {
+        const doc = await db.collection('systemSettings').doc('depositRules').get();
+        if (doc.exists) {
+            document.getElementById('depositRequireAmountMatch').checked = doc.data().requireAmountMatch !== false;
+            document.getElementById('depositRequireAgentName').checked = doc.data().requireAgentName !== false;
+            document.getElementById('depositRequireNetworkKeyword').checked = doc.data().requireNetworkKeyword !== false;
+            document.getElementById('depositRequireTxKeyword').checked = doc.data().requireTxKeyword !== false;
+            document.getElementById('depositRequireFutureDate').checked = doc.data().requireFutureDate !== false;
+        } else {
+            // Default: all true
+            document.getElementById('depositRequireAmountMatch').checked = true;
+            document.getElementById('depositRequireAgentName').checked = true;
+            document.getElementById('depositRequireNetworkKeyword').checked = true;
+            document.getElementById('depositRequireTxKeyword').checked = true;
+            document.getElementById('depositRequireFutureDate').checked = true;
+        }
+    }
+    document.getElementById('saveDepositRulesBtn').onclick = async () => {
+        const requireAmountMatch = document.getElementById('depositRequireAmountMatch').checked;
+        const requireAgentName = document.getElementById('depositRequireAgentName').checked;
+        const requireNetworkKeyword = document.getElementById('depositRequireNetworkKeyword').checked;
+        const requireTxKeyword = document.getElementById('depositRequireTxKeyword').checked;
+        const requireFutureDate = document.getElementById('depositRequireFutureDate').checked;
+        await db.collection('systemSettings').doc('depositRules').set({
+            requireAmountMatch, requireAgentName, requireNetworkKeyword,
+            requireTxKeyword, requireFutureDate,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        document.getElementById('depositRulesMsg').innerHTML = '<span style="color:#2ecc71;">✅ Deposit verification rules saved</span>';
+        setTimeout(() => document.getElementById('depositRulesMsg').innerHTML = '', 3000);
+    };
+
+    // ==================== ADMINS, APPEARANCE ====================
     async function loadAdmins() {
         const admins = await db.collection('users').where('role', '==', 'admin').get();
         let html = '<table><tr><th>Email</th><th>Name</th><th>Actions</th></tr>';
-        admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.fullName || '-')}</td><td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td></tr>`; });
+        admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td> Whether${escapeHtml(a.fullName || '-')}</td> Whether<button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td>`; });
         document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td></tr>';
     }
     window.openAddAdminModal = () => { document.getElementById('addAdminModal').style.display = 'flex'; };
@@ -900,7 +994,6 @@
     };
     window.removeAdmin = async (uid) => { if(confirm('Remove admin?')) { await db.collection('users').doc(uid).delete(); loadAdmins(); } };
 
-    // ==================== APPEARANCE ====================
     async function loadAppearanceSettings() {
         const doc = await db.collection('systemSettings').doc('appearance').get();
         if(doc.exists) {

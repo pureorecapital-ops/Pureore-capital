@@ -237,19 +237,6 @@
             border-radius: 12px;
             border: 1px solid #2ecc71;
         }
-        .datetime-row {
-            display: flex;
-            gap: 1rem;
-            margin: 0.5rem 0;
-        }
-        .datetime-row input {
-            flex: 1;
-            background: #1E1E2A;
-            border: 1px solid #2C2C3A;
-            border-radius: 40px;
-            padding: 0.7rem;
-            color: white;
-        }
         .error-msg { color: #ef4444; font-size: 0.8rem; margin-top: 0.3rem; }
         .success-msg { color: #2ecc71; text-align: center; font-weight: bold; }
         .hidden { display: none; }
@@ -307,11 +294,6 @@
     <div id="step2Card" class="card hidden">
         <div id="agentInfo"></div>
         <div class="verify-card">
-            <div class="section-title">📅 Transaction Date & Time</div>
-            <div class="datetime-row">
-                <input type="date" id="transactionDate" value="">
-                <input type="time" id="transactionTime" value="">
-            </div>
             <div class="section-title">📝 Paste your transaction SMS</div>
             <textarea id="smsText" rows="4" placeholder="Paste the SMS from MTN, Airtel or Zamtel here"></textarea>
             <div class="section-title">📸 Upload screenshot of payment</div>
@@ -418,16 +400,89 @@
     const verifyMessage = document.getElementById('verifyMessage');
     const fileNameDisplay = document.getElementById('fileNameDisplay');
     const imagePreviewDiv = document.getElementById('imagePreview');
-    const transactionDateInput = document.getElementById('transactionDate');
-    const transactionTimeInput = document.getElementById('transactionTime');
 
     let selectedAmount = null;
     let selectedNetwork = null;
     let currentAgent = null;
 
-    const now = new Date();
-    transactionDateInput.value = now.toISOString().split('T')[0];
-    transactionTimeInput.value = now.toTimeString().slice(0,5);
+    // Deposit rules (loaded from Firestore)
+    let depositRules = {
+        requireAmountMatch: true,
+        requireAgentName: true,
+        requireNetworkKeyword: true,
+        requireTxKeyword: true
+    };
+
+    async function loadDepositRules() {
+        try {
+            const doc = await db.collection('systemSettings').doc('depositRules').get();
+            if (doc.exists) {
+                const data = doc.data();
+                depositRules.requireAmountMatch = data.requireAmountMatch !== false;
+                depositRules.requireAgentName = data.requireAgentName !== false;
+                depositRules.requireNetworkKeyword = data.requireNetworkKeyword !== false;
+                depositRules.requireTxKeyword = data.requireTxKeyword !== false;
+            }
+        } catch (err) {
+            console.warn("Could not load deposit rules, using defaults", err);
+        }
+    }
+
+    // Helper to get agent name for selected network (same as in payNowBtn)
+    function getAgentNameForNetwork(network) {
+        const mtnAgentsDisplay = [
+            { number: '0961391022', name: 'John Kabwe' },
+            { number: '0960338304', name: 'Getrude Sonpo' }
+        ];
+        const airtelAgentDisplay = { number: '0775552002', name: 'John Kabwe' };
+        const zamtelAgentDisplay = { number: '0951359357', name: 'Jeremiah Ilunga' };
+        if (network === 'mtn') {
+            const index = Math.floor(Date.now() / 60000) % 2;
+            return mtnAgentsDisplay[index].name;
+        } else if (network === 'airtel') {
+            return airtelAgentDisplay.name;
+        } else if (network === 'zamtel') {
+            return zamtelAgentDisplay.name;
+        }
+        return '';
+    }
+
+    // Validate SMS based on enabled rules
+    function validateSms(sms, amount, network) {
+        const lowerSms = sms.toLowerCase();
+        // 1. Amount match (if rule enabled)
+        if (depositRules.requireAmountMatch) {
+            const amountRegex = new RegExp(`\\b${amount}\\b`);
+            if (!amountRegex.test(sms)) {
+                return { valid: false, error: `SMS amount does not match your deposit amount (${amount} ZMW).` };
+            }
+        }
+        // 2. Network keyword (if rule enabled)
+        if (depositRules.requireNetworkKeyword) {
+            let networkKeyword = '';
+            if (network === 'mtn') networkKeyword = 'mtn';
+            else if (network === 'airtel') networkKeyword = 'airtel';
+            else if (network === 'zamtel') networkKeyword = 'zamtel';
+            if (!lowerSms.includes(networkKeyword)) {
+                return { valid: false, error: `SMS does not contain the network name (${network.toUpperCase()}). Please paste the correct SMS.` };
+            }
+        }
+        // 3. Agent name (if rule enabled)
+        if (depositRules.requireAgentName) {
+            const agentName = getAgentNameForNetwork(network);
+            if (!lowerSms.includes(agentName.toLowerCase())) {
+                return { valid: false, error: `SMS does not contain the agent name "${agentName}". Please make sure you paid the correct agent.` };
+            }
+        }
+        // 4. Transaction keywords (if rule enabled)
+        if (depositRules.requireTxKeyword) {
+            const txKeywords = /send|sent|received|deposit|paid|transfer|successful|payment/i;
+            if (!txKeywords.test(sms)) {
+                return { valid: false, error: 'SMS does not contain a recognised transaction keyword (send, sent, received, etc.).' };
+            }
+        }
+        return { valid: true, error: null };
+    }
 
     screenshotUpload.addEventListener('change', () => {
         const file = screenshotUpload.files[0];
@@ -566,12 +621,13 @@
         }
     });
 
-    // Simplified verification: only check agent name and date
+    // Load deposit rules once when page loads
+    loadDepositRules();
+
+    // Verification with conditional rules
     verifyBtn.addEventListener('click', async () => {
         const sms = smsTextarea.value.trim();
         const screenshotFile = screenshotUpload.files[0];
-        const userDate = transactionDateInput.value;
-        const userTime = transactionTimeInput.value;
 
         if (!sms) {
             verifyMessage.innerHTML = '<div class="error-msg">❌ Please paste the SMS.</div>';
@@ -581,38 +637,19 @@
             verifyMessage.innerHTML = '<div class="error-msg">❌ Please upload a screenshot.</div>';
             return;
         }
-        if (!userDate || !userTime) {
-            verifyMessage.innerHTML = '<div class="error-msg">❌ Please set transaction date/time.</div>';
-            return;
-        }
 
-        // Check that the transaction date is not in the future
-        const transactionTimestamp = new Date(`${userDate}T${userTime}:00`);
-        if (transactionTimestamp > new Date()) {
-            verifyMessage.innerHTML = '<div class="error-msg">❌ Transaction date/time cannot be in the future.</div>';
-            return;
-        }
-
+        const amount = parseFloat(sessionStorage.getItem('depositAmount'));
         const network = sessionStorage.getItem('depositNetwork');
-        if (!network) {
+        const phone = sessionStorage.getItem('depositPhone');
+        if (!amount || !network || !phone) {
             verifyMessage.innerHTML = '<div class="error-msg">Session expired. Please go back and start over.</div>';
             return;
         }
 
-        // Get agent name for the selected network
-        let agentName = '';
-        if (network === 'mtn') {
-            const index = Math.floor(Date.now() / 60000) % 2;
-            agentName = mtnAgentsDisplay[index].name;
-        } else if (network === 'airtel') {
-            agentName = airtelAgentDisplay.name;
-        } else if (network === 'zamtel') {
-            agentName = zamtelAgentDisplay.name;
-        }
-
-        // Check if agent name appears in the SMS (case-insensitive)
-        if (!sms.toLowerCase().includes(agentName.toLowerCase())) {
-            verifyMessage.innerHTML = `<div class="error-msg">❌ SMS does not contain the agent name "${agentName}". Please make sure you paid the correct agent.</div>`;
+        // Apply SMS validation based on enabled rules
+        const validation = validateSms(sms, amount, network);
+        if (!validation.valid) {
+            verifyMessage.innerHTML = `<div class="error-msg">${validation.error}</div>`;
             return;
         }
 
@@ -624,19 +661,18 @@
 
         verifyBtn.disabled = true;
         verifyBtn.innerText = 'Submitting...';
-        verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Submitting deposit...</div>';
+        verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Verifying and submitting...</div>';
 
         try {
             const depositRef = db.collection('deposits').doc();
             const depositId = depositRef.id;
             await depositRef.set({
                 userId: user.uid,
-                amount: parseFloat(sessionStorage.getItem('depositAmount')) || 0,
+                amount: amount,
                 paymentMethod: network,
-                phone: sessionStorage.getItem('depositPhone'),
+                phone: phone,
                 screenshotUrl: '',
                 status: 'pending',
-                userProvidedTimestamp: firebase.firestore.Timestamp.fromDate(transactionTimestamp),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 smsText: sms
             });
