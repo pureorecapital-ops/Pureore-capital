@@ -62,11 +62,11 @@
             100% { opacity: 0.3; transform: scale(1); }
         }
         :root {
-            --admin-primary: #2ecc71;      /* green */
-            --admin-secondary: #1a5c7a;    /* deep teal/blue */
-            --admin-tertiary: #3498db;     /* light blue */
-            --admin-bg: #0a1a2a;           /* dark blue bg */
-            --admin-card: #0d2a3a;          /* card blue */
+            --admin-primary: #2ecc71;
+            --admin-secondary: #1a5c7a;
+            --admin-tertiary: #3498db;
+            --admin-bg: #0a1a2a;
+            --admin-card: #0d2a3a;
             --admin-text: #e0f0f6;
             --admin-border: #2ecc7140;
             --admin-gradient: linear-gradient(135deg, #2ecc71, #1a5c7a, #3498db);
@@ -598,7 +598,7 @@
                 <td><button class="btn-small success" onclick="approveDeposit('${doc.id}', '${d.userId}', ${d.amount})">Approve</button> <button class="btn-small danger" onclick="rejectDeposit('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td></tr>';
+        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td><tr>';
     }
     window.approveDeposit = async (depositId, userId, amount) => {
         await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); t.update(userRef, { balance: (userSnap.data().balance || 0) + amount }); t.update(db.collection('deposits').doc(depositId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
@@ -613,7 +613,7 @@
             const user = await db.collection('users').doc(d.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.fullName || d.userId)}</td><td>${formatMoney(d.amount)}</td><td>${d.status}</td><td>${d.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td></tr>';
+        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td><tr>';
     }
 
     // ==================== WITHDRAWALS ====================
@@ -632,7 +632,7 @@
                 <td><button class="btn-small success" onclick="approveWithdrawal('${doc.id}', '${w.userId}', ${w.amount})">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="6">No pending withdrawals</td></tr>';
+        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="6">No pending withdrawals</td><tr>';
     }
     window.approveWithdrawal = async (withdrawalId, userId, amount) => {
         await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); if((userSnap.data().balance || 0) < amount) throw new Error('Insufficient balance'); t.update(userRef, { balance: userSnap.data().balance - amount }); t.update(db.collection('withdrawals').doc(withdrawalId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
@@ -647,7 +647,7 @@
             const user = await db.collection('users').doc(w.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td></tr>';
+        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td><tr>';
     }
 
     // ==================== INVESTMENT PLANS ====================
@@ -667,7 +667,7 @@
                 <td><button class="btn-small" onclick="openEditPlanModal('${doc.id}', '${collection}')">Edit</button> <button class="btn-small danger" onclick="deletePlan('${doc.id}', '${collection}')">Delete</button></td>
             </tr>`;
         });
-        document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td></tr>';
+        document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td><tr>';
     }
     window.openAddPlanModal = (type) => {
         currentPlanType = type;
@@ -773,7 +773,7 @@
             const user = await db.collection('users').doc(t.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.email || t.userId)}</td><td>${t.type}</td><td>${formatMoney(t.amount)}</td><td>${escapeHtml(t.description)}</td><td>${t.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('transactionsList').innerHTML = html || '<tr><td colspan="5">No transactions</td></tr>';
+        document.getElementById('transactionsList').innerHTML = html || '<tr><td colspan="5">No transactions</td><tr>';
         document.getElementById('txSearchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#transactionsList tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
     }
 
@@ -781,7 +781,7 @@
         const news = await db.collection('news').orderBy('createdAt', 'desc').get();
         let html = `<table><tr><th>Title</th><th>Image</th><th>Actions</th></tr>`;
         news.forEach(doc => { const n = doc.data(); html += `<tr><td>${escapeHtml(n.title)}</td><td>${n.imageUrl ? '<a href="'+n.imageUrl+'" target="_blank">View</a>' : '-'}</td><td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td></tr>';
+        document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td><tr>';
     }
     window.openAddNewsModal = () => { document.getElementById('addNewsModal').style.display = 'flex'; };
     document.getElementById('saveNewsBtn').onclick = async () => { await db.collection('news').add({ title: document.getElementById('newsTitle').value, content: document.getElementById('newsContent').value, imageUrl: document.getElementById('newsImage').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addNewsModal'); loadNews(); showToast('News posted'); };
@@ -789,7 +789,7 @@
 
     async function loadSupportTickets() {
         const tickets = await db.collection('supportTickets').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>`;
+        let html = `<td><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>`;
         for (const doc of tickets.docs) {
             const t = doc.data();
             const user = await db.collection('users').doc(t.userId).get();
@@ -801,7 +801,7 @@
                 <td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td>
             </tr>`;
         }
-        document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td></tr>';
+        document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td><tr>';
     }
     window.openReplyModal = (id) => { document.getElementById('replyTicketId').value = id; document.getElementById('supportReplyModal').style.display = 'flex'; };
     document.getElementById('sendReplyBtn').onclick = async () => { const ticketId = document.getElementById('replyTicketId').value; const reply = document.getElementById('replyMessage').value; await db.collection('supportTickets').doc(ticketId).update({ replies: firebase.firestore.FieldValue.arrayUnion({ reply, repliedAt: new Date(), admin: true }), status: 'replied' }); closeModal('supportReplyModal'); loadSupportTickets(); showToast('Reply sent'); };
@@ -809,37 +809,37 @@
 
     async function loadTreasureCodes() {
         const codes = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
+        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
         codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td><td>${c.amount}</td><td>${c.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td></tr>';
+        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td><tr>';
     }
     window.openAddTreasureModal = () => { document.getElementById('addTreasureModal').style.display = 'flex'; };
     document.getElementById('saveTreasureBtn').onclick = async () => { const code = document.getElementById('treasureCode').value.toUpperCase(); const amount = parseFloat(document.getElementById('treasureAmount').value); if(code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 uppercase letters/numbers', true); return; } await db.collection('treasureCodes').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addTreasureModal'); loadTreasureCodes(); showToast('Treasure code created'); };
     window.deleteTreasureCode = async (id) => { if(confirm('Delete?')) { await db.collection('treasureCodes').doc(id).delete(); loadTreasureCodes(); } };
 
-    // ==================== VOUCHERS ====================
+    // ==================== VOUCHERS (UPDATED FORMAT) ====================
     async function loadVouchers() {
         const vouchers = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
+        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
         vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td><td>${v.amount}</td><td>${v.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td></tr>';
+        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td><tr>';
     }
     window.deleteVoucher = async (id) => { if(confirm('Delete?')) { await db.collection('vouchers').doc(id).delete(); loadVouchers(); } };
 
+    // ✅ Auto-generate voucher – new format amount.randomcode (e.g., 20.huskokj)
     document.getElementById('generateVoucherBtn').onclick = async () => {
         const amount = parseFloat(document.getElementById('voucherAmountInput').value);
         if (isNaN(amount) || amount <= 0) { showToast('Amount must be a positive number', true); return; }
-        const amountWithDecimals = amount.toFixed(2);
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        let suffix = '';
-        for (let i = 0; i < 4; i++) suffix += letters[Math.floor(Math.random() * letters.length)];
-        const code = amountWithDecimals + suffix;
+        // Generate random 6-8 lowercase alphanumeric string
+        const randomPart = Math.random().toString(36).substring(2, 10).toLowerCase();
+        const code = `${amount}.${randomPart}`;
         await db.collection('vouchers').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
         document.getElementById('generatedVoucherCode').innerHTML = `Generated code: <strong>${code}</strong>`;
         showToast('Voucher created');
         loadVouchers();
-        closeModal('addVoucherModal');
     };
+
+    // ✅ Manual voucher creation – same new format
     function setupVoucherManualCreation() {
         const btn = document.getElementById('generateManualVoucherBtn');
         if (!btn) return;
@@ -869,11 +869,9 @@
             let agentValid = false;
             agentQuery.forEach(doc => { if (doc.data().name.toLowerCase() === agentName.toLowerCase()) agentValid = true; });
             if (!agentValid) { showToast('Agent not found. Check number and name.', true); return; }
-            const amountWithDecimals = amount.toFixed(2);
-            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            let suffix = '';
-            for (let i = 0; i < 4; i++) suffix += letters[Math.floor(Math.random() * letters.length)];
-            const code = amountWithDecimals + suffix;
+            // Generate random part
+            const randomPart = Math.random().toString(36).substring(2, 10).toLowerCase();
+            const code = `${amount}.${randomPart}`;
             await db.collection('vouchers').add({
                 code: code,
                 amount: amount,
@@ -967,7 +965,7 @@
         const admins = await db.collection('users').where('role', '==', 'admin').get();
         let html = `<table><tr><th>Email</th><th>Name</th><th>Actions</th></tr>`;
         admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.fullName || '-')}</td><td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td></tr>`; });
-        document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td></tr>';
+        document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td><tr>';
     }
     window.openAddAdminModal = () => { document.getElementById('addAdminModal').style.display = 'flex'; };
     document.getElementById('createAdminBtn').onclick = async () => {

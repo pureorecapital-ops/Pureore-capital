@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Login – Pureore Capital</title>
-    <!-- Preconnect to Firebase -->
     <link rel="preconnect" href="https://www.gstatic.com">
-    <!-- Firebase SDKs (compat version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -102,13 +100,11 @@
         <p style="text-align: center; margin-top: 1rem;">
             Don't have an account? <a href="register.html">Register</a>
         </p>
-        <!-- Admin toggle – crown icon -->
         <div class="admin-toggle" id="adminToggle" aria-label="Admin access"></div>
     </div>
 </div>
 
 <script>
-    // Firebase configuration – correct storageBucket
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -119,18 +115,28 @@
         measurementId: "G-FQKC29NYE9"
     };
     
-    // Initialize Firebase only once
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    //  DISABLE OFFLINE PERSISTENCE – No cached data
     db.settings({ persistence: false });
-
-    // Set persistence for auth (optional but recommended)
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+    // ========== FIX: Clean up any stale auth state before login ==========
+    (async function cleanupStaleSession() {
+        try {
+            // Force signOut to clear any corrupted tokens or partial sessions
+            await auth.signOut();
+            // Small delay ensures Firebase fully clears IndexedDB/localStorage
+            await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (e) {
+            // If already signed out or other error, ignore
+            console.log("Pre-login cleanup (non-critical):", e);
+        }
+    })();
+    // =====================================================================
 
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
@@ -191,6 +197,11 @@
                 if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
                 if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
                 if (error.code === 'auth/too-many-requests') errorMsg = 'Too many failed attempts. Try again later.';
+                // Special handling for network/auth error caused by stale token
+                if (error.code === 'auth/network-request-failed') {
+                    errorMsg = 'Network error. Please refresh the page and try again.';
+                    // Attempt one more cleanup and reload? But we already did cleanup at start.
+                }
                 messageDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login';
@@ -198,7 +209,6 @@
         });
     }
 
-    // Admin toggle – crown icon
     const adminToggle = document.getElementById('adminToggle');
     if (adminToggle) {
         adminToggle.addEventListener('click', () => {

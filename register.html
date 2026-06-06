@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Register – Pureore Capital</title>
-    <!-- Preconnect to Firebase -->
     <link rel="preconnect" href="https://www.gstatic.com">
-    <!-- Firebase SDKs (compat version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -75,12 +73,7 @@
             color: #10B981; padding: 8px; border-radius: 16px;
             text-align: center; margin-bottom: 1rem; font-size: 0.9rem;
         }
-        .note {
-            font-size: 0.7rem;
-            color: #aaa;
-            text-align: center;
-            margin-top: 0.2rem;
-        }
+        .note { font-size: 0.7rem; color: #aaa; text-align: center; margin-top: 0.2rem; }
         a { color: #6C47FF; text-decoration: none; }
         a:hover { text-decoration: underline; }
         @keyframes fadeSlideUp {
@@ -101,7 +94,7 @@
             <input type="password" id="regPassword" placeholder="Password (min 6 characters)" required autocomplete="new-password">
             <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required autocomplete="off">
             <input type="text" id="regReferralCode" placeholder="Referral Code (optional)" autocomplete="off">
-            <div class="note">💡 If someone invited you, enter their code. Otherwise leave blank.</div>
+            <div class="note" id="referralNote">💡 If someone invited you, enter their code. Otherwise leave blank.</div>
             <button type="submit" class="btn" id="submitBtn">Register & Get 20 ZMW</button>
         </form>
         <div id="message"></div>
@@ -112,7 +105,6 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -129,31 +121,30 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data (as requested)
     db.settings({ persistence: false });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ==================== READ REFERRAL CODE FROM URL ====================
+    // ✅ FIX 1: Read referral code from URL (e.g., register.html?ref=6I9J95L0)
     function getReferralCodeFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('ref');
     }
 
-    // Auto‑fill referral code field if present in URL
+    // ✅ FIX 2: Auto-fill the referral code field if present in URL
     const urlReferralCode = getReferralCodeFromUrl();
     if (urlReferralCode) {
         const referralInput = document.getElementById('regReferralCode');
+        const referralNote = document.getElementById('referralNote');
         if (referralInput) {
             referralInput.value = urlReferralCode;
-            const note = document.querySelector('.note');
-            if (note) {
-                note.innerHTML = '💡 Referral code automatically filled from your invitation link.';
+            referralInput.style.border = "2px solid #2ecc71"; // Visual indicator
+            if (referralNote) {
+                referralNote.innerHTML = '💡 Referral code automatically filled from your invitation link.';
+                referralNote.style.color = "#2ecc71";
             }
         }
     }
 
-    // ==================== REGISTRATION LOGIC ====================
     const registerForm = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');
     
@@ -168,11 +159,12 @@
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirm = document.getElementById('regConfirmPassword').value;
-            const referralCode = document.getElementById('regReferralCode').value.trim();
+            let referralCode = document.getElementById('regReferralCode').value.trim();
             const messageDiv = document.getElementById('message');
             
             messageDiv.innerHTML = '';
             
+            // Validation...
             if (!fullName) {
                 messageDiv.innerHTML = '<div class="error">Please enter your full name.</div>';
                 submitBtn.disabled = false;
@@ -198,6 +190,7 @@
                 return;
             }
             
+            // ✅ FIX 3: Validate the referral code only if it's provided
             if (referralCode) {
                 try {
                     const referrerQuery = await db.collection('users').where('referralCode', '==', referralCode).get();
@@ -210,6 +203,9 @@
                 } catch (err) {
                     console.warn("Referral check failed:", err);
                 }
+            } else {
+                // If referral code is empty, set it to null
+                referralCode = null;
             }
             
             try {
@@ -217,16 +213,17 @@
                 const uid = userCred.user.uid;
                 const generatedReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
                 
+                // ✅ FIX 4: Save the referredBy field
                 await db.collection('users').doc(uid).set({
                     fullName: fullName,
                     email: email,
                     balance: 20,
                     referralCode: generatedReferralCode,
-                    referredBy: referralCode || null,
+                    referredBy: referralCode, // This is the critical field for the team page
                     role: 'user',
                     isBlocked: false,
                     canRequestLoan: true,
-                    referralBonusGiven: false,   // ✅ Prevents double bonus when first deposit + investment occurs
+                    referralBonusGiven: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 

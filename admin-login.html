@@ -87,7 +87,6 @@
 </div>
 
 <script>
-    // ========== FIREBASE CONFIGURATION ==========
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -97,7 +96,6 @@
         appId: "1:78967797858:web:379b9692951429c345793b",
         measurementId: "G-FQKC29NYE9"
     };
-    // Initialize Firebase only once
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
@@ -106,13 +104,22 @@
     db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ========== DOM elements ==========
+    // ========== FIX: Clean up any stale auth state before admin login ==========
+    (async function cleanupStaleSession() {
+        try {
+            await auth.signOut();
+            await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (e) {
+            console.log("Pre-admin-login cleanup (non-critical):", e);
+        }
+    })();
+    // ==========================================================================
+
     const loginBtn = document.getElementById('loginBtn');
     const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const messageDiv = document.getElementById('message');
 
-    // ========== Helper: show error ==========
     function showError(msg) {
         messageDiv.innerHTML = `<div class="error">${msg}</div>`;
         setTimeout(() => {
@@ -120,7 +127,6 @@
         }, 5000);
     }
 
-    // ========== Login function ==========
     async function adminLogin(email, password) {
         loginBtn.disabled = true;
         loginBtn.textContent = 'Logging in...';
@@ -142,7 +148,6 @@
                 await auth.signOut();
                 throw new Error('Access denied. Not an admin account.');
             }
-            // Success – redirect to admin dashboard
             window.location.href = 'admin-dashboard.html';
         } catch (error) {
             console.error("Admin login error:", error);
@@ -158,7 +163,6 @@
         }
     }
 
-    // ========== Event listeners ==========
     function handleLoginClick() {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
@@ -177,7 +181,6 @@
         if (e.key === 'Enter') handleLoginClick();
     });
 
-    // ========== Auto-redirect if already logged in as admin ==========
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             try {

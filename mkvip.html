@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="referrer" content="no-referrer"> <!-- FIX: allows external images to load -->
     <title>Mk Vip | Pureore Capital</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -423,6 +424,54 @@
 
     let userPurchaseCounts = {};
 
+    // ---- FIX: Normalize image URL to avoid blocking ----
+    function getSafeImageUrl(url) {
+        if (!url || url === '') return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
+        let safeUrl = url.trim();
+        
+        // Convert HTTP to HTTPS
+        if (safeUrl.startsWith('http://')) {
+            safeUrl = safeUrl.replace('http://', 'https://');
+        }
+        // Convert protocol-relative URLs
+        if (safeUrl.startsWith('//')) {
+            safeUrl = 'https:' + safeUrl;
+        }
+        
+        // Handle ImgBB page links (e.g., https://ibb.co/xxxxx) -> direct image
+        if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
+            const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)/);
+            if (match && match[1]) {
+                safeUrl = `https://i.ibb.co/${match[1]}/image.jpg`;
+            }
+        }
+        
+        // Handle Imgur page links -> direct image
+        if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
+            const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
+            if (match && match[1]) {
+                safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
+            }
+        }
+        
+        return safeUrl;
+    }
+
+    function createImageWithFallback(imgElement, originalUrl) {
+        const safeUrl = getSafeImageUrl(originalUrl);
+        imgElement.src = safeUrl;
+        imgElement.setAttribute('crossorigin', 'anonymous');
+        imgElement.setAttribute('referrerpolicy', 'no-referrer');
+        
+        // If image fails to load, try again with corrected URL or fallback to default
+        imgElement.onerror = () => {
+            if (imgElement.src !== 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg') {
+                imgElement.src = 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
+            }
+        };
+    }
+    // ------------------------------------------------
+
     async function loadPlans() {
         const loadingDiv = document.getElementById('loadingIndicator');
         const grid = document.getElementById('plansGrid');
@@ -467,7 +516,6 @@
         plans.forEach(plan => {
             const minAmount = plan.minAmount || 0;
             const days = plan.days || 0;
-            // dailyReturn is now a FIXED AMOUNT (ZMW per day), not a percentage.
             const dailyAmount = plan.dailyReturn || 0;
             const totalIncome = dailyAmount * days;
             const lockText = plan.lock || 'Purchased 1 time and locked';
@@ -483,15 +531,16 @@
             } else if (purchaseLimit === 0) {
                 limitText = `<div class="plan-limit">♾️ Unlimited</div>`;
             }
-            let imageUrl = plan.image;
-            if (!imageUrl || imageUrl === '') {
-                imageUrl = 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
-            }
+            
+            // FIX: use safe image handling
+            const imageUrl = plan.image || '';
+            const safeImageUrl = getSafeImageUrl(imageUrl);
+            
             const card = document.createElement('div');
             card.className = 'plan-card';
             const disabledAttr = limitReached ? 'disabled' : '';
             card.innerHTML = `
-                <img class="plan-image" src="${imageUrl}" alt="${escapeHtml(plan.name)}" onerror="this.src='https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg'">
+                <img class="plan-image" id="img-${plan.name.replace(/\s/g, '')}" src="${safeImageUrl}" alt="${escapeHtml(plan.name)}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg'">
                 <div class="plan-content">
                     <div class="plan-title">${escapeHtml(plan.name)}</div>
                     ${limitText}
@@ -505,8 +554,8 @@
                     <div class="total-income">💰 TOTAL INCOME: ${totalIncome.toFixed(2)} ZMW</div>
                     <button class="invest-btn" data-plan='${JSON.stringify({
                         name: plan.name,
-                        investAmount: minAmount,      // amount to deduct
-                        dailyAmount: dailyAmount,     // fixed daily profit
+                        investAmount: minAmount,
+                        dailyAmount: dailyAmount,
                         days: days,
                         purchaseLimit: purchaseLimit
                     })}' ${disabledAttr}>💎 INVEST NOW</button>
@@ -524,8 +573,8 @@
             return;
         }
         const userId = user.uid;
-        const investAmount = plan.investAmount;   // minAmount
-        const dailyAmount = plan.dailyAmount;     // fixed daily profit
+        const investAmount = plan.investAmount;
+        const dailyAmount = plan.dailyAmount;
         const days = plan.days;
         const purchaseLimit = plan.purchaseLimit;
 
@@ -538,7 +587,6 @@
             return;
         }
 
-        // Check purchase limit
         if (purchaseLimit && purchaseLimit > 0) {
             const existingCountQuery = await db.collection('investments')
                 .where('userId', '==', userId)
@@ -629,7 +677,7 @@
                     userId: userId,
                     planName: plan.name,
                     investAmount: investAmount,
-                    dailyReturn: dailyAmount,        // store absolute daily amount
+                    dailyReturn: dailyAmount,
                     days: days,
                     businessDays: businessDays,
                     startDate: firebase.firestore.Timestamp.fromDate(startDate),

@@ -203,7 +203,7 @@
         <div class="menu-card" onclick="location.href='chat.html'"><div class="menu-icon"></div><div class="menu-text">Chat</div><div class="menu-arrow"></div></div>
         <div class="menu-card" id="downloadApkBtn"><div class="menu-icon"></div><div class="menu-text">Download APK</div><div class="menu-arrow"></div></div>
         <div class="menu-card" id="changePasswordBtn"><div class="menu-icon"></div><div class="menu-text">Change Password</div><div class="menu-arrow"></div></div>
-        <div class="menu-card" onclick="location.href='support.html'"><div class="menu-icon"></div><div class="menu-text">Customer Service</div><div class="menu-arrow"></div></div>
+        <div class="menu-card" onclick="location.href='support.html'"><div class="menu-icon"></div><div class="menu-text">Customer Service</div><div class="menu-arrow"></div></div>
         <div class="menu-card" id="logoutBtn"><div class="menu-icon"></div><div class="menu-text">Logout</div><div class="menu-arrow"></div></div>
     </div>
 </div>
@@ -260,12 +260,9 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    //  DISABLE OFFLINE PERSISTENCE – No cached data
     db.settings({ persistence: false });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper: escape HTML to prevent XSS
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -361,7 +358,11 @@
             await user.reauthenticateWithCredential(credential);
             await user.updatePassword(newPwd);
             modalMessage.innerHTML = '<div class="msg success">Password changed successfully! You will be logged out.</div>';
-            setTimeout(async () => { await auth.signOut(); window.location.href = 'login.html'; }, 2000);
+            setTimeout(async () => { 
+                await auth.signOut();
+                await new Promise(r => setTimeout(r, 300));
+                window.location.href = 'login.html';
+            }, 2000);
         } catch (err) {
             let msg = err.message;
             if (err.code === 'auth/wrong-password') msg = 'Old password is incorrect.';
@@ -369,15 +370,21 @@
         }
     });
 
-    // Logout button – redirect to login page
+    // ========== FIX: Logout with delay to clear Firebase storage ==========
     document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await auth.signOut();
+        try {
+            await auth.signOut();
+            // Critical delay: ensures Firebase fully clears IndexedDB/localStorage
+            await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (err) {
+            console.warn("Sign out error:", err);
+        }
         window.location.href = 'login.html';
     });
+    // ======================================================================
 
     // APK download – replace with actual APK URL before going live
     document.getElementById('downloadApkBtn').addEventListener('click', () => {
-        //  IMPORTANT: Replace this URL with your actual APK file location
         const apkUrl = 'https://your-server.com/pureore-capital.apk'; // CHANGE THIS
         const link = document.createElement('a');
         link.href = apkUrl;

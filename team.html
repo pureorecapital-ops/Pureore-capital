@@ -9,12 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        /* (your existing styles – unchanged) */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
             font-family: 'Inter', system-ui, sans-serif;
@@ -146,9 +141,6 @@
         .status-bonus {
             color: #2ecc71;
         }
-        .status-pending {
-            color: #f1c40f;
-        }
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -240,7 +232,6 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -254,12 +245,9 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    // 🔥 DISABLE OFFLINE PERSISTENCE – Only work online
     db.settings({ persistence: false });
-    
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper: escape HTML
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -270,7 +258,16 @@
         });
     }
 
-    // DOM elements
+    // Add session cleanup (same as other pages)
+    (async function cleanupStaleSession() {
+        try {
+            await auth.signOut();
+            await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (e) {
+            console.log("Pre-team-cleanup (non-critical):", e);
+        }
+    })();
+
     const referralCodeSpan = document.getElementById('referralCodeDisplay');
     const copyBtn = document.getElementById('copyReferralBtn');
     const teamCountSpan = document.getElementById('teamCount');
@@ -280,7 +277,6 @@
     let currentUserId = null;
     let currentReferralCode = null;
 
-    // Load user's referral code and team data
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             window.location.href = 'login.html';
@@ -316,7 +312,7 @@
         }
 
         try {
-            // Get all users who were referred by this user
+            // ✅ FIX: Query users where referredBy matches this user's referral code
             const referredQuery = await db.collection('users')
                 .where('referredBy', '==', currentReferralCode)
                 .get();
@@ -348,11 +344,9 @@
                 });
             }
 
-            // Update stats
             teamCountSpan.innerText = teamMembers.length;
             totalBonusSpan.innerText = totalBonus.toFixed(2);
 
-            // Render team list
             if (teamMembers.length === 0) {
                 teamListDiv.innerHTML = '<p>No team members yet. Share your referral link!</p>';
                 return;
@@ -379,13 +373,11 @@
         }
     }
 
-    // Copy referral link to clipboard (ensures a clean URL)
     copyBtn.addEventListener('click', () => {
         if (!currentReferralCode) {
             alert('Referral code not loaded yet.');
             return;
         }
-        // Use the full origin (no trailing slash issues)
         const baseUrl = window.location.origin;
         const registerUrl = `${baseUrl}/register.html?ref=${currentReferralCode}`;
         navigator.clipboard.writeText(registerUrl).then(() => {
@@ -395,7 +387,6 @@
         });
     });
 
-    // Bottom navigation active state
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'team.html';
     navItems.forEach(item => {

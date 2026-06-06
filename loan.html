@@ -4,28 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Loans | Pureore Capital</title>
-    <!-- Firebase SDKs -->
+    <meta name="referrer" content="no-referrer">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
             color: #FFFFFF;
             padding: 1rem;
             padding-bottom: 85px;
             min-height: 100vh;
         }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 25% 40%, rgba(46, 204, 113, 0.03) 1.5px, transparent 1.5px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
             position: relative;
+            z-index: 2;
         }
         .back-arrow {
             position: absolute;
@@ -64,6 +73,53 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+        /* Eligibility card */
+        .status-card {
+            background: rgba(18, 18, 24, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(241,196,15,0.3);
+        }
+        .status-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: #f1c40f;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.8rem;
+        }
+        .status-item {
+            background: #111116;
+            border-radius: 20px;
+            padding: 0.6rem;
+            text-align: center;
+        }
+        .status-label {
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2ecc71;
+        }
+        .status-value.pass { color: #2ecc71; }
+        .status-value.fail { color: #ef4444; }
+        .eligibility-note {
+            margin-top: 0.8rem;
+            font-size: 0.75rem;
+            color: #aaa;
+            text-align: center;
+            border-top: 1px solid #2C2C3A;
+            padding-top: 0.6rem;
+        }
         .card {
             background: rgba(18, 18, 24, 0.9);
             backdrop-filter: blur(10px);
@@ -72,19 +128,28 @@
             margin-bottom: 1.5rem;
             border: 1px solid rgba(46, 204, 113, 0.3);
         }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #f1c40f;
+        }
         .loan-amount-buttons {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.8rem;
-            justify-content: center;
+            gap: 0.6rem;
             margin: 1rem 0;
         }
         .loan-amount-btn {
             background: #1E1E2A;
             border: 1px solid #2C2C3A;
             border-radius: 40px;
-            padding: 0.6rem 1rem;
+            padding: 0.5rem 1rem;
             font-weight: 600;
+            font-size: 0.9rem;
             color: white;
             cursor: pointer;
             transition: 0.2s;
@@ -98,12 +163,19 @@
             border-radius: 24px;
             padding: 1rem;
             margin: 1rem 0;
-            text-align: center;
+        }
+        .calculator label {
+            font-size: 0.85rem;
+            color: #ccc;
+            display: block;
+            margin-bottom: 0.3rem;
         }
         .repay-total {
             font-size: 1.4rem;
             font-weight: 800;
             color: #f1c40f;
+            text-align: center;
+            margin-top: 0.5rem;
         }
         input, select {
             width: 100%;
@@ -113,19 +185,25 @@
             background: #1E1E2A;
             color: white;
             font-size: 1rem;
-            margin-bottom: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: #2ecc71;
+            box-shadow: 0 0 0 2px rgba(46,204,113,0.2);
         }
         .btn-primary {
             width: 100%;
             background: linear-gradient(135deg, #e67e22, #d35400);
-            padding: 1rem;
+            padding: 0.9rem;
             border: none;
             border-radius: 60px;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: white;
             cursor: pointer;
             transition: 0.2s;
+            margin-top: 0.5rem;
         }
         .btn-primary:disabled {
             opacity: 0.5;
@@ -133,29 +211,6 @@
         }
         .btn-repay {
             background: linear-gradient(135deg, #2ecc71, #239b56);
-        }
-        .alert-card {
-            background: rgba(239,68,68,0.2);
-            border: 1px solid #ef4444;
-            text-align: center;
-            border-radius: 28px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        .warning-img {
-            width: 80px;
-            margin: 0 auto;
-        }
-        .eligibility-fail {
-            color: #ef4444;
-            text-align: center;
-            margin-top: 1rem;
-        }
-        .overdue-note {
-            font-size: 0.75rem;
-            color: #aaa;
-            text-align: center;
-            margin-top: 0.5rem;
         }
         .loan-item {
             background: #111116;
@@ -170,6 +225,35 @@
         }
         .loan-details {
             font-size: 0.85rem;
+        }
+        .loan-details strong {
+            color: #f1c40f;
+        }
+        .message-box {
+            margin-top: 0.8rem;
+            padding: 0.6rem;
+            border-radius: 40px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        .message-success {
+            background: rgba(46,204,113,0.2);
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
+        }
+        .message-error {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+        .overdue-note {
+            font-size: 0.7rem;
+            color: #f1c40f;
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: rgba(241,196,15,0.1);
+            border-radius: 40px;
         }
         .bottom-nav {
             position: fixed;
@@ -208,7 +292,9 @@
         }
         .nav-item.active .nav-label { color: #2ecc71; }
         @media (max-width: 600px) {
-            .loan-amount-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+            .animated-title { font-size: 1.5rem; }
+            .loan-amount-btn { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+            .status-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -217,30 +303,35 @@
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">🏦 Loan Center</div>
 
-    <div id="alertContainer"></div>
+    <!-- Eligibility Status Card -->
+    <div id="eligibilityCard" class="status-card" style="display: none;">
+        <div class="status-title">📊 Loan Eligibility Status</div>
+        <div class="status-grid" id="eligibilityGrid"></div>
+        <div id="eligibilityMessage" class="eligibility-note"></div>
+    </div>
 
     <!-- Request Loan Section -->
     <div id="loanContent" class="card">
-        <h3>📌 Request New Loan</h3>
+        <div class="section-title">📌 Request New Loan</div>
         <div class="loan-amount-buttons" id="loanAmountBtns"></div>
         <div class="calculator">
-            <label>💰 Enter amount to borrow (ZMW)</label>
+            <label>💰 Enter amount to borrow (ZMW) – multiples of 6,000</label>
             <input type="number" id="loanAmountInput" placeholder="e.g., 6000" min="6000" step="6000">
         </div>
         <div class="calculator">
-            <label>💸 Pay back calculator (15% interest, 15 days)</label>
+            <label>💸 Payback calculator (15% interest, 15 days)</label>
             <input type="number" id="paybackInput" placeholder="Enter amount to calculate">
-            <div id="paybackResult" class="repay-total" style="margin-top: 0.5rem;"></div>
+            <div id="paybackResult" class="repay-total"></div>
         </div>
         <button id="requestLoanBtn" class="btn-primary">Request Loan</button>
-        <div id="loanMessage" class="eligibility-fail"></div>
+        <div id="loanMessage" class="message-box"></div>
     </div>
 
     <!-- Repay Loan Section -->
     <div id="repaySection" class="card">
-        <h3>💰 Repay Active Loan</h3>
+        <div class="section-title">💰 Repay Active Loan</div>
         <div id="activeLoansList"></div>
-        <div id="repayMessage" class="eligibility-fail"></div>
+        <div id="repayMessage" class="message-box"></div>
         <div class="overdue-note">
             ⚠️ Overdue loans: If not repaid within 15 days, your account may be blocked and legal action may be taken.
         </div>
@@ -270,7 +361,6 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -283,111 +373,82 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-
-    // 🔥 DISABLE OFFLINE PERSISTENCE – No cached data
+    
     db.settings({ persistence: false });
-
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper functions
-    function showMessage(elementId, msg, isError = true) {
-        const el = document.getElementById(elementId);
-        if (el) {
-            el.innerHTML = `<div class="${isError ? 'eligibility-fail' : ''}" style="margin-top:0.5rem; color:${isError ? '#ef4444' : '#2ecc71'};">${msg}</div>`;
-            setTimeout(() => { if (el.innerHTML.includes(msg)) el.innerHTML = ''; }, 5000);
-        }
+    // Helper: show message inside an element
+    function showMessage(elId, msg, isError = true) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        el.innerHTML = `<div class="message-box ${isError ? 'message-error' : 'message-success'}">${msg}</div>`;
+        setTimeout(() => {
+            if (el.innerHTML.includes(msg)) el.innerHTML = '';
+        }, 5000);
     }
 
-    // Generate loan amount buttons from 6000 to 100000 step 6000
+    // Generate loan amount buttons (6000 to 100000 step 6000)
     function generateLoanButtons() {
         const container = document.getElementById('loanAmountBtns');
         if (!container) return;
-        const amounts = [];
-        for (let i = 6000; i <= 100000; i += 6000) amounts.push(i);
-        amounts.forEach(amt => {
+        container.innerHTML = '';
+        for (let i = 6000; i <= 100000; i += 6000) {
             const btn = document.createElement('button');
             btn.className = 'loan-amount-btn';
-            btn.innerText = amt.toLocaleString() + ' ZMW';
-            btn.dataset.amount = amt;
+            btn.innerText = i.toLocaleString() + ' ZMW';
+            btn.dataset.amount = i;
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.loan-amount-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                const loanInput = document.getElementById('loanAmountInput');
-                if (loanInput) loanInput.value = amt;
-                calculatePayback(amt);
+                document.getElementById('loanAmountInput').value = i;
+                calculatePayback(i);
             });
             container.appendChild(btn);
-        });
+        }
     }
 
-    // Calculate payback amount (15% interest)
     function calculatePayback(amount) {
         const resultDiv = document.getElementById('paybackResult');
-        if (!resultDiv) return;
         if (!amount || amount < 6000) {
             resultDiv.innerHTML = '';
             return;
         }
-        const interest = amount * 0.15;
-        const total = amount + interest;
-        resultDiv.innerHTML = `You need to pay back: ${total.toFixed(2)} ZMW after 15 days`;
+        const total = amount * 1.15;
+        resultDiv.innerHTML = `💰 You will repay: ${total.toFixed(2)} ZMW after 15 days`;
     }
 
-    // ✅ NEW: Check if user already has a pending or active loan
     async function hasExistingActiveOrPendingLoan(userId) {
-        const loansSnapshot = await db.collection('loans')
+        const snapshot = await db.collection('loans')
             .where('userId', '==', userId)
             .where('status', 'in', ['pending', 'active'])
             .limit(1)
             .get();
-        return !loansSnapshot.empty;
+        return !snapshot.empty;
     }
 
-    // ✅ NEW: Calculate total invested amount (sum of all investments)
     async function getTotalInvested(userId) {
-        const snapshot = await db.collection('investments')
-            .where('userId', '==', userId)
-            .get();
+        const snapshot = await db.collection('investments').where('userId', '==', userId).get();
         let total = 0;
-        snapshot.forEach(doc => {
-            total += doc.data().investAmount || 0;
-        });
+        snapshot.forEach(doc => total += doc.data().investAmount || 0);
         return total;
     }
 
-    // Eligibility checks for new loan
     async function checkEligibility(userId) {
         const userDoc = await db.collection('users').doc(userId).get();
-        if (!userDoc.exists) {
-            return { eligible: false, reason: '❌ User profile not found.' };
-        }
+        if (!userDoc.exists) return { eligible: false, reason: 'User not found.' };
         const userData = userDoc.data();
         const balance = userData.balance || 0;
+        if (balance < 10000) return { eligible: false, reason: `❌ Balance must be ≥ 10,000 ZMW. You have ${balance.toFixed(2)} ZMW.` };
         
-        // 1. Balance check
-        if (balance < 10000) {
-            return { eligible: false, reason: '❌ Balance must be at least 10,000 ZMW to request a loan.' };
-        }
-
-        // 2. At least one investment plan purchased
         const investmentsAny = await db.collection('investments').where('userId', '==', userId).limit(1).get();
-        if (investmentsAny.empty) {
-            return { eligible: false, reason: '❌ You must purchase at least one investment plan before applying for a loan.' };
-        }
-
-        // 3. Total invested amount >= 15,000 ZMW
+        if (investmentsAny.empty) return { eligible: false, reason: '❌ You must purchase at least one investment plan before applying for a loan.' };
+        
         const totalInvested = await getTotalInvested(userId);
-        if (totalInvested < 15000) {
-            return { eligible: false, reason: `❌ Your total invested amount must be at least 15,000 ZMW. Current total: ${totalInvested.toFixed(2)} ZMW` };
-        }
-
-        // 4. Referral code exists
+        if (totalInvested < 15000) return { eligible: false, reason: `❌ Total invested must be ≥ 15,000 ZMW. Current: ${totalInvested.toFixed(2)} ZMW.` };
+        
         const referralCode = userData.referralCode;
-        if (!referralCode) {
-            return { eligible: false, reason: '❌ Referral code missing. Please contact support.' };
-        }
-
-        // 5. Team members: at least 15 who have both deposited and invested
+        if (!referralCode) return { eligible: false, reason: '❌ Referral code missing. Contact support.' };
+        
         const referredUsers = await db.collection('users').where('referredBy', '==', referralCode).get();
         let qualifiedReferred = 0;
         for (const doc of referredUsers.docs) {
@@ -398,54 +459,53 @@
             const hasInvestment = !inv.empty;
             if (hasDeposit && hasInvestment) qualifiedReferred++;
         }
-        if (qualifiedReferred < 15) {
-            return { eligible: false, reason: `❌ You need at least 15 team members who have both deposited and invested. Current: ${qualifiedReferred}/15` };
-        }
-
-        // 6. Check if user is allowed to request a loan (admin-controlled flag)
-        if (userData.canRequestLoan === false) {
-            return { eligible: false, reason: '❌ You are not currently allowed to request a new loan. Please contact admin after repaying your previous loan.' };
-        }
-
+        if (qualifiedReferred < 15) return { eligible: false, reason: `❌ Need at least 15 team members with deposit+investment. Current: ${qualifiedReferred}/15.` };
+        
+        if (userData.canRequestLoan === false) return { eligible: false, reason: '❌ You are not allowed to request a new loan. Please contact admin after repaying previous loan.' };
+        
         return { eligible: true, balance, qualifiedReferred, totalInvested };
     }
 
-    // Check if account is restricted (admin toggled restricted flag)
-    async function isAccountRestricted(userId) {
+    async function updateEligibilityUI(userId) {
+        const card = document.getElementById('eligibilityCard');
+        const grid = document.getElementById('eligibilityGrid');
+        const msgDiv = document.getElementById('eligibilityMessage');
+        if (!card || !grid) return;
         const userDoc = await db.collection('users').doc(userId).get();
-        return userDoc.exists && userDoc.data().restricted === true;
-    }
-
-    // Show restriction alert and hide loan sections
-    async function showRestrictionAlert(userId) {
-        const restricted = await isAccountRestricted(userId);
-        const alertContainer = document.getElementById('alertContainer');
-        const loanContent = document.getElementById('loanContent');
-        const repaySection = document.getElementById('repaySection');
-        if (!alertContainer || !loanContent || !repaySection) return;
-        if (restricted) {
-            alertContainer.innerHTML = `
-                <div class="alert-card">
-                    <img src="https://i.ibb.co/jP1hv722/file-000000005c4071fd8f0804a576ae6ac1.png" class="warning-img" alt="Alert">
-                    <h3>⚠️ Account Restricted</h3>
-                    <p>Your account has been flagged due to suspicious activity or large withdrawals. Please contact admin to resolve.</p>
-                    <button id="talkToAdminBtn" class="btn-primary" style="background:#ef4444; margin-top:0.5rem;">Talk to Admin</button>
-                </div>
-            `;
-            loanContent.style.display = 'none';
-            repaySection.style.display = 'none';
-            const talkBtn = document.getElementById('talkToAdminBtn');
-            if (talkBtn) {
-                talkBtn.addEventListener('click', () => window.open('https://wa.me/260951359357', '_blank'));
+        if (!userDoc.exists) return;
+        const userData = userDoc.data();
+        const balance = userData.balance || 0;
+        const totalInvested = await getTotalInvested(userId);
+        const referralCode = userData.referralCode;
+        let qualifiedReferred = 0;
+        if (referralCode) {
+            const referredUsers = await db.collection('users').where('referredBy', '==', referralCode).get();
+            for (const doc of referredUsers.docs) {
+                const refId = doc.id;
+                const deposits = await db.collection('deposits').where('userId', '==', refId).where('status', '==', 'completed').limit(1).get();
+                const hasDeposit = !deposits.empty;
+                const inv = await db.collection('investments').where('userId', '==', refId).limit(1).get();
+                const hasInvestment = !inv.empty;
+                if (hasDeposit && hasInvestment) qualifiedReferred++;
             }
+        }
+        const eligibility = await checkEligibility(userId);
+        card.style.display = 'block';
+        grid.innerHTML = `
+            <div class="status-item"><div class="status-label">💰 Balance</div><div class="status-value ${balance >= 10000 ? 'pass' : 'fail'}">${balance.toFixed(2)} ZMW</div><div class="status-label">≥ 10,000 required</div></div>
+            <div class="status-item"><div class="status-label">📈 Total Invested</div><div class="status-value ${totalInvested >= 15000 ? 'pass' : 'fail'}">${totalInvested.toFixed(2)} ZMW</div><div class="status-label">≥ 15,000 required</div></div>
+            <div class="status-item"><div class="status-label">👥 Qualified Team</div><div class="status-value ${qualifiedReferred >= 15 ? 'pass' : 'fail'}">${qualifiedReferred}/15</div><div class="status-label">with deposit+investment</div></div>
+            <div class="status-item"><div class="status-label">🔑 Referral Code</div><div class="status-value ${referralCode ? 'pass' : 'fail'}">${referralCode || 'Missing'}</div><div class="status-label">Must exist</div></div>
+        `;
+        if (eligibility.eligible) {
+            msgDiv.innerHTML = '✅ You are eligible to request a loan!';
+            msgDiv.style.color = '#2ecc71';
         } else {
-            alertContainer.innerHTML = '';
-            loanContent.style.display = 'block';
-            repaySection.style.display = 'block';
+            msgDiv.innerHTML = eligibility.reason;
+            msgDiv.style.color = '#ef4444';
         }
     }
 
-    // Load active loans for repayment
     async function loadActiveLoans(userId) {
         const snapshot = await db.collection('loans')
             .where('userId', '==', userId)
@@ -455,7 +515,7 @@
         const container = document.getElementById('activeLoansList');
         if (!container) return;
         if (snapshot.empty) {
-            container.innerHTML = '<p>No active loans to repay.</p>';
+            container.innerHTML = '<p style="text-align:center; color:#aaa;">No active loans to repay.</p>';
             return;
         }
         let html = '';
@@ -465,17 +525,15 @@
             html += `
                 <div class="loan-item">
                     <div class="loan-details">
-                        <strong>Amount: K${loan.amount}</strong><br>
-                        To Repay: K${loan.repayTotal}<br>
+                        <strong>Amount: K${loan.amount.toFixed(2)}</strong><br>
+                        To Repay: K${loan.repayTotal.toFixed(2)}<br>
                         Due: ${dueDate}
                     </div>
-                    <button class="btn-primary btn-repay repay-btn" data-id="${doc.id}" data-amount="${loan.repayTotal}">Repay K${loan.repayTotal}</button>
+                    <button class="btn-primary btn-repay repay-btn" data-id="${doc.id}" data-amount="${loan.repayTotal}">Repay K${loan.repayTotal.toFixed(2)}</button>
                 </div>
             `;
         });
         container.innerHTML = html;
-
-        // Attach repay handlers
         document.querySelectorAll('.repay-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const loanId = btn.dataset.id;
@@ -485,139 +543,97 @@
         });
     }
 
-    // Repay loan function – after repayment, disables further loan requests (set canRequestLoan = false)
     async function repayLoan(loanId, repayAmount) {
         const user = auth.currentUser;
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
-        }
+        if (!user) { window.location.href = 'login.html'; return; }
         try {
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(user.uid);
                 const userSnap = await transaction.get(userRef);
                 const currentBalance = userSnap.data().balance || 0;
-                if (currentBalance < repayAmount) {
-                    throw new Error('Insufficient balance to repay this loan.');
-                }
+                if (currentBalance < repayAmount) throw new Error(`Insufficient balance. You need ${repayAmount.toFixed(2)} ZMW.`);
                 const newBalance = currentBalance - repayAmount;
-                // Update user: deduct balance and disable new loan requests until admin approval
-                transaction.update(userRef, { 
-                    balance: newBalance,
-                    canRequestLoan: false   // 🔒 Lock new loan requests after repayment
-                });
-
+                transaction.update(userRef, { balance: newBalance, canRequestLoan: false });
                 const loanRef = db.collection('loans').doc(loanId);
                 transaction.update(loanRef, { status: 'paid', repaidAt: firebase.firestore.FieldValue.serverTimestamp() });
-
                 const txRef = db.collection('transactions').doc();
                 transaction.set(txRef, {
                     userId: user.uid,
                     type: 'loan_repayment',
                     amount: repayAmount,
-                    description: `Loan repayment of K${repayAmount}`,
+                    description: `Loan repayment of K${repayAmount.toFixed(2)}`,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             });
-            showMessage('repayMessage', '✅ Loan repaid successfully! You cannot request a new loan until admin approves. Please contact admin.', false);
+            showMessage('repayMessage', `✅ Loan repaid successfully! K${repayAmount.toFixed(2)} deducted. New loan requests require admin approval.`, false);
             await loadActiveLoans(user.uid);
+            await updateEligibilityUI(user.uid);
         } catch (err) {
             showMessage('repayMessage', err.message, true);
         }
     }
 
-    // Main logic
     auth.onAuthStateChanged(async (user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
-        }
+        if (!user) { window.location.href = 'login.html'; return; }
         const userId = user.uid;
         generateLoanButtons();
-        await showRestrictionAlert(userId);
+        await updateEligibilityUI(userId);
         await loadActiveLoans(userId);
 
         const loanAmountInput = document.getElementById('loanAmountInput');
         const paybackInput = document.getElementById('paybackInput');
         const requestBtn = document.getElementById('requestLoanBtn');
 
-        if (loanAmountInput) {
-            loanAmountInput.addEventListener('input', () => {
-                let val = parseFloat(loanAmountInput.value);
-                if (!isNaN(val) && val >= 6000) {
-                    calculatePayback(val);
-                } else {
-                    const resultDiv = document.getElementById('paybackResult');
-                    if (resultDiv) resultDiv.innerHTML = '';
-                }
-            });
-        }
+        loanAmountInput.addEventListener('input', () => {
+            let val = parseFloat(loanAmountInput.value);
+            if (!isNaN(val) && val >= 6000) calculatePayback(val);
+            else document.getElementById('paybackResult').innerHTML = '';
+        });
+        paybackInput.addEventListener('input', () => {
+            let val = parseFloat(paybackInput.value);
+            if (!isNaN(val) && val >= 6000) calculatePayback(val);
+            else document.getElementById('paybackResult').innerHTML = '';
+        });
 
-        if (paybackInput) {
-            paybackInput.addEventListener('input', () => {
-                let val = parseFloat(paybackInput.value);
-                if (!isNaN(val) && val >= 6000) {
-                    const interest = val * 0.15;
-                    const total = val + interest;
-                    const resultDiv = document.getElementById('paybackResult');
-                    if (resultDiv) resultDiv.innerHTML = `You need to pay back: ${total.toFixed(2)} ZMW after 15 days`;
-                } else {
-                    const resultDiv = document.getElementById('paybackResult');
-                    if (resultDiv) resultDiv.innerHTML = '';
-                }
-            });
-        }
-
-        if (requestBtn) {
-            requestBtn.addEventListener('click', async () => {
-                const loanAmount = parseFloat(loanAmountInput ? loanAmountInput.value : '');
-                if (isNaN(loanAmount) || loanAmount < 6000 || loanAmount > 100000 || loanAmount % 6000 !== 0) {
-                    showMessage('loanMessage', 'Enter a loan amount between 6,000 and 100,000 ZMW (in multiples of 6,000).');
-                    return;
-                }
-
-                // ✅ Check for existing pending/active loan
-                const hasLoan = await hasExistingActiveOrPendingLoan(userId);
-                if (hasLoan) {
-                    showMessage('loanMessage', '❌ You already have a pending or active loan. Please wait for approval or repay the existing loan first.');
-                    return;
-                }
-
-                const eligibility = await checkEligibility(userId);
-                if (!eligibility.eligible) {
-                    showMessage('loanMessage', eligibility.reason);
-                    return;
-                }
-                const restricted = await isAccountRestricted(userId);
-                if (restricted) {
-                    showMessage('loanMessage', 'Your account is restricted. Contact admin first.');
-                    return;
-                }
-                const repayTotal = loanAmount * 1.15;
-                const dueDate = new Date();
-                dueDate.setDate(dueDate.getDate() + 15);
-                try {
-                    await db.collection('loans').add({
-                        userId: userId,
-                        amount: loanAmount,
-                        repayTotal: repayTotal,
-                        status: 'pending', // admin will approve
-                        dueDate: firebase.firestore.Timestamp.fromDate(dueDate),
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    showMessage('loanMessage', `✅ Loan request submitted for ${loanAmount} ZMW. Admin will review.`, false);
-                    if (loanAmountInput) loanAmountInput.value = '';
-                    const resultDiv = document.getElementById('paybackResult');
-                    if (resultDiv) resultDiv.innerHTML = '';
-                    document.querySelectorAll('.loan-amount-btn').forEach(b => b.classList.remove('active'));
-                } catch (err) {
-                    showMessage('loanMessage', 'Error: ' + err.message);
-                }
-            });
-        }
+        requestBtn.addEventListener('click', async () => {
+            const loanAmount = parseFloat(loanAmountInput.value);
+            if (isNaN(loanAmount) || loanAmount < 6000 || loanAmount > 100000 || loanAmount % 6000 !== 0) {
+                showMessage('loanMessage', 'Enter a loan amount between 6,000 and 100,000 ZMW (in multiples of 6,000).');
+                return;
+            }
+            const hasLoan = await hasExistingActiveOrPendingLoan(userId);
+            if (hasLoan) {
+                showMessage('loanMessage', '❌ You already have a pending or active loan. Wait for approval or repay first.');
+                return;
+            }
+            const eligibility = await checkEligibility(userId);
+            if (!eligibility.eligible) {
+                showMessage('loanMessage', eligibility.reason);
+                return;
+            }
+            const repayTotal = loanAmount * 1.15;
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 15);
+            try {
+                await db.collection('loans').add({
+                    userId: userId,
+                    amount: loanAmount,
+                    repayTotal: repayTotal,
+                    status: 'pending',
+                    dueDate: firebase.firestore.Timestamp.fromDate(dueDate),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showMessage('loanMessage', `✅ Loan request submitted for ${loanAmount.toFixed(2)} ZMW. Admin will review.`, false);
+                loanAmountInput.value = '';
+                document.getElementById('paybackResult').innerHTML = '';
+                document.querySelectorAll('.loan-amount-btn').forEach(b => b.classList.remove('active'));
+            } catch (err) {
+                showMessage('loanMessage', 'Error: ' + err.message);
+            }
+        });
     });
 
-    // Bottom navigation active state and redirection
+    // Bottom navigation
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'loan.html';
     navItems.forEach(item => {

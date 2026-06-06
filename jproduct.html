@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="referrer" content="no-referrer"> <!-- FIX: enables external images -->
     <title>J Product | Pureore Capital</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -423,6 +424,38 @@
 
     let userPurchaseCounts = {};
 
+    // ---- FIX: Normalize image URL to avoid blocking ----
+    function getSafeImageUrl(url) {
+        if (!url || url === '') return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
+        let safeUrl = url.trim();
+        
+        if (safeUrl.startsWith('http://')) {
+            safeUrl = safeUrl.replace('http://', 'https://');
+        }
+        if (safeUrl.startsWith('//')) {
+            safeUrl = 'https:' + safeUrl;
+        }
+        
+        // ImgBB page link -> direct
+        if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
+            const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)/);
+            if (match && match[1]) {
+                safeUrl = `https://i.ibb.co/${match[1]}/image.jpg`;
+            }
+        }
+        
+        // Imgur page link -> direct
+        if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
+            const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
+            if (match && match[1]) {
+                safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
+            }
+        }
+        
+        return safeUrl;
+    }
+    // ------------------------------------------------
+
     async function loadPlans() {
         const loadingDiv = document.getElementById('loadingIndicator');
         const grid = document.getElementById('plansGrid');
@@ -467,10 +500,8 @@
         plans.forEach(plan => {
             const minAmount = plan.minAmount || 0;
             const days = plan.days || 0;
-            // ⚠️ IMPORTANT: dailyReturn is now treated as a FIXED AMOUNT (ZMW per day), NOT a percentage.
-            // Example: if dailyReturn = 25, the user receives 25 ZMW every day.
-            const dailyAmount = plan.dailyReturn || 0;   // absolute daily profit
-            const totalIncome = dailyAmount * days;       // total profit over the period
+            const dailyAmount = plan.dailyReturn || 0;
+            const totalIncome = dailyAmount * days;
             const lockText = plan.lock || 'Purchased 1 time and locked';
             const purchaseLimit = plan.purchaseLimit;
             const userPurchased = userPurchaseCounts[plan.name] || 0;
@@ -484,16 +515,16 @@
             } else if (purchaseLimit === 0) {
                 limitText = `<div class="plan-limit">♾️ Unlimited</div>`;
             }
-            let imageUrl = plan.image;
-            if (!imageUrl || imageUrl === '') {
-                imageUrl = 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-            }
+            
+            // FIX: use safe image URL
+            const imageUrl = plan.image || '';
+            const safeImageUrl = getSafeImageUrl(imageUrl);
+            
             const card = document.createElement('div');
             card.className = 'plan-card';
             const disabledAttr = limitReached ? 'disabled' : '';
-            // The invest button will deduct minAmount (the cost to buy the plan)
             card.innerHTML = `
-                <img class="plan-image" src="${imageUrl}" alt="${escapeHtml(plan.name)}" onerror="this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'">
+                <img class="plan-image" src="${safeImageUrl}" alt="${escapeHtml(plan.name)}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'">
                 <div class="plan-content">
                     <div class="plan-title">${escapeHtml(plan.name)}</div>
                     ${limitText}
@@ -507,8 +538,8 @@
                     <div class="total-income">💰 TOTAL INCOME: ${totalIncome.toFixed(2)} ZMW</div>
                     <button class="invest-btn" data-plan='${JSON.stringify({
                         name: plan.name,
-                        investAmount: minAmount,           // amount to deduct from balance
-                        dailyAmount: dailyAmount,          // daily profit (absolute)
+                        investAmount: minAmount,
+                        dailyAmount: dailyAmount,
                         days: days,
                         purchaseLimit: purchaseLimit
                     })}' ${disabledAttr}>💎 INVEST NOW</button>
@@ -526,8 +557,8 @@
             return;
         }
         const userId = user.uid;
-        const investAmount = plan.investAmount;   // minAmount (cost to buy)
-        const dailyAmount = plan.dailyAmount;     // fixed daily profit
+        const investAmount = plan.investAmount;
+        const dailyAmount = plan.dailyAmount;
         const days = plan.days;
         const purchaseLimit = plan.purchaseLimit;
 
@@ -540,7 +571,6 @@
             return;
         }
 
-        // Check purchase limit
         if (purchaseLimit && purchaseLimit > 0) {
             const existingCountQuery = await db.collection('investments')
                 .where('userId', '==', userId)
@@ -618,8 +648,6 @@
             }
             const businessDays = days;
             const businessEndDate = addWeekdays(startDate, businessDays);
-            // dailyAmount is already the absolute daily profit (e.g., 25 ZMW)
-            // No percentage calculation needed.
 
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(userId);
@@ -633,7 +661,7 @@
                     userId: userId,
                     planName: plan.name,
                     investAmount: investAmount,
-                    dailyReturn: dailyAmount,        // store absolute daily amount (NOT percentage)
+                    dailyReturn: dailyAmount,
                     days: days,
                     businessDays: businessDays,
                     startDate: firebase.firestore.Timestamp.fromDate(startDate),

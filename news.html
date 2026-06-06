@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="referrer" content="no-referrer"> <!-- FIX: enables external images -->
     <title>News | Pureore Capital</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -267,7 +268,6 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    // Allow offline persistence (slightly better user experience)
     db.settings({ persistence: true });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
@@ -281,6 +281,49 @@
             return m;
         });
     }
+
+    // ---- FIX: Normalize image URL to avoid blocking ----
+    const DEFAULT_NEWS_IMAGE = 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png';
+    // Verify default image works - if not, fallback to another reliable default
+    const FALLBACK_IMAGE = 'https://placehold.co/800x400/1a1a2a/2ecc71?text=News+Image';
+
+    function getSafeImageUrl(url) {
+        if (!url || url === '') return DEFAULT_NEWS_IMAGE;
+        let safeUrl = url.trim();
+        
+        // Convert HTTP to HTTPS
+        if (safeUrl.startsWith('http://')) {
+            safeUrl = safeUrl.replace('http://', 'https://');
+        }
+        // Convert protocol-relative URLs
+        if (safeUrl.startsWith('//')) {
+            safeUrl = 'https:' + safeUrl;
+        }
+        
+        // Handle ImgBB page links (e.g., https://ibb.co/xxxxx) -> direct image
+        if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
+            const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)/);
+            if (match && match[1]) {
+                safeUrl = `https://i.ibb.co/${match[1]}/image.jpg`;
+            }
+        }
+        
+        // Handle Imgur page links -> direct image
+        if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
+            const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
+            if (match && match[1]) {
+                safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
+            }
+        }
+        
+        // If it's the old broken placeholder or contains 'file-000000', replace with default
+        if (safeUrl.includes('file-000000') || safeUrl === DEFAULT_NEWS_IMAGE) {
+            return DEFAULT_NEWS_IMAGE;
+        }
+        
+        return safeUrl;
+    }
+    // ------------------------------------------------
 
     // Auth check and load news
     auth.onAuthStateChanged(user => {
@@ -302,14 +345,13 @@
             let html = '';
             snapshot.forEach(doc => {
                 const news = doc.data();
-                let imageUrl = news.imageUrl;
-                // ✅ FIX: If imageUrl is missing, empty, or looks like a file path (contains 'file-'), use default placeholder
-                if (!imageUrl || imageUrl.trim() === '' || imageUrl.includes('file-000000')) {
-                    imageUrl = 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png';
-                }
+                let rawImageUrl = news.imageUrl || '';
+                // Apply safety normalization
+                let safeImageUrl = getSafeImageUrl(rawImageUrl);
+                
                 html += `
                     <div class="news-card">
-                        <img class="news-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(news.title)}" onerror="this.src='https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png'">
+                        <img class="news-image" src="${escapeHtml(safeImageUrl)}" alt="${escapeHtml(news.title)}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${FALLBACK_IMAGE}';">
                         <div class="news-content">
                             <div class="news-title">${escapeHtml(news.title)}</div>
                             <div class="news-description">${escapeHtml(news.content).replace(/\n/g, '<br>')}</div>
