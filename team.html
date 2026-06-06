@@ -258,16 +258,6 @@
         });
     }
 
-    // Add session cleanup (same as other pages)
-    (async function cleanupStaleSession() {
-        try {
-            await auth.signOut();
-            await new Promise(resolve => setTimeout(resolve, 300));
-        } catch (e) {
-            console.log("Pre-team-cleanup (non-critical):", e);
-        }
-    })();
-
     const referralCodeSpan = document.getElementById('referralCodeDisplay');
     const copyBtn = document.getElementById('copyReferralBtn');
     const teamCountSpan = document.getElementById('teamCount');
@@ -312,7 +302,6 @@
         }
 
         try {
-            // ✅ FIX: Query users where referredBy matches this user's referral code
             const referredQuery = await db.collection('users')
                 .where('referredBy', '==', currentReferralCode)
                 .get();
@@ -320,7 +309,6 @@
             const teamMembers = [];
             let totalBonus = 0;
 
-            // For each referred user, get their referral earnings
             for (const doc of referredQuery.docs) {
                 const memberData = doc.data();
                 const memberId = doc.id;

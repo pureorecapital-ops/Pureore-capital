@@ -61,7 +61,6 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        /* ✅ Balanced card – consistent width and padding */
         .card {
             background: rgba(18, 18, 24, 0.9);
             backdrop-filter: blur(10px);
@@ -71,7 +70,6 @@
             margin-bottom: 1.5rem;
             width: 100%;
         }
-        /* ✅ Balance display – clean and prominent */
         .balance-card {
             background: rgba(18, 18, 24, 0.7);
             border-radius: 60px;
@@ -208,7 +206,6 @@
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">🎫 Voucher Redemption</div>
 
-    <!-- ✅ Display current balance -->
     <div class="balance-card" id="balanceCard">
         <span class="balance-label">💰 Your Current Balance</span>
         <span class="balance-amount" id="userBalance">0.00 ZMW</span>
@@ -240,7 +237,6 @@
     </div>
 </div>
 
-<!-- Bottom Navigation -->
 <div class="bottom-nav">
     <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
@@ -279,23 +275,11 @@
     db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ========== Clean up stale session (like login pages) ==========
-    (async function cleanupStaleSession() {
-        try {
-            await auth.signOut();
-            await new Promise(resolve => setTimeout(resolve, 300));
-        } catch (e) {
-            console.log("Pre-voucher cleanup (non-critical):", e);
-        }
-    })();
-
-    // DOM elements
     const claimBtn = document.getElementById('claimBtn');
     const messageDiv = document.getElementById('message');
     const userBalanceSpan = document.getElementById('userBalance');
     let currentUser = null;
 
-    // Helper: show message
     function showMessage(msg, isError = true) {
         messageDiv.innerHTML = `<div class="message ${isError ? 'error' : 'success'}">${msg}</div>`;
         setTimeout(() => {
@@ -303,7 +287,6 @@
         }, 5000);
     }
 
-    // Load current user balance
     async function loadUserBalance(uid) {
         try {
             const userDoc = await db.collection('users').doc(uid).get();
@@ -316,27 +299,23 @@
         }
     }
 
-    // ✅ Improved agent validation: try both number and name, case-insensitive, trimmed
     async function validateAgent(agentNumber, agentName) {
         const trimmedNumber = agentNumber.trim();
         const trimmedName = agentName.trim();
         
-        // Query agents by number
         const numberQuery = await db.collection('agents')
             .where('number', '==', trimmedNumber)
             .get();
         
         if (!numberQuery.empty) {
-            // Check if any match name case-insensitively
             for (const doc of numberQuery.docs) {
                 const agent = doc.data();
                 if (agent.name && agent.name.toLowerCase() === trimmedName.toLowerCase()) {
-                    return true; // Valid agent
+                    return true;
                 }
             }
         }
         
-        // If not found by number, try by name only (for flexibility)
         const nameQuery = await db.collection('agents')
             .where('name', '==', trimmedName)
             .get();
@@ -352,14 +331,13 @@
         return false;
     }
 
-    // Main redemption logic
     claimBtn.addEventListener('click', async () => {
         const userName = document.getElementById('userName').value.trim();
         const userPassword = document.getElementById('userPassword').value;
         const agentNumber = document.getElementById('agentNumber').value.trim();
         const agentName = document.getElementById('agentName').value.trim();
         let voucherCodeRaw = document.getElementById('voucherCode').value.trim();
-        const voucherCode = voucherCodeRaw.toUpperCase(); // case-insensitive
+        const voucherCode = voucherCodeRaw.toUpperCase();
 
         if (!userName || !userPassword || !agentNumber || !agentName || !voucherCode) {
             showMessage('Please fill in all fields.', true);
@@ -373,7 +351,6 @@
         }
         currentUser = user;
 
-        // Verify user name and password
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (!userDoc.exists) {
             showMessage('User profile not found.', true);
@@ -385,7 +362,6 @@
             return;
         }
         
-        // Re-authenticate user with password
         const credential = firebase.auth.EmailAuthProvider.credential(user.email, userPassword);
         try {
             await user.reauthenticateWithCredential(credential);
@@ -394,14 +370,12 @@
             return;
         }
 
-        // ✅ Agent validation using improved function
         const agentValid = await validateAgent(agentNumber, agentName);
         if (!agentValid) {
             showMessage('Agent not found. Please check the number and name exactly as registered.', true);
             return;
         }
 
-        // Voucher code format: 10 chars, first 6 digits, last 4 letters
         if (voucherCode.length !== 10) {
             showMessage('Voucher code must be exactly 10 characters.', true);
             return;
@@ -418,7 +392,6 @@
             return;
         }
 
-        // Check voucher code in Firestore (already uppercase)
         const codeQuery = await db.collection('vouchers')
             .where('code', '==', voucherCode)
             .limit(1)
@@ -438,7 +411,6 @@
             return;
         }
 
-        // All checks passed – credit amount
         claimBtn.disabled = true;
         claimBtn.innerText = 'Processing...';
         try {
@@ -460,7 +432,6 @@
                 description: `Voucher code: ${voucherCode} (Agent: ${agentName} ${agentNumber})`,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            // Update balance display
             await loadUserBalance(user.uid);
             showMessage(`✅ Success! K${amountValue.toFixed(2)} added to your balance. Redirecting...`, false);
             setTimeout(() => {
@@ -474,7 +445,6 @@
         }
     });
 
-    // On auth state changed: load balance and show name hint
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             window.location.href = 'login.html';
@@ -482,7 +452,6 @@
         }
         currentUser = user;
         await loadUserBalance(user.uid);
-        // Optionally pre-fill user name from Firestore
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
             const fullName = userDoc.data().fullName;
@@ -490,7 +459,6 @@
         }
     });
 
-    // Bottom navigation active state
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'vouchers.html';
     navItems.forEach(item => {
