@@ -241,6 +241,17 @@
         .success-msg { color: #2ecc71; text-align: center; font-weight: bold; }
         .hidden { display: none; }
         #fireworks { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
+        .rotate-agent {
+            background: rgba(46,204,113,0.2);
+            border: none;
+            border-radius: 40px;
+            padding: 0.2rem 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: #2ecc71;
+        }
+        .rotate-agent:hover { background: rgba(46,204,113,0.4); }
     </style>
 </head>
 <body>
@@ -293,6 +304,7 @@
     <!-- Step 2 -->
     <div id="step2Card" class="card hidden">
         <div id="agentInfo"></div>
+        <div id="agentRotateBtn" class="rotate-agent hidden">⟳ Show another agent</div>
         <div class="verify-card">
             <div class="section-title">📝 Paste your transaction SMS</div>
             <textarea id="smsText" rows="4" placeholder="Paste the SMS from MTN, Airtel or Zamtel here"></textarea>
@@ -400,10 +412,13 @@
     const verifyMessage = document.getElementById('verifyMessage');
     const fileNameDisplay = document.getElementById('fileNameDisplay');
     const imagePreviewDiv = document.getElementById('imagePreview');
+    const agentRotateBtn = document.getElementById('agentRotateBtn');
 
     let selectedAmount = null;
     let selectedNetwork = null;
-    let currentAgent = null;
+    let currentAgent = null;           // the agent currently displayed
+    let agentsForNetwork = [];         // list of agents for the chosen network
+    let agentIndex = 0;                // index of displayed agent
 
     // Deposit rules (loaded from Firestore)
     let depositRules = {
@@ -428,53 +443,92 @@
         }
     }
 
-    // Helper to get agent name for selected network (same as in payNowBtn)
-    function getAgentNameForNetwork(network) {
-        const mtnAgentsDisplay = [
-            { number: '0961391022', name: 'John Kabwe' },
-            { number: '0960338304', name: 'Getrude Sonpo' }
-        ];
-        const airtelAgentDisplay = { number: '0775552002', name: 'John Kabwe' };
-        const zamtelAgentDisplay = { number: '0951359357', name: 'Jeremiah Ilunga' };
-        if (network === 'mtn') {
-            const index = Math.floor(Date.now() / 60000) % 2;
-            return mtnAgentsDisplay[index].name;
-        } else if (network === 'airtel') {
-            return airtelAgentDisplay.name;
-        } else if (network === 'zamtel') {
-            return zamtelAgentDisplay.name;
+    // Load agents for a given network from Firestore
+    async function loadAgentsForNetwork(network) {
+        try {
+            const snapshot = await db.collection('agents')
+                .where('network', '==', network)
+                .get();
+            const agents = [];
+            snapshot.forEach(doc => {
+                agents.push({ id: doc.id, ...doc.data() });
+            });
+            return agents;
+        } catch (err) {
+            console.error("Error loading agents:", err);
+            return [];
         }
-        return '';
     }
 
-    // Validate SMS based on enabled rules
+    // Display the current agent (from agentsForNetwork[agentIndex])
+    function displayCurrentAgent() {
+        if (!agentsForNetwork.length) {
+            agentInfoDiv.innerHTML = `<div class="agent-card"><div class="agent-header">⚠️ No agent found for ${selectedNetwork.toUpperCase()}</div><div class="error-msg">Contact admin to add an agent for this network.</div></div>`;
+            agentRotateBtn.classList.add('hidden');
+            return;
+        }
+        currentAgent = agentsForNetwork[agentIndex];
+        const agentHtml = `
+            <div class="agent-card">
+                <div class="agent-header">📌 AGENT (${selectedNetwork.toUpperCase()})</div>
+                <div class="agent-name">${escapeHtml(currentAgent.name)}</div>
+                <div>
+                    <span class="agent-number">${escapeHtml(currentAgent.number)}</span>
+                    <button class="copy-number" data-number="${escapeHtml(currentAgent.number)}">Copy</button>
+                </div>
+            </div>
+        `;
+        agentInfoDiv.innerHTML = agentHtml;
+        document.querySelectorAll('.copy-number').forEach(btn => {
+            btn.addEventListener('click', () => {
+                navigator.clipboard.writeText(btn.dataset.number);
+                alert('Agent number copied!');
+            });
+        });
+        agentRotateBtn.classList.toggle('hidden', agentsForNetwork.length <= 1);
+    }
+
+    // Rotate to next agent
+    function rotateAgent() {
+        if (agentsForNetwork.length > 1) {
+            agentIndex = (agentIndex + 1) % agentsForNetwork.length;
+            displayCurrentAgent();
+        }
+    }
+
+    // Helper: escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+    }
+
+    // Validate SMS based on enabled rules and current agent
     function validateSms(sms, amount, network) {
         const lowerSms = sms.toLowerCase();
-        // 1. Amount match (if rule enabled)
+        // 1. Amount match
         if (depositRules.requireAmountMatch) {
             const amountRegex = new RegExp(`\\b${amount}\\b`);
             if (!amountRegex.test(sms)) {
                 return { valid: false, error: `SMS amount does not match your deposit amount (${amount} ZMW).` };
             }
         }
-        // 2. Network keyword (if rule enabled)
+        // 2. Network keyword
         if (depositRules.requireNetworkKeyword) {
             let networkKeyword = '';
             if (network === 'mtn') networkKeyword = 'mtn';
             else if (network === 'airtel') networkKeyword = 'airtel';
             else if (network === 'zamtel') networkKeyword = 'zamtel';
             if (!lowerSms.includes(networkKeyword)) {
-                return { valid: false, error: `SMS does not contain the network name (${network.toUpperCase()}). Please paste the correct SMS.` };
+                return { valid: false, error: `SMS does not contain the network name (${network.toUpperCase()}).` };
             }
         }
-        // 3. Agent name (if rule enabled)
-        if (depositRules.requireAgentName) {
-            const agentName = getAgentNameForNetwork(network);
-            if (!lowerSms.includes(agentName.toLowerCase())) {
-                return { valid: false, error: `SMS does not contain the agent name "${agentName}". Please make sure you paid the correct agent.` };
+        // 3. Agent name (using current displayed agent)
+        if (depositRules.requireAgentName && currentAgent) {
+            if (!lowerSms.includes(currentAgent.name.toLowerCase())) {
+                return { valid: false, error: `SMS does not contain the agent name "${currentAgent.name}". Please make sure you paid the correct agent.` };
             }
         }
-        // 4. Transaction keywords (if rule enabled)
+        // 4. Transaction keywords
         if (depositRules.requireTxKeyword) {
             const txKeywords = /send|sent|received|deposit|paid|transfer|successful|payment/i;
             if (!txKeywords.test(sms)) {
@@ -554,10 +608,17 @@
     });
 
     networkOptions.forEach(opt => {
-        opt.addEventListener('click', () => {
+        opt.addEventListener('click', async () => {
             networkOptions.forEach(o => o.classList.remove('active'));
             opt.classList.add('active');
             selectedNetwork = opt.dataset.network;
+            // Load agents for this network
+            agentsForNetwork = await loadAgentsForNetwork(selectedNetwork);
+            agentIndex = 0;
+            if (agentsForNetwork.length === 0) {
+                // No agent – show error on pay button?
+                console.warn(`No agents for ${selectedNetwork}`);
+            }
             validatePhone();
             validatePayButton();
         });
@@ -568,17 +629,11 @@
     function validatePayButton() {
         const amountOk = selectedAmount && selectedAmount >= 70;
         const networkOk = selectedNetwork !== null;
+        const agentsOk = agentsForNetwork.length > 0;   // prevent paying if no agent exists
         const phoneOk = validatePhone();
         const ready = readyCheckbox.checked;
-        payNowBtn.disabled = !(amountOk && networkOk && phoneOk && ready);
+        payNowBtn.disabled = !(amountOk && networkOk && agentsOk && phoneOk && ready);
     }
-
-    const mtnAgentsDisplay = [
-        { number: '0961391022', name: 'John Kabwe' },
-        { number: '0960338304', name: 'Getrude Sonpo' }
-    ];
-    const airtelAgentDisplay = { number: '0775552002', name: 'John Kabwe' };
-    const zamtelAgentDisplay = { number: '0951359357', name: 'Jeremiah Ilunga' };
 
     payNowBtn.addEventListener('click', async () => {
         if (payNowBtn.disabled) return;
@@ -587,30 +642,18 @@
         sessionStorage.setItem('depositPhone', getFullPhone());
         sessionStorage.setItem('depositPhoneDigits', phoneInput.value);
 
-        let agentHtml = '';
-        if (selectedNetwork === 'mtn') {
-            const index = Math.floor(Date.now() / 60000) % 2;
-            currentAgent = mtnAgentsDisplay[index];
-            agentHtml = `<div class="agent-card"><div class="agent-header">📌 AGENT (MTN)</div><div class="agent-name">${currentAgent.name}</div><div><span class="agent-number">${currentAgent.number}</span><button class="copy-number" data-number="${currentAgent.number}">Copy</button></div></div>`;
-        } else if (selectedNetwork === 'airtel') {
-            currentAgent = airtelAgentDisplay;
-            agentHtml = `<div class="agent-card"><div class="agent-header">📡 AGENT (Airtel)</div><div class="agent-name">${currentAgent.name}</div><div><span class="agent-number">${currentAgent.number}</span><button class="copy-number" data-number="${currentAgent.number}">Copy</button></div></div>`;
-        } else if (selectedNetwork === 'zamtel') {
-            currentAgent = zamtelAgentDisplay;
-            agentHtml = `<div class="agent-card"><div class="agent-header">📶 AGENT (Zamtel)</div><div class="agent-name">${currentAgent.name}</div><div><span class="agent-number">${currentAgent.number}</span><button class="copy-number" data-number="${currentAgent.number}">Copy</button></div></div>`;
+        // Display agent information
+        if (agentsForNetwork.length === 0) {
+            alert('No agent available for this network. Please contact admin.');
+            return;
         }
-        agentInfoDiv.innerHTML = agentHtml;
-        document.querySelectorAll('.copy-number').forEach(btn => {
-            btn.addEventListener('click', () => {
-                navigator.clipboard.writeText(btn.dataset.number);
-                alert('Agent number copied!');
-            });
-        });
+        displayCurrentAgent();
+        agentRotateBtn.onclick = rotateAgent;
         step1Card.classList.add('hidden');
         step2Card.classList.remove('hidden');
     });
 
-    // Back arrow: step2 -> step1, step1 -> dashboard
+    // Back arrow
     const backArrow = document.getElementById('backArrow');
     backArrow.addEventListener('click', () => {
         if (!step2Card.classList.contains('hidden')) {
@@ -621,10 +664,8 @@
         }
     });
 
-    // Load deposit rules once when page loads
     loadDepositRules();
 
-    // Verification with conditional rules
     verifyBtn.addEventListener('click', async () => {
         const sms = smsTextarea.value.trim();
         const screenshotFile = screenshotUpload.files[0];
@@ -646,7 +687,7 @@
             return;
         }
 
-        // Apply SMS validation based on enabled rules
+        // Validate SMS using the currently displayed agent
         const validation = validateSms(sms, amount, network);
         if (!validation.valid) {
             verifyMessage.innerHTML = `<div class="error-msg">${validation.error}</div>`;
@@ -674,10 +715,11 @@
                 screenshotUrl: '',
                 status: 'pending',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                smsText: sms
+                smsText: sms,
+                agentName: currentAgent ? currentAgent.name : '',
+                agentNumber: currentAgent ? currentAgent.number : ''
             });
 
-            // Background upload
             const storageRef = storage.ref(`deposits/${user.uid}/${Date.now()}_${screenshotFile.name}`);
             storageRef.put(screenshotFile).then(async (snapshot) => {
                 const url = await snapshot.ref.getDownloadURL();

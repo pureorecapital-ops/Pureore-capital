@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Admin Dashboard | Pureore Capital</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -21,7 +20,6 @@
             overflow-x: hidden;
             min-height: 100vh;
         }
-        /* Nebula clouds (static background) */
         body::before {
             content: '';
             position: fixed;
@@ -29,13 +27,12 @@
             left: -10%;
             width: 120%;
             height: 120%;
-            background: radial-gradient(circle at 20% 30%, rgba(109,40,217,0.15), transparent 50%),
-                        radial-gradient(circle at 80% 70%, rgba(37,99,235,0.1), transparent 60%),
-                        radial-gradient(circle at 50% 80%, rgba(6,182,212,0.08), transparent 70%);
+            background: radial-gradient(circle at 20% 30%, rgba(109,40,217,0.08), transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(37,99,235,0.06), transparent 60%),
+                        radial-gradient(circle at 50% 80%, rgba(6,182,212,0.05), transparent 70%);
             pointer-events: none;
             z-index: 0;
         }
-        /* Twinkling stars (CSS only) */
         .stars {
             position: fixed;
             top: 0;
@@ -55,16 +52,6 @@
         @keyframes twinkle {
             0% { opacity: 0.2; transform: scale(1); }
             100% { opacity: 1; transform: scale(1.2); }
-        }
-        /* Canvas for drifting star particles */
-        #starCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
         }
         :root {
             --admin-primary: #2ecc71;
@@ -295,18 +282,45 @@
             margin-top: 0.5rem;
             border: 1px solid #2ecc71;
         }
+        /* Agent rows styles */
+        .agent-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: flex-end;
+            margin-bottom: 0.8rem;
+            padding: 0.5rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+        }
+        .agent-row select, .agent-row input {
+            flex: 1;
+            min-width: 100px;
+        }
+        .remove-row-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        .add-row-btn {
+            background: #2ecc71;
+            margin-top: 0.5rem;
+        }
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .tab-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
             .admin-card { padding: 1rem; }
             .users-table th, .users-table td { padding: 8px 6px; font-size: 0.8rem; }
             .users-table .edit-balance input { width: 70px; }
+            .agent-row { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
 <body>
-<!-- Canvas for drifting stars -->
-<canvas id="starCanvas"></canvas>
+<!-- Only CSS twinkling stars – no canvas -->
 <div class="stars" id="starsContainer"></div>
 
 <div class="container">
@@ -408,7 +422,7 @@
         <div class="admin-card"><div class="card-title">📜 Existing Vouchers</div><div id="vouchersList">Loading...</div></div>
     </div>
 
-    <!-- Settings Tab -->
+    <!-- Settings Tab (with Agent Authorization) -->
     <div id="settingsTab" class="tab-content">
         <div class="admin-card"><div class="card-title">⚙️ General Settings</div><div><label>Website Name</label> <input type="text" id="websiteName" style="width:100%;"></div><div><label>Contact Email</label> <input type="email" id="contactEmail" style="width:100%;"></div><div><label>Contact Phone</label> <input type="text" id="contactPhone" style="width:100%;"></div><div><label>Payment Methods Info</label> <textarea id="paymentMethods" rows="3" style="width:100%;"></textarea></div><button id="saveSettingsBtn" class="btn-small success">Save Settings</button></div>
         <div class="admin-card"><div class="card-title">💸 Withdrawal Rules</div><div style="display: flex; flex-direction: column; gap: 0.8rem;"><label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="withdrawRequireDeposit" checked> Require at least one completed deposit before withdrawal</label><label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" id="withdrawRequireInvestment" checked> Require at least one investment plan before withdrawal</label><p class="note" style="font-size: 0.8rem; color: #aaa;">If unchecked, users can withdraw without meeting those requirements.</p><button id="saveWithdrawRulesBtn" class="btn-small success">Save Withdrawal Rules</button><div id="withdrawRulesMsg" style="margin-top: 0.5rem;"></div></div></div>
@@ -425,6 +439,15 @@
                 <div id="depositRulesMsg" style="margin-top: 0.5rem;"></div>
             </div>
         </div>
+
+        <!-- NEW: Agent Authorization (Bulk Create) -->
+        <div class="admin-card">
+            <div class="card-title">👥 Agent Authorization (Bulk Create)</div>
+            <div id="agentRowsContainer"></div>
+            <button id="addAgentRowBtn" class="btn-small success add-row-btn">+ Add Another Agent</button>
+            <button id="bulkCreateAgentsBtn" class="btn-small success" style="margin-top: 0.8rem;">✅ Create Agents</button>
+            <div id="agentCreationMsg" style="margin-top: 0.5rem;"></div>
+        </div>
     </div>
 
     <!-- Admins Tab -->
@@ -437,7 +460,7 @@
     </div>
 </div>
 
-<!-- Modals -->
+<!-- Modals (unchanged) -->
 <div id="addPlanModal" class="modal"><div class="modal-content"><h3>➕ Add Investment Plan</h3><div style="margin-bottom: 0.8rem;"><label>Plan Name</label><input type="text" id="planName" placeholder="e.g., Starter"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Min Amount (ZMW)</label><input type="number" id="planMin" placeholder="Min"></div><div><label>Max Amount (ZMW)</label><input type="number" id="planMax" placeholder="Max"></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Days</label><input type="number" id="planDays" placeholder="Days"></div><div><label>Daily Return (ZMW)</label><input type="number" id="planDailyReturn" placeholder="Absolute daily profit"></div></div><div><label>Image URL (or upload below)</label><input type="text" id="planImage" placeholder="https://..."><div style="margin-top: 0.5rem;"><label>Upload Image (max 150px)</label><input type="file" id="planImageFile" accept="image/*"><div id="planImagePreview" class="image-upload-preview"></div></div></div><div><label>Purchase Limit (0 = unlimited)</label><input type="number" id="planPurchaseLimit" value="0"></div><div><label>Lock Text (optional)</label><input type="text" id="planLock" placeholder="e.g., Purchased 1 time and locked"></div><div><label>Expiry</label><input type="text" id="planExpiry" placeholder="Auto or date"></div><div><label>Description</label><textarea id="planDesc" rows="2" placeholder="Plan description"></textarea></div><input type="hidden" id="planType"><div style="display: flex; gap: 1rem; margin-top: 1rem;"><button id="savePlanBtn" class="btn-small success" style="flex:1;">Save</button><button class="btn-small danger" onclick="closeModal('addPlanModal')" style="flex:1;">Cancel</button></div></div></div>
 <div id="editPlanModal" class="modal"><div class="modal-content"><h3>✏️ Edit Investment Plan</h3><input type="hidden" id="editPlanId"><input type="hidden" id="editPlanType"><div><label>Plan Name</label><input type="text" id="editPlanName"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Min Amount</label><input type="number" id="editPlanMin"></div><div><label>Max Amount</label><input type="number" id="editPlanMax"></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Days</label><input type="number" id="editPlanDays"></div><div><label>Daily Return (ZMW)</label><input type="number" id="editPlanDailyReturn"></div></div><div><label>Image URL</label><input type="text" id="editPlanImage"><div><label>Upload New Image (optional)</label><input type="file" id="editPlanImageFile" accept="image/*"><div id="editPlanImagePreview" class="image-upload-preview"></div></div></div><div><label>Purchase Limit (0 = unlimited)</label><input type="number" id="editPlanPurchaseLimit" value="0"></div><div><label>Lock Text</label><input type="text" id="editPlanLock"></div><div><label>Expiry</label><input type="text" id="editPlanExpiry"></div><div><label>Description</label><textarea id="editPlanDesc" rows="2"></textarea></div><div style="display: flex; gap: 1rem; margin-top: 1rem;"><button id="updatePlanBtn" class="btn-small success" style="flex:1;">Update</button><button class="btn-small danger" onclick="closeModal('editPlanModal')" style="flex:1;">Cancel</button></div></div></div>
 <div id="addNewsModal" class="modal"><div class="modal-content"><h3>Add News</h3><input type="text" id="newsTitle" placeholder="Title"><textarea id="newsContent" rows="4" placeholder="Content"></textarea><input type="text" id="newsImage" placeholder="Image URL (optional)"><button id="saveNewsBtn" class="btn-small success">Post</button><button class="btn-small" onclick="closeModal('addNewsModal')">Cancel</button></div></div>
@@ -460,74 +483,22 @@
     const storage = firebase.storage();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ==================== STARFIELD CANVAS ====================
-    (function createStarfield() {
-        const canvas = document.getElementById('starCanvas');
-        const ctx = canvas.getContext('2d');
-        let stars = [];
-        let width, height;
+    // ========== CSS TWINKLING STARS ==========
+    const starsContainer = document.getElementById('starsContainer');
+    for (let i = 0; i < 200; i++) {
+        const star = document.createElement('div');
+        star.classList.add('star');
+        const size = Math.random() * 3 + 1;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDelay = Math.random() * 5 + 's';
+        star.style.animationDuration = (Math.random() * 3 + 1) + 's';
+        starsContainer.appendChild(star);
+    }
 
-        function initStars() {
-            stars = [];
-            const starCount = 400;
-            for (let i = 0; i < starCount; i++) {
-                stars.push({
-                    x: Math.random(),
-                    y: Math.random(),
-                    radius: Math.random() * 1.5 + 0.5,
-                    alpha: Math.random() * 0.5 + 0.3,
-                    speedX: (Math.random() - 0.5) * 0.0003,
-                    speedY: (Math.random() - 0.5) * 0.0002,
-                    twinkleSpeed: 0.5 + Math.random() * 2,
-                    twinklePhase: Math.random() * Math.PI * 2
-                });
-            }
-        }
-
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-        }
-
-        function animate() {
-            if (!ctx) return;
-            ctx.clearRect(0, 0, width, height);
-            for (let s of stars) {
-                let x = (s.x + s.speedX * performance.now()) % 1;
-                let y = (s.y + s.speedY * performance.now()) % 1;
-                let brightness = 0.4 + 0.6 * Math.sin(performance.now() * 0.001 * s.twinkleSpeed + s.twinklePhase);
-                ctx.beginPath();
-                ctx.arc(x * width, y * height, s.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * brightness})`;
-                ctx.fill();
-            }
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', () => { resize(); });
-        resize();
-        initStars();
-        animate();
-
-        // Create CSS twinkling stars (additional random dots)
-        const starsContainer = document.getElementById('starsContainer');
-        for (let i = 0; i < 200; i++) {
-            const star = document.createElement('div');
-            star.classList.add('star');
-            const size = Math.random() * 3 + 1;
-            star.style.width = size + 'px';
-            star.style.height = size + 'px';
-            star.style.left = Math.random() * 100 + '%';
-            star.style.top = Math.random() * 100 + '%';
-            star.style.animationDelay = Math.random() * 5 + 's';
-            star.style.animationDuration = (Math.random() * 3 + 1) + 's';
-            starsContainer.appendChild(star);
-        }
-    })();
-
-    // ==================== ORIGINAL ADMIN SCRIPT (unchanged functionality) ====================
+    // Helper functions
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
     function formatMoney(amt) { return 'K' + parseFloat(amt).toFixed(2); }
     function showToast(msg, isError = false) { alert(msg); }
@@ -618,13 +589,13 @@
             const u = doc.data();
             html += `<tr>
                 <td>${escapeHtml(u.fullName || '-')}</td>
-                <td style="word-break:break-all;">${escapeHtml(u.email)}</td>
+                <td>${escapeHtml(u.email)}</td>
                 <td>${formatMoney(u.balance)}</td>
                 <td><select class="role-select" data-id="${doc.id}"><option ${u.role==='admin'?'selected':''}>admin</option><option ${u.role==='user'?'selected':''}>user</option></select></td>
                 <td><button class="btn-small ${u.isBlocked ? 'warning' : 'danger'}" onclick="toggleBlock('${doc.id}', ${u.isBlocked})">${u.isBlocked ? 'Unblock' : 'Block'}</button></td>
                 <td><button class="btn-small ${u.canRequestLoan===false ? 'warning' : 'success'}" onclick="toggleLoanFlag('${doc.id}', ${u.canRequestLoan===false})">${u.canRequestLoan===false ? 'Allow Loan' : 'Disable Loan'}</button></td>
                 <td><div class="edit-balance"><input type="number" id="bal_${doc.id}" placeholder="New balance"><button class="btn-small" onclick="updateBalance('${doc.id}')">Set</button></div><button class="btn-small warning" onclick="resetUserPassword('${u.email}')">Reset Password</button><button class="btn-small danger" onclick="deleteUserAccount('${doc.id}', '${u.email}')">Delete Account</button></td>
-            </table>`;
+            </tr>`;
         }
         html += `</tbody></table>`;
         document.getElementById('usersList').innerHTML = html;
@@ -661,7 +632,7 @@
     // ==================== DEPOSITS ====================
     async function loadPendingDeposits() {
         const pending = await db.collection('deposits').where('status', '==', 'pending').get();
-        let html = `<table><tr><th>User</th><th>Amount</th><th>Method</th><th>Screenshot</th><th>SMS Preview (150 chars)</th><th>Date/Time</th><th>Actions</th></tr>`;
+        let html = `<tr><th>User</th><th>Amount</th><th>Method</th><th>Screenshot</th><th>SMS Preview (150 chars)</th><th>Date/Time</th><th>Actions</th></tr>`;
         for (const doc of pending.docs) {
             const d = doc.data();
             const user = await db.collection('users').doc(d.userId).get();
@@ -680,7 +651,7 @@
                 <td><button class="btn-small success" onclick="approveDeposit('${doc.id}', '${d.userId}', ${d.amount})">Approve</button> <button class="btn-small danger" onclick="rejectDeposit('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td></tr>';
+        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td>';
     }
     window.approveDeposit = async (depositId, userId, amount) => {
         await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); t.update(userRef, { balance: (userSnap.data().balance || 0) + amount }); t.update(db.collection('deposits').doc(depositId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
@@ -689,19 +660,19 @@
     window.rejectDeposit = async (depositId) => { await db.collection('deposits').doc(depositId).update({ status: 'rejected' }); loadPendingDeposits(); loadDepositsHistory(); };
     async function loadDepositsHistory() {
         const all = await db.collection('deposits').orderBy('createdAt', 'desc').get();
-        let html = `<tr><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+        let html = `<tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
         for (const doc of all.docs) {
             const d = doc.data();
             const user = await db.collection('users').doc(d.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.fullName || d.userId)}</td><td>${formatMoney(d.amount)}</td><td>${d.status}</td><td>${d.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td></tr>';
+        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</tr>';
     }
 
     // ==================== WITHDRAWALS ====================
     async function loadPendingWithdrawals() {
         const pending = await db.collection('withdrawals').where('status', '==', 'pending').get();
-        let html = `<table><tr><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>`;
+        let html = `<tr><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>`;
         for (const doc of pending.docs) {
             const w = doc.data();
             const user = await db.collection('users').doc(w.userId).get();
@@ -714,7 +685,7 @@
                 <td><button class="btn-small success" onclick="approveWithdrawal('${doc.id}', '${w.userId}', ${w.amount})">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="6">No pending withdrawals</td></tr>';
+        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<td><td colspan="6">No pending withdrawals</td>';
     }
     window.approveWithdrawal = async (withdrawalId, userId, amount) => {
         await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); if((userSnap.data().balance || 0) < amount) throw new Error('Insufficient balance'); t.update(userRef, { balance: userSnap.data().balance - amount }); t.update(db.collection('withdrawals').doc(withdrawalId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
@@ -723,13 +694,13 @@
     window.rejectWithdrawal = async (withdrawalId) => { await db.collection('withdrawals').doc(withdrawalId).update({ status: 'rejected' }); loadPendingWithdrawals(); loadWithdrawalsHistory(); };
     async function loadWithdrawalsHistory() {
         const all = await db.collection('withdrawals').orderBy('createdAt', 'desc').get();
-        let html = `<tr><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+        let html = `<tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
         for (const doc of all.docs) {
             const w = doc.data();
             const user = await db.collection('users').doc(w.userId).get();
-            html += `<td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+            html += `<tr><td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td></tr>';
+        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</tr>';
     }
 
     // ==================== INVESTMENT PLANS ====================
@@ -738,12 +709,12 @@
     async function loadJproductPlans() { loadPlans('jproductPlans', 'jproductPlansList'); }
     async function loadPlans(collection, elementId) {
         const snapshot = await db.collection(collection).orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily (ZMW)</th><th>Actions</th></tr>`;
+        let html = `<tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily (ZMW)</th><th>Actions</th></tr>`;
         snapshot.forEach(doc => {
             const p = doc.data();
-            html += `<td>${escapeHtml(p.name)}</td><td>${p.minAmount} - ${p.maxAmount}</td><td>${p.days}</td><td>${p.dailyReturn} ZMW</td><td><button class="btn-small" onclick="openEditPlanModal('${doc.id}', '${collection}')">Edit</button> <button class="btn-small danger" onclick="deletePlan('${doc.id}', '${collection}')">Delete</button></td></tr>`;
+            html += `<tr><td>${escapeHtml(p.name)}</td><td>${p.minAmount} - ${p.maxAmount}</td><td>${p.days}</td><td>${p.dailyReturn} ZMW</td><td><button class="btn-small" onclick="openEditPlanModal('${doc.id}', '${collection}')">Edit</button> <button class="btn-small danger" onclick="deletePlan('${doc.id}', '${collection}')">Delete</button></td></tr>`;
         });
-        document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td></tr>';
+        document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td>';
     }
     window.openAddPlanModal = (type) => {
         currentPlanType = type;
@@ -843,21 +814,21 @@
     // ==================== TRANSACTIONS, NEWS, SUPPORT, TREASURE ====================
     async function loadTransactions() {
         const txns = await db.collection('transactions').orderBy('createdAt', 'desc').get();
-        let html = `</tr><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>`;
+        let html = `<tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>`;
         for (const doc of txns.docs) {
             const t = doc.data();
             const user = await db.collection('users').doc(t.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.email || t.userId)}</td><td>${t.type}</td><td>${formatMoney(t.amount)}</td><td>${escapeHtml(t.description)}</td><td>${t.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('transactionsList').innerHTML = html || '<tr><td colspan="5">No transactions</td></tr>';
+        document.getElementById('transactionsList').innerHTML = html || '<td><td colspan="5">No transactions</td>';
         document.getElementById('txSearchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#transactionsList tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
     }
 
     async function loadNews() {
         const news = await db.collection('news').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>Title</th><th>Image</th><th>Actions</th></tr>`;
+        let html = `<tr><th>Title</th><th>Image</th><th>Actions</th></tr>`;
         news.forEach(doc => { const n = doc.data(); html += `<tr><td>${escapeHtml(n.title)}</td><td>${n.imageUrl ? '<a href="'+n.imageUrl+'" target="_blank">View</a>' : '-'}</td><td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td></tr>';
+        document.getElementById('newsList').innerHTML = html || '<td><td colspan="3">No news</td>';
     }
     window.openAddNewsModal = () => { document.getElementById('addNewsModal').style.display = 'flex'; };
     document.getElementById('saveNewsBtn').onclick = async () => { await db.collection('news').add({ title: document.getElementById('newsTitle').value, content: document.getElementById('newsContent').value, imageUrl: document.getElementById('newsImage').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addNewsModal'); loadNews(); showToast('News posted'); };
@@ -865,13 +836,19 @@
 
     async function loadSupportTickets() {
         const tickets = await db.collection('supportTickets').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>`;
+        let html = `<table><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>`;
         for (const doc of tickets.docs) {
             const t = doc.data();
             const user = await db.collection('users').doc(t.userId).get();
-            html += `<tr><td>${escapeHtml(user.data()?.email || t.userId)}</td><td>${escapeHtml(t.subject)}</td><td>${escapeHtml(t.message)}</td><td>${t.status}</td><td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td></tr>`;
+            html += `<tr>
+                <td>${escapeHtml(user.data()?.email || t.userId)}</td>
+                <td>${escapeHtml(t.subject)}</td>
+                <td>${escapeHtml(t.message)}</td>
+                <td>${t.status}</td>
+                <td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td>
+            </tr>`;
         }
-        document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td></tr>';
+        document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td>';
     }
     window.openReplyModal = (id) => { document.getElementById('replyTicketId').value = id; document.getElementById('supportReplyModal').style.display = 'flex'; };
     document.getElementById('sendReplyBtn').onclick = async () => { const ticketId = document.getElementById('replyTicketId').value; const reply = document.getElementById('replyMessage').value; await db.collection('supportTickets').doc(ticketId).update({ replies: firebase.firestore.FieldValue.arrayUnion({ reply, repliedAt: new Date(), admin: true }), status: 'replied' }); closeModal('supportReplyModal'); loadSupportTickets(); showToast('Reply sent'); };
@@ -879,9 +856,9 @@
 
     async function loadTreasureCodes() {
         const codes = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
+        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
         codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td><td>${c.amount}</td><td>${c.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td></tr>';
+        document.getElementById('treasureCodesList').innerHTML = html || '<td><td colspan="4">No codes</td>';
     }
     window.openAddTreasureModal = () => { document.getElementById('addTreasureModal').style.display = 'flex'; };
     document.getElementById('saveTreasureBtn').onclick = async () => { const code = document.getElementById('treasureCode').value.toUpperCase(); const amount = parseFloat(document.getElementById('treasureAmount').value); if(code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 uppercase letters/numbers', true); return; } await db.collection('treasureCodes').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addTreasureModal'); loadTreasureCodes(); showToast('Treasure code created'); };
@@ -890,9 +867,9 @@
     // ==================== VOUCHERS (UPDATED FORMAT) ====================
     async function loadVouchers() {
         const vouchers = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
-        let html = `<tr><td><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
+        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
         vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td><td>${v.amount}</td><td>${v.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td></tr>';
+        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td>';
     }
     window.deleteVoucher = async (id) => { if(confirm('Delete?')) { await db.collection('vouchers').doc(id).delete(); loadVouchers(); } };
 
@@ -1029,9 +1006,9 @@
     // ==================== ADMINS, APPEARANCE ====================
     async function loadAdmins() {
         const admins = await db.collection('users').where('role', '==', 'admin').get();
-        let html = `<table><tr><th>Email</th><th>Name</th><th>Actions</th></tr>`;
+        let html = `<tr><th>Email</th><th>Name</th><th>Actions</th></tr>`;
         admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.fullName || '-')}</td><td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td></tr>`; });
-        document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td></tr>';
+        document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td>';
     }
     window.openAddAdminModal = () => { document.getElementById('addAdminModal').style.display = 'flex'; };
     document.getElementById('createAdminBtn').onclick = async () => {
@@ -1144,6 +1121,126 @@
     });
 
     document.getElementById('adminLogoutBtn').addEventListener('click', async () => { await auth.signOut(); window.location.href = 'admin-login.html'; });
+
+    // ==================== AGENT BULK CREATION ====================
+    let agentRowIndex = 0;
+
+    function addAgentRow(phone = '', password = '', name = '', network = 'mtn') {
+        const container = document.getElementById('agentRowsContainer');
+        if (!container) return;
+        const rowId = `agent_row_${agentRowIndex++}`;
+        const div = document.createElement('div');
+        div.className = 'agent-row';
+        div.id = rowId;
+        div.innerHTML = `
+            <select class="agent-network" data-row="${rowId}">
+                <option value="mtn" ${network === 'mtn' ? 'selected' : ''}>MTN</option>
+                <option value="airtel" ${network === 'airtel' ? 'selected' : ''}>Airtel</option>
+                <option value="zamtel" ${network === 'zamtel' ? 'selected' : ''}>Zamtel</option>
+            </select>
+            <input type="text" class="agent-phone" placeholder="Phone (12 digits, e.g., 260965379422)" value="${escapeHtml(phone)}" maxlength="12">
+            <input type="text" class="agent-password" placeholder="Password (6 digits)" value="${escapeHtml(password)}" maxlength="6">
+            <input type="text" class="agent-name" placeholder="Full Name" value="${escapeHtml(name)}">
+            <button class="remove-row-btn" onclick="removeAgentRow('${rowId}')">✖</button>
+        `;
+        container.appendChild(div);
+    }
+
+    window.removeAgentRow = (rowId) => {
+        const row = document.getElementById(rowId);
+        if (row) row.remove();
+    };
+
+    document.getElementById('addAgentRowBtn').addEventListener('click', () => {
+        addAgentRow();
+    });
+
+    document.getElementById('bulkCreateAgentsBtn').addEventListener('click', async () => {
+        const rows = document.querySelectorAll('.agent-row');
+        if (rows.length === 0) {
+            showToast('No agents to create', true);
+            return;
+        }
+        const agentsData = [];
+        for (const row of rows) {
+            const network = row.querySelector('.agent-network').value;
+            const phone = row.querySelector('.agent-phone').value.trim();
+            const password = row.querySelector('.agent-password').value.trim();
+            const name = row.querySelector('.agent-name').value.trim();
+            if (!phone || !password || !name) {
+                showToast('Please fill all fields for every agent', true);
+                return;
+            }
+            if (!/^\d{12}$/.test(phone)) {
+                showToast(`Phone ${phone} must be exactly 12 digits`, true);
+                return;
+            }
+            if (!/^\d{6}$/.test(password)) {
+                showToast(`Password for ${phone} must be exactly 6 digits`, true);
+                return;
+            }
+            agentsData.push({ network, phone, password, name });
+        }
+        const createBtn = document.getElementById('bulkCreateAgentsBtn');
+        createBtn.disabled = true;
+        createBtn.innerText = 'Creating...';
+        const msgDiv = document.getElementById('agentCreationMsg');
+        msgDiv.innerHTML = '';
+        let successCount = 0;
+        let failCount = 0;
+        for (const agent of agentsData) {
+            try {
+                const email = `agent_${agent.phone}@agent.pureore.com`;
+                const userCred = await auth.createUserWithEmailAndPassword(email, agent.password);
+                const uid = userCred.user.uid;
+                await db.collection('users').doc(uid).set({
+                    fullName: agent.name,
+                    email: email,
+                    phone: agent.phone,
+                    role: 'agent',
+                    balance: 0,
+                    isBlocked: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await db.collection('agents').add({
+                    network: agent.network,
+                    name: agent.name,
+                    number: agent.phone,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                successCount++;
+            } catch (err) {
+                console.error(`Failed to create agent ${agent.phone}:`, err);
+                failCount++;
+                msgDiv.innerHTML += `<div style="color:#ef4444;">❌ ${agent.phone}: ${err.message}</div>`;
+            }
+        }
+        if (successCount > 0) {
+            showToast(`${successCount} agents created, ${failCount} failed`, false);
+            // Optionally refresh agents list if you have a function
+            if (typeof loadAgents === 'function') loadAgents();
+        } else {
+            showToast('No agents created', true);
+        }
+        createBtn.disabled = false;
+        createBtn.innerText = '✅ Create Agents';
+        // Optionally clear rows? We keep them for reference but you can clear if desired.
+    });
+
+    // Initialize one empty row when settings tab becomes active
+    let settingsInitialized = false;
+    const settingsTab = document.getElementById('settingsTab');
+    const observer = new MutationObserver(() => {
+        if (settingsTab && settingsTab.classList.contains('active') && !settingsInitialized) {
+            settingsInitialized = true;
+            addAgentRow();
+        }
+    });
+    observer.observe(settingsTab, { attributes: true, attributeFilter: ['class'] });
+    if (settingsTab && settingsTab.classList.contains('active')) {
+        settingsInitialized = true;
+        addAgentRow();
+    }
 </script>
 </body>
 </html>

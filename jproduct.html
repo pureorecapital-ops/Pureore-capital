@@ -424,37 +424,29 @@
 
     let userPurchaseCounts = {};
 
-    // ---- FIX: Normalize image URL to avoid blocking ----
     function getSafeImageUrl(url) {
         if (!url || url === '') return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
         let safeUrl = url.trim();
-        
         if (safeUrl.startsWith('http://')) {
             safeUrl = safeUrl.replace('http://', 'https://');
         }
         if (safeUrl.startsWith('//')) {
             safeUrl = 'https:' + safeUrl;
         }
-        
-        // ImgBB page link -> direct
         if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
             const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)/);
             if (match && match[1]) {
                 safeUrl = `https://i.ibb.co/${match[1]}/image.jpg`;
             }
         }
-        
-        // Imgur page link -> direct
         if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
             const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
             if (match && match[1]) {
                 safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
             }
         }
-        
         return safeUrl;
     }
-    // ------------------------------------------------
 
     async function loadPlans() {
         const loadingDiv = document.getElementById('loadingIndicator');
@@ -516,7 +508,6 @@
                 limitText = `<div class="plan-limit">♾️ Unlimited</div>`;
             }
             
-            // FIX: use safe image URL
             const imageUrl = plan.image || '';
             const safeImageUrl = getSafeImageUrl(imageUrl);
             
@@ -671,8 +662,10 @@
                     totalReturn: 0
                 });
 
-                if (canGiveBonus && referrerId && firstDepositAmount > 0) {
-                    const bonusAmount = firstDepositAmount * 0.05;
+                // ========== UPDATED: Bonus based on PLAN amount ==========
+                if (canGiveBonus && referrerId) {
+                    // 5% of the plan's investment amount
+                    const bonusAmount = investAmount * 0.05;
                     const referrerRef = db.collection('users').doc(referrerId);
                     const referrerSnap = await transaction.get(referrerRef);
                     const newReferrerBalance = (referrerSnap.data().balance || 0) + bonusAmount;
@@ -684,7 +677,8 @@
                         referrerId: referrerId,
                         referredUserId: userId,
                         amount: bonusAmount,
-                        depositAmount: firstDepositAmount,
+                        depositAmount: firstDepositAmount, // optional, for reference
+                        planAmount: investAmount,          // store the plan amount for clarity
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
@@ -693,10 +687,11 @@
                         userId: referrerId,
                         type: 'referral_bonus',
                         amount: bonusAmount,
-                        description: `Referral bonus from ${userData.fullName || user.email} (5% of K${firstDepositAmount})`,
+                        description: `Referral bonus from ${userData.fullName || user.email} (5% of K${investAmount} plan)`,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
+                // ========================================================
             });
 
             await db.collection('transactions').add({
@@ -708,8 +703,9 @@
             });
 
             showFireworks();
-            if (canGiveBonus && referrerId && firstDepositAmount > 0) {
-                showToast(`✅ Success! Invested ${investAmount} ZMW. Your referrer earned ${(firstDepositAmount * 0.05).toFixed(2)} ZMW bonus! Redirecting...`, false);
+            if (canGiveBonus && referrerId) {
+                const bonusAmount = investAmount * 0.05;
+                showToast(`✅ Success! Invested ${investAmount} ZMW. Your referrer earned ${bonusAmount.toFixed(2)} ZMW bonus! Redirecting...`, false);
             } else {
                 showToast(`✅ Success! Invested ${investAmount} ZMW in ${plan.name}. Redirecting to Income page...`, false);
             }

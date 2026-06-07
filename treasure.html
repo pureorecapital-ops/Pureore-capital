@@ -294,7 +294,6 @@
         }
 
         try {
-            // Query the treasure code
             const codeQuery = await db.collection('treasureCodes')
                 .where('code', '==', code)
                 .limit(1)
@@ -325,7 +324,6 @@
                 return;
             }
 
-            // Perform the transaction
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(user.uid);
                 const userSnap = await transaction.get(userRef);
@@ -342,7 +340,6 @@
                 });
             });
 
-            // Log transaction
             await db.collection('transactions').add({
                 userId: user.uid,
                 type: 'treasure',
@@ -358,7 +355,6 @@
             }, 2000);
         } catch (err) {
             console.error('Treasure claim error:', err);
-            // More specific error messages
             if (err.message === 'User document not found. Please contact support.') {
                 showMessage('Your user profile is missing. Please contact support.', 'error');
             } else if (err.code === 'permission-denied') {
@@ -373,7 +369,6 @@
         }
     });
 
-    // Bottom navigation active state
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'treasure.html';
     navItems.forEach(item => {

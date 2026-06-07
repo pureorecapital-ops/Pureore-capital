@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Agent Dashboard | Pureore Capital</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a2f2a, #0a1a2a);
+            animation: bgShift 8s ease infinite;
+            background-size: 200% 200%;
+            color: #fff;
+            padding: 1rem;
+            padding-bottom: 85px;
+        }
+        @keyframes bgShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        /* Top bar */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .agent-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #2ecc71, #f1c40f, #e67e22);
+            background-size: 200% auto;
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: nameFlow 3s ease infinite;
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            border: 1px solid rgba(46,204,113,0.3);
+        }
+        @keyframes nameFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .logout-btn {
+            background: rgba(239,68,68,0.8);
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .logout-btn:hover {
+            background: #ef4444;
+            transform: scale(1.02);
+        }
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 60px;
+            padding: 0.6rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(46,204,113,0.3);
+        }
+        .nav-item {
+            background: transparent;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-item:hover {
+            background: rgba(46,204,113,0.3);
+        }
+        /* Balance Cards */
+        .balance-card {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+            border-radius: 40px;
+            padding: 1.8rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(241,196,15,0.4);
+        }
+        .balance-label {
+            font-size: 1rem;
+            color: #ccc;
+        }
+        .balance-amount {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #f1c40f;
+        }
+        .stats-grid {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 32px;
+            padding: 1rem;
+            text-align: center;
+            flex: 1;
+            border: 1px solid rgba(46,204,113,0.3);
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #2ecc71;
+        }
+        .withdraw-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            padding: 1rem;
+            border: none;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #0A0A0C;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: 0.2s;
+        }
+        .withdraw-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .withdraw-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+        .message {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            border-radius: 30px;
+            text-align: center;
+        }
+        .success {
+            background: rgba(46,204,113,0.2);
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
+        }
+        .error {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #0d2a3a;
+            border-radius: 32px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 350px;
+            margin: auto;
+            width: 90%;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 0.6rem;
+            margin: 0.5rem 0;
+            border-radius: 40px;
+            background: #1E1E2A;
+            border: 1px solid #2ecc71;
+            color: white;
+        }
+        .modal-content button {
+            margin-top: 0.5rem;
+            background: #2ecc71;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal {
+            background: #ef4444;
+            color: white;
+            margin-top: 0.5rem;
+        }
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+            border-top: 1px solid rgba(46,204,113,0.2);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="top-bar">
+        <div class="agent-name" id="agentNameDisplay">Agent</div>
+        <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+
+    <div class="navbar">
+        <button class="nav-item" id="simsBtn">📱 Sims</button>
+        <button class="nav-item" id="settingsBtn">⚙️ Settings</button>
+    </div>
+
+    <div class="balance-card">
+        <div class="balance-label">💰 Total Commission Balance</div>
+        <div class="balance-amount" id="commissionBalance">K0.00</div>
+        <button id="withdrawBtn" class="withdraw-btn">💸 Withdraw All (min 50 ZMW)</button>
+        <div id="withdrawMessage"></div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Deposit Commission (10%)</div>
+            <div class="stat-number" id="depositCommissionTotal">K0.00</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Withdrawal Commission (2%)</div>
+            <div class="stat-number" id="withdrawCommissionTotal">K0.00</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        pureorecapital@2025
+    </div>
+</div>
+
+<!-- Sims Modal -->
+<div id="simsModal" class="modal">
+    <div class="modal-content">
+        <h3>📱 Registered Users</h3>
+        <p id="totalUsersCount">Loading...</p>
+        <button onclick="closeModal('simsModal')">Close</button>
+    </div>
+</div>
+
+<!-- Settings Modal (Change Password) -->
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h3>🔐 Change Password</h3>
+        <input type="password" id="oldPassword" placeholder="Current Password">
+        <input type="password" id="newPassword" placeholder="New Password (min 6)">
+        <input type="password" id="confirmPassword" placeholder="Confirm New Password">
+        <button id="changePwdBtn">Update Password</button>
+        <button class="close-modal" onclick="closeModal('settingsModal')">Cancel</button>
+        <div id="pwdMessage" style="margin-top:0.5rem; font-size:0.8rem;"></div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+        authDomain: "pureore-capital-zambia.firebaseapp.com",
+        projectId: "pureore-capital-zambia",
+        storageBucket: "pureore-capital-zambia.appspot.com",
+        messagingSenderId: "78967797858",
+        appId: "1:78967797858:web:379b9692951429c345793b",
+        measurementId: "G-FQKC29NYE9"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    db.settings({ persistence: false });
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+    let currentAgentId = null;
+    let currentAgentPhone = null;
+    let currentBalance = 0;
+
+    function showMessage(elementId, msg, isError = true) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.innerHTML = `<div class="message ${isError ? 'error' : 'success'}">${msg}</div>`;
+            setTimeout(() => { if (el.innerHTML.includes(msg)) el.innerHTML = ''; }, 5000);
+        }
+    }
+
+    async function loadAgentData() {
+        if (!currentAgentId) return;
+        const userDoc = await db.collection('users').doc(currentAgentId).get();
+        const data = userDoc.data();
+        currentBalance = data.balance || 0;
+        document.getElementById('commissionBalance').innerText = 'K' + currentBalance.toFixed(2);
+        document.getElementById('agentNameDisplay').innerText = data.fullName || 'Agent';
+        currentAgentPhone = data.phone || '';
+
+        const commissionsSnap = await db.collection('agentCommissions')
+            .where('agentId', '==', currentAgentId)
+            .get();
+        let depositTotal = 0, withdrawTotal = 0;
+        commissionsSnap.forEach(doc => {
+            const c = doc.data();
+            if (c.type === 'deposit') depositTotal += c.amount;
+            else if (c.type === 'withdrawal') withdrawTotal += c.amount;
+        });
+        document.getElementById('depositCommissionTotal').innerText = 'K' + depositTotal.toFixed(2);
+        document.getElementById('withdrawCommissionTotal').innerText = 'K' + withdrawTotal.toFixed(2);
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (!userDoc.exists || userDoc.data().role !== 'agent') {
+            alert('Access denied. Not an agent account.');
+            await auth.signOut();
+            window.location.href = 'login.html';
+            return;
+        }
+        currentAgentId = user.uid;
+        await loadAgentData();
+    });
+
+    document.getElementById('simsBtn').addEventListener('click', async () => {
+        const modal = document.getElementById('simsModal');
+        const totalSpan = document.getElementById('totalUsersCount');
+        totalSpan.innerText = 'Loading...';
+        modal.style.display = 'flex';
+        const usersSnap = await db.collection('users').get();
+        totalSpan.innerText = usersSnap.size;
+    });
+
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+        document.getElementById('settingsModal').style.display = 'flex';
+        document.getElementById('oldPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+        document.getElementById('pwdMessage').innerHTML = '';
+    });
+
+    document.getElementById('changePwdBtn').addEventListener('click', async () => {
+        const oldPwd = document.getElementById('oldPassword').value;
+        const newPwd = document.getElementById('newPassword').value;
+        const confirmPwd = document.getElementById('confirmPassword').value;
+        const msgDiv = document.getElementById('pwdMessage');
+        if (!oldPwd || !newPwd || !confirmPwd) {
+            msgDiv.innerHTML = '<span style="color:#ef4444;">All fields required</span>';
+            return;
+        }
+        if (newPwd.length < 6) {
+            msgDiv.innerHTML = '<span style="color:#ef4444;">New password must be at least 6 characters</span>';
+            return;
+        }
+        if (newPwd !== confirmPwd) {
+            msgDiv.innerHTML = '<span style="color:#ef4444;">Passwords do not match</span>';
+            return;
+        }
+        const user = auth.currentUser;
+        if (!user) return;
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPwd);
+        try {
+            await user.reauthenticateWithCredential(credential);
+            await user.updatePassword(newPwd);
+            msgDiv.innerHTML = '<span style="color:#2ecc71;">Password changed successfully</span>';
+            setTimeout(() => closeModal('settingsModal'), 1500);
+        } catch (err) {
+            let msg = err.message;
+            if (err.code === 'auth/wrong-password') msg = 'Current password is incorrect';
+            msgDiv.innerHTML = `<span style="color:#ef4444;">${msg}</span>`;
+        }
+    });
+
+    document.getElementById('withdrawBtn').addEventListener('click', async () => {
+        if (currentBalance < 50) {
+            showMessage('withdrawMessage', `❌ Minimum withdrawal is 50 ZMW. Your balance: K${currentBalance.toFixed(2)}`, true);
+            return;
+        }
+        if (confirm(`Withdraw K${currentBalance.toFixed(2)}? This amount will be sent to your registered number ${currentAgentPhone}.`)) {
+            const btn = document.getElementById('withdrawBtn');
+            btn.disabled = true;
+            btn.innerText = 'Processing...';
+            try {
+                await db.collection('withdrawals').add({
+                    userId: currentAgentId,
+                    amount: currentBalance,
+                    netAmount: currentBalance,
+                    network: 'agent',
+                    phone: currentAgentPhone,
+                    isAgentWithdrawal: true,
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await db.collection('users').doc(currentAgentId).update({ balance: 0 });
+                showMessage('withdrawMessage', `✅ Withdrawal request sent! K${currentBalance.toFixed(2)} will be processed by admin.`, false);
+                await loadAgentData();
+            } catch (err) {
+                showMessage('withdrawMessage', 'Error: ' + err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '💸 Withdraw All (min 50 ZMW)';
+            }
+        }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await auth.signOut();
+        window.location.href = 'login.html';
+    });
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    window.closeModal = closeModal;
+</script>
+</body>
+</html>

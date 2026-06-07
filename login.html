@@ -124,19 +124,27 @@
     db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ========== FIX: Clean up any stale auth state before login ==========
+    // Clean up stale session
     (async function cleanupStaleSession() {
         try {
-            // Force signOut to clear any corrupted tokens or partial sessions
             await auth.signOut();
-            // Small delay ensures Firebase fully clears IndexedDB/localStorage
             await new Promise(resolve => setTimeout(resolve, 300));
         } catch (e) {
-            // If already signed out or other error, ignore
             console.log("Pre-login cleanup (non-critical):", e);
         }
     })();
-    // =====================================================================
+
+    // Helper: convert phone number to agent email format (internal, no visible hint)
+    function phoneToAgentEmail(phone) {
+        const cleaned = phone.replace(/\D/g, '');
+        return `agent_${cleaned}@agent.pureore.com`;
+    }
+
+    // Detect if input looks like a Zambian phone number (12 digits starting with 260)
+    function isPhoneNumber(input) {
+        const digits = input.replace(/\D/g, '');
+        return digits.length === 12 && digits.startsWith('260');
+    }
 
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
@@ -150,14 +158,20 @@
             loginBtn.textContent = 'Logging in...';
             messageDiv.innerHTML = '';
             
-            const email = document.getElementById('loginEmail').value.trim();
+            let identifier = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             
-            if (!email || !password) {
+            if (!identifier || !password) {
                 messageDiv.innerHTML = '<div class="error">Please enter both email and password.</div>';
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login';
                 return;
+            }
+            
+            // Convert phone number to agent email if needed (silent)
+            let email = identifier;
+            if (isPhoneNumber(identifier)) {
+                email = phoneToAgentEmail(identifier);
             }
             
             try {
@@ -186,6 +200,8 @@
                 const role = userData.role || 'user';
                 if (role === 'admin') {
                     window.location.href = 'admin-dashboard.html';
+                } else if (role === 'agent') {
+                    window.location.href = 'agent-dashboard.html';
                 } else {
                     window.location.href = 'dashboard.html';
                 }
@@ -197,10 +213,8 @@
                 if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
                 if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
                 if (error.code === 'auth/too-many-requests') errorMsg = 'Too many failed attempts. Try again later.';
-                // Special handling for network/auth error caused by stale token
                 if (error.code === 'auth/network-request-failed') {
                     errorMsg = 'Network error. Please refresh the page and try again.';
-                    // Attempt one more cleanup and reload? But we already did cleanup at start.
                 }
                 messageDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
                 loginBtn.disabled = false;
