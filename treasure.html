@@ -3,17 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="referrer" content="no-referrer">
     <title>Treasure | Pureore Capital</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
             font-family: 'Inter', system-ui, sans-serif;
@@ -182,9 +178,7 @@
             flex: 1;
             text-align: center;
         }
-        .nav-item:hover {
-            transform: translateY(-3px);
-        }
+        .nav-item:hover { transform: translateY(-3px); }
         .nav-icon {
             width: 28px;
             height: 28px;
@@ -196,9 +190,7 @@
             color: #aaa;
             font-weight: 500;
         }
-        .nav-item.active .nav-label {
-            color: #2ecc71;
-        }
+        .nav-item.active .nav-label { color: #2ecc71; }
         @media (max-width: 600px) {
             .animated-title { font-size: 1.5rem; }
             .treasure-card { padding: 1.2rem; }
@@ -208,9 +200,7 @@
 <body>
 <div class="container">
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
-
     <div class="animated-title">🎁 TREASURE HUNT 🎁</div>
-
     <div class="treasure-card">
         <div class="treasure-icon">💎</div>
         <p style="margin-bottom: 1rem; color: #ccc;">Enter the secret code to claim your reward</p>
@@ -218,7 +208,6 @@
         <button id="claimBtn" class="claim-btn">🔓 Claim Treasure</button>
         <div id="messageArea"></div>
     </div>
-
     <div class="info-card">
         <div class="info-title">📢 How to get Treasure Codes?</div>
         <div class="info-text">
@@ -228,7 +217,7 @@
     </div>
 </div>
 
-<!-- Bottom Navigation (6 icons) – unchanged -->
+<!-- Bottom Navigation -->
 <div class="bottom-nav">
     <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
@@ -305,6 +294,7 @@
         }
 
         try {
+            // Query the treasure code
             const codeQuery = await db.collection('treasureCodes')
                 .where('code', '==', code)
                 .limit(1)
@@ -335,10 +325,13 @@
                 return;
             }
 
+            // Perform the transaction
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(user.uid);
                 const userSnap = await transaction.get(userRef);
-                if (!userSnap.exists) throw new Error('User document not found');
+                if (!userSnap.exists) {
+                    throw new Error('User document not found. Please contact support.');
+                }
                 const currentBalance = userSnap.data().balance || 0;
                 const newBalance = currentBalance + amount;
                 transaction.update(userRef, { balance: newBalance });
@@ -349,6 +342,7 @@
                 });
             });
 
+            // Log transaction
             await db.collection('transactions').add({
                 userId: user.uid,
                 type: 'treasure',
@@ -364,7 +358,16 @@
             }, 2000);
         } catch (err) {
             console.error('Treasure claim error:', err);
-            showMessage('Server error. Please try again later.', 'error');
+            // More specific error messages
+            if (err.message === 'User document not found. Please contact support.') {
+                showMessage('Your user profile is missing. Please contact support.', 'error');
+            } else if (err.code === 'permission-denied') {
+                showMessage('Permission denied. Please check your network and try again.', 'error');
+            } else if (err.code === 'unavailable') {
+                showMessage('Network error. Please check your internet connection.', 'error');
+            } else {
+                showMessage('Server error. Please try again later.', 'error');
+            }
             claimBtn.disabled = false;
             claimBtn.innerText = '🔓 Claim Treasure';
         }

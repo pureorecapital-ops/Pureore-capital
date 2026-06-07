@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Team | Pureore Capital</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -209,7 +208,6 @@
     </div>
 </div>
 
-<!-- Bottom Navigation -->
 <div class="bottom-nav">
     <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
@@ -302,6 +300,7 @@
         }
 
         try {
+            // Query users who used this user's referral code (case‑insensitive)
             const referredQuery = await db.collection('users')
                 .where('referredBy', '==', currentReferralCode)
                 .get();
@@ -312,6 +311,7 @@
             for (const doc of referredQuery.docs) {
                 const memberData = doc.data();
                 const memberId = doc.id;
+                // Get referral earnings (bonus given when this referred user made first investment)
                 const earningsQuery = await db.collection('referralEarnings')
                     .where('referrerId', '==', currentUserId)
                     .where('referredUserId', '==', memberId)
@@ -361,15 +361,23 @@
         }
     }
 
+    // ✅ FIX: Build correct referral link including subdirectory if any
+    function getReferralLink() {
+        // Get the full URL of the current page (team.html)
+        const currentUrl = window.location.href;
+        // Remove everything after the last '/' to get the directory
+        const baseDir = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+        return `${baseDir}register.html?ref=${currentReferralCode}`;
+    }
+
     copyBtn.addEventListener('click', () => {
         if (!currentReferralCode) {
             alert('Referral code not loaded yet.');
             return;
         }
-        const baseUrl = window.location.origin;
-        const registerUrl = `${baseUrl}/register.html?ref=${currentReferralCode}`;
+        const registerUrl = getReferralLink();
         navigator.clipboard.writeText(registerUrl).then(() => {
-            alert('Referral link copied to clipboard! Share it with friends.');
+            alert('Referral link copied to clipboard! Share it with friends.\n\n' + registerUrl);
         }).catch(() => {
             alert('Could not copy. Please copy manually: ' + registerUrl);
         });

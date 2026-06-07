@@ -13,61 +13,66 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', system-ui, sans-serif;
-            background: var(--admin-bg);
-            color: var(--admin-text);
+            background: radial-gradient(ellipse at 30% 40%, #0B1026, #050816);
+            color: #E0F2FE;
             padding: 1rem;
             transition: var(--transition);
             position: relative;
             overflow-x: hidden;
+            min-height: 100vh;
         }
-        /* Starfield animation */
+        /* Nebula clouds (static background) */
         body::before {
             content: '';
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            background: radial-gradient(circle at 20% 30%, rgba(109,40,217,0.15), transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(37,99,235,0.1), transparent 60%),
+                        radial-gradient(circle at 50% 80%, rgba(6,182,212,0.08), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        /* Twinkling stars (CSS only) */
+        .stars {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(2px 2px at 20% 30%, #fff, rgba(0,0,0,0)),
-                        radial-gradient(1px 1px at 60% 70%, #fff, rgba(0,0,0,0)),
-                        radial-gradient(3px 3px at 85% 15%, #fff, rgba(0,0,0,0));
-            background-size: 200px 200px, 150px 150px, 300px 300px;
-            background-repeat: no-repeat;
-            opacity: 0.2;
-            animation: starsMove 20s linear infinite;
             pointer-events: none;
             z-index: 0;
         }
-        @keyframes starsMove {
-            0% { background-position: 0% 0%, 0% 0%, 0% 0%; }
-            100% { background-position: 200px 200px, 150px 150px, 300px 300px; }
-        }
-        /* Moon glow */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, rgba(46,204,113,0.2) 0%, rgba(46,204,113,0) 70%);
+        .star {
+            position: absolute;
+            background-color: #fff;
             border-radius: 50%;
+            opacity: 0;
+            animation: twinkle 2s infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+        /* Canvas for drifting star particles */
+        #starCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
             z-index: 0;
-            animation: moonGlow 6s ease-in-out infinite;
-        }
-        @keyframes moonGlow {
-            0% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.1); }
-            100% { opacity: 0.3; transform: scale(1); }
         }
         :root {
             --admin-primary: #2ecc71;
             --admin-secondary: #1a5c7a;
             --admin-tertiary: #3498db;
-            --admin-bg: #0a1a2a;
-            --admin-card: #0d2a3a;
-            --admin-text: #e0f0f6;
+            --admin-bg: rgba(5,8,22,0.85);
+            --admin-card: rgba(17,24,39,0.7);
+            --admin-text: #e0f2fe;
             --admin-border: #2ecc7140;
             --admin-gradient: linear-gradient(135deg, #2ecc71, #1a5c7a, #3498db);
             --admin-glow: 0 0 12px rgba(46,204,113,0.5);
@@ -96,11 +101,12 @@
             margin-bottom: 2rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--admin-border);
+            backdrop-filter: blur(4px);
         }
         .admin-title { font-size: 1.8rem; font-weight: 800; }
         .header-stats { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
-        .badge { background: var(--admin-primary); padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; position: relative; color: #0a1a2a; }
-        .logout-btn { background: var(--admin-primary); border: none; padding: 0.5rem 1.2rem; border-radius: 40px; color: #0a1a2a; font-weight: bold; cursor: pointer; transition: var(--transition); }
+        .badge { background: var(--admin-primary); padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; position: relative; color: #050816; }
+        .logout-btn { background: var(--admin-primary); border: none; padding: 0.5rem 1.2rem; border-radius: 40px; color: #050816; font-weight: bold; cursor: pointer; transition: var(--transition); }
         .logout-btn:hover { transform: scale(1.02); filter: brightness(1.05); }
         .stats-grid {
             display: grid;
@@ -110,13 +116,14 @@
         }
         .stat-card {
             background: var(--admin-card);
+            backdrop-filter: blur(12px);
             border-radius: 20px;
             padding: 1rem;
             text-align: center;
             border: 1px solid var(--admin-border);
             transition: var(--transition);
         }
-        .stat-card:hover { transform: translateY(-3px); border-color: var(--admin-primary); box-shadow: var(--admin-glow); }
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--admin-primary); box-shadow: var(--admin-glow); background: rgba(17,24,39,0.8); }
         .stat-number { font-size: 2rem; font-weight: 800; color: var(--admin-primary); }
         .admin-tabs {
             display: flex;
@@ -127,7 +134,8 @@
             padding-bottom: 0.5rem;
         }
         .tab-btn {
-            background: transparent;
+            background: rgba(17,24,39,0.5);
+            backdrop-filter: blur(4px);
             color: #b0d4bc;
             border: none;
             padding: 0.6rem 1.2rem;
@@ -137,8 +145,8 @@
             transition: var(--transition);
             position: relative;
         }
-        .tab-btn:hover { color: var(--admin-primary); background: rgba(46,204,113,0.1); }
-        .tab-btn.active { background: var(--admin-gradient); color: #0a1a2a; box-shadow: var(--admin-glow); }
+        .tab-btn:hover { color: var(--admin-primary); background: rgba(46,204,113,0.2); }
+        .tab-btn.active { background: var(--admin-gradient); color: #050816; box-shadow: var(--admin-glow); }
         .tab-btn .pending-dot {
             position: absolute;
             top: 0px;
@@ -155,13 +163,14 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .admin-card {
             background: var(--admin-card);
+            backdrop-filter: blur(12px);
             border-radius: 20px;
             padding: 1.2rem;
             margin-bottom: 1.5rem;
             border: 1px solid var(--admin-border);
             transition: var(--transition);
         }
-        .admin-card:hover { transform: translateY(-3px); border-color: var(--admin-primary); box-shadow: var(--admin-glow); }
+        .admin-card:hover { transform: translateY(-3px); border-color: var(--admin-primary); box-shadow: var(--admin-glow); background: rgba(17,24,39,0.8); }
         .card-title { color: var(--admin-primary); margin-bottom: 1rem; border-left: 4px solid var(--admin-primary); padding-left: 12px; font-size: 1.2rem; font-weight: 700; }
         
         /* Users Table */
@@ -212,7 +221,7 @@
         }
         .btn-small {
             background: #2ecc71;
-            color: #0a1a2a;
+            color: #050816;
             border: none;
             padding: 0.3rem 1rem;
             border-radius: 30px;
@@ -223,9 +232,9 @@
             margin: 0.2rem;
         }
         .btn-small:hover { transform: scale(1.02); background: #27ae60; }
-        .btn-small.warning { background: #f1c40f; color: #0a1a2a; }
+        .btn-small.warning { background: #f1c40f; color: #050816; }
         .btn-small.danger { background: #e74c3c; color: white; }
-        .btn-small.success { background: #2ecc71; color: #0a1a2a; }
+        .btn-small.success { background: #2ecc71; color: #050816; }
         
         .edit-balance { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .edit-balance input, .plan-form input, .news-form input, .news-form textarea, .code-form input, .support-reply textarea {
@@ -246,10 +255,11 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
         }
         .modal-content {
-            background: #0d2a3a;
+            background: rgba(17,24,39,0.95);
+            backdrop-filter: blur(12px);
             border-radius: 28px;
             padding: 1.8rem;
             width: 90%;
@@ -295,9 +305,13 @@
     </style>
 </head>
 <body>
+<!-- Canvas for drifting stars -->
+<canvas id="starCanvas"></canvas>
+<div class="stars" id="starsContainer"></div>
+
 <div class="container">
     <div class="admin-header">
-        <h1 class="admin-title">🌊 Pureore Admin Panel</h1>
+        <h1 class="admin-title">🌌 Pureore Admin Panel</h1>
         <div class="header-stats">
             <span class="badge" id="pendingDepositsBadge">Deposits: 0</span>
             <span class="badge" id="pendingWithdrawalsBadge">Withdrawals: 0</span>
@@ -446,6 +460,74 @@
     const storage = firebase.storage();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
+    // ==================== STARFIELD CANVAS ====================
+    (function createStarfield() {
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let width, height;
+
+        function initStars() {
+            stars = [];
+            const starCount = 400;
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random(),
+                    y: Math.random(),
+                    radius: Math.random() * 1.5 + 0.5,
+                    alpha: Math.random() * 0.5 + 0.3,
+                    speedX: (Math.random() - 0.5) * 0.0003,
+                    speedY: (Math.random() - 0.5) * 0.0002,
+                    twinkleSpeed: 0.5 + Math.random() * 2,
+                    twinklePhase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        function animate() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, width, height);
+            for (let s of stars) {
+                let x = (s.x + s.speedX * performance.now()) % 1;
+                let y = (s.y + s.speedY * performance.now()) % 1;
+                let brightness = 0.4 + 0.6 * Math.sin(performance.now() * 0.001 * s.twinkleSpeed + s.twinklePhase);
+                ctx.beginPath();
+                ctx.arc(x * width, y * height, s.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * brightness})`;
+                ctx.fill();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => { resize(); });
+        resize();
+        initStars();
+        animate();
+
+        // Create CSS twinkling stars (additional random dots)
+        const starsContainer = document.getElementById('starsContainer');
+        for (let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            const size = Math.random() * 3 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 5 + 's';
+            star.style.animationDuration = (Math.random() * 3 + 1) + 's';
+            starsContainer.appendChild(star);
+        }
+    })();
+
+    // ==================== ORIGINAL ADMIN SCRIPT (unchanged functionality) ====================
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
     function formatMoney(amt) { return 'K' + parseFloat(amt).toFixed(2); }
     function showToast(msg, isError = false) { alert(msg); }
@@ -542,7 +624,7 @@
                 <td><button class="btn-small ${u.isBlocked ? 'warning' : 'danger'}" onclick="toggleBlock('${doc.id}', ${u.isBlocked})">${u.isBlocked ? 'Unblock' : 'Block'}</button></td>
                 <td><button class="btn-small ${u.canRequestLoan===false ? 'warning' : 'success'}" onclick="toggleLoanFlag('${doc.id}', ${u.canRequestLoan===false})">${u.canRequestLoan===false ? 'Allow Loan' : 'Disable Loan'}</button></td>
                 <td><div class="edit-balance"><input type="number" id="bal_${doc.id}" placeholder="New balance"><button class="btn-small" onclick="updateBalance('${doc.id}')">Set</button></div><button class="btn-small warning" onclick="resetUserPassword('${u.email}')">Reset Password</button><button class="btn-small danger" onclick="deleteUserAccount('${doc.id}', '${u.email}')">Delete Account</button></td>
-            </tr>`;
+            </table>`;
         }
         html += `</tbody></table>`;
         document.getElementById('usersList').innerHTML = html;
@@ -598,7 +680,7 @@
                 <td><button class="btn-small success" onclick="approveDeposit('${doc.id}', '${d.userId}', ${d.amount})">Approve</button> <button class="btn-small danger" onclick="rejectDeposit('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td><tr>';
+        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td></tr>';
     }
     window.approveDeposit = async (depositId, userId, amount) => {
         await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); t.update(userRef, { balance: (userSnap.data().balance || 0) + amount }); t.update(db.collection('deposits').doc(depositId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
@@ -607,13 +689,13 @@
     window.rejectDeposit = async (depositId) => { await db.collection('deposits').doc(depositId).update({ status: 'rejected' }); loadPendingDeposits(); loadDepositsHistory(); };
     async function loadDepositsHistory() {
         const all = await db.collection('deposits').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+        let html = `<tr><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
         for (const doc of all.docs) {
             const d = doc.data();
             const user = await db.collection('users').doc(d.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.fullName || d.userId)}</td><td>${formatMoney(d.amount)}</td><td>${d.status}</td><td>${d.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td><tr>';
+        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td></tr>';
     }
 
     // ==================== WITHDRAWALS ====================
@@ -632,7 +714,7 @@
                 <td><button class="btn-small success" onclick="approveWithdrawal('${doc.id}', '${w.userId}', ${w.amount})">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="6">No pending withdrawals</td><tr>';
+        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="6">No pending withdrawals</td></tr>';
     }
     window.approveWithdrawal = async (withdrawalId, userId, amount) => {
         await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); if((userSnap.data().balance || 0) < amount) throw new Error('Insufficient balance'); t.update(userRef, { balance: userSnap.data().balance - amount }); t.update(db.collection('withdrawals').doc(withdrawalId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
@@ -641,13 +723,13 @@
     window.rejectWithdrawal = async (withdrawalId) => { await db.collection('withdrawals').doc(withdrawalId).update({ status: 'rejected' }); loadPendingWithdrawals(); loadWithdrawalsHistory(); };
     async function loadWithdrawalsHistory() {
         const all = await db.collection('withdrawals').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+        let html = `<tr><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
         for (const doc of all.docs) {
             const w = doc.data();
             const user = await db.collection('users').doc(w.userId).get();
-            html += `<tr><td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+            html += `<td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td><tr>';
+        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td></tr>';
     }
 
     // ==================== INVESTMENT PLANS ====================
@@ -659,15 +741,9 @@
         let html = `<table><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily (ZMW)</th><th>Actions</th></tr>`;
         snapshot.forEach(doc => {
             const p = doc.data();
-            html += `<tr>
-                <td>${escapeHtml(p.name)}</td>
-                <td>${p.minAmount} - ${p.maxAmount}</td>
-                <td>${p.days}</td>
-                <td>${p.dailyReturn} ZMW</td>
-                <td><button class="btn-small" onclick="openEditPlanModal('${doc.id}', '${collection}')">Edit</button> <button class="btn-small danger" onclick="deletePlan('${doc.id}', '${collection}')">Delete</button></td>
-            </tr>`;
+            html += `<td>${escapeHtml(p.name)}</td><td>${p.minAmount} - ${p.maxAmount}</td><td>${p.days}</td><td>${p.dailyReturn} ZMW</td><td><button class="btn-small" onclick="openEditPlanModal('${doc.id}', '${collection}')">Edit</button> <button class="btn-small danger" onclick="deletePlan('${doc.id}', '${collection}')">Delete</button></td></tr>`;
         });
-        document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td><tr>';
+        document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td></tr>';
     }
     window.openAddPlanModal = (type) => {
         currentPlanType = type;
@@ -767,13 +843,13 @@
     // ==================== TRANSACTIONS, NEWS, SUPPORT, TREASURE ====================
     async function loadTransactions() {
         const txns = await db.collection('transactions').orderBy('createdAt', 'desc').get();
-        let html = `<table><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>`;
+        let html = `</tr><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>`;
         for (const doc of txns.docs) {
             const t = doc.data();
             const user = await db.collection('users').doc(t.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.email || t.userId)}</td><td>${t.type}</td><td>${formatMoney(t.amount)}</td><td>${escapeHtml(t.description)}</td><td>${t.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('transactionsList').innerHTML = html || '<tr><td colspan="5">No transactions</td><tr>';
+        document.getElementById('transactionsList').innerHTML = html || '<tr><td colspan="5">No transactions</td></tr>';
         document.getElementById('txSearchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#transactionsList tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
     }
 
@@ -781,7 +857,7 @@
         const news = await db.collection('news').orderBy('createdAt', 'desc').get();
         let html = `<table><tr><th>Title</th><th>Image</th><th>Actions</th></tr>`;
         news.forEach(doc => { const n = doc.data(); html += `<tr><td>${escapeHtml(n.title)}</td><td>${n.imageUrl ? '<a href="'+n.imageUrl+'" target="_blank">View</a>' : '-'}</td><td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td><tr>';
+        document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td></tr>';
     }
     window.openAddNewsModal = () => { document.getElementById('addNewsModal').style.display = 'flex'; };
     document.getElementById('saveNewsBtn').onclick = async () => { await db.collection('news').add({ title: document.getElementById('newsTitle').value, content: document.getElementById('newsContent').value, imageUrl: document.getElementById('newsImage').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addNewsModal'); loadNews(); showToast('News posted'); };
@@ -789,19 +865,13 @@
 
     async function loadSupportTickets() {
         const tickets = await db.collection('supportTickets').orderBy('createdAt', 'desc').get();
-        let html = `<td><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>`;
+        let html = `<table><tr><th>User</th><th>Subject</th><th>Message</th><th>Status</th><th>Actions</th></tr>`;
         for (const doc of tickets.docs) {
             const t = doc.data();
             const user = await db.collection('users').doc(t.userId).get();
-            html += `<tr>
-                <td>${escapeHtml(user.data()?.email || t.userId)}</td>
-                <td>${escapeHtml(t.subject)}</td>
-                <td>${escapeHtml(t.message)}</td>
-                <td>${t.status}</td>
-                <td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td>
-            </tr>`;
+            html += `<tr><td>${escapeHtml(user.data()?.email || t.userId)}</td><td>${escapeHtml(t.subject)}</td><td>${escapeHtml(t.message)}</td><td>${t.status}</td><td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td></tr>`;
         }
-        document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td><tr>';
+        document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td></tr>';
     }
     window.openReplyModal = (id) => { document.getElementById('replyTicketId').value = id; document.getElementById('supportReplyModal').style.display = 'flex'; };
     document.getElementById('sendReplyBtn').onclick = async () => { const ticketId = document.getElementById('replyTicketId').value; const reply = document.getElementById('replyMessage').value; await db.collection('supportTickets').doc(ticketId).update({ replies: firebase.firestore.FieldValue.arrayUnion({ reply, repliedAt: new Date(), admin: true }), status: 'replied' }); closeModal('supportReplyModal'); loadSupportTickets(); showToast('Reply sent'); };
@@ -809,9 +879,9 @@
 
     async function loadTreasureCodes() {
         const codes = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
-        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
+        let html = `<table><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
         codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td><td>${c.amount}</td><td>${c.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td><tr>';
+        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td></tr>';
     }
     window.openAddTreasureModal = () => { document.getElementById('addTreasureModal').style.display = 'flex'; };
     document.getElementById('saveTreasureBtn').onclick = async () => { const code = document.getElementById('treasureCode').value.toUpperCase(); const amount = parseFloat(document.getElementById('treasureAmount').value); if(code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 uppercase letters/numbers', true); return; } await db.collection('treasureCodes').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addTreasureModal'); loadTreasureCodes(); showToast('Treasure code created'); };
@@ -820,17 +890,15 @@
     // ==================== VOUCHERS (UPDATED FORMAT) ====================
     async function loadVouchers() {
         const vouchers = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
-        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
+        let html = `<tr><td><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
         vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td><td>${v.amount}</td><td>${v.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td><tr>';
+        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td></tr>';
     }
     window.deleteVoucher = async (id) => { if(confirm('Delete?')) { await db.collection('vouchers').doc(id).delete(); loadVouchers(); } };
 
-    // ✅ Auto-generate voucher – new format amount.randomcode (e.g., 20.huskokj)
     document.getElementById('generateVoucherBtn').onclick = async () => {
         const amount = parseFloat(document.getElementById('voucherAmountInput').value);
         if (isNaN(amount) || amount <= 0) { showToast('Amount must be a positive number', true); return; }
-        // Generate random 6-8 lowercase alphanumeric string
         const randomPart = Math.random().toString(36).substring(2, 10).toLowerCase();
         const code = `${amount}.${randomPart}`;
         await db.collection('vouchers').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
@@ -839,7 +907,6 @@
         loadVouchers();
     };
 
-    // ✅ Manual voucher creation – same new format
     function setupVoucherManualCreation() {
         const btn = document.getElementById('generateManualVoucherBtn');
         if (!btn) return;
@@ -869,7 +936,6 @@
             let agentValid = false;
             agentQuery.forEach(doc => { if (doc.data().name.toLowerCase() === agentName.toLowerCase()) agentValid = true; });
             if (!agentValid) { showToast('Agent not found. Check number and name.', true); return; }
-            // Generate random part
             const randomPart = Math.random().toString(36).substring(2, 10).toLowerCase();
             const code = `${amount}.${randomPart}`;
             await db.collection('vouchers').add({
@@ -965,7 +1031,7 @@
         const admins = await db.collection('users').where('role', '==', 'admin').get();
         let html = `<table><tr><th>Email</th><th>Name</th><th>Actions</th></tr>`;
         admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.fullName || '-')}</td><td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td></tr>`; });
-        document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td><tr>';
+        document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td></tr>';
     }
     window.openAddAdminModal = () => { document.getElementById('addAdminModal').style.display = 'flex'; };
     document.getElementById('createAdminBtn').onclick = async () => {

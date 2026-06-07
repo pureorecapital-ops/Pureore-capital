@@ -73,7 +73,8 @@
             color: #10B981; padding: 8px; border-radius: 16px;
             text-align: center; margin-bottom: 1rem; font-size: 0.9rem;
         }
-        .note { font-size: 0.7rem; color: #aaa; text-align: center; margin-top: 0.2rem; }
+        .note { font-size: 0.75rem; color: #ccc; text-align: center; margin-top: 0.2rem; }
+        .required { color: #ef4444; }
         a { color: #6C47FF; text-decoration: none; }
         a:hover { text-decoration: underline; }
         @keyframes fadeSlideUp {
@@ -93,8 +94,8 @@
             <input type="email" id="regEmail" placeholder="Email" required autocomplete="email">
             <input type="password" id="regPassword" placeholder="Password (min 6 characters)" required autocomplete="new-password">
             <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required autocomplete="off">
-            <input type="text" id="regReferralCode" placeholder="Referral Code (optional)" autocomplete="off">
-            <div class="note" id="referralNote">💡 If someone invited you, enter their code. Otherwise leave blank.</div>
+            <input type="text" id="regReferralCode" placeholder="Referral Code (required)" required autocomplete="off">
+            <div class="note" id="referralNote">💡 You must enter a valid referral code to register.</div>
             <button type="submit" class="btn" id="submitBtn">Register & Get 20 ZMW</button>
         </form>
         <div id="message"></div>
@@ -124,47 +125,58 @@
     db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ✅ FIX 1: Read referral code from URL (e.g., register.html?ref=6I9J95L0)
+    // Read referral code from URL (e.g., register.html?ref=6I9J95L0)
     function getReferralCodeFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('ref');
     }
 
-    // ✅ FIX 2: Auto-fill the referral code field if present in URL
+    // Auto-fill the referral code field if present in URL
     const urlReferralCode = getReferralCodeFromUrl();
     if (urlReferralCode) {
         const referralInput = document.getElementById('regReferralCode');
         const referralNote = document.getElementById('referralNote');
         if (referralInput) {
             referralInput.value = urlReferralCode;
-            referralInput.style.border = "2px solid #2ecc71"; // Visual indicator
+            referralInput.style.border = "2px solid #2ecc71";
             if (referralNote) {
-                referralNote.innerHTML = '💡 Referral code automatically filled from your invitation link.';
+                referralNote.innerHTML = '✅ Referral code automatically filled from your invitation link. You cannot change it.';
                 referralNote.style.color = "#2ecc71";
             }
+            // Make the field read-only to prevent manual change (optional but recommended)
+            referralInput.readOnly = true;
         }
     }
 
     const registerForm = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');
-    
+    const messageDiv = document.getElementById('message');
+    const referralInput = document.getElementById('regReferralCode');
+
+    async function validateReferralCode(code) {
+        if (!code) return false;
+        const referrerQuery = await db.collection('users')
+            .where('referralCode', '==', code.trim().toUpperCase())
+            .limit(1)
+            .get();
+        return !referrerQuery.empty;
+    }
+
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             submitBtn.disabled = true;
             submitBtn.textContent = 'Creating account...';
+            messageDiv.innerHTML = '';
             
             const fullName = document.getElementById('regFullName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirm = document.getElementById('regConfirmPassword').value;
-            let referralCode = document.getElementById('regReferralCode').value.trim();
-            const messageDiv = document.getElementById('message');
+            let referralCode = referralInput.value.trim().toUpperCase();
             
-            messageDiv.innerHTML = '';
-            
-            // Validation...
+            // Basic validations
             if (!fullName) {
                 messageDiv.innerHTML = '<div class="error">Please enter your full name.</div>';
                 submitBtn.disabled = false;
@@ -190,22 +202,21 @@
                 return;
             }
             
-            // ✅ FIX 3: Validate the referral code only if it's provided
-            if (referralCode) {
-                try {
-                    const referrerQuery = await db.collection('users').where('referralCode', '==', referralCode).get();
-                    if (referrerQuery.empty) {
-                        messageDiv.innerHTML = '<div class="error">❌ Invalid referral code. Please check and try again.</div>';
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Register & Get 20 ZMW';
-                        return;
-                    }
-                } catch (err) {
-                    console.warn("Referral check failed:", err);
-                }
-            } else {
-                // If referral code is empty, set it to null
-                referralCode = null;
+            // ✅ Require referral code
+            if (!referralCode) {
+                messageDiv.innerHTML = '<div class="error">❌ Referral code is required. You must enter a valid code to register.</div>';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register & Get 20 ZMW';
+                return;
+            }
+            
+            // ✅ Validate referral code exists in Firestore
+            const isValidCode = await validateReferralCode(referralCode);
+            if (!isValidCode) {
+                messageDiv.innerHTML = '<div class="error">❌ Invalid referral code. Please check and enter a valid code.</div>';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register & Get 20 ZMW';
+                return;
             }
             
             try {
@@ -213,13 +224,13 @@
                 const uid = userCred.user.uid;
                 const generatedReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
                 
-                // ✅ FIX 4: Save the referredBy field
+                // Save user with the entered referral code (stored as referredBy)
                 await db.collection('users').doc(uid).set({
                     fullName: fullName,
                     email: email,
                     balance: 20,
                     referralCode: generatedReferralCode,
-                    referredBy: referralCode, // This is the critical field for the team page
+                    referredBy: referralCode,   // The code of the person who invited them
                     role: 'user',
                     isBlocked: false,
                     canRequestLoan: true,

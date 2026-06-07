@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <meta name="referrer" content="no-referrer"> <!-- FIX: enables external images -->
+    <meta name="referrer" content="no-referrer">
     <title>News | Pureore Capital</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -189,9 +184,7 @@
             flex: 1;
             text-align: center;
         }
-        .nav-item:hover {
-            transform: translateY(-3px);
-        }
+        .nav-item:hover { transform: translateY(-3px); }
         .nav-icon {
             width: 28px;
             height: 28px;
@@ -204,9 +197,7 @@
             color: #aaa;
             font-weight: 500;
         }
-        .nav-item.active .nav-label {
-            color: #2ecc71;
-        }
+        .nav-item.active .nav-label { color: #2ecc71; }
         @media (max-width: 768px) {
             .animated-title { font-size: 1.8rem; }
             .news-image { height: 200px; }
@@ -220,18 +211,15 @@
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">📰 NEWS</div>
 
-    <!-- Auto-scrolling flags -->
     <div class="flags-container">
         <div class="flags-marquee" id="flagsMarquee"></div>
     </div>
 
-    <!-- News Articles (dynamic from Firestore) -->
     <div id="newsContainer">
         <div class="loader"></div>
     </div>
 </div>
 
-<!-- Bottom Navigation (6 icons) -->
 <div class="bottom-nav">
     <div class="nav-item" data-page="dashboard.html">
         <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
@@ -254,7 +242,6 @@
 </div>
 
 <script>
-    // ==================== FIREBASE INIT ====================
     const firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -271,20 +258,13 @@
     db.settings({ persistence: true });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Helper: escape HTML
     function escapeHtml(str) {
         if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
     }
 
-    // ---- FIX: Normalize image URL to avoid blocking ----
+    // Improved image URL normalisation – no aggressive filtering
     const DEFAULT_NEWS_IMAGE = 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png';
-    // Verify default image works - if not, fallback to another reliable default
     const FALLBACK_IMAGE = 'https://placehold.co/800x400/1a1a2a/2ecc71?text=News+Image';
 
     function getSafeImageUrl(url) {
@@ -295,12 +275,12 @@
         if (safeUrl.startsWith('http://')) {
             safeUrl = safeUrl.replace('http://', 'https://');
         }
-        // Convert protocol-relative URLs
+        // Fix protocol-relative URLs
         if (safeUrl.startsWith('//')) {
             safeUrl = 'https:' + safeUrl;
         }
         
-        // Handle ImgBB page links (e.g., https://ibb.co/xxxxx) -> direct image
+        // Convert ImgBB page link (ibb.co/xxxxx) to direct image link
         if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
             const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)/);
             if (match && match[1]) {
@@ -308,7 +288,7 @@
             }
         }
         
-        // Handle Imgur page links -> direct image
+        // Convert Imgur page link to direct image
         if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
             const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
             if (match && match[1]) {
@@ -316,16 +296,14 @@
             }
         }
         
-        // If it's the old broken placeholder or contains 'file-000000', replace with default
-        if (safeUrl.includes('file-000000') || safeUrl === DEFAULT_NEWS_IMAGE) {
+        // No automatic replacement of 'file-000000' – only if it's the exact broken placeholder
+        if (safeUrl === 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png') {
             return DEFAULT_NEWS_IMAGE;
         }
         
         return safeUrl;
     }
-    // ------------------------------------------------
 
-    // Auth check and load news
     auth.onAuthStateChanged(user => {
         if (!user) {
             window.location.href = 'login.html';
@@ -346,7 +324,6 @@
             snapshot.forEach(doc => {
                 const news = doc.data();
                 let rawImageUrl = news.imageUrl || '';
-                // Apply safety normalization
                 let safeImageUrl = getSafeImageUrl(rawImageUrl);
                 
                 html += `
@@ -367,14 +344,9 @@
         }
     }
 
-    // Build flags marquee (6 countries, double for seamless scroll)
     const countries = [
-        { name: "UK", emoji: "🇬🇧" },
-        { name: "Congo", emoji: "🇨🇬" },
-        { name: "Tanzania", emoji: "🇹🇿" },
-        { name: "Ghana", emoji: "🇬🇭" },
-        { name: "Zimbabwe", emoji: "🇿🇼" },
-        { name: "Zambia", emoji: "🇿🇲" }
+        { name: "UK", emoji: "🇬🇧" }, { name: "Congo", emoji: "🇨🇬" }, { name: "Tanzania", emoji: "🇹🇿" },
+        { name: "Ghana", emoji: "🇬🇭" }, { name: "Zimbabwe", emoji: "🇿🇼" }, { name: "Zambia", emoji: "🇿🇲" }
     ];
     const marquee = document.getElementById('flagsMarquee');
     function buildMarquee() {
@@ -388,7 +360,6 @@
     }
     buildMarquee();
 
-    // Bottom navigation active highlight and redirection
     const navItems = document.querySelectorAll('.nav-item');
     const currentPage = window.location.pathname.split('/').pop() || 'news.html';
     navItems.forEach(item => {
