@@ -66,6 +66,7 @@
             transition: 0.2s; margin-top: 0.5rem;
         }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .error { background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #ef4444; padding: 0.6rem; border-radius: 20px; text-align: center; margin-top: 1rem; }
         .success { background: rgba(46,204,113,0.2); border: 1px solid #2ecc71; color: #2ecc71; padding: 0.6rem; border-radius: 20px; text-align: center; margin-top: 1rem; }
         .bonus-notice {
@@ -74,14 +75,12 @@
             text-align: center; margin-bottom: 1rem; font-size: 0.9rem;
         }
         .note { font-size: 0.75rem; color: #ccc; text-align: center; margin-top: 0.2rem; }
-        .required { color: #ef4444; }
         a { color: #6C47FF; text-decoration: none; }
         a:hover { text-decoration: underline; }
         @keyframes fadeSlideUp {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -92,10 +91,10 @@
         <form id="registerForm">
             <input type="text" id="regFullName" placeholder="Full Name" required autocomplete="name">
             <input type="email" id="regEmail" placeholder="Email" required autocomplete="email">
-            <input type="password" id="regPassword" placeholder="Password (min 6 characters)" required autocomplete="new-password">
+            <input type="password" id="regPassword" placeholder="Password (min 6)" required autocomplete="new-password">
             <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required autocomplete="off">
             <input type="text" id="regReferralCode" placeholder="Referral Code (required)" required autocomplete="off">
-            <div class="note" id="referralNote">💡 You must enter a valid referral code to register.</div>
+            <div class="note">💡 You must enter a valid referral code to register.</div>
             <button type="submit" class="btn" id="submitBtn">Register & Get 20 ZMW</button>
         </form>
         <div id="message"></div>
@@ -116,154 +115,147 @@
         measurementId: "G-FQKC29NYE9"
     };
     
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    db.settings({ persistence: false });
+    // ✅ REMOVED db.settings({ persistence: false }) – it can cause hangs
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // Read referral code from URL (e.g., register.html?ref=6I9J95L0)
+    // ✅ Auto-fill referral code from URL (e.g., register.html?ref=6I9J95LO)
     function getReferralCodeFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('ref');
     }
 
-    // Auto-fill the referral code field if present in URL
-    const urlReferralCode = getReferralCodeFromUrl();
-    if (urlReferralCode) {
+    const urlRef = getReferralCodeFromUrl();
+    if (urlRef) {
         const referralInput = document.getElementById('regReferralCode');
-        const referralNote = document.getElementById('referralNote');
         if (referralInput) {
-            referralInput.value = urlReferralCode;
+            referralInput.value = urlRef.toUpperCase();
             referralInput.style.border = "2px solid #2ecc71";
-            if (referralNote) {
-                referralNote.innerHTML = '✅ Referral code automatically filled from your invitation link. You cannot change it.';
-                referralNote.style.color = "#2ecc71";
-            }
-            // Make the field read-only to prevent manual change (optional but recommended)
-            referralInput.readOnly = true;
         }
     }
 
     const registerForm = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');
     const messageDiv = document.getElementById('message');
-    const referralInput = document.getElementById('regReferralCode');
 
+    // ✅ Validation with timeout (prevents infinite hang)
     async function validateReferralCode(code) {
         if (!code) return false;
-        const referrerQuery = await db.collection('users')
-            .where('referralCode', '==', code.trim().toUpperCase())
+        const queryCode = code.trim().toUpperCase();
+        console.log("🔍 Validating referral code:", queryCode);
+        
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("Referral check timed out after 10s")), 10000);
+        });
+        
+        const queryPromise = db.collection('users')
+            .where('referralCode', '==', queryCode)
             .limit(1)
             .get();
-        return !referrerQuery.empty;
+        
+        try {
+            const snapshot = await Promise.race([queryPromise, timeoutPromise]);
+            const isValid = !snapshot.empty;
+            console.log(`✅ Referral code ${queryCode} is ${isValid ? 'valid' : 'invalid'}`);
+            return isValid;
+        } catch (err) {
+            console.error("❌ Referral validation error:", err);
+            throw err;
+        }
     }
 
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Creating account...';
-            messageDiv.innerHTML = '';
-            
-            const fullName = document.getElementById('regFullName').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const confirm = document.getElementById('regConfirmPassword').value;
-            let referralCode = referralInput.value.trim().toUpperCase();
-            
-            // Basic validations
-            if (!fullName) {
-                messageDiv.innerHTML = '<div class="error">Please enter your full name.</div>';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Register & Get 20 ZMW';
-                return;
-            }
-            if (!email) {
-                messageDiv.innerHTML = '<div class="error">Please enter your email address.</div>';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Register & Get 20 ZMW';
-                return;
-            }
-            if (password.length < 6) {
-                messageDiv.innerHTML = '<div class="error">Password must be at least 6 characters.</div>';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Register & Get 20 ZMW';
-                return;
-            }
-            if (password !== confirm) {
-                messageDiv.innerHTML = '<div class="error">Passwords do not match.</div>';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Register & Get 20 ZMW';
-                return;
-            }
-            
-            // ✅ Require referral code
-            if (!referralCode) {
-                messageDiv.innerHTML = '<div class="error">❌ Referral code is required. You must enter a valid code to register.</div>';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Register & Get 20 ZMW';
-                return;
-            }
-            
-            // ✅ Validate referral code exists in Firestore
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating account...';
+        messageDiv.innerHTML = '';
+        
+        const fullName = document.getElementById('regFullName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirm = document.getElementById('regConfirmPassword').value;
+        let referralCode = document.getElementById('regReferralCode').value.trim().toUpperCase();
+        
+        if (!fullName || !email || !password || !confirm || !referralCode) {
+            messageDiv.innerHTML = '<div class="error">All fields are required.</div>';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Register & Get 20 ZMW';
+            return;
+        }
+        if (password.length < 6) {
+            messageDiv.innerHTML = '<div class="error">Password must be at least 6 characters.</div>';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Register & Get 20 ZMW';
+            return;
+        }
+        if (password !== confirm) {
+            messageDiv.innerHTML = '<div class="error">Passwords do not match.</div>';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Register & Get 20 ZMW';
+            return;
+        }
+        
+        try {
+            console.log("⏳ Checking referral code...");
             const isValidCode = await validateReferralCode(referralCode);
             if (!isValidCode) {
-                messageDiv.innerHTML = '<div class="error">❌ Invalid referral code. Please check and enter a valid code.</div>';
+                messageDiv.innerHTML = '<div class="error">❌ Invalid referral code. Please check and try again.</div>';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Register & Get 20 ZMW';
                 return;
             }
             
-            try {
-                const userCred = await auth.createUserWithEmailAndPassword(email, password);
-                const uid = userCred.user.uid;
-                const generatedReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-                
-                // Save user with the entered referral code (stored as referredBy)
-                await db.collection('users').doc(uid).set({
-                    fullName: fullName,
-                    email: email,
-                    balance: 20,
-                    referralCode: generatedReferralCode,
-                    referredBy: referralCode,   // The code of the person who invited them
-                    role: 'user',
-                    isBlocked: false,
-                    canRequestLoan: true,
-                    referralBonusGiven: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                await db.collection('transactions').add({
-                    userId: uid,
-                    type: 'bonus',
-                    amount: 20,
-                    description: 'Welcome bonus 20 ZMW',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                messageDiv.innerHTML = '<div class="success">✅ Registration successful! Redirecting to dashboard...</div>';
-                
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
-                
-            } catch (error) {
-                console.error("Registration error:", error);
-                let errorMsg = error.message;
-                if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered. Please login.';
-                if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
-                if (error.code === 'auth/weak-password') errorMsg = 'Password is too weak. Use at least 6 characters.';
-                messageDiv.innerHTML = `<div class="error">❌ ${errorMsg}</div>`;
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Register & Get 20 ZMW';
-            }
-        });
-    }
+            console.log("📧 Creating Firebase Auth user...");
+            const userCred = await auth.createUserWithEmailAndPassword(email, password);
+            const uid = userCred.user.uid;
+            console.log("✅ Auth user created, UID:", uid);
+            
+            const generatedReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+            
+            console.log("📝 Writing user document to Firestore...");
+            await db.collection('users').doc(uid).set({
+                fullName: fullName,
+                email: email,
+                balance: 20,
+                referralCode: generatedReferralCode,
+                referredBy: referralCode,
+                role: 'user',
+                isBlocked: false,
+                canRequestLoan: true,
+                referralBonusGiven: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            console.log("📝 Recording bonus transaction...");
+            await db.collection('transactions').add({
+                userId: uid,
+                type: 'bonus',
+                amount: 20,
+                description: 'Welcome bonus 20 ZMW',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            messageDiv.innerHTML = '<div class="success">✅ Registration successful! Redirecting to dashboard...</div>';
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1500);
+        } catch (error) {
+            console.error("🔥 Registration error:", error);
+            let errorMsg = error.message;
+            if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered. Please login.';
+            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
+            if (error.code === 'auth/weak-password') errorMsg = 'Password too weak. Use at least 6 characters.';
+            if (error.message.includes("timed out")) errorMsg = 'Referral check timed out. Please try again.';
+            messageDiv.innerHTML = `<div class="error">❌ ${errorMsg}</div>`;
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Register & Get 20 ZMW';
+        }
+    });
 </script>
 </body>
 </html>
