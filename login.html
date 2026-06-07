@@ -92,7 +92,7 @@
     <div class="auth-card">
         <h2>Welcome Back</h2>
         <form id="loginForm">
-            <input type="email" id="loginEmail" placeholder="Email" required autocomplete="email">
+            <input type="text" id="loginEmail" placeholder="Email" required autocomplete="off">
             <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
             <button type="submit" class="btn" id="loginBtn">Login</button>
         </form>
@@ -134,7 +134,7 @@
         }
     })();
 
-    // Helper: convert phone number to agent email format (internal, no visible hint)
+    // Helper: convert phone number to agent email format
     function phoneToAgentEmail(phone) {
         const cleaned = phone.replace(/\D/g, '');
         return `agent_${cleaned}@agent.pureore.com`;
@@ -162,7 +162,7 @@
             const password = document.getElementById('loginPassword').value;
             
             if (!identifier || !password) {
-                messageDiv.innerHTML = '<div class="error">Please enter both email and password.</div>';
+                messageDiv.innerHTML = '<div class="error">Please enter both identifier and password.</div>';
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login';
                 return;
@@ -209,9 +209,9 @@
             } catch (error) {
                 console.error("Login error:", error);
                 let errorMsg = error.message;
-                if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
+                if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this identifier.';
                 if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
-                if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
+                if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email or phone number format.';
                 if (error.code === 'auth/too-many-requests') errorMsg = 'Too many failed attempts. Try again later.';
                 if (error.code === 'auth/network-request-failed') {
                     errorMsg = 'Network error. Please refresh the page and try again.';
