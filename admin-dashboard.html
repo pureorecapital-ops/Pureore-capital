@@ -754,7 +754,7 @@
         document.getElementById('agentEarningsSummary').innerHTML = `<strong>Total Earnings: ${formatMoney(earnings)}</strong>`;
     };
 
-    // ========== MODIFIED DEPOSIT APPROVAL WITH AGENT COMMISSION ==========
+    // ========== MATCH AGENT FROM SMS (helper) ==========
     async function matchAgentFromSms(smsText) {
         if (!smsText) return null;
         const agentsSnap = await db.collection('agents').get();
@@ -770,30 +770,70 @@
     }
     window.matchAgentFromSms = matchAgentFromSms;
 
+    // ========== FIXED APPROVE DEPOSIT (no transaction, sequential with error handling) ==========
     window.approveDeposit = async (depositId, userId, amount) => {
-        const depositRef = db.collection('deposits').doc(depositId);
-        const depositSnap = await depositRef.get();
-        const deposit = depositSnap.data();
-        let agentId = deposit.agentId || null;
-        if (!agentId && deposit.smsText) {
-            agentId = await matchAgentFromSms(deposit.smsText);
-            if (agentId) await depositRef.update({ agentId: agentId });
-        }
-        await db.runTransaction(async (t) => {
+        console.log("🔍 Approving deposit:", depositId, userId, amount);
+        try {
+            const depositRef = db.collection('deposits').doc(depositId);
+            const depositSnap = await depositRef.get();
+            if (!depositSnap.exists) {
+                showToast('Deposit not found', true);
+                return;
+            }
+            const deposit = depositSnap.data();
+            if (deposit.status === 'completed') {
+                showToast('Deposit already approved', true);
+                return;
+            }
+
+            // 1. Update user balance
             const userRef = db.collection('users').doc(userId);
-            const userSnap = await t.get(userRef);
-            t.update(userRef, { balance: (userSnap.data().balance || 0) + amount });
-            t.update(depositRef, { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp(), agentId: agentId || null });
+            const userSnap = await userRef.get();
+            if (!userSnap.exists) {
+                showToast('User not found', true);
+                return;
+            }
+            const currentBalance = userSnap.data().balance || 0;
+            const newBalance = currentBalance + amount;
+            await userRef.update({ balance: newBalance });
+            console.log(`✅ User balance updated: ${currentBalance} → ${newBalance}`);
+
+            // 2. Update deposit status
+            await depositRef.update({
+                status: 'completed',
+                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("✅ Deposit marked as completed");
+
+            // 3. Record transaction
+            await db.collection('transactions').add({
+                userId: userId,
+                type: 'deposit',
+                amount: amount,
+                description: `Deposit of K${amount} approved`,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("✅ Transaction recorded");
+
+            // 4. Agent commission handling (if agentId exists or can be matched)
+            let agentId = deposit.agentId || null;
+            if (!agentId && deposit.smsText) {
+                agentId = await matchAgentFromSms(deposit.smsText);
+                if (agentId) {
+                    await depositRef.update({ agentId: agentId });
+                    console.log(`✅ Agent matched from SMS: ${agentId}`);
+                }
+            }
             if (agentId) {
                 const agentRef = db.collection('agents').doc(agentId);
-                const agentSnap = await t.get(agentRef);
+                const agentSnap = await agentRef.get();
                 if (agentSnap.exists) {
                     const agent = agentSnap.data();
                     const commissionAmount = (amount * agent.commissionRate) / 100;
-                    const newEarnings = (agent.totalEarnings || 0) + commissionAmount;
-                    t.update(agentRef, { totalEarnings: newEarnings });
-                    const commissionRef = db.collection('commissions').doc();
-                    t.set(commissionRef, {
+                    const currentEarnings = agent.totalEarnings || 0;
+                    const newEarnings = currentEarnings + commissionAmount;
+                    await agentRef.update({ totalEarnings: newEarnings });
+                    await db.collection('commissions').add({
                         agentId: agentId,
                         depositId: depositId,
                         depositAmount: amount,
@@ -801,14 +841,28 @@
                         commissionRate: agent.commissionRate,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    console.log(`✅ Agent ${agent.name} earned K${commissionAmount} commission`);
+                    showToast(`Deposit approved + K${commissionAmount} commission to agent`, false);
+                } else {
+                    showToast('Deposit approved (agent not found)', false);
                 }
+            } else {
+                showToast('Deposit approved successfully', false);
             }
-        });
-        showToast('Deposit approved' + (agentId ? ' + agent commission credited' : ''));
-        loadPendingDeposits(); loadDepositsHistory(); loadStats(); loadUsers(); loadAgents();
+
+            // 5. Refresh all relevant UI
+            await loadPendingDeposits();
+            await loadDepositsHistory();
+            await loadStats();
+            await loadUsers();
+            if (typeof loadAgents === 'function') await loadAgents();
+        } catch (error) {
+            console.error("❌ Approval error:", error);
+            showToast('Error approving deposit: ' + error.message, true);
+        }
     };
 
-    // ========== ALL EXISTING FUNCTIONS (unchanged, but included fully) ==========
+    // ========== ALL EXISTING FUNCTIONS (unchanged) ==========
     function setupPendingListeners() {
         db.collection('deposits').where('status', '==', 'pending').onSnapshot(snap => {
             const count = snap.size;
@@ -920,7 +974,7 @@
                 <td><button class="btn-small success" onclick="approveDeposit('${doc.id}', '${d.userId}', ${d.amount})">Approve</button> <button class="btn-small danger" onclick="rejectDeposit('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td></tr>';
+        document.getElementById('pendingDepositsList').innerHTML = html || '</td><td colspan="7">No pending deposits</td></tr>';
     }
     window.rejectDeposit = async (depositId) => { await db.collection('deposits').doc(depositId).update({ status: 'rejected' }); loadPendingDeposits(); loadDepositsHistory(); };
     async function loadDepositsHistory() {
@@ -936,7 +990,7 @@
 
     async function loadPendingWithdrawals() {
         const pending = await db.collection('withdrawals').where('status', '==', 'pending').get();
-        let html = `<tr><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>`;
+        let html = `<table><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>`;
         for (const doc of pending.docs) {
             const w = doc.data();
             const user = await db.collection('users').doc(w.userId).get();
@@ -964,7 +1018,7 @@
             const user = await db.collection('users').doc(w.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td></tr>';
+        document.getElementById('withdrawalsHistory').innerHTML = html || '<table><td colspan="4">No withdrawals</td></tr>';
     }
 
     async function loadMkvipPlans() { loadPlans('mkvipPlans', 'mkvipPlansList'); }
@@ -1274,7 +1328,7 @@
 
     async function loadAdmins() {
         const admins = await db.collection('users').where('role', '==', 'admin').get();
-        let html = `<tr><th>Email</th><th>Name</th><th>Actions</th></tr>`;
+        let html = `<table><th>Email</th><th>Name</th><th>Actions</th></tr>`;
         admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.fullName || '-')}</td><td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td></tr>`; });
         document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td></tr>';
     }
