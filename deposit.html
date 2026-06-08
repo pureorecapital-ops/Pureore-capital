@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     <style>
+        /* (your existing styles – unchanged) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
@@ -241,17 +242,6 @@
         .success-msg { color: #2ecc71; text-align: center; font-weight: bold; }
         .hidden { display: none; }
         #fireworks { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
-        .rotate-agent {
-            background: rgba(46,204,113,0.2);
-            border: none;
-            border-radius: 40px;
-            padding: 0.2rem 1rem;
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            cursor: pointer;
-            color: #2ecc71;
-        }
-        .rotate-agent:hover { background: rgba(46,204,113,0.4); }
     </style>
 </head>
 <body>
@@ -304,7 +294,6 @@
     <!-- Step 2 -->
     <div id="step2Card" class="card hidden">
         <div id="agentInfo"></div>
-        <div id="agentRotateBtn" class="rotate-agent hidden">⟳ Show another agent</div>
         <div class="verify-card">
             <div class="section-title">📝 Paste your transaction SMS</div>
             <textarea id="smsText" rows="4" placeholder="Paste the SMS from MTN, Airtel or Zamtel here"></textarea>
@@ -412,15 +401,12 @@
     const verifyMessage = document.getElementById('verifyMessage');
     const fileNameDisplay = document.getElementById('fileNameDisplay');
     const imagePreviewDiv = document.getElementById('imagePreview');
-    const agentRotateBtn = document.getElementById('agentRotateBtn');
 
     let selectedAmount = null;
     let selectedNetwork = null;
-    let currentAgent = null;           // the agent currently displayed
-    let agentsForNetwork = [];         // list of agents for the chosen network
-    let agentIndex = 0;                // index of displayed agent
+    let currentAgent = null;          // system picks one agent automatically
 
-    // Deposit rules (loaded from Firestore)
+    // Deposit rules
     let depositRules = {
         requireAmountMatch: true,
         requireAgentName: true,
@@ -443,39 +429,89 @@
         }
     }
 
-    // Load agents for a given network from Firestore
-    async function loadAgentsForNetwork(network) {
+    // ========== HARDCODED AGENTS ==========
+    function getHardcodedAgents(network) {
+        const mtnAgents = [
+            { name: "John Kabwe", number: "0961391022", agentId: null },
+            { name: "Getrude Sonpo", number: "0960338304", agentId: null }
+        ];
+        const airtelAgents = [
+            { name: "John Kabwe", number: "0775552002", agentId: null }
+        ];
+        const zamtelAgents = [
+            { name: "Jeremiah Ilunga", number: "0951359357", agentId: null }
+        ];
+        if (network === 'mtn') return mtnAgents;
+        if (network === 'airtel') return airtelAgents;
+        if (network === 'zamtel') return zamtelAgents;
+        return [];
+    }
+
+    // ========== LOAD FIRESTORE AGENTS (admin created, active only) ==========
+    async function loadFirestoreAgents(network) {
         try {
-            const snapshot = await db.collection('agents')
-                .where('network', '==', network)
-                .get();
-            const agents = [];
-            snapshot.forEach(doc => {
-                agents.push({ id: doc.id, ...doc.data() });
+            const agentsSnap = await db.collection('agents').where('status', '==', 'active').get();
+            const firestoreAgents = [];
+            agentsSnap.forEach(doc => {
+                const agent = doc.data();
+                let number = null;
+                if (network === 'mtn' && agent.mtnNumber) number = agent.mtnNumber;
+                else if (network === 'airtel' && agent.airtelNumber) number = agent.airtelNumber;
+                else if (network === 'zamtel' && agent.zamtelNumber) number = agent.zamtelNumber;
+                if (number) {
+                    firestoreAgents.push({
+                        name: agent.name,
+                        number: number,
+                        agentId: doc.id,
+                        source: 'firestore'
+                    });
+                }
             });
-            return agents;
+            return firestoreAgents;
         } catch (err) {
-            console.error("Error loading agents:", err);
+            console.error("Error loading Firestore agents:", err);
             return [];
         }
     }
 
-    // Display the current agent (from agentsForNetwork[agentIndex])
-    function displayCurrentAgent() {
-        if (!agentsForNetwork.length) {
-            agentInfoDiv.innerHTML = `<div class="agent-card"><div class="agent-header">⚠️ No agent found for ${selectedNetwork.toUpperCase()}</div><div class="error-msg">Contact admin to add an agent for this network.</div></div>`;
-            agentRotateBtn.classList.add('hidden');
+    // Merge both lists, remove duplicates (same name+number)
+    function mergeAgents(firestoreAgents, hardcodedAgents) {
+        const merged = [...firestoreAgents];
+        for (const hc of hardcodedAgents) {
+            const exists = merged.some(fa => fa.name === hc.name && fa.number === hc.number);
+            if (!exists) {
+                merged.push({ ...hc, source: 'hardcoded' });
+            }
+        }
+        return merged;
+    }
+
+    // Load agents and automatically pick the first one
+    async function loadAndSetAgentForNetwork(network) {
+        if (!network) return null;
+        const firestoreAgents = await loadFirestoreAgents(network);
+        const hardcodedAgents = getHardcodedAgents(network);
+        const combined = mergeAgents(firestoreAgents, hardcodedAgents);
+        if (combined.length === 0) return null;
+        // System picks the first agent automatically
+        return combined[0];
+    }
+
+    // Display the selected agent (no rotate button)
+    function displayAgent(agent) {
+        if (!agent) {
+            agentInfoDiv.innerHTML = `<div class="agent-card"><div class="agent-header">⚠️ No agent found for ${selectedNetwork.toUpperCase()}</div><div class="error-msg">Contact admin.</div></div>`;
             return;
         }
-        currentAgent = agentsForNetwork[agentIndex];
         const agentHtml = `
             <div class="agent-card">
                 <div class="agent-header">📌 AGENT (${selectedNetwork.toUpperCase()})</div>
-                <div class="agent-name">${escapeHtml(currentAgent.name)}</div>
+                <div class="agent-name">${escapeHtml(agent.name)}</div>
                 <div>
-                    <span class="agent-number">${escapeHtml(currentAgent.number)}</span>
-                    <button class="copy-number" data-number="${escapeHtml(currentAgent.number)}">Copy</button>
+                    <span class="agent-number">${escapeHtml(agent.number)}</span>
+                    <button class="copy-number" data-number="${escapeHtml(agent.number)}">Copy</button>
                 </div>
+                ${agent.agentId ? `<div style="font-size:0.7rem; color:#aaa; margin-top:0.3rem;">✓ Official agent</div>` : ''}
             </div>
         `;
         agentInfoDiv.innerHTML = agentHtml;
@@ -485,34 +521,22 @@
                 alert('Agent number copied!');
             });
         });
-        agentRotateBtn.classList.toggle('hidden', agentsForNetwork.length <= 1);
     }
 
-    // Rotate to next agent
-    function rotateAgent() {
-        if (agentsForNetwork.length > 1) {
-            agentIndex = (agentIndex + 1) % agentsForNetwork.length;
-            displayCurrentAgent();
-        }
-    }
-
-    // Helper: escape HTML
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
     }
 
-    // Validate SMS based on enabled rules and current agent
+    // SMS validation
     function validateSms(sms, amount, network) {
         const lowerSms = sms.toLowerCase();
-        // 1. Amount match
         if (depositRules.requireAmountMatch) {
             const amountRegex = new RegExp(`\\b${amount}\\b`);
             if (!amountRegex.test(sms)) {
                 return { valid: false, error: `SMS amount does not match your deposit amount (${amount} ZMW).` };
             }
         }
-        // 2. Network keyword
         if (depositRules.requireNetworkKeyword) {
             let networkKeyword = '';
             if (network === 'mtn') networkKeyword = 'mtn';
@@ -522,13 +546,11 @@
                 return { valid: false, error: `SMS does not contain the network name (${network.toUpperCase()}).` };
             }
         }
-        // 3. Agent name (using current displayed agent)
         if (depositRules.requireAgentName && currentAgent) {
             if (!lowerSms.includes(currentAgent.name.toLowerCase())) {
                 return { valid: false, error: `SMS does not contain the agent name "${currentAgent.name}". Please make sure you paid the correct agent.` };
             }
         }
-        // 4. Transaction keywords
         if (depositRules.requireTxKeyword) {
             const txKeywords = /send|sent|received|deposit|paid|transfer|successful|payment/i;
             if (!txKeywords.test(sms)) {
@@ -538,6 +560,7 @@
         return { valid: true, error: null };
     }
 
+    // File upload preview
     screenshotUpload.addEventListener('change', () => {
         const file = screenshotUpload.files[0];
         if (file) {
@@ -607,18 +630,18 @@
         validatePayButton();
     });
 
+    // When network is selected, load the agent automatically
     networkOptions.forEach(opt => {
         opt.addEventListener('click', async () => {
             networkOptions.forEach(o => o.classList.remove('active'));
             opt.classList.add('active');
             selectedNetwork = opt.dataset.network;
-            // Load agents for this network
-            agentsForNetwork = await loadAgentsForNetwork(selectedNetwork);
-            agentIndex = 0;
-            if (agentsForNetwork.length === 0) {
-                // No agent – show error on pay button?
-                console.warn(`No agents for ${selectedNetwork}`);
-            }
+            payNowBtn.disabled = true;
+            payNowBtn.innerText = 'Loading agent...';
+            const agent = await loadAndSetAgentForNetwork(selectedNetwork);
+            currentAgent = agent;
+            payNowBtn.disabled = false;
+            payNowBtn.innerText = '💸 Pay Now';
             validatePhone();
             validatePayButton();
         });
@@ -629,31 +652,33 @@
     function validatePayButton() {
         const amountOk = selectedAmount && selectedAmount >= 70;
         const networkOk = selectedNetwork !== null;
-        const agentsOk = agentsForNetwork.length > 0;   // prevent paying if no agent exists
+        const agentOk = currentAgent !== null;
         const phoneOk = validatePhone();
         const ready = readyCheckbox.checked;
-        payNowBtn.disabled = !(amountOk && networkOk && agentsOk && phoneOk && ready);
+        payNowBtn.disabled = !(amountOk && networkOk && agentOk && phoneOk && ready);
     }
 
     payNowBtn.addEventListener('click', async () => {
         if (payNowBtn.disabled) return;
+        // Make sure we have an agent (re‑load to be safe)
+        if (!currentAgent) {
+            currentAgent = await loadAndSetAgentForNetwork(selectedNetwork);
+        }
+        if (!currentAgent) {
+            alert('No agent available for this network. Please contact admin.');
+            return;
+        }
+        displayAgent(currentAgent);
+
         sessionStorage.setItem('depositAmount', selectedAmount);
         sessionStorage.setItem('depositNetwork', selectedNetwork);
         sessionStorage.setItem('depositPhone', getFullPhone());
         sessionStorage.setItem('depositPhoneDigits', phoneInput.value);
 
-        // Display agent information
-        if (agentsForNetwork.length === 0) {
-            alert('No agent available for this network. Please contact admin.');
-            return;
-        }
-        displayCurrentAgent();
-        agentRotateBtn.onclick = rotateAgent;
         step1Card.classList.add('hidden');
         step2Card.classList.remove('hidden');
     });
 
-    // Back arrow
     const backArrow = document.getElementById('backArrow');
     backArrow.addEventListener('click', () => {
         if (!step2Card.classList.contains('hidden')) {
@@ -687,7 +712,6 @@
             return;
         }
 
-        // Validate SMS using the currently displayed agent
         const validation = validateSms(sms, amount, network);
         if (!validation.valid) {
             verifyMessage.innerHTML = `<div class="error-msg">${validation.error}</div>`;
@@ -706,8 +730,7 @@
 
         try {
             const depositRef = db.collection('deposits').doc();
-            const depositId = depositRef.id;
-            await depositRef.set({
+            const depositData = {
                 userId: user.uid,
                 amount: amount,
                 paymentMethod: network,
@@ -718,7 +741,11 @@
                 smsText: sms,
                 agentName: currentAgent ? currentAgent.name : '',
                 agentNumber: currentAgent ? currentAgent.number : ''
-            });
+            };
+            if (currentAgent && currentAgent.agentId) {
+                depositData.agentId = currentAgent.agentId;
+            }
+            await depositRef.set(depositData);
 
             const storageRef = storage.ref(`deposits/${user.uid}/${Date.now()}_${screenshotFile.name}`);
             storageRef.put(screenshotFile).then(async (snapshot) => {
@@ -728,6 +755,7 @@
 
             showFireworks();
             verifyMessage.innerHTML = '<div class="success-msg">✅ Deposit request submitted! Redirecting...</div>';
+            // Redirect to history.html after 1 second
             setTimeout(() => {
                 window.location.href = 'history.html';
             }, 1000);

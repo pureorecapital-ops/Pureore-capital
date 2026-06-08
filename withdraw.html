@@ -228,6 +228,13 @@
             <div id="phoneError" class="error-msg"></div>
         </div>
 
+        <!-- NEW: Account holder name for mobile money -->
+        <div id="mobileNameGroup" class="form-group hidden">
+            <label>👤 Account holder name</label>
+            <input type="text" id="accountName" placeholder="Full name as registered on mobile money">
+            <div id="nameError" class="error-msg"></div>
+        </div>
+
         <div id="bankInputGroup" class="form-group hidden">
             <label>🏦 Choose bank</label>
             <div class="bank-options" id="bankOptions">
@@ -298,8 +305,10 @@
     // DOM elements
     const networkSelect = document.getElementById('networkSelect');
     const mobileGroup = document.getElementById('mobileInputGroup');
+    const mobileNameGroup = document.getElementById('mobileNameGroup');
     const bankGroup = document.getElementById('bankInputGroup');
     const phoneInput = document.getElementById('phoneNumber');
+    const accountNameInput = document.getElementById('accountName');
     const bankCardInput = document.getElementById('bankCardNumber');
     const withdrawAmountInput = document.getElementById('withdrawAmount');
     const discountCard = document.getElementById('discountCard');
@@ -307,6 +316,7 @@
     const netAmountSpan = document.getElementById('netAmount');
     const confirmBtn = document.getElementById('confirmWithdrawBtn');
     const phoneErrorDiv = document.getElementById('phoneError');
+    const nameErrorDiv = document.getElementById('nameError');
     const cardErrorDiv = document.getElementById('cardError');
     const amountErrorDiv = document.getElementById('amountError');
     const generalErrorDiv = document.getElementById('generalError');
@@ -356,17 +366,21 @@
         selectedNetwork = networkSelect.value;
         if (selectedNetwork === 'bank') {
             mobileGroup.classList.add('hidden');
+            mobileNameGroup.classList.add('hidden');
             bankGroup.classList.remove('hidden');
         } else if (selectedNetwork === 'mtn' || selectedNetwork === 'airtel' || selectedNetwork === 'zamtel') {
             mobileGroup.classList.remove('hidden');
+            mobileNameGroup.classList.remove('hidden');
             bankGroup.classList.add('hidden');
             selectedBank = '';
             bankChips.forEach(c => c.classList.remove('active'));
         } else {
             mobileGroup.classList.add('hidden');
+            mobileNameGroup.classList.add('hidden');
             bankGroup.classList.add('hidden');
         }
         validatePhone();
+        validateMobileName();
         validateForm();
     });
 
@@ -384,6 +398,25 @@
         else if (selectedNetwork === 'zamtel') valid = (prefix === '95' || prefix === '75');
         phoneErrorDiv.innerText = valid ? '' : `Invalid prefix for ${selectedNetwork.toUpperCase()}.`;
         return valid;
+    }
+
+    function validateMobileName() {
+        if (!selectedNetwork || selectedNetwork === 'bank') return true;
+        const name = accountNameInput.value.trim();
+        if (name.length === 0) {
+            nameErrorDiv.innerText = 'Account holder name is required';
+            return false;
+        }
+        if (name.length < 3) {
+            nameErrorDiv.innerText = 'Name must be at least 3 characters';
+            return false;
+        }
+        if (!/^[A-Za-z\s\.\-]+$/.test(name)) {
+            nameErrorDiv.innerText = 'Only letters, spaces, dots and hyphens allowed';
+            return false;
+        }
+        nameErrorDiv.innerText = '';
+        return true;
     }
 
     function validateBankCard() {
@@ -406,6 +439,12 @@
         validatePhone();
         validateForm();
     });
+
+    accountNameInput.addEventListener('input', () => {
+        validateMobileName();
+        validateForm();
+    });
+
     bankCardInput.addEventListener('input', () => {
         bankCardInput.value = bankCardInput.value.replace(/\D/g, '').slice(0, 16);
         validateBankCard();
@@ -493,7 +532,9 @@
         if (selectedNetwork === 'bank') {
             contactOk = validateBankCard() && selectedBank !== '';
         } else if (selectedNetwork === 'mtn' || selectedNetwork === 'airtel' || selectedNetwork === 'zamtel') {
-            contactOk = validatePhone() && phoneInput.value.length === 9;
+            const phoneOk = validatePhone() && phoneInput.value.length === 9;
+            const nameOk = validateMobileName();
+            contactOk = phoneOk && nameOk;
         } else {
             contactOk = false;
         }
@@ -624,6 +665,7 @@
             withdrawData.cardNumber = bankCardInput.value.trim();
         } else {
             withdrawData.phone = '+260' + phoneInput.value.trim();
+            withdrawData.accountName = accountNameInput.value.trim();  // NEW: save the name
         }
 
         confirmBtn.innerText = 'Submitting...';
@@ -643,7 +685,7 @@
         }
     });
 
-    // Load withdrawal rules once on page load (after auth check, but auth is async; we can call it after DOM ready)
+    // Load withdrawal rules once on page load
     loadWithdrawalRules();
 </script>
 </body>

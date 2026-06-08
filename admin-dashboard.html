@@ -160,7 +160,6 @@
         .admin-card:hover { transform: translateY(-3px); border-color: var(--admin-primary); box-shadow: var(--admin-glow); background: rgba(17,24,39,0.8); }
         .card-title { color: var(--admin-primary); margin-bottom: 1rem; border-left: 4px solid var(--admin-primary); padding-left: 12px; font-size: 1.2rem; font-weight: 700; }
         
-        /* Users Table – unchanged */
         .users-table-wrapper {
             overflow-x: auto;
             border-radius: 16px;
@@ -282,7 +281,6 @@
             margin-top: 0.5rem;
             border: 1px solid #2ecc71;
         }
-        /* Improved Recent Activities */
         .activity-list {
             display: flex;
             flex-direction: column;
@@ -303,29 +301,27 @@
             background: rgba(46,204,113,0.1);
             transform: translateX(4px);
         }
-        /* Improved Agent rows */
-        .agent-row {
+        .agent-numbers-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.8rem;
-            align-items: flex-end;
+            gap: 1rem;
             margin-bottom: 1rem;
             padding: 0.8rem;
             background: rgba(0,0,0,0.3);
             border-radius: 20px;
             border: 1px solid rgba(46,204,113,0.2);
         }
-        .agent-row .field-group {
+        .agent-numbers-row .field-group {
             flex: 1;
             min-width: 140px;
         }
-        .agent-row label {
+        .agent-numbers-row label {
             display: block;
             font-size: 0.7rem;
             color: #aaa;
             margin-bottom: 0.2rem;
         }
-        .agent-row select, .agent-row input {
+        .agent-numbers-row input {
             width: 100%;
             padding: 0.5rem;
             border-radius: 40px;
@@ -333,24 +329,27 @@
             border: 1px solid #2ecc71;
             color: white;
         }
-        .remove-row-btn {
-            background: #ef4444;
+        .inline-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .inline-form .row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .inline-form .row label {
+            width: 140px;
+        }
+        .inline-form .row input, .inline-form .row select {
+            flex: 1;
+            padding: 0.5rem;
+            border-radius: 40px;
+            background: #1a2a1a;
+            border: 1px solid #2ecc71;
             color: white;
-            border: none;
-            padding: 0.3rem 0.8rem;
-            border-radius: 30px;
-            cursor: pointer;
-            height: 38px;
-            align-self: flex-end;
-        }
-        .add-row-btn {
-            background: #2ecc71;
-            margin-top: 0.5rem;
-        }
-        /* Fix missing users button */
-        .fix-users-card {
-            background: rgba(46,204,113,0.1);
-            border: 1px solid var(--admin-primary);
         }
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -358,8 +357,6 @@
             .admin-card { padding: 1rem; }
             .users-table th, .users-table td { padding: 8px 6px; font-size: 0.8rem; }
             .users-table .edit-balance input { width: 70px; }
-            .agent-row { flex-direction: column; align-items: stretch; }
-            .remove-row-btn { align-self: stretch; margin-top: 0.5rem; }
         }
     </style>
 </head>
@@ -396,6 +393,7 @@
         <button class="tab-btn" data-tab="vouchers">🎫 Vouchers</button>
         <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
         <button class="tab-btn" data-tab="admins">🛡️ Admins</button>
+        <button class="tab-btn" data-tab="agents">👥 Agents</button>
         <button class="tab-btn" data-tab="appearance">🎨 Appearance</button>
     </div>
 
@@ -466,46 +464,51 @@
         <div class="admin-card"><div class="card-title">📜 Existing Vouchers</div><div id="vouchersList">Loading...</div></div>
     </div>
 
-    <!-- Settings Tab (with Agent Authorization) -->
+    <!-- Settings Tab -->
     <div id="settingsTab" class="tab-content">
         <div class="admin-card"><div class="card-title">⚙️ General Settings</div><div><label>Website Name</label> <input type="text" id="websiteName" style="width:100%;"></div><div><label>Contact Email</label> <input type="email" id="contactEmail" style="width:100%;"></div><div><label>Contact Phone</label> <input type="text" id="contactPhone" style="width:100%;"></div><div><label>Payment Methods Info</label> <textarea id="paymentMethods" rows="3" style="width:100%;"></textarea></div><button id="saveSettingsBtn" class="btn-small success">Save Settings</button></div>
         <div class="admin-card"><div class="card-title">💸 Withdrawal Rules</div><div style="display: flex; flex-direction: column; gap: 0.8rem;"><label><input type="checkbox" id="withdrawRequireDeposit" checked> Require at least one completed deposit before withdrawal</label><label><input type="checkbox" id="withdrawRequireInvestment" checked> Require at least one investment plan before withdrawal</label><p class="note" style="font-size: 0.8rem; color: #aaa;">If unchecked, users can withdraw without meeting those requirements.</p><button id="saveWithdrawRulesBtn" class="btn-small success">Save Withdrawal Rules</button><div id="withdrawRulesMsg" style="margin-top: 0.5rem;"></div></div></div>
-        <div class="admin-card">
-            <div class="card-title">🔍 Deposit Verification Rules</div>
-            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
-                <label><input type="checkbox" id="depositRequireAmountMatch" checked> Require SMS amount matches deposit amount</label>
-                <label><input type="checkbox" id="depositRequireAgentName" checked> Require agent name in SMS</label>
-                <label><input type="checkbox" id="depositRequireNetworkKeyword" checked> Require network keyword (mtn/airtel/zamtel)</label>
-                <label><input type="checkbox" id="depositRequireTxKeyword" checked> Require transaction keyword (send/sent/received/paid/transfer/successful/payment)</label>
-                <label><input type="checkbox" id="depositRequireFutureDate" checked> Reject future transaction date</label>
-                <p class="note" style="font-size: 0.8rem; color: #aaa;">If unchecked, those checks will be skipped in deposit verification.</p>
-                <button id="saveDepositRulesBtn" class="btn-small success">Save Deposit Rules</button>
-                <div id="depositRulesMsg" style="margin-top: 0.5rem;"></div>
-            </div>
-        </div>
-
-        <!-- Agent Authorization (Bulk Create) -->
-        <div class="admin-card">
-            <div class="card-title">👥 Agent Authorization (Bulk Create)</div>
-            <div id="agentRowsContainer"></div>
-            <button id="addAgentRowBtn" class="btn-small success add-row-btn">+ Add Another Agent</button>
-            <button id="bulkCreateAgentsBtn" class="btn-small success" style="margin-top: 0.8rem;">✅ Create Agents</button>
-            <div id="agentCreationMsg" style="margin-top: 0.5rem;"></div>
-        </div>
+        <div class="admin-card"><div class="card-title">🔍 Deposit Verification Rules</div><div style="display: flex; flex-direction: column; gap: 0.8rem;"><label><input type="checkbox" id="depositRequireAmountMatch" checked> Require SMS amount matches deposit amount</label><label><input type="checkbox" id="depositRequireAgentName" checked> Require agent name in SMS</label><label><input type="checkbox" id="depositRequireNetworkKeyword" checked> Require network keyword (mtn/airtel/zamtel)</label><label><input type="checkbox" id="depositRequireTxKeyword" checked> Require transaction keyword (send/sent/received/paid/transfer/successful/payment)</label><label><input type="checkbox" id="depositRequireFutureDate" checked> Reject future transaction date</label><button id="saveDepositRulesBtn" class="btn-small success">Save Deposit Rules</button><div id="depositRulesMsg" style="margin-top: 0.5rem;"></div></div></div>
     </div>
 
-    <!-- Admins Tab (with Fix Missing Documents button) -->
+    <!-- Admins Tab -->
     <div id="adminsTab" class="tab-content">
+        <div class="admin-card"><div class="card-title">🛡️ Admin Accounts</div><button class="btn-small success" onclick="openAddAdminModal()">+ Add Admin</button><div id="adminsList">Loading...</div></div>
+        <div class="admin-card fix-users-card"><div class="card-title">🔧 Fix Missing Firestore Documents</div><p style="margin-bottom: 0.5rem;">This will create Firestore documents for any Firebase Auth users that don't have one (e.g., existing users who can't register because their referral code is missing).</p><button id="fixMissingDocsBtn" class="btn-small success">🔧 Fix Missing Documents</button><div id="fixDocsMsg" style="margin-top: 0.5rem;"></div></div>
+    </div>
+
+    <!-- Agents Tab -->
+    <div id="agentsTab" class="tab-content">
         <div class="admin-card">
-            <div class="card-title">🛡️ Admin Accounts</div>
-            <button class="btn-small success" onclick="openAddAdminModal()">+ Add Admin</button>
-            <div id="adminsList">Loading...</div>
+            <div class="card-title">➕ Create / Edit Agent</div>
+            <div class="inline-form">
+                <div class="row"><label>Agent Name *</label><input type="text" id="agentName" placeholder="Full name"></div>
+                <div class="row"><label>Phone (Primary, 260XXXXXXXXX) *</label><input type="text" id="agentPhone" placeholder="260961391022" maxlength="12"></div>
+                <div class="row"><label>Email (auto‑generated)</label><input type="email" id="agentEmail" readonly placeholder="Will be generated from phone"></div>
+                <div class="row"><label>Commission Rate (%)</label><input type="number" id="agentCommission" value="10" step="0.5" min="0" max="100"></div>
+                <div class="row"><label>Status</label><select id="agentStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                <div class="row"><label>Password (6 digits)</label><input type="text" id="agentPassword" placeholder="6 digits" maxlength="6"></div>
+                <div><label>📱 Additional Numbers (at least one of MTN/Airtel/Zamtel)</label></div>
+                <div class="agent-numbers-row">
+                    <div class="field-group"><label>MTN Number</label><input type="text" id="agentMtn" placeholder="260XXXXXXXXX" maxlength="12"></div>
+                    <div class="field-group"><label>Airtel Number</label><input type="text" id="agentAirtel" placeholder="260XXXXXXXXX" maxlength="12"></div>
+                    <div class="field-group"><label>Zamtel Number</label><input type="text" id="agentZamtel" placeholder="260XXXXXXXXX" maxlength="12"></div>
+                </div>
+                <input type="hidden" id="editingAgentId" value="">
+                <div><button id="saveAgentBtn" class="btn-small success">💾 Save Agent</button> <button id="cancelAgentEditBtn" class="btn-small warning" style="display:none;">Cancel Edit</button></div>
+            </div>
         </div>
-        <div class="admin-card fix-users-card">
-            <div class="card-title">🔧 Fix Missing Firestore Documents</div>
-            <p style="margin-bottom: 0.5rem;">This will create Firestore documents for any Firebase Auth users that don't have one (e.g., existing users who can't register because their referral code is missing).</p>
-            <button id="fixMissingDocsBtn" class="btn-small success">🔧 Fix Missing Documents</button>
-            <div id="fixDocsMsg" style="margin-top: 0.5rem;"></div>
+        <div class="admin-card">
+            <div class="card-title">👥 Registered Agents</div>
+            <div id="agentsList">Loading...</div>
+        </div>
+        <div class="admin-card">
+            <div class="card-title">💰 Agent Earnings Overview</div>
+            <div id="agentEarningsSummary">Select an agent to view earnings</div>
+        </div>
+        <div class="admin-card">
+            <div class="card-title">📜 Commission History</div>
+            <div id="commissionHistoryList">Select an agent above</div>
         </div>
     </div>
 
@@ -516,7 +519,7 @@
     </div>
 </div>
 
-<!-- Modals (unchanged) -->
+<!-- Modals -->
 <div id="addPlanModal" class="modal"><div class="modal-content"><h3>➕ Add Investment Plan</h3><div style="margin-bottom: 0.8rem;"><label>Plan Name</label><input type="text" id="planName" placeholder="e.g., Starter"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Min Amount (ZMW)</label><input type="number" id="planMin" placeholder="Min"></div><div><label>Max Amount (ZMW)</label><input type="number" id="planMax" placeholder="Max"></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Days</label><input type="number" id="planDays" placeholder="Days"></div><div><label>Daily Return (ZMW)</label><input type="number" id="planDailyReturn" placeholder="Absolute daily profit"></div></div><div><label>Image URL (or upload below)</label><input type="text" id="planImage" placeholder="https://..."><div style="margin-top: 0.5rem;"><label>Upload Image (max 150px)</label><input type="file" id="planImageFile" accept="image/*"><div id="planImagePreview" class="image-upload-preview"></div></div></div><div><label>Purchase Limit (0 = unlimited)</label><input type="number" id="planPurchaseLimit" value="0"></div><div><label>Lock Text (optional)</label><input type="text" id="planLock" placeholder="e.g., Purchased 1 time and locked"></div><div><label>Expiry</label><input type="text" id="planExpiry" placeholder="Auto or date"></div><div><label>Description</label><textarea id="planDesc" rows="2" placeholder="Plan description"></textarea></div><input type="hidden" id="planType"><div style="display: flex; gap: 1rem; margin-top: 1rem;"><button id="savePlanBtn" class="btn-small success" style="flex:1;">Save</button><button class="btn-small danger" onclick="closeModal('addPlanModal')" style="flex:1;">Cancel</button></div></div></div>
 <div id="editPlanModal" class="modal"><div class="modal-content"><h3>✏️ Edit Investment Plan</h3><input type="hidden" id="editPlanId"><input type="hidden" id="editPlanType"><div><label>Plan Name</label><input type="text" id="editPlanName"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Min Amount</label><input type="number" id="editPlanMin"></div><div><label>Max Amount</label><input type="number" id="editPlanMax"></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;"><div><label>Days</label><input type="number" id="editPlanDays"></div><div><label>Daily Return (ZMW)</label><input type="number" id="editPlanDailyReturn"></div></div><div><label>Image URL</label><input type="text" id="editPlanImage"><div><label>Upload New Image (optional)</label><input type="file" id="editPlanImageFile" accept="image/*"><div id="editPlanImagePreview" class="image-upload-preview"></div></div></div><div><label>Purchase Limit (0 = unlimited)</label><input type="number" id="editPlanPurchaseLimit" value="0"></div><div><label>Lock Text</label><input type="text" id="editPlanLock"></div><div><label>Expiry</label><input type="text" id="editPlanExpiry"></div><div><label>Description</label><textarea id="editPlanDesc" rows="2"></textarea></div><div style="display: flex; gap: 1rem; margin-top: 1rem;"><button id="updatePlanBtn" class="btn-small success" style="flex:1;">Update</button><button class="btn-small danger" onclick="closeModal('editPlanModal')" style="flex:1;">Cancel</button></div></div></div>
 <div id="addNewsModal" class="modal"><div class="modal-content"><h3>Add News</h3><input type="text" id="newsTitle" placeholder="Title"><textarea id="newsContent" rows="4" placeholder="Content"></textarea><input type="text" id="newsImage" placeholder="Image URL (optional)"><button id="saveNewsBtn" class="btn-small success">Post</button><button class="btn-small" onclick="closeModal('addNewsModal')">Cancel</button></div></div>
@@ -594,8 +597,218 @@
         loadDepositRules();
         setupPendingListeners();
         setupVoucherManualCreation();
+        loadAgents(); // load agents
+        document.getElementById('agentPhone').addEventListener('input', generateAgentEmail);
+        document.getElementById('saveAgentBtn').addEventListener('click', saveAgent);
+        document.getElementById('cancelAgentEditBtn').addEventListener('click', clearAgentForm);
     });
 
+    function generateAgentEmail() {
+        let phone = document.getElementById('agentPhone').value.trim();
+        if (phone.startsWith('260') && phone.length === 12 && /^\d+$/.test(phone)) {
+            document.getElementById('agentEmail').value = `agent_${phone}@agent.pureore.com`;
+        } else {
+            document.getElementById('agentEmail').value = '';
+        }
+    }
+
+    // ========== AGENT SYSTEM ==========
+    async function loadAgents() {
+        const agentsSnap = await db.collection('agents').orderBy('createdAt', 'desc').get();
+        let html = `<table class="users-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>MTN</th><th>Airtel</th><th>Zamtel</th><th>Comm.%</th><th>Status</th><th>Earnings</th><th>Actions</th></tr></thead><tbody>`;
+        for (const doc of agentsSnap.docs) {
+            const a = doc.data();
+            html += `<tr>
+                <td>${escapeHtml(a.name)}</td>
+                <td>${escapeHtml(a.email)}</td>
+                <td>${escapeHtml(a.phone)}</td>
+                <td>${escapeHtml(a.mtnNumber || '-')}</td>
+                <td>${escapeHtml(a.airtelNumber || '-')}</td>
+                <td>${escapeHtml(a.zamtelNumber || '-')}</td>
+                <td>${a.commissionRate}%</td>
+                <td><span style="color:${a.status==='active'?'#2ecc71':'#e74c3c'}">${a.status}</span></td>
+                <td>${formatMoney(a.totalEarnings || 0)}</td>
+                <td>
+                    <button class="btn-small" onclick="editAgent('${doc.id}')">Edit</button>
+                    <button class="btn-small danger" onclick="deleteAgent('${doc.id}')">Delete</button>
+                    <button class="btn-small warning" onclick="viewAgentCommissions('${doc.id}')">Commissions</button>
+                </td>
+            </tr>`;
+        }
+        html += `</tbody></table>`;
+        document.getElementById('agentsList').innerHTML = html || '<p>No agents yet.</p>';
+    }
+
+    window.editAgent = async (agentId) => {
+        const doc = await db.collection('agents').doc(agentId).get();
+        if (!doc.exists) return;
+        const a = doc.data();
+        document.getElementById('editingAgentId').value = agentId;
+        document.getElementById('agentName').value = a.name;
+        document.getElementById('agentPhone').value = a.phone;
+        document.getElementById('agentEmail').value = a.email;
+        document.getElementById('agentCommission').value = a.commissionRate;
+        document.getElementById('agentStatus').value = a.status;
+        document.getElementById('agentMtn').value = a.mtnNumber || '';
+        document.getElementById('agentAirtel').value = a.airtelNumber || '';
+        document.getElementById('agentZamtel').value = a.zamtelNumber || '';
+        document.getElementById('agentPassword').value = '';
+        document.getElementById('cancelAgentEditBtn').style.display = 'inline-block';
+    };
+
+    window.clearAgentForm = () => {
+        document.getElementById('editingAgentId').value = '';
+        document.getElementById('agentName').value = '';
+        document.getElementById('agentPhone').value = '';
+        document.getElementById('agentEmail').value = '';
+        document.getElementById('agentCommission').value = '10';
+        document.getElementById('agentStatus').value = 'active';
+        document.getElementById('agentMtn').value = '';
+        document.getElementById('agentAirtel').value = '';
+        document.getElementById('agentZamtel').value = '';
+        document.getElementById('agentPassword').value = '';
+        document.getElementById('cancelAgentEditBtn').style.display = 'none';
+    };
+
+    async function saveAgent() {
+        const name = document.getElementById('agentName').value.trim();
+        const phone = document.getElementById('agentPhone').value.trim();
+        const email = document.getElementById('agentEmail').value.trim();
+        const commissionRate = parseFloat(document.getElementById('agentCommission').value);
+        const status = document.getElementById('agentStatus').value;
+        const mtn = document.getElementById('agentMtn').value.trim();
+        const airtel = document.getElementById('agentAirtel').value.trim();
+        const zamtel = document.getElementById('agentZamtel').value.trim();
+        const password = document.getElementById('agentPassword').value.trim();
+        const editingId = document.getElementById('editingAgentId').value;
+
+        if (!name || !phone || !email || isNaN(commissionRate)) {
+            showToast('Please fill all required fields (Name, Phone, Email, Commission)', true);
+            return;
+        }
+        if (!/^260\d{9}$/.test(phone)) {
+            showToast('Phone must be 12 digits starting with 260', true);
+            return;
+        }
+        if (!mtn && !airtel && !zamtel) {
+            showToast('At least one mobile money number (MTN/Airtel/Zamtel) must be provided', true);
+            return;
+        }
+        if (!editingId && (!password || !/^\d{6}$/.test(password))) {
+            showToast('Password must be exactly 6 digits for new agent', true);
+            return;
+        }
+
+        const agentData = {
+            name, phone, email, commissionRate, status,
+            mtnNumber: mtn || null, airtelNumber: airtel || null, zamtelNumber: zamtel || null,
+            totalEarnings: 0,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        try {
+            if (editingId) {
+                await db.collection('agents').doc(editingId).update(agentData);
+                showToast('Agent updated');
+            } else {
+                const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                const uid = userCred.user.uid;
+                await db.collection('users').doc(uid).set({
+                    fullName: name, email: email, phone: phone, role: 'agent',
+                    balance: 0, isBlocked: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                agentData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection('agents').doc(uid).set(agentData);
+                showToast('Agent created successfully');
+            }
+            clearAgentForm();
+            loadAgents();
+        } catch (err) {
+            showToast(err.message, true);
+        }
+    }
+
+    window.deleteAgent = async (agentId) => {
+        if (!confirm('Delete this agent? Commission history will be lost.')) return;
+        await db.collection('agents').doc(agentId).delete();
+        loadAgents();
+        showToast('Agent deleted');
+    };
+
+    window.viewAgentCommissions = async (agentId) => {
+        const commissionsSnap = await db.collection('commissions').where('agentId', '==', agentId).orderBy('createdAt', 'desc').get();
+        const agentDoc = await db.collection('agents').doc(agentId).get();
+        const agentName = agentDoc.exists ? agentDoc.data().name : 'Agent';
+        let html = `<h4>Commissions for ${escapeHtml(agentName)}</h4><table class="users-table"><thead><tr><th>Deposit ID</th><th>Amount</th><th>Commission</th><th>Date</th></tr></thead><tbody>`;
+        if (commissionsSnap.empty) {
+            html += `<tr><td colspan="4">No commissions yet</td></tr>`;
+        } else {
+            commissionsSnap.forEach(doc => {
+                const c = doc.data();
+                html += `<tr><td>${c.depositId}</td><td>${formatMoney(c.depositAmount)}</td><td>${formatMoney(c.commissionAmount)}</td><td>${c.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+            });
+        }
+        html += `</tbody></table>`;
+        document.getElementById('commissionHistoryList').innerHTML = html;
+        const earnings = agentDoc.exists ? (agentDoc.data().totalEarnings || 0) : 0;
+        document.getElementById('agentEarningsSummary').innerHTML = `<strong>Total Earnings: ${formatMoney(earnings)}</strong>`;
+    };
+
+    // ========== MODIFIED DEPOSIT APPROVAL WITH AGENT COMMISSION ==========
+    async function matchAgentFromSms(smsText) {
+        if (!smsText) return null;
+        const agentsSnap = await db.collection('agents').get();
+        for (const doc of agentsSnap.docs) {
+            const agent = doc.data();
+            if (agent.status !== 'active') continue;
+            const numbers = [agent.phone, agent.mtnNumber, agent.airtelNumber, agent.zamtelNumber].filter(n => n);
+            for (const num of numbers) {
+                if (num && smsText.includes(num)) return doc.id;
+            }
+        }
+        return null;
+    }
+    window.matchAgentFromSms = matchAgentFromSms;
+
+    window.approveDeposit = async (depositId, userId, amount) => {
+        const depositRef = db.collection('deposits').doc(depositId);
+        const depositSnap = await depositRef.get();
+        const deposit = depositSnap.data();
+        let agentId = deposit.agentId || null;
+        if (!agentId && deposit.smsText) {
+            agentId = await matchAgentFromSms(deposit.smsText);
+            if (agentId) await depositRef.update({ agentId: agentId });
+        }
+        await db.runTransaction(async (t) => {
+            const userRef = db.collection('users').doc(userId);
+            const userSnap = await t.get(userRef);
+            t.update(userRef, { balance: (userSnap.data().balance || 0) + amount });
+            t.update(depositRef, { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp(), agentId: agentId || null });
+            if (agentId) {
+                const agentRef = db.collection('agents').doc(agentId);
+                const agentSnap = await t.get(agentRef);
+                if (agentSnap.exists) {
+                    const agent = agentSnap.data();
+                    const commissionAmount = (amount * agent.commissionRate) / 100;
+                    const newEarnings = (agent.totalEarnings || 0) + commissionAmount;
+                    t.update(agentRef, { totalEarnings: newEarnings });
+                    const commissionRef = db.collection('commissions').doc();
+                    t.set(commissionRef, {
+                        agentId: agentId,
+                        depositId: depositId,
+                        depositAmount: amount,
+                        commissionAmount: commissionAmount,
+                        commissionRate: agent.commissionRate,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            }
+        });
+        showToast('Deposit approved' + (agentId ? ' + agent commission credited' : ''));
+        loadPendingDeposits(); loadDepositsHistory(); loadStats(); loadUsers(); loadAgents();
+    };
+
+    // ========== ALL EXISTING FUNCTIONS (unchanged, but included fully) ==========
     function setupPendingListeners() {
         db.collection('deposits').where('status', '==', 'pending').onSnapshot(snap => {
             const count = snap.size;
@@ -634,16 +847,14 @@
         withdrawals.forEach(w => activities.push(`💸 Withdrawal ${w.data().amount} ZMW from ${w.data().userId?.slice(0,8)} - ${w.data().status}`));
         const users = await db.collection('users').orderBy('createdAt', 'desc').limit(10).get();
         users.forEach(u => activities.push(`👤 New user: ${u.data().fullName || u.data().email}`));
-        // Sort by most recent (combine and sort by timestamp? For simplicity keep order)
         const recent = activities.slice(0,15);
         const html = recent.map(a => `<div class="activity-item">${a}</div>`).join('');
         document.getElementById('recentActivities').innerHTML = html || '<div>No recent activity</div>';
     }
 
-    // ==================== USERS ====================
     async function loadUsers() {
         const users = await db.collection('users').get();
-        let html = `<table class="users-table"><thead><tr><th>Name</th><th>Email</th><th>Balance</th><th>Role</th><th>Blocked</th><th>Can Request Loan</th><th>Actions</th></table></thead><tbody>`;
+        let html = `<table class="users-table"><thead><tr><th>Name</th><th>Email</th><th>Balance</th><th>Role</th><th>Blocked</th><th>Can Request Loan</th><th>Actions</th></tr></thead><tbody>`;
         for (const doc of users.docs) {
             const u = doc.data();
             html += `<tr>
@@ -688,7 +899,6 @@
         } catch (err) { showToast(err.message, true); }
     };
 
-    // ==================== DEPOSITS ====================
     async function loadPendingDeposits() {
         const pending = await db.collection('deposits').where('status', '==', 'pending').get();
         let html = `<tr><th>User</th><th>Amount</th><th>Method</th><th>Screenshot</th><th>SMS Preview (150 chars)</th><th>Date/Time</th><th>Actions</th></tr>`;
@@ -710,25 +920,20 @@
                 <td><button class="btn-small success" onclick="approveDeposit('${doc.id}', '${d.userId}', ${d.amount})">Approve</button> <button class="btn-small danger" onclick="rejectDeposit('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td>';
+        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td></tr>';
     }
-    window.approveDeposit = async (depositId, userId, amount) => {
-        await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); t.update(userRef, { balance: (userSnap.data().balance || 0) + amount }); t.update(db.collection('deposits').doc(depositId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
-        showToast('Deposit approved'); loadPendingDeposits(); loadDepositsHistory(); loadStats(); loadUsers();
-    };
     window.rejectDeposit = async (depositId) => { await db.collection('deposits').doc(depositId).update({ status: 'rejected' }); loadPendingDeposits(); loadDepositsHistory(); };
     async function loadDepositsHistory() {
         const all = await db.collection('deposits').orderBy('createdAt', 'desc').get();
-        let html = `<td><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+        let html = `<tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
         for (const doc of all.docs) {
             const d = doc.data();
             const user = await db.collection('users').doc(d.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.fullName || d.userId)}</td><td>${formatMoney(d.amount)}</td><td>${d.status}</td><td>${d.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('depositsHistory').innerHTML = html || '<td><td colspan="4">No deposits</td>';
+        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td></tr>';
     }
 
-    // ==================== WITHDRAWALS ====================
     async function loadPendingWithdrawals() {
         const pending = await db.collection('withdrawals').where('status', '==', 'pending').get();
         let html = `<tr><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>`;
@@ -744,7 +949,7 @@
                 <td><button class="btn-small success" onclick="approveWithdrawal('${doc.id}', '${w.userId}', ${w.amount})">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<td><td colspan="6">No pending withdrawals</td>';
+        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="6">No pending withdrawals</td></tr>';
     }
     window.approveWithdrawal = async (withdrawalId, userId, amount) => {
         await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); if((userSnap.data().balance || 0) < amount) throw new Error('Insufficient balance'); t.update(userRef, { balance: userSnap.data().balance - amount }); t.update(db.collection('withdrawals').doc(withdrawalId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
@@ -759,11 +964,9 @@
             const user = await db.collection('users').doc(w.userId).get();
             html += `<tr><td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
         }
-        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td>';
+        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="4">No withdrawals</td></tr>';
     }
 
-    // ==================== INVESTMENT PLANS ====================
-    let currentPlanType = '';
     async function loadMkvipPlans() { loadPlans('mkvipPlans', 'mkvipPlansList'); }
     async function loadJproductPlans() { loadPlans('jproductPlans', 'jproductPlansList'); }
     async function loadPlans(collection, elementId) {
@@ -779,7 +982,7 @@
                 <td><button class="btn-small" onclick="openEditPlanModal('${doc.id}', '${collection}')">Edit</button> <button class="btn-small danger" onclick="deletePlan('${doc.id}', '${collection}')">Delete</button></td>
             </tr>`;
         });
-        document.getElementById(elementId).innerHTML = html || '<td><td colspan="5">No plans</td>';
+        document.getElementById(elementId).innerHTML = html || '<tr><td colspan="5">No plans</td></tr>';
     }
     window.openAddPlanModal = (type) => {
         currentPlanType = type;
@@ -876,7 +1079,6 @@
     };
     window.deletePlan = async (id, collection) => { if(confirm('Delete plan?')) { await db.collection(collection).doc(id).delete(); if(collection === 'mkvipPlans') loadMkvipPlans(); else loadJproductPlans(); showToast('Deleted'); } };
 
-    // ==================== TRANSACTIONS, NEWS, SUPPORT, TREASURE ====================
     async function loadTransactions() {
         const txns = await db.collection('transactions').orderBy('createdAt', 'desc').get();
         let html = `<tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr>`;
@@ -891,15 +1093,15 @@
                 <td>${t.createdAt?.toDate().toLocaleString() || 'N/A'}</td>
             </tr>`;
         }
-        document.getElementById('transactionsList').innerHTML = html || '<td><td colspan="5">No transactions</td>';
+        document.getElementById('transactionsList').innerHTML = html || '<tr><td colspan="5">No transactions</td></tr>';
         document.getElementById('txSearchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#transactionsList tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
     }
 
     async function loadNews() {
         const news = await db.collection('news').orderBy('createdAt', 'desc').get();
-        let html = `<td><th>Title</th><th>Image</th><th>Actions</th></tr>`;
+        let html = `<tr><th>Title</th><th>Image</th><th>Actions</th></tr>`;
         news.forEach(doc => { const n = doc.data(); html += `<tr><td>${escapeHtml(n.title)}</td><td>${n.imageUrl ? '<a href="'+n.imageUrl+'" target="_blank">View</a>' : '-'}</td><td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td></tr>`; });
-        document.getElementById('newsList').innerHTML = html || '<td><td colspan="3">No news</td>';
+        document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td></tr>';
     }
     window.openAddNewsModal = () => { document.getElementById('addNewsModal').style.display = 'flex'; };
     document.getElementById('saveNewsBtn').onclick = async () => { await db.collection('news').add({ title: document.getElementById('newsTitle').value, content: document.getElementById('newsContent').value, imageUrl: document.getElementById('newsImage').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addNewsModal'); loadNews(); showToast('News posted'); };
@@ -919,7 +1121,7 @@
                 <td><button class="btn-small" onclick="openReplyModal('${doc.id}')">Reply</button> <button class="btn-small danger" onclick="closeTicket('${doc.id}')">Close</button></td>
             </tr>`;
         }
-        document.getElementById('supportTicketsList').innerHTML = html || '<td><td colspan="5">No tickets</td>';
+        document.getElementById('supportTicketsList').innerHTML = html || '<tr><td colspan="5">No tickets</td></tr>';
     }
     window.openReplyModal = (id) => { document.getElementById('replyTicketId').value = id; document.getElementById('supportReplyModal').style.display = 'flex'; };
     document.getElementById('sendReplyBtn').onclick = async () => { const ticketId = document.getElementById('replyTicketId').value; const reply = document.getElementById('replyMessage').value; await db.collection('supportTickets').doc(ticketId).update({ replies: firebase.firestore.FieldValue.arrayUnion({ reply, repliedAt: new Date(), admin: true }), status: 'replied' }); closeModal('supportReplyModal'); loadSupportTickets(); showToast('Reply sent'); };
@@ -927,30 +1129,19 @@
 
     async function loadTreasureCodes() {
         const codes = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
-        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></td>`;
-        codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td>.html(${c.amount})`; // fixed typo
-            html += `<td>${c.used ? 'Yes' : 'No'}</td>
-            <td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td>
-        </tr>`;
-        });
-        document.getElementById('treasureCodesList').innerHTML = html || '<td><td colspan="4">No codes</td>';
+        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
+        codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td><td>${c.amount}</td><td>${c.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td></tr>`; });
+        document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td></tr>';
     }
     window.openAddTreasureModal = () => { document.getElementById('addTreasureModal').style.display = 'flex'; };
     document.getElementById('saveTreasureBtn').onclick = async () => { const code = document.getElementById('treasureCode').value.toUpperCase(); const amount = parseFloat(document.getElementById('treasureAmount').value); if(code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 uppercase letters/numbers', true); return; } await db.collection('treasureCodes').add({ code, amount, used: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal('addTreasureModal'); loadTreasureCodes(); showToast('Treasure code created'); };
     window.deleteTreasureCode = async (id) => { if(confirm('Delete?')) { await db.collection('treasureCodes').doc(id).delete(); loadTreasureCodes(); } };
 
-    // ==================== VOUCHERS ====================
     async function loadVouchers() {
         const vouchers = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
-        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></td>`;
-        vouchers.forEach(doc => { const v = doc.data(); html += `<tr>
-                <td>${v.code}</td>
-                <td>${v.amount}</td>
-                <td>${v.used ? 'Yes' : 'No'}</td>
-                <td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td>
-            </tr>`;
-        });
-        document.getElementById('vouchersList').innerHTML = html || '<td><td colspan="4">No vouchers</td>';
+        let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
+        vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td><td>${v.amount}</td><td>${v.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td></tr>`; });
+        document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td></tr>';
     }
     window.deleteVoucher = async (id) => { if(confirm('Delete?')) { await db.collection('vouchers').doc(id).delete(); loadVouchers(); } };
 
@@ -1013,7 +1204,6 @@
         });
     }
 
-    // ==================== SETTINGS ====================
     async function loadSettings() {
         const doc = await db.collection('systemSettings').doc('general').get();
         if(doc.exists) {
@@ -1033,7 +1223,6 @@
         showToast('Settings saved');
     };
 
-    // ==================== WITHDRAWAL RULES ====================
     async function loadWithdrawalRules() {
         const doc = await db.collection('systemSettings').doc('withdrawalRules').get();
         if (doc.exists) {
@@ -1052,7 +1241,6 @@
         setTimeout(() => document.getElementById('withdrawRulesMsg').innerHTML = '', 3000);
     };
 
-    // ==================== DEPOSIT RULES ====================
     async function loadDepositRules() {
         const doc = await db.collection('systemSettings').doc('depositRules').get();
         if (doc.exists) {
@@ -1084,17 +1272,11 @@
         setTimeout(() => document.getElementById('depositRulesMsg').innerHTML = '', 3000);
     };
 
-    // ==================== ADMINS, APPEARANCE ====================
     async function loadAdmins() {
         const admins = await db.collection('users').where('role', '==', 'admin').get();
         let html = `<tr><th>Email</th><th>Name</th><th>Actions</th></tr>`;
-        admins.forEach(doc => { const a = doc.data(); html += `<tr>
-                <td>${escapeHtml(a.email)}</td>
-                <td>${escapeHtml(a.fullName || '-')}</td>
-                <td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td>
-            </table>`;
-        });
-        document.getElementById('adminsList').innerHTML = html || '<td><td colspan="3">No admins</td>';
+        admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.fullName || '-')}</td><td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td></tr>`; });
+        document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td></tr>';
     }
     window.openAddAdminModal = () => { document.getElementById('addAdminModal').style.display = 'flex'; };
     document.getElementById('createAdminBtn').onclick = async () => {
@@ -1208,152 +1390,17 @@
 
     document.getElementById('adminLogoutBtn').addEventListener('click', async () => { await auth.signOut(); window.location.href = 'admin-login.html'; });
 
-    // ==================== AGENT BULK CREATION ====================
-    let agentRowIndex = 0;
-
-    function addAgentRow(phone = '', password = '', name = '', network = 'mtn') {
-        const container = document.getElementById('agentRowsContainer');
-        if (!container) return;
-        const rowId = `agent_row_${agentRowIndex++}`;
-        const div = document.createElement('div');
-        div.className = 'agent-row';
-        div.id = rowId;
-        div.innerHTML = `
-            <div class="field-group">
-                <label>Network</label>
-                <select class="agent-network" data-row="${rowId}">
-                    <option value="mtn" ${network === 'mtn' ? 'selected' : ''}>MTN</option>
-                    <option value="airtel" ${network === 'airtel' ? 'selected' : ''}>Airtel</option>
-                    <option value="zamtel" ${network === 'zamtel' ? 'selected' : ''}>Zamtel</option>
-                </select>
-            </div>
-            <div class="field-group">
-                <label>Phone (12 digits, e.g., 260965379422)</label>
-                <input type="text" class="agent-phone" placeholder="Phone" value="${escapeHtml(phone)}" maxlength="12">
-            </div>
-            <div class="field-group">
-                <label>Password (6 digits)</label>
-                <input type="text" class="agent-password" placeholder="Password" value="${escapeHtml(password)}" maxlength="6">
-            </div>
-            <div class="field-group">
-                <label>Full Name</label>
-                <input type="text" class="agent-name" placeholder="Full Name" value="${escapeHtml(name)}">
-            </div>
-            <button class="remove-row-btn" onclick="removeAgentRow('${rowId}')">✖ Remove</button>
-        `;
-        container.appendChild(div);
-    }
-
-    window.removeAgentRow = (rowId) => {
-        const row = document.getElementById(rowId);
-        if (row) row.remove();
-    };
-
-    document.getElementById('addAgentRowBtn').addEventListener('click', () => {
-        addAgentRow();
-    });
-
-    document.getElementById('bulkCreateAgentsBtn').addEventListener('click', async () => {
-        const rows = document.querySelectorAll('.agent-row');
-        if (rows.length === 0) {
-            showToast('No agents to create', true);
-            return;
-        }
-        const agentsData = [];
-        for (const row of rows) {
-            const network = row.querySelector('.agent-network').value;
-            const phone = row.querySelector('.agent-phone').value.trim();
-            const password = row.querySelector('.agent-password').value.trim();
-            const name = row.querySelector('.agent-name').value.trim();
-            if (!phone || !password || !name) {
-                showToast('Please fill all fields for every agent', true);
-                return;
-            }
-            if (!/^\d{12}$/.test(phone)) {
-                showToast(`Phone ${phone} must be exactly 12 digits`, true);
-                return;
-            }
-            if (!/^\d{6}$/.test(password)) {
-                showToast(`Password for ${phone} must be exactly 6 digits`, true);
-                return;
-            }
-            agentsData.push({ network, phone, password, name });
-        }
-        const createBtn = document.getElementById('bulkCreateAgentsBtn');
-        createBtn.disabled = true;
-        createBtn.innerText = 'Creating...';
-        const msgDiv = document.getElementById('agentCreationMsg');
-        msgDiv.innerHTML = '';
-        let successCount = 0;
-        let failCount = 0;
-        for (const agent of agentsData) {
-            try {
-                const email = `agent_${agent.phone}@agent.pureore.com`;
-                const userCred = await auth.createUserWithEmailAndPassword(email, agent.password);
-                const uid = userCred.user.uid;
-                await db.collection('users').doc(uid).set({
-                    fullName: agent.name,
-                    email: email,
-                    phone: agent.phone,
-                    role: 'agent',
-                    balance: 0,
-                    isBlocked: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                await db.collection('agents').add({
-                    network: agent.network,
-                    name: agent.name,
-                    number: agent.phone,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                successCount++;
-            } catch (err) {
-                console.error(`Failed to create agent ${agent.phone}:`, err);
-                failCount++;
-                msgDiv.innerHTML += `<div style="color:#ef4444;">❌ ${agent.phone}: ${err.message}</div>`;
-            }
-        }
-        if (successCount > 0) {
-            showToast(`${successCount} agents created, ${failCount} failed`, false);
-        } else {
-            showToast('No agents created', true);
-        }
-        createBtn.disabled = false;
-        createBtn.innerText = '✅ Create Agents';
-    });
-
-    // Initialize one empty row when settings tab becomes active
-    let settingsInitialized = false;
-    const settingsTabElem = document.getElementById('settingsTab');
-    const observer = new MutationObserver(() => {
-        if (settingsTabElem && settingsTabElem.classList.contains('active') && !settingsInitialized) {
-            settingsInitialized = true;
-            addAgentRow();
-        }
-    });
-    observer.observe(settingsTabElem, { attributes: true, attributeFilter: ['class'] });
-    if (settingsTabElem && settingsTabElem.classList.contains('active')) {
-        settingsInitialized = true;
-        addAgentRow();
-    }
-
-    // ==================== FIX MISSING FIRESTORE DOCUMENTS ====================
     document.getElementById('fixMissingDocsBtn').addEventListener('click', async () => {
         const btn = document.getElementById('fixMissingDocsBtn');
         const msgDiv = document.getElementById('fixDocsMsg');
         btn.disabled = true;
         btn.innerText = 'Processing...';
         msgDiv.innerHTML = '';
-
         try {
-            // Get all Auth users (requires admin privileges; this works because the function is called from admin dashboard)
             const authUsers = await auth.listUsers();
             const existingDocs = await db.collection('users').get();
             const existingUids = new Set(existingDocs.docs.map(d => d.id));
-
-            let created = 0;
-            let failed = 0;
-
+            let created = 0, failed = 0;
             for (const authUser of authUsers.users) {
                 if (!existingUids.has(authUser.uid)) {
                     try {
@@ -1379,12 +1426,10 @@
                     }
                 }
             }
-
             if (created > 0) {
                 msgDiv.innerHTML = `<span style="color:#2ecc71;">✅ Created ${created} missing user documents. ${failed} failed.</span>`;
                 showToast(`${created} missing documents created.`, false);
-                loadUsers(); // refresh the users list
-                loadStats();
+                loadUsers(); loadStats();
             } else {
                 msgDiv.innerHTML = `<span style="color:#f1c40f;">ℹ️ No missing documents found. All Auth users have Firestore documents.</span>`;
             }
