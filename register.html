@@ -119,35 +119,52 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     
-    // ✅ REMOVED db.settings({ persistence: false }) – it can cause hangs
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ✅ Auto-fill referral code from URL (e.g., register.html?ref=6I9J95LO)
+    // ========== ROBUST REFERRAL CODE EXTRACTOR (works in all browsers) ==========
     function getReferralCodeFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('ref');
+        // 1. Check standard query string (register.html?ref=CODE)
+        let params = new URLSearchParams(window.location.search);
+        let ref = params.get('ref');
+        
+        // 2. If not found, check hash fragment (register.html#ref=CODE)
+        if (!ref && window.location.hash) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            ref = hashParams.get('ref');
+        }
+        
+        // 3. Fallback for very old browsers or unusual URL encoding
+        if (!ref) {
+            const url = window.location.href;
+            const match = url.match(/[?&]ref=([^&#]*)/i);
+            if (match) ref = decodeURIComponent(match[1]);
+        }
+        
+        return ref || null;
     }
 
-    const urlRef = getReferralCodeFromUrl();
-    if (urlRef) {
-        const referralInput = document.getElementById('regReferralCode');
-        if (referralInput) {
-            referralInput.value = urlRef.toUpperCase();
-            referralInput.style.border = "2px solid #2ecc71";
+    // Wait for DOM to be fully loaded before filling the input
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlRef = getReferralCodeFromUrl();
+        if (urlRef) {
+            const referralInput = document.getElementById('regReferralCode');
+            if (referralInput) {
+                referralInput.value = urlRef.toUpperCase();
+                referralInput.style.border = "2px solid #2ecc71";
+            }
         }
-    }
+    });
 
     const registerForm = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');
     const messageDiv = document.getElementById('message');
 
-    // ✅ Validation with timeout (prevents infinite hang)
+    // Validation with timeout
     async function validateReferralCode(code) {
         if (!code) return false;
         const queryCode = code.trim().toUpperCase();
         console.log("🔍 Validating referral code:", queryCode);
         
-        // Create a timeout promise
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => reject(new Error("Referral check timed out after 10s")), 10000);
         });
