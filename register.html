@@ -105,7 +105,8 @@
 </div>
 
 <script>
-    const firebaseConfig = {
+    // ========== FIREBASE CONFIG ==========
+    var firebaseConfig = {
         apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
         authDomain: "pureore-capital-zambia.firebaseapp.com",
         projectId: "pureore-capital-zambia",
@@ -116,87 +117,83 @@
     };
     
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    
+    var auth = firebase.auth();
+    var db = firebase.firestore();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ========== ROBUST REFERRAL CODE EXTRACTOR (works in all browsers) ==========
+    // ========== ROBUST REFERRAL CODE EXTRACTOR (works in ALL browsers, no URLSearchParams) ==========
     function getReferralCodeFromUrl() {
-        // 1. Check standard query string (register.html?ref=CODE)
-        let params = new URLSearchParams(window.location.search);
-        let ref = params.get('ref');
-        
-        // 2. If not found, check hash fragment (register.html#ref=CODE)
-        if (!ref && window.location.hash) {
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
-            ref = hashParams.get('ref');
-        }
-        
-        // 3. Fallback for very old browsers or unusual URL encoding
-        if (!ref) {
-            const url = window.location.href;
-            const match = url.match(/[?&]ref=([^&#]*)/i);
-            if (match) ref = decodeURIComponent(match[1]);
-        }
-        
-        return ref || null;
+        var url = window.location.href;
+        // Look for ref=CODE in query string or hash
+        var match = url.match(/[?&]ref=([^&#]*)/i);
+        if (match) return decodeURIComponent(match[1]);
+        // Also check hash (#ref=CODE)
+        match = url.match(/#.*[?&]ref=([^&#]*)/i);
+        if (match) return decodeURIComponent(match[1]);
+        return null;
     }
 
-    // Wait for DOM to be fully loaded before filling the input
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlRef = getReferralCodeFromUrl();
-        if (urlRef) {
-            const referralInput = document.getElementById('regReferralCode');
-            if (referralInput) {
-                referralInput.value = urlRef.toUpperCase();
-                referralInput.style.border = "2px solid #2ecc71";
+    // Auto-fill referral code when DOM is ready (works without DOMContentLoaded fallback)
+    function fillReferralCode() {
+        var refCode = getReferralCodeFromUrl();
+        if (refCode) {
+            var input = document.getElementById('regReferralCode');
+            if (input) {
+                input.value = refCode.toUpperCase();
+                input.style.border = "2px solid #2ecc71";
             }
         }
-    });
-
-    const registerForm = document.getElementById('registerForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const messageDiv = document.getElementById('message');
-
-    // Validation with timeout
-    async function validateReferralCode(code) {
-        if (!code) return false;
-        const queryCode = code.trim().toUpperCase();
-        console.log("🔍 Validating referral code:", queryCode);
-        
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Referral check timed out after 10s")), 10000);
-        });
-        
-        const queryPromise = db.collection('users')
-            .where('referralCode', '==', queryCode)
-            .limit(1)
-            .get();
-        
-        try {
-            const snapshot = await Promise.race([queryPromise, timeoutPromise]);
-            const isValid = !snapshot.empty;
-            console.log(`✅ Referral code ${queryCode} is ${isValid ? 'valid' : 'invalid'}`);
-            return isValid;
-        } catch (err) {
-            console.error("❌ Referral validation error:", err);
-            throw err;
-        }
+    }
+    // Run immediately if DOM already loaded, otherwise wait
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fillReferralCode);
+    } else {
+        fillReferralCode();
     }
 
-    registerForm.addEventListener('submit', async (e) => {
+    // ========== SIMPLE REFERRAL VALIDATION (no Promise.race, just timeout using setTimeout) ==========
+    function validateReferralCode(code, callback) {
+        if (!code) return callback(false);
+        var queryCode = code.trim().toUpperCase();
+        console.log("Checking referral code:", queryCode);
+        
+        var timedOut = false;
+        var timeout = setTimeout(function() {
+            timedOut = true;
+            callback(false, "timed out");
+        }, 10000);
+        
+        db.collection('users').where('referralCode', '==', queryCode).limit(1).get().then(function(snapshot) {
+            if (!timedOut) {
+                clearTimeout(timeout);
+                var isValid = !snapshot.empty;
+                callback(isValid);
+            }
+        }).catch(function(err) {
+            if (!timedOut) {
+                clearTimeout(timeout);
+                callback(false, err.message);
+            }
+        });
+    }
+
+    // ========== REGISTRATION FORM HANDLER ==========
+    var registerForm = document.getElementById('registerForm');
+    var submitBtn = document.getElementById('submitBtn');
+    var messageDiv = document.getElementById('message');
+
+    registerForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         submitBtn.disabled = true;
         submitBtn.textContent = 'Creating account...';
         messageDiv.innerHTML = '';
         
-        const fullName = document.getElementById('regFullName').value.trim();
-        const email = document.getElementById('regEmail').value.trim();
-        const password = document.getElementById('regPassword').value;
-        const confirm = document.getElementById('regConfirmPassword').value;
-        let referralCode = document.getElementById('regReferralCode').value.trim().toUpperCase();
+        var fullName = document.getElementById('regFullName').value.trim();
+        var email = document.getElementById('regEmail').value.trim();
+        var password = document.getElementById('regPassword').value;
+        var confirm = document.getElementById('regConfirmPassword').value;
+        var referralCode = document.getElementById('regReferralCode').value.trim().toUpperCase();
         
         if (!fullName || !email || !password || !confirm || !referralCode) {
             messageDiv.innerHTML = '<div class="error">All fields are required.</div>';
@@ -217,61 +214,57 @@
             return;
         }
         
-        try {
-            console.log("⏳ Checking referral code...");
-            const isValidCode = await validateReferralCode(referralCode);
-            if (!isValidCode) {
-                messageDiv.innerHTML = '<div class="error">❌ Invalid referral code. Please check and try again.</div>';
+        // Validate referral code
+        validateReferralCode(referralCode, function(isValid, errorMsg) {
+            if (!isValid) {
+                var msg = errorMsg ? 'Referral check error: ' + errorMsg : '❌ Invalid referral code. Please check and try again.';
+                messageDiv.innerHTML = '<div class="error">' + msg + '</div>';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Register & Get 20 ZMW';
                 return;
             }
             
-            console.log("📧 Creating Firebase Auth user...");
-            const userCred = await auth.createUserWithEmailAndPassword(email, password);
-            const uid = userCred.user.uid;
-            console.log("✅ Auth user created, UID:", uid);
-            
-            const generatedReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-            
-            console.log("📝 Writing user document to Firestore...");
-            await db.collection('users').doc(uid).set({
-                fullName: fullName,
-                email: email,
-                balance: 20,
-                referralCode: generatedReferralCode,
-                referredBy: referralCode,
-                role: 'user',
-                isBlocked: false,
-                canRequestLoan: true,
-                referralBonusGiven: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            // Proceed with registration
+            auth.createUserWithEmailAndPassword(email, password).then(function(userCred) {
+                var uid = userCred.user.uid;
+                var generatedReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+                
+                return db.collection('users').doc(uid).set({
+                    fullName: fullName,
+                    email: email,
+                    balance: 20,
+                    referralCode: generatedReferralCode,
+                    referredBy: referralCode,
+                    role: 'user',
+                    isBlocked: false,
+                    canRequestLoan: true,
+                    referralBonusGiven: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(function() {
+                    return db.collection('transactions').add({
+                        userId: uid,
+                        type: 'bonus',
+                        amount: 20,
+                        description: 'Welcome bonus 20 ZMW',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+            }).then(function() {
+                messageDiv.innerHTML = '<div class="success">✅ Registration successful! Redirecting to dashboard...</div>';
+                setTimeout(function() {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            }).catch(function(error) {
+                console.error("Registration error:", error);
+                var errorMsg = error.message;
+                if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered. Please login.';
+                if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
+                if (error.code === 'auth/weak-password') errorMsg = 'Password too weak. Use at least 6 characters.';
+                messageDiv.innerHTML = '<div class="error">❌ ' + errorMsg + '</div>';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register & Get 20 ZMW';
             });
-            
-            console.log("📝 Recording bonus transaction...");
-            await db.collection('transactions').add({
-                userId: uid,
-                type: 'bonus',
-                amount: 20,
-                description: 'Welcome bonus 20 ZMW',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            messageDiv.innerHTML = '<div class="success">✅ Registration successful! Redirecting to dashboard...</div>';
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1500);
-        } catch (error) {
-            console.error("🔥 Registration error:", error);
-            let errorMsg = error.message;
-            if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered. Please login.';
-            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
-            if (error.code === 'auth/weak-password') errorMsg = 'Password too weak. Use at least 6 characters.';
-            if (error.message.includes("timed out")) errorMsg = 'Referral check timed out. Please try again.';
-            messageDiv.innerHTML = `<div class="error">❌ ${errorMsg}</div>`;
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Register & Get 20 ZMW';
-        }
+        });
     });
 </script>
 </body>
