@@ -565,49 +565,70 @@
 
         // Check purchase limit
         if (purchaseLimit && purchaseLimit > 0) {
-            const existingCountQuery = await db.collection('investments')
-                .where('userId', '==', userId)
-                .where('planName', '==', plan.name)
-                .get();
-            const activeCount = existingCountQuery.size;
-            if (activeCount >= purchaseLimit) {
-                showToast(`❌ You have already reached the limit (${purchaseLimit}) for this plan.`, true);
-                const btns = document.querySelectorAll('.invest-btn');
-                btns.forEach(btn => {
-                    const btnPlan = JSON.parse(btn.dataset.plan);
-                    if (btnPlan.name === plan.name) {
-                        btn.disabled = true;
-                        const parentCard = btn.closest('.plan-card');
-                        if (parentCard) {
-                            const limitDiv = parentCard.querySelector('.plan-limit');
-                            if (limitDiv) limitDiv.innerHTML = '❌ Limit reached';
+            try {
+                const existingCountQuery = await db.collection('investments')
+                    .where('userId', '==', userId)
+                    .where('planName', '==', plan.name)
+                    .get();
+                const activeCount = existingCountQuery.size;
+                if (activeCount >= purchaseLimit) {
+                    showToast(`❌ You have already reached the limit (${purchaseLimit}) for this plan.`, true);
+                    const btns = document.querySelectorAll('.invest-btn');
+                    btns.forEach(btn => {
+                        const btnPlan = JSON.parse(btn.dataset.plan);
+                        if (btnPlan.name === plan.name) {
+                            btn.disabled = true;
+                            const parentCard = btn.closest('.plan-card');
+                            if (parentCard) {
+                                const limitDiv = parentCard.querySelector('.plan-limit');
+                                if (limitDiv) limitDiv.innerHTML = '❌ Limit reached';
+                            }
                         }
-                    }
-                });
+                    });
+                    return;
+                }
+            } catch (err) {
+                console.error("Limit check error:", err);
+                showToast("Error checking purchase limit. Please try again.", true);
                 return;
             }
         }
 
         // Fetch user balance
-        const userDoc = await db.collection('users').doc(userId).get();
-        if (!userDoc.exists) {
-            showToast('User data not found.', true);
+        let userDoc, currentBalance;
+        try {
+            userDoc = await db.collection('users').doc(userId).get();
+            if (!userDoc.exists) {
+                showToast('User data not found.', true);
+                return;
+            }
+            currentBalance = userDoc.data().balance || 0;
+            console.log("Current balance:", currentBalance, "Invest amount:", investAmount);
+        } catch (err) {
+            console.error("Balance fetch error:", err);
+            showToast("Error fetching balance. Please try again.", true);
             return;
         }
-        let currentBalance = userDoc.data().balance || 0;
-        console.log("Current balance:", currentBalance, "Invest amount:", investAmount);
-        
-        // FIX: Allow small floating-point tolerance (0.001 ZMW)
+
+        // Check balance with tolerance
         if (currentBalance + 0.001 < investAmount) {
             showToast(`Insufficient balance! You need ${investAmount} ZMW. Your balance: ${currentBalance.toFixed(2)} ZMW.`, true);
             return;
         }
 
-        const existingInvestments = await db.collection('investments')
-            .where('userId', '==', userId)
-            .limit(1)
-            .get();
-        const isFirstInvestment = existingInvestments.empty;
+        // Check first investment and referral bonus
+        let existingInvestments, isFirstInvestment;
+        try {
+            existingInvestments = await db.collection('investments')
+                .where('userId', '==', userId)
+                .limit(1)
+                .get();
+            isFirstInvestment = existingInvestments.empty;
+        } catch (err) {
+            console.error("First investment check error:", err);
+            isFirstInvestment = false;
+        }
+
         const userData = userDoc.data();
         const referredBy = userData.referredBy;
         const bonusAlreadyGiven = userData.referralBonusGiven === true;
@@ -616,28 +637,40 @@
         let referrerId = null;
         let firstDepositAmount = 0;
         if (canGiveBonus) {
-            const referrerQuery = await db.collection('users')
-                .where('referralCode', '==', referredBy)
-                .limit(1)
-                .get();
-            if (!referrerQuery.empty) {
-                referrerId = referrerQuery.docs[0].id;
-                const depositsSnapshot = await db.collection('deposits')
-                    .where('userId', '==', userId)
-                    .where('status', '==', 'completed')
-                    .orderBy('createdAt', 'asc')
+            try {
+                const referrerQuery = await db.collection('users')
+                    .where('referralCode', '==', referredBy)
                     .limit(1)
                     .get();
-                if (!depositsSnapshot.empty) {
-                    firstDepositAmount = depositsSnapshot.docs[0].data().amount;
+                if (!referrerQuery.empty) {
+                    referrerId = referrerQuery.docs[0].id;
+                    const depositsSnapshot = await db.collection('deposits')
+                        .where('userId', '==', userId)
+                        .where('status', '==', 'completed')
+                        .orderBy('createdAt', 'asc')
+                        .limit(1)
+                        .get();
+                    if (!depositsSnapshot.empty) {
+                        firstDepositAmount = depositsSnapshot.docs[0].data().amount;
+                    }
                 }
+            } catch (err) {
+                console.warn("Could not fetch referrer data, bonus will be skipped:", err);
+                // continue without bonus
             }
         }
 
         const allBtns = document.querySelectorAll('.invest-btn');
         allBtns.forEach(btn => btn.disabled = true);
 
+        // Start the purchase process (without transaction to avoid silent failures)
         try {
+            // 1. Update user balance
+            const newBalance = currentBalance - investAmount;
+            await db.collection('users').doc(userId).update({ balance: newBalance });
+            console.log("User balance updated to", newBalance);
+
+            // 2. Create investment document
             let startDate = new Date();
             if (isWeekend(startDate)) {
                 startDate.setDate(startDate.getDate() + (8 - startDate.getDay()));
@@ -646,59 +679,23 @@
             const businessDays = days;
             const businessEndDate = addWeekdays(startDate, businessDays);
 
-            await db.runTransaction(async (transaction) => {
-                const userRef = db.collection('users').doc(userId);
-                const userSnap = await transaction.get(userRef);
-                // Re‑read balance inside transaction to avoid race conditions
-                let finalBalance = userSnap.data().balance || 0;
-                if (finalBalance + 0.001 < investAmount) throw new Error('Insufficient balance');
-                const newBalance = finalBalance - investAmount;
-                transaction.update(userRef, { balance: newBalance });
-
-                const investmentRef = db.collection('investments').doc();
-                transaction.set(investmentRef, {
-                    userId: userId,
-                    planName: plan.name,
-                    investAmount: investAmount,
-                    dailyReturn: dailyAmount,
-                    days: days,
-                    businessDays: businessDays,
-                    startDate: firebase.firestore.Timestamp.fromDate(startDate),
-                    businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),
-                    lastClaimed: firebase.firestore.Timestamp.fromDate(startDate),
-                    status: 'active',
-                    totalReturn: 0
-                });
-
-                if (canGiveBonus && referrerId) {
-                    const bonusAmount = investAmount * 0.05;
-                    const referrerRef = db.collection('users').doc(referrerId);
-                    const referrerSnap = await transaction.get(referrerRef);
-                    const newReferrerBalance = (referrerSnap.data().balance || 0) + bonusAmount;
-                    transaction.update(referrerRef, { balance: newReferrerBalance });
-                    transaction.update(userRef, { referralBonusGiven: true });
-
-                    const earningRef = db.collection('referralEarnings').doc();
-                    transaction.set(earningRef, {
-                        referrerId: referrerId,
-                        referredUserId: userId,
-                        amount: bonusAmount,
-                        depositAmount: firstDepositAmount,
-                        planAmount: investAmount,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    const txRef = db.collection('transactions').doc();
-                    transaction.set(txRef, {
-                        userId: referrerId,
-                        type: 'referral_bonus',
-                        amount: bonusAmount,
-                        description: `Referral bonus from ${userData.fullName || user.email} (5% of K${investAmount} plan)`,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
+            const investmentRef = db.collection('investments').doc();
+            await investmentRef.set({
+                userId: userId,
+                planName: plan.name,
+                investAmount: investAmount,
+                dailyReturn: dailyAmount,
+                days: days,
+                businessDays: businessDays,
+                startDate: firebase.firestore.Timestamp.fromDate(startDate),
+                businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),
+                lastClaimed: firebase.firestore.Timestamp.fromDate(startDate),
+                status: 'active',
+                totalReturn: 0
             });
+            console.log("Investment created:", investmentRef.id);
 
+            // 3. Record transaction (investment)
             await db.collection('transactions').add({
                 userId: userId,
                 type: 'investment',
@@ -706,9 +703,50 @@
                 description: `Purchased ${plan.name} (J Product)`,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            console.log("Investment transaction recorded");
+
+            // 4. Handle referral bonus if applicable
+            let bonusSuccess = false;
+            if (canGiveBonus && referrerId) {
+                try {
+                    const bonusAmount = investAmount * 0.05;
+                    // Update referrer balance
+                    const referrerRef = db.collection('users').doc(referrerId);
+                    const referrerSnap = await referrerRef.get();
+                    const newReferrerBalance = (referrerSnap.data().balance || 0) + bonusAmount;
+                    await referrerRef.update({ balance: newReferrerBalance });
+                    
+                    // Mark this user as having received the bonus
+                    await db.collection('users').doc(userId).update({ referralBonusGiven: true });
+                    
+                    // Record referral earnings
+                    await db.collection('referralEarnings').add({
+                        referrerId: referrerId,
+                        referredUserId: userId,
+                        amount: bonusAmount,
+                        depositAmount: firstDepositAmount,
+                        planAmount: investAmount,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Record transaction for referrer
+                    await db.collection('transactions').add({
+                        userId: referrerId,
+                        type: 'referral_bonus',
+                        amount: bonusAmount,
+                        description: `Referral bonus from ${userData.fullName || user.email} (5% of K${investAmount} plan)`,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    bonusSuccess = true;
+                    console.log("Referral bonus of", bonusAmount, "given to", referrerId);
+                } catch (bonusErr) {
+                    console.warn("Bonus failed but investment succeeded:", bonusErr);
+                    // Do not revert the investment; just log and continue
+                }
+            }
 
             showFireworks();
-            if (canGiveBonus && referrerId) {
+            if (bonusSuccess) {
                 const bonusAmount = investAmount * 0.05;
                 showToast(`✅ Success! Invested ${investAmount} ZMW. Your referrer earned ${bonusAmount.toFixed(2)} ZMW bonus! Redirecting...`, false);
             } else {
@@ -718,8 +756,10 @@
                 window.location.href = 'income.html';
             }, 2000);
         } catch (err) {
-            console.error("Investment error:", err);
-            showToast(err.message || 'Investment failed. Please try again.', true);
+            console.error("Investment error (full object):", err);
+            let errorMsg = err.message || err.code || "Unknown error";
+            showToast("Investment failed: " + errorMsg, true);
+            // Re-enable buttons
             allBtns.forEach(btn => btn.disabled = false);
         }
     }
