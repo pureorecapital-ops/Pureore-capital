@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <meta name="referrer" content="no-referrer"> <!-- FIX: enables external images -->
+    <meta name="referrer" content="no-referrer">
     <title>J Product | Pureore Capital</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -542,6 +542,7 @@
     }
 
     async function investInPlan(plan) {
+        console.log("investInPlan called with plan:", plan);
         const user = auth.currentUser;
         if (!user) {
             window.location.href = 'login.html';
@@ -562,6 +563,7 @@
             return;
         }
 
+        // Check purchase limit
         if (purchaseLimit && purchaseLimit > 0) {
             const existingCountQuery = await db.collection('investments')
                 .where('userId', '==', userId)
@@ -586,14 +588,18 @@
             }
         }
 
+        // Fetch user balance
         const userDoc = await db.collection('users').doc(userId).get();
         if (!userDoc.exists) {
             showToast('User data not found.', true);
             return;
         }
-        const currentBalance = userDoc.data().balance || 0;
-        if (currentBalance < investAmount) {
-            showToast(`Insufficient balance! You need ${investAmount} ZMW.`, true);
+        let currentBalance = userDoc.data().balance || 0;
+        console.log("Current balance:", currentBalance, "Invest amount:", investAmount);
+        
+        // FIX: Allow small floating-point tolerance (0.001 ZMW)
+        if (currentBalance + 0.001 < investAmount) {
+            showToast(`Insufficient balance! You need ${investAmount} ZMW. Your balance: ${currentBalance.toFixed(2)} ZMW.`, true);
             return;
         }
 
@@ -643,8 +649,10 @@
             await db.runTransaction(async (transaction) => {
                 const userRef = db.collection('users').doc(userId);
                 const userSnap = await transaction.get(userRef);
-                const newBalance = userSnap.data().balance - investAmount;
-                if (newBalance < 0) throw new Error('Insufficient balance');
+                // Re‑read balance inside transaction to avoid race conditions
+                let finalBalance = userSnap.data().balance || 0;
+                if (finalBalance + 0.001 < investAmount) throw new Error('Insufficient balance');
+                const newBalance = finalBalance - investAmount;
                 transaction.update(userRef, { balance: newBalance });
 
                 const investmentRef = db.collection('investments').doc();
@@ -662,9 +670,7 @@
                     totalReturn: 0
                 });
 
-                // ========== UPDATED: Bonus based on PLAN amount ==========
                 if (canGiveBonus && referrerId) {
-                    // 5% of the plan's investment amount
                     const bonusAmount = investAmount * 0.05;
                     const referrerRef = db.collection('users').doc(referrerId);
                     const referrerSnap = await transaction.get(referrerRef);
@@ -677,8 +683,8 @@
                         referrerId: referrerId,
                         referredUserId: userId,
                         amount: bonusAmount,
-                        depositAmount: firstDepositAmount, // optional, for reference
-                        planAmount: investAmount,          // store the plan amount for clarity
+                        depositAmount: firstDepositAmount,
+                        planAmount: investAmount,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
@@ -691,7 +697,6 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                // ========================================================
             });
 
             await db.collection('transactions').add({
@@ -713,7 +718,8 @@
                 window.location.href = 'income.html';
             }, 2000);
         } catch (err) {
-            showToast(err.message, true);
+            console.error("Investment error:", err);
+            showToast(err.message || 'Investment failed. Please try again.', true);
             allBtns.forEach(btn => btn.disabled = false);
         }
     }
@@ -729,8 +735,13 @@
 
     function investHandler(e) {
         const btn = e.currentTarget;
-        const plan = JSON.parse(btn.dataset.plan);
-        investInPlan(plan);
+        try {
+            const plan = JSON.parse(btn.dataset.plan);
+            investInPlan(plan);
+        } catch (err) {
+            console.error("Failed to parse plan data:", err);
+            showToast("Error processing plan. Please refresh.", true);
+        }
     }
 
     auth.onAuthStateChanged(user => {
