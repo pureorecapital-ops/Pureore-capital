@@ -216,6 +216,10 @@
             cursor: pointer;
             margin: 0.5rem 0;
         }
+        .file-upload.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
         .file-upload:hover { background: #2a2a36; }
         .file-upload input { display: none; }
         .file-label {
@@ -397,8 +401,8 @@
         }, 3000);
     }
 
-    // Helper: compress image before upload
-    async function compressImage(file, maxWidth = 800, quality = 0.7) {
+    // Faster compression (600px max width, 0.6 quality)
+    async function compressImage(file, maxWidth = 600, quality = 0.6) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -445,10 +449,12 @@
     const imagePreviewDiv = document.getElementById('imagePreview');
     const uploadProgressDiv = document.getElementById('uploadProgress');
     const progressFill = document.querySelector('#uploadProgress .progress-fill');
+    const fileUploadTrigger = document.getElementById('fileUploadTrigger');
 
     let selectedAmount = null;
     let selectedNetwork = null;
     let currentAgent = null;
+    let isProcessing = false; // Prevent multiple submissions and file selections
 
     let depositRules = {
         requireAmountMatch: true,
@@ -472,11 +478,11 @@
         }
     }
 
-    // ========== HARDCODED AGENTS (corrected name) ==========
+    // ========== HARDCODED AGENTS ==========
     function getHardcodedAgents(network) {
         const mtnAgents = [
             { name: "John Kabwe", number: "0961391022", agentId: null },
-            { name: "Getrude Sompo", number: "0960338304", agentId: null }   // fixed name
+            { name: "Getrude Sompo", number: "0960338304", agentId: null }
         ];
         const airtelAgents = [
             { name: "John Kabwe", number: "0775552002", agentId: null }
@@ -528,14 +534,12 @@
         return merged;
     }
 
-    // Load agents and pick a random one
     async function loadAndSetAgentForNetwork(network) {
         if (!network) return null;
         const firestoreAgents = await loadFirestoreAgents(network);
         const hardcodedAgents = getHardcodedAgents(network);
         const combined = mergeAgents(firestoreAgents, hardcodedAgents);
         if (combined.length === 0) return null;
-        // Random selection from available agents
         const randomIndex = Math.floor(Math.random() * combined.length);
         return combined[randomIndex];
     }
@@ -601,8 +605,12 @@
         return { valid: true, error: null };
     }
 
-    // File upload preview
-    screenshotUpload.addEventListener('change', () => {
+    // File upload preview – disable multiple selections during processing
+    screenshotUpload.addEventListener('change', (e) => {
+        if (isProcessing) {
+            e.preventDefault();
+            return;
+        }
         const file = screenshotUpload.files[0];
         if (file) {
             fileNameDisplay.textContent = file.name;
@@ -618,7 +626,15 @@
             imagePreviewDiv.innerHTML = '';
         }
     });
-    document.getElementById('fileUploadTrigger').addEventListener('click', () => screenshotUpload.click());
+
+    // Prevent multiple file picker triggers
+    fileUploadTrigger.addEventListener('click', (e) => {
+        if (isProcessing) {
+            e.preventDefault();
+            return;
+        }
+        screenshotUpload.click();
+    });
 
     function getFullPhone() {
         const digits = phoneInput.value.trim();
@@ -731,21 +747,23 @@
     loadDepositRules();
 
     verifyBtn.addEventListener('click', async () => {
-        // Prevent multiple clicks
-        if (verifyBtn.disabled) return;
+        // Prevent multiple submissions and file selections
+        if (verifyBtn.disabled || isProcessing) return;
+        isProcessing = true;
         verifyBtn.disabled = true;
+        fileUploadTrigger.classList.add('disabled');
 
         const sms = smsTextarea.value.trim();
         const screenshotFile = screenshotUpload.files[0];
 
         if (!sms) {
             verifyMessage.innerHTML = '<div class="error-msg">❌ Please paste the SMS.</div>';
-            verifyBtn.disabled = false;
+            resetProcessing();
             return;
         }
         if (!screenshotFile) {
             verifyMessage.innerHTML = '<div class="error-msg">❌ Please upload a screenshot.</div>';
-            verifyBtn.disabled = false;
+            resetProcessing();
             return;
         }
 
@@ -754,14 +772,14 @@
         const phone = sessionStorage.getItem('depositPhone');
         if (!amount || !network || !phone) {
             verifyMessage.innerHTML = '<div class="error-msg">Session expired. Please go back and start over.</div>';
-            verifyBtn.disabled = false;
+            resetProcessing();
             return;
         }
 
         const validation = validateSms(sms, amount, network);
         if (!validation.valid) {
             verifyMessage.innerHTML = `<div class="error-msg">${validation.error}</div>`;
-            verifyBtn.disabled = false;
+            resetProcessing();
             return;
         }
 
@@ -771,14 +789,13 @@
             return;
         }
 
-        // Show progress bar
         uploadProgressDiv.style.display = 'block';
         progressFill.style.width = '0%';
-        verifyBtn.innerText = 'Compressing image...';
+        verifyBtn.innerText = 'Compressing...';
         verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Processing...</div>';
 
         try {
-            // 1. Create deposit document (without screenshot URL first)
+            // 1. Create deposit document
             const depositRef = db.collection('deposits').doc();
             const depositData = {
                 userId: user.uid,
@@ -797,36 +814,41 @@
             }
             await depositRef.set(depositData);
 
-            // 2. Compress image
-            verifyBtn.innerText = 'Uploading screenshot...';
-            const compressedFile = await compressImage(screenshotFile, 800, 0.7);
+            // 2. Compress image (faster)
+            verifyBtn.innerText = 'Uploading...';
+            const compressedFile = await compressImage(screenshotFile, 600, 0.6);
             const storageRef = storage.ref(`deposits/${user.uid}/${Date.now()}_${compressedFile.name}`);
 
-            // 3. Upload with progress tracking
             const uploadTask = storageRef.put(compressedFile);
             uploadTask.on('state_changed', (snapshot) => {
                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                 progressFill.style.width = progress + '%';
-                verifyBtn.innerText = `Uploading ${Math.round(progress)}%...`;
+                verifyBtn.innerText = `Uploading ${Math.round(progress)}%`;
             });
             await uploadTask;
             const url = await uploadTask.snapshot.ref.getDownloadURL();
             await depositRef.update({ screenshotUrl: url });
 
             showFireworks();
-            verifyMessage.innerHTML = '<div class="success-msg">✅ Deposit request submitted! Redirecting...</div>';
+            verifyMessage.innerHTML = '<div class="success-msg">✅ Deposit submitted! Redirecting...</div>';
             setTimeout(() => {
                 window.location.href = 'history.html';
-            }, 2000);
+            }, 1500);
         } catch (err) {
             console.error(err);
             verifyMessage.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
-            verifyBtn.disabled = false;
-            verifyBtn.innerText = '🔍 Verify & Complete';
-            uploadProgressDiv.style.display = 'none';
-            progressFill.style.width = '0%';
+            resetProcessing();
         }
     });
+
+    function resetProcessing() {
+        isProcessing = false;
+        verifyBtn.disabled = false;
+        fileUploadTrigger.classList.remove('disabled');
+        uploadProgressDiv.style.display = 'none';
+        progressFill.style.width = '0%';
+        verifyBtn.innerText = '🔍 Verify & Complete';
+    }
 </script>
 </body>
 </html>
