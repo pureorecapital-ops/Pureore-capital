@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     <style>
+        /* ... (same styles as previous, no changes) ... */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
@@ -401,7 +402,6 @@
         }, 3000);
     }
 
-    // Faster compression (600px max width, 0.6 quality)
     async function compressImage(file, maxWidth = 600, quality = 0.6) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -454,7 +454,8 @@
     let selectedAmount = null;
     let selectedNetwork = null;
     let currentAgent = null;
-    let isProcessing = false; // Prevent multiple submissions and file selections
+    let isProcessing = false;
+    let selectedFile = null; // Store the selected file object
 
     let depositRules = {
         requireAmountMatch: true,
@@ -478,7 +479,6 @@
         }
     }
 
-    // ========== HARDCODED AGENTS ==========
     function getHardcodedAgents(network) {
         const mtnAgents = [
             { name: "John Kabwe", number: "0961391022", agentId: null },
@@ -496,7 +496,6 @@
         return [];
     }
 
-    // ========== LOAD FIRESTORE AGENTS ==========
     async function loadFirestoreAgents(network) {
         try {
             const agentsSnap = await db.collection('agents').where('status', '==', 'active').get();
@@ -605,34 +604,28 @@
         return { valid: true, error: null };
     }
 
-    // File upload preview – disable multiple selections during processing
-    screenshotUpload.addEventListener('change', (e) => {
-        if (isProcessing) {
-            e.preventDefault();
-            return;
-        }
-        const file = screenshotUpload.files[0];
-        if (file) {
-            fileNameDisplay.textContent = file.name;
-            const reader = new FileReader();
-            reader.onload = e => {
-                imagePreviewDiv.innerHTML = `<img src="${e.target.result}" alt="Screenshot preview">`;
-                imagePreviewDiv.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        } else {
-            fileNameDisplay.textContent = 'No file chosen';
-            imagePreviewDiv.classList.add('hidden');
-            imagePreviewDiv.innerHTML = '';
-        }
-    });
+    // File selection handler – stores the file and shows preview immediately
+    function onFileSelected(event) {
+        if (isProcessing) return;
+        const file = event.target.files[0];
+        if (!file) return;
+        selectedFile = file;
+        fileNameDisplay.textContent = file.name;
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imagePreviewDiv.innerHTML = `<img src="${e.target.result}" alt="Screenshot preview">`;
+            imagePreviewDiv.classList.remove('hidden');
+            verifyMessage.innerHTML = '';
+        };
+        reader.readAsDataURL(file);
+        // Reset the input value so that selecting the same file again will trigger change
+        screenshotUpload.value = '';
+    }
 
-    // Prevent multiple file picker triggers
-    fileUploadTrigger.addEventListener('click', (e) => {
-        if (isProcessing) {
-            e.preventDefault();
-            return;
-        }
+    screenshotUpload.addEventListener('change', onFileSelected);
+    fileUploadTrigger.addEventListener('click', () => {
+        if (isProcessing) return;
         screenshotUpload.click();
     });
 
@@ -739,6 +732,13 @@
         if (!step2Card.classList.contains('hidden')) {
             step2Card.classList.add('hidden');
             step1Card.classList.remove('hidden');
+            // Reset file selection when going back
+            selectedFile = null;
+            imagePreviewDiv.classList.add('hidden');
+            imagePreviewDiv.innerHTML = '';
+            fileNameDisplay.textContent = 'No file chosen';
+            verifyMessage.innerHTML = '';
+            screenshotUpload.value = '';
         } else {
             window.location.href = 'dashboard.html';
         }
@@ -747,23 +747,14 @@
     loadDepositRules();
 
     verifyBtn.addEventListener('click', async () => {
-        // Prevent multiple submissions and file selections
         if (verifyBtn.disabled || isProcessing) return;
-        isProcessing = true;
-        verifyBtn.disabled = true;
-        fileUploadTrigger.classList.add('disabled');
-
         const sms = smsTextarea.value.trim();
-        const screenshotFile = screenshotUpload.files[0];
-
         if (!sms) {
             verifyMessage.innerHTML = '<div class="error-msg">❌ Please paste the SMS.</div>';
-            resetProcessing();
             return;
         }
-        if (!screenshotFile) {
+        if (!selectedFile) {
             verifyMessage.innerHTML = '<div class="error-msg">❌ Please upload a screenshot.</div>';
-            resetProcessing();
             return;
         }
 
@@ -772,14 +763,12 @@
         const phone = sessionStorage.getItem('depositPhone');
         if (!amount || !network || !phone) {
             verifyMessage.innerHTML = '<div class="error-msg">Session expired. Please go back and start over.</div>';
-            resetProcessing();
             return;
         }
 
         const validation = validateSms(sms, amount, network);
         if (!validation.valid) {
             verifyMessage.innerHTML = `<div class="error-msg">${validation.error}</div>`;
-            resetProcessing();
             return;
         }
 
@@ -789,13 +778,16 @@
             return;
         }
 
+        isProcessing = true;
+        verifyBtn.disabled = true;
+        fileUploadTrigger.classList.add('disabled');
         uploadProgressDiv.style.display = 'block';
         progressFill.style.width = '0%';
         verifyBtn.innerText = 'Compressing...';
         verifyMessage.innerHTML = '<div class="success-msg" style="color:#2ecc71;">Processing...</div>';
 
         try {
-            // 1. Create deposit document
+            // Create deposit document
             const depositRef = db.collection('deposits').doc();
             const depositData = {
                 userId: user.uid,
@@ -814,11 +806,10 @@
             }
             await depositRef.set(depositData);
 
-            // 2. Compress image (faster)
+            // Compress and upload
             verifyBtn.innerText = 'Uploading...';
-            const compressedFile = await compressImage(screenshotFile, 600, 0.6);
+            const compressedFile = await compressImage(selectedFile, 600, 0.6);
             const storageRef = storage.ref(`deposits/${user.uid}/${Date.now()}_${compressedFile.name}`);
-
             const uploadTask = storageRef.put(compressedFile);
             uploadTask.on('state_changed', (snapshot) => {
                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
@@ -837,18 +828,15 @@
         } catch (err) {
             console.error(err);
             verifyMessage.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
-            resetProcessing();
+            // reset on error
+            isProcessing = false;
+            verifyBtn.disabled = false;
+            fileUploadTrigger.classList.remove('disabled');
+            uploadProgressDiv.style.display = 'none';
+            progressFill.style.width = '0%';
+            verifyBtn.innerText = '🔍 Verify & Complete';
         }
     });
-
-    function resetProcessing() {
-        isProcessing = false;
-        verifyBtn.disabled = false;
-        fileUploadTrigger.classList.remove('disabled');
-        uploadProgressDiv.style.display = 'none';
-        progressFill.style.width = '0%';
-        verifyBtn.innerText = '🔍 Verify & Complete';
-    }
 </script>
 </body>
 </html>
