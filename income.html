@@ -379,10 +379,12 @@
         return result;
     }
 
-    function businessDaysElapsed(startDate, endDate) {
+    // FIXED: Count only COMPLETED business days (exclude the start day)
+    function businessDaysElapsed(startDate, now) {
         let count = 0;
         let current = new Date(startDate);
-        while (current <= endDate) {
+        current.setDate(current.getDate() + 1); // start from the day after startDate
+        while (current <= now) {
             if (!isWeekend(current)) count++;
             current.setDate(current.getDate() + 1);
         }
@@ -488,6 +490,7 @@
         const now = new Date();
         let html = '';
         for (const inv of investments) {
+            // days left based on COMPLETED business days
             const elapsedDays = businessDaysElapsed(inv.startDate, now);
             const totalDays = inv.businessDays;
             const daysLeft = Math.max(0, totalDays - elapsedDays);

@@ -409,6 +409,10 @@
     <div id="usersTab" class="tab-content">
         <div class="admin-card">
             <div class="card-title">👥 All Users</div>
+            <div style="margin-bottom: 1rem;">
+                <button id="blockAllUsersBtn" class="btn-small warning">🚫 Block All Non-Admin Users</button>
+                <button id="unblockAllUsersBtn" class="btn-small success">✅ Unblock All Non-Admin Users</button>
+            </div>
             <div class="users-table-wrapper"><div id="usersList">Loading...</div></div>
         </div>
     </div>
@@ -635,7 +639,7 @@
                 </td>
             </tr>`;
         }
-        html += `</tbody></table>`;
+        html += `</tbody><tr>`;
         document.getElementById('agentsList').innerHTML = html || '<p>No agents yet.</p>';
     }
 
@@ -745,7 +749,12 @@
         } else {
             commissionsSnap.forEach(doc => {
                 const c = doc.data();
-                html += `<tr><td>${c.depositId}</td><td>${formatMoney(c.depositAmount)}</td><td>${formatMoney(c.commissionAmount)}</td><td>${c.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+                html += `<tr>
+                    <td>${c.depositId}</td>
+                    <td>${formatMoney(c.depositAmount)}</td>
+                    <td>${formatMoney(c.commissionAmount)}</td>
+                    <td>${c.createdAt?.toDate().toLocaleString() || 'N/A'}</td>
+                </tr>`;
             });
         }
         html += `</tbody></table>`;
@@ -754,7 +763,7 @@
         document.getElementById('agentEarningsSummary').innerHTML = `<strong>Total Earnings: ${formatMoney(earnings)}</strong>`;
     };
 
-    // ========== MATCH AGENT FROM SMS (helper) ==========
+    // ========== MATCH AGENT FROM SMS ==========
     async function matchAgentFromSms(smsText) {
         if (!smsText) return null;
         const agentsSnap = await db.collection('agents').get();
@@ -770,59 +779,31 @@
     }
     window.matchAgentFromSms = matchAgentFromSms;
 
-    // ========== FIXED APPROVE DEPOSIT (no transaction, sequential with error handling) ==========
+    // ========== FIXED APPROVE DEPOSIT ==========
     window.approveDeposit = async (depositId, userId, amount) => {
         console.log("🔍 Approving deposit:", depositId, userId, amount);
         try {
             const depositRef = db.collection('deposits').doc(depositId);
             const depositSnap = await depositRef.get();
-            if (!depositSnap.exists) {
-                showToast('Deposit not found', true);
-                return;
-            }
+            if (!depositSnap.exists) { showToast('Deposit not found', true); return; }
             const deposit = depositSnap.data();
-            if (deposit.status === 'completed') {
-                showToast('Deposit already approved', true);
-                return;
-            }
+            if (deposit.status === 'completed') { showToast('Deposit already approved', true); return; }
 
-            // 1. Update user balance
             const userRef = db.collection('users').doc(userId);
             const userSnap = await userRef.get();
-            if (!userSnap.exists) {
-                showToast('User not found', true);
-                return;
-            }
+            if (!userSnap.exists) { showToast('User not found', true); return; }
             const currentBalance = userSnap.data().balance || 0;
             const newBalance = currentBalance + amount;
             await userRef.update({ balance: newBalance });
-            console.log(`✅ User balance updated: ${currentBalance} → ${newBalance}`);
-
-            // 2. Update deposit status
-            await depositRef.update({
-                status: 'completed',
-                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            console.log("✅ Deposit marked as completed");
-
-            // 3. Record transaction
+            await depositRef.update({ status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
             await db.collection('transactions').add({
-                userId: userId,
-                type: 'deposit',
-                amount: amount,
-                description: `Deposit of K${amount} approved`,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                userId: userId, type: 'deposit', amount: amount, description: `Deposit of K${amount} approved`, createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            console.log("✅ Transaction recorded");
 
-            // 4. Agent commission handling (if agentId exists or can be matched)
             let agentId = deposit.agentId || null;
             if (!agentId && deposit.smsText) {
                 agentId = await matchAgentFromSms(deposit.smsText);
-                if (agentId) {
-                    await depositRef.update({ agentId: agentId });
-                    console.log(`✅ Agent matched from SMS: ${agentId}`);
-                }
+                if (agentId) await depositRef.update({ agentId: agentId });
             }
             if (agentId) {
                 const agentRef = db.collection('agents').doc(agentId);
@@ -831,38 +812,115 @@
                     const agent = agentSnap.data();
                     const commissionAmount = (amount * agent.commissionRate) / 100;
                     const currentEarnings = agent.totalEarnings || 0;
-                    const newEarnings = currentEarnings + commissionAmount;
-                    await agentRef.update({ totalEarnings: newEarnings });
+                    await agentRef.update({ totalEarnings: currentEarnings + commissionAmount });
                     await db.collection('commissions').add({
-                        agentId: agentId,
-                        depositId: depositId,
-                        depositAmount: amount,
-                        commissionAmount: commissionAmount,
-                        commissionRate: agent.commissionRate,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        agentId: agentId, depositId: depositId, depositAmount: amount, commissionAmount: commissionAmount, commissionRate: agent.commissionRate, createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    console.log(`✅ Agent ${agent.name} earned K${commissionAmount} commission`);
                     showToast(`Deposit approved + K${commissionAmount} commission to agent`, false);
-                } else {
-                    showToast('Deposit approved (agent not found)', false);
-                }
-            } else {
-                showToast('Deposit approved successfully', false);
-            }
+                } else showToast('Deposit approved (agent not found)', false);
+            } else showToast('Deposit approved successfully', false);
 
-            // 5. Refresh all relevant UI
-            await loadPendingDeposits();
-            await loadDepositsHistory();
+            await loadPendingDeposits(); await loadDepositsHistory(); await loadStats(); await loadUsers(); if (typeof loadAgents === 'function') await loadAgents();
+        } catch (error) { console.error("❌ Approval error:", error); showToast('Error approving deposit: ' + error.message, true); }
+    };
+
+    // ========== FIXED APPROVE WITHDRAWAL (NO BALANCE DEDUCTION - already deducted at submission) ==========
+    window.approveWithdrawal = async (withdrawalId, userId, amount) => {
+        console.log("✅ Approving withdrawal:", withdrawalId, userId, amount);
+        try {
+            const withdrawalRef = db.collection('withdrawals').doc(withdrawalId);
+            const withdrawalSnap = await withdrawalRef.get();
+            if (!withdrawalSnap.exists) { showToast('Withdrawal not found', true); return; }
+            const withdrawal = withdrawalSnap.data();
+            if (withdrawal.status === 'completed') { showToast('Withdrawal already approved', true); return; }
+
+            // Do NOT deduct balance again – already deducted when request was submitted
+            await withdrawalRef.update({
+                status: 'completed',
+                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await db.collection('transactions').add({
+                userId: userId,
+                type: 'withdrawal',
+                amount: amount,
+                description: `Withdrawal of K${amount} approved`,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast('Withdrawal approved successfully', false);
+            await loadPendingWithdrawals();
+            await loadWithdrawalsHistory();
             await loadStats();
             await loadUsers();
-            if (typeof loadAgents === 'function') await loadAgents();
         } catch (error) {
-            console.error("❌ Approval error:", error);
-            showToast('Error approving deposit: ' + error.message, true);
+            console.error("❌ Withdrawal approval error:", error);
+            showToast('Error approving withdrawal: ' + error.message, true);
         }
     };
 
-    // ========== ALL EXISTING FUNCTIONS (unchanged) ==========
+    // ========== FIXED REJECT WITHDRAWAL (REFUND the deducted amount) ==========
+    window.rejectWithdrawal = async (withdrawalId) => {
+        try {
+            const withdrawalRef = db.collection('withdrawals').doc(withdrawalId);
+            const withdrawalSnap = await withdrawalRef.get();
+            if (!withdrawalSnap.exists) { showToast('Withdrawal not found', true); return; }
+            const withdrawal = withdrawalSnap.data();
+            if (withdrawal.status !== 'pending') { showToast('Withdrawal already processed', true); return; }
+
+            // Refund the full amount back to user balance
+            const userRef = db.collection('users').doc(withdrawal.userId);
+            const userSnap = await userRef.get();
+            if (!userSnap.exists) { showToast('User not found', true); return; }
+            const currentBalance = userSnap.data().balance || 0;
+            const refundAmount = withdrawal.amount; // full amount requested (before fee)
+            await userRef.update({ balance: currentBalance + refundAmount });
+
+            // Mark withdrawal as rejected
+            await withdrawalRef.update({
+                status: 'rejected',
+                rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Record a transaction for the refund
+            await db.collection('transactions').add({
+                userId: withdrawal.userId,
+                type: 'refund',
+                amount: refundAmount,
+                description: `Withdrawal of K${refundAmount} rejected - amount refunded`,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast('Withdrawal rejected and amount refunded to user', false);
+            await loadPendingWithdrawals();
+            await loadWithdrawalsHistory();
+            await loadStats();
+            await loadUsers();
+        } catch (error) {
+            console.error("❌ Rejection error:", error);
+            showToast('Error rejecting withdrawal: ' + error.message, true);
+        }
+    };
+
+    // ========== MASS BLOCK / UNBLOCK USERS ==========
+    async function blockAllNonAdminUsers(blockStatus) {
+        if (!confirm(blockStatus ? "⚠️ Block ALL non-admin users? They will not be able to log in or access dashboard." : "✅ Unblock ALL non-admin users?")) return;
+        const usersSnap = await db.collection('users').where('role', '==', 'user').get();
+        let count = 0;
+        const batch = db.batch();
+        usersSnap.forEach(doc => {
+            batch.update(doc.ref, { isBlocked: blockStatus });
+            count++;
+        });
+        await batch.commit();
+        showToast(`${blockStatus ? 'Blocked' : 'Unblocked'} ${count} users.`, false);
+        loadUsers();
+    }
+
+    document.getElementById('blockAllUsersBtn').addEventListener('click', () => blockAllNonAdminUsers(true));
+    document.getElementById('unblockAllUsersBtn').addEventListener('click', () => blockAllNonAdminUsers(false));
+
+    // ========== ALL EXISTING FUNCTIONS (unchanged except withdrawal functions replaced) ==========
     function setupPendingListeners() {
         db.collection('deposits').where('status', '==', 'pending').onSnapshot(snap => {
             const count = snap.size;
@@ -959,10 +1017,7 @@
         for (const doc of pending.docs) {
             const d = doc.data();
             const user = await db.collection('users').doc(d.userId).get();
-            let smsPreview = 'N/A';
-            if (d.smsText) {
-                smsPreview = d.smsText.length > 150 ? d.smsText.substring(0,150)+'...' : d.smsText;
-            }
+            let smsPreview = d.smsText ? (d.smsText.length > 150 ? d.smsText.substring(0,150)+'...' : d.smsText) : 'N/A';
             const dateTime = d.createdAt ? d.createdAt.toDate().toLocaleString() : 'N/A';
             html += `<tr>
                 <td>${escapeHtml(user.data()?.fullName || d.userId)}</td>
@@ -974,51 +1029,66 @@
                 <td><button class="btn-small success" onclick="approveDeposit('${doc.id}', '${d.userId}', ${d.amount})">Approve</button> <button class="btn-small danger" onclick="rejectDeposit('${doc.id}')">Reject</button></td>
             </tr>`;
         }
-        document.getElementById('pendingDepositsList').innerHTML = html || '</td><td colspan="7">No pending deposits</td></tr>';
+        document.getElementById('pendingDepositsList').innerHTML = html || '<tr><td colspan="7">No pending deposits</td></tr>';
     }
     window.rejectDeposit = async (depositId) => { await db.collection('deposits').doc(depositId).update({ status: 'rejected' }); loadPendingDeposits(); loadDepositsHistory(); };
     async function loadDepositsHistory() {
         const all = await db.collection('deposits').orderBy('createdAt', 'desc').get();
-        let html = `<tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+        let html = `<tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th><tr>`;
         for (const doc of all.docs) {
             const d = doc.data();
             const user = await db.collection('users').doc(d.userId).get();
-            html += `<tr><td>${escapeHtml(user.data()?.fullName || d.userId)}</td><td>${formatMoney(d.amount)}</td><td>${d.status}</td><td>${d.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+            html += `<tr>
+                <td>${escapeHtml(user.data()?.fullName || d.userId)}</td>
+                <td>${formatMoney(d.amount)}</td>
+                <td>${d.status}</td>
+                <td>${d.createdAt?.toDate().toLocaleString() || 'N/A'}</td>
+            </tr>`;
         }
-        document.getElementById('depositsHistory').innerHTML = html || '<tr><td colspan="4">No deposits</td></tr>';
+        document.getElementById('depositsHistory').innerHTML = html || '<td><td colspan="4">No deposits</td></tr>';
     }
 
+    // ===== UPDATED: Show Account Name in Pending Withdrawals =====
     async function loadPendingWithdrawals() {
         const pending = await db.collection('withdrawals').where('status', '==', 'pending').get();
-        let html = `<table><th>User</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>`;
+        let html = `<table><th>User</th><th>Account Name</th><th>Amount</th><th>Net After Fee</th><th>Network</th><th>Contact</th><th>Actions</th></tr>`;
         for (const doc of pending.docs) {
             const w = doc.data();
             const user = await db.collection('users').doc(w.userId).get();
+            const accountName = w.accountName || '-';
             html += `<tr>
                 <td>${escapeHtml(user.data()?.fullName || w.userId)}</td>
+                <td>${escapeHtml(accountName)}</td>
                 <td>${formatMoney(w.amount)}</td>
                 <td>${formatMoney(w.netAmount)}</td>
                 <td>${w.network}</td>
                 <td>${w.phone || w.cardNumber}</td>
-                <td><button class="btn-small success" onclick="approveWithdrawal('${doc.id}', '${w.userId}', ${w.amount})">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal('${doc.id}')">Reject</button></td>
+                <td>
+                    <button class="btn-small success" onclick="approveWithdrawal('${doc.id}', '${w.userId}', ${w.amount})">Approve</button>
+                    <button class="btn-small danger" onclick="rejectWithdrawal('${doc.id}')">Reject</button>
+                </td>
             </tr>`;
         }
-        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="6">No pending withdrawals</td></tr>';
+        document.getElementById('pendingWithdrawalsList').innerHTML = html || '<tr><td colspan="7">No pending withdrawals</td></tr>';
     }
-    window.approveWithdrawal = async (withdrawalId, userId, amount) => {
-        await db.runTransaction(async t => { const userRef = db.collection('users').doc(userId); const userSnap = await t.get(userRef); if((userSnap.data().balance || 0) < amount) throw new Error('Insufficient balance'); t.update(userRef, { balance: userSnap.data().balance - amount }); t.update(db.collection('withdrawals').doc(withdrawalId), { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() }); });
-        showToast('Withdrawal approved'); loadPendingWithdrawals(); loadWithdrawalsHistory(); loadStats(); loadUsers();
-    };
-    window.rejectWithdrawal = async (withdrawalId) => { await db.collection('withdrawals').doc(withdrawalId).update({ status: 'rejected' }); loadPendingWithdrawals(); loadWithdrawalsHistory(); };
+
+    // ===== UPDATED: Show Account Name in Withdrawal History =====
     async function loadWithdrawalsHistory() {
         const all = await db.collection('withdrawals').orderBy('createdAt', 'desc').get();
-        let html = `<tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+        let html = `<tr><th>User</th><th>Account Name</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
         for (const doc of all.docs) {
             const w = doc.data();
             const user = await db.collection('users').doc(w.userId).get();
-            html += `<tr><td>${escapeHtml(user.data()?.fullName || w.userId)}</td><td>${formatMoney(w.amount)}</td><td>${w.status}</td><td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td></tr>`;
+            const accountName = w.accountName || '-';
+            html += `<tr>
+                <td>${escapeHtml(user.data()?.fullName || w.userId)}</td>
+                <td>${escapeHtml(accountName)}</td>
+                <td>${formatMoney(w.amount)}</td>
+                <td>${w.status}</td>
+                <td>${w.createdAt?.toDate().toLocaleString() || 'N/A'}</td>
+            </tr>`;
         }
-        document.getElementById('withdrawalsHistory').innerHTML = html || '<table><td colspan="4">No withdrawals</td></tr>';
+        document.getElementById('withdrawalsHistory').innerHTML = html || '<tr><td colspan="5">No withdrawals</td></tr>';
     }
 
     async function loadMkvipPlans() { loadPlans('mkvipPlans', 'mkvipPlansList'); }
@@ -1154,7 +1224,11 @@
     async function loadNews() {
         const news = await db.collection('news').orderBy('createdAt', 'desc').get();
         let html = `<tr><th>Title</th><th>Image</th><th>Actions</th></tr>`;
-        news.forEach(doc => { const n = doc.data(); html += `<tr><td>${escapeHtml(n.title)}</td><td>${n.imageUrl ? '<a href="'+n.imageUrl+'" target="_blank">View</a>' : '-'}</td><td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td></tr>`; });
+        news.forEach(doc => { const n = doc.data(); html += `<tr>
+            <td>${escapeHtml(n.title)}</td>
+            <td>${n.imageUrl ? '<a href="'+n.imageUrl+'" target="_blank">View</a>' : '-'}</td>
+            <td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td>
+        </tr>`; });
         document.getElementById('newsList').innerHTML = html || '<tr><td colspan="3">No news</td></tr>';
     }
     window.openAddNewsModal = () => { document.getElementById('addNewsModal').style.display = 'flex'; };
@@ -1184,7 +1258,12 @@
     async function loadTreasureCodes() {
         const codes = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
         let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
-        codes.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.code}</td><td>${c.amount}</td><td>${c.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td></tr>`; });
+        codes.forEach(doc => { const c = doc.data(); html += `<tr>
+            <td>${c.code}</td>
+            <td>${c.amount}</td>
+            <td>${c.used ? 'Yes' : 'No'}</td>
+            <td><button class="btn-small danger" onclick="deleteTreasureCode('${doc.id}')">Delete</button></td>
+        </tr>`; });
         document.getElementById('treasureCodesList').innerHTML = html || '<tr><td colspan="4">No codes</td></tr>';
     }
     window.openAddTreasureModal = () => { document.getElementById('addTreasureModal').style.display = 'flex'; };
@@ -1194,7 +1273,12 @@
     async function loadVouchers() {
         const vouchers = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
         let html = `<tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr>`;
-        vouchers.forEach(doc => { const v = doc.data(); html += `<tr><td>${v.code}</td><td>${v.amount}</td><td>${v.used ? 'Yes' : 'No'}</td><td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td></tr>`; });
+        vouchers.forEach(doc => { const v = doc.data(); html += `<tr>
+            <td>${v.code}</td>
+            <td>${v.amount}</td>
+            <td>${v.used ? 'Yes' : 'No'}</td>
+            <td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td>
+        </tr>`; });
         document.getElementById('vouchersList').innerHTML = html || '<tr><td colspan="4">No vouchers</td></tr>';
     }
     window.deleteVoucher = async (id) => { if(confirm('Delete?')) { await db.collection('vouchers').doc(id).delete(); loadVouchers(); } };
@@ -1242,13 +1326,8 @@
             const randomPart = Math.random().toString(36).substring(2, 10).toLowerCase();
             const code = `${amount}.${randomPart}`;
             await db.collection('vouchers').add({
-                code: code,
-                amount: amount,
-                used: false,
-                createdForUserId: userDoc.id,
-                agentNumber: agentNumber,
-                agentName: agentName,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                code: code, amount: amount, used: false, createdForUserId: userDoc.id,
+                agentNumber: agentNumber, agentName: agentName, createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             document.getElementById('manualVoucherResult').innerHTML = `✅ Voucher code: <strong>${code}</strong> (Amount: ${amount.toFixed(2)} ZMW)`;
             document.getElementById('manualVoucherResult').style.display = 'block';
@@ -1329,7 +1408,11 @@
     async function loadAdmins() {
         const admins = await db.collection('users').where('role', '==', 'admin').get();
         let html = `<table><th>Email</th><th>Name</th><th>Actions</th></tr>`;
-        admins.forEach(doc => { const a = doc.data(); html += `<tr><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.fullName || '-')}</td><td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td></tr>`; });
+        admins.forEach(doc => { const a = doc.data(); html += `<tr>
+            <td>${escapeHtml(a.email)}</td>
+            <td>${escapeHtml(a.fullName || '-')}</td>
+            <td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td>
+        </tr>`; });
         document.getElementById('adminsList').innerHTML = html || '<tr><td colspan="3">No admins</td></tr>';
     }
     window.openAddAdminModal = () => { document.getElementById('addAdminModal').style.display = 'flex'; };
@@ -1462,39 +1545,18 @@
                         const generatedReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
                         const role = authUser.email && authUser.email.includes('admin') ? 'admin' : 'user';
                         await db.collection('users').doc(authUser.uid).set({
-                            fullName: fullName,
-                            email: authUser.email,
-                            balance: 0,
-                            referralCode: generatedReferralCode,
-                            referredBy: null,
-                            role: role,
-                            isBlocked: false,
-                            canRequestLoan: true,
-                            referralBonusGiven: false,
+                            fullName: fullName, email: authUser.email, balance: 0, referralCode: generatedReferralCode,
+                            referredBy: null, role: role, isBlocked: false, canRequestLoan: true, referralBonusGiven: false,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         created++;
-                    } catch (err) {
-                        console.error(`Failed to create document for ${authUser.email}:`, err);
-                        failed++;
-                    }
+                    } catch (err) { console.error(`Failed to create document for ${authUser.email}:`, err); failed++; }
                 }
             }
-            if (created > 0) {
-                msgDiv.innerHTML = `<span style="color:#2ecc71;">✅ Created ${created} missing user documents. ${failed} failed.</span>`;
-                showToast(`${created} missing documents created.`, false);
-                loadUsers(); loadStats();
-            } else {
-                msgDiv.innerHTML = `<span style="color:#f1c40f;">ℹ️ No missing documents found. All Auth users have Firestore documents.</span>`;
-            }
-        } catch (err) {
-            console.error(err);
-            msgDiv.innerHTML = `<span style="color:#ef4444;">❌ Error: ${err.message}. Make sure you are logged in as admin and have the required permissions.</span>`;
-            showToast(err.message, true);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = '🔧 Fix Missing Documents';
-        }
+            if (created > 0) { msgDiv.innerHTML = `<span style="color:#2ecc71;">✅ Created ${created} missing user documents. ${failed} failed.</span>`; showToast(`${created} missing documents created.`, false); loadUsers(); loadStats(); }
+            else { msgDiv.innerHTML = `<span style="color:#f1c40f;">ℹ️ No missing documents found. All Auth users have Firestore documents.</span>`; }
+        } catch (err) { console.error(err); msgDiv.innerHTML = `<span style="color:#ef4444;">❌ Error: ${err.message}. Make sure you are logged in as admin and have the required permissions.</span>`; showToast(err.message, true); }
+        finally { btn.disabled = false; btn.innerText = '🔧 Fix Missing Documents'; }
     });
 </script>
 </body>
