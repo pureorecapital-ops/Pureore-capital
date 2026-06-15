@@ -104,6 +104,16 @@
             transform: scale(1.02);
             filter: brightness(1.05);
         }
+        .warning-block {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid #ef4444;
+            border-radius: 20px;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #ef4444;
+            font-size: 0.9rem;
+        }
         .tabs {
             display: flex;
             gap: 1rem;
@@ -293,6 +303,12 @@
         <button id="claimAllBtn" class="claim-all-btn" disabled>💰 Claim All Available</button>
     </div>
 
+    <!-- Warning banner (hidden by default) -->
+    <div id="claimBlockWarning" class="warning-block" style="display: none;">
+        ⚠️ You have only 1 active plan and it ends in 2 days or less.<br>
+        Please purchase another plan (Mk Vip or J Product) to continue claiming daily income.
+    </div>
+
     <div class="tabs">
         <button class="tab-btn active" data-tab="normal">📈 Active</button>
         <button class="tab-btn" data-tab="expired">⏰ Expired</button>
@@ -379,11 +395,11 @@
         return result;
     }
 
-    // FIXED: Count only COMPLETED business days (exclude the start day)
+    // Count only COMPLETED business days (exclude start day)
     function businessDaysElapsed(startDate, now) {
         let count = 0;
         let current = new Date(startDate);
-        current.setDate(current.getDate() + 1); // start from the day after startDate
+        current.setDate(current.getDate() + 1);
         while (current <= now) {
             if (!isWeekend(current)) count++;
             current.setDate(current.getDate() + 1);
@@ -405,6 +421,7 @@
     let currentUserId = null;
     let refreshInterval = null;
     let currentInvestments = [];
+    let claimingBlocked = false;  // global flag
 
     window.addEventListener('beforeunload', () => {
         if (refreshInterval) clearInterval(refreshInterval);
@@ -425,6 +442,21 @@
             }
         }, 60000);
     });
+
+    // ========== NEW: Check if claiming should be blocked ==========
+    // Block when: activePlansCount < 2 AND any plan has daysLeft <= 2
+    function isClaimingBlocked(activeInvestments) {
+        if (activeInvestments.length >= 2) return false;
+        if (activeInvestments.length === 0) return false; // nothing to claim anyway
+        const now = new Date();
+        for (const inv of activeInvestments) {
+            const elapsedDays = businessDaysElapsed(inv.startDate, now);
+            const totalDays = inv.businessDays;
+            const daysLeft = Math.max(0, totalDays - elapsedDays);
+            if (daysLeft <= 2) return true;
+        }
+        return false;
+    }
 
     async function loadInvestments() {
         if (!currentUserId) return;
@@ -470,9 +502,15 @@
             }
 
             currentInvestments = active;
+            claimingBlocked = isClaimingBlocked(active);
             renderActive(active);
             renderExpired(expired);
             updateTotalPendingAndClaimAll(active);
+            // Show/hide warning banner
+            const warningDiv = document.getElementById('claimBlockWarning');
+            if (warningDiv) {
+                warningDiv.style.display = claimingBlocked ? 'block' : 'none';
+            }
         } catch (err) {
             console.error("Error loading investments:", err);
             const container = document.getElementById('activeInvestments');
@@ -490,13 +528,13 @@
         const now = new Date();
         let html = '';
         for (const inv of investments) {
-            // days left based on COMPLETED business days
             const elapsedDays = businessDaysElapsed(inv.startDate, now);
             const totalDays = inv.businessDays;
             const daysLeft = Math.max(0, totalDays - elapsedDays);
 
             const claimStatus = getClaimStatus(inv, now);
-            const canClaim = claimStatus.available;
+            let canClaim = claimStatus.available;
+            if (claimingBlocked) canClaim = false;
             const hoursRemaining = claimStatus.hoursRemaining;
             const earnedSoFar = claimStatus.earnedSoFar;
             const dailyAmount = claimStatus.dailyAmount;
@@ -518,14 +556,14 @@
                             <div class="progress-fill" style="width: ${progressPercent}%;"></div>
                         </div>
                         <div class="progress-text">
-                            ${canClaim ? '✓ Ready to claim' : `⏱️ Next claim in ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`}
+                            ${canClaim ? '✓ Ready to claim' : (claimingBlocked ? '⛔ Claiming disabled – buy another plan' : `⏱️ Next claim in ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`)}
                         </div>
                         <div class="pending-amount">
                             💰 Earned so far: ${formatMoney(earnedSoFar)} / ${formatMoney(dailyAmount)}
                         </div>
                     </div>
                     <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${dailyAmount}">
-                        ${canClaim ? '💰 Claim Daily Income' : '⏳ Wait for next claim'}
+                        ${canClaim ? '💰 Claim Daily Income' : (claimingBlocked ? '⛔ Blocked' : '⏳ Wait for next claim')}
                     </button>
                     ${isWeekend(now) ? '<div class="weekend-warning">⛔ Claiming only available Monday–Friday. Come back on a weekday.</div>' : ''}
                 </div>
@@ -533,6 +571,7 @@
         }
         container.innerHTML = html;
 
+        // Attach event listeners only to enabled buttons
         document.querySelectorAll('.claim-btn.active').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -545,10 +584,15 @@
 
     async function claimDailyIncome(investmentId, dailyAmount, refreshAfter = true) {
         const user = auth.currentUser;
-        if (!user) return;
+        if (!user) return false;
         const now = new Date();
         if (isWeekend(now)) {
             showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
+            return false;
+        }
+        // Re-check block condition before claiming
+        if (claimingBlocked) {
+            showToast('❌ Claiming is blocked because you have only one active plan and it ends in 2 days or less. Please purchase another plan first.', true);
             return false;
         }
         try {
@@ -591,6 +635,10 @@
         const now = new Date();
         if (isWeekend(now)) {
             showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
+            return;
+        }
+        if (claimingBlocked) {
+            showToast('❌ Claiming is blocked because you have only one active plan and it ends in 2 days or less. Please purchase another plan first.', true);
             return;
         }
 
@@ -637,7 +685,7 @@
         let hasClaimable = false;
         for (const inv of investments) {
             const claimStatus = getClaimStatus(inv, now);
-            if (claimStatus.available) {
+            if (claimStatus.available && !claimingBlocked) {
                 total += claimStatus.dailyAmount;
                 hasClaimable = true;
             }
@@ -647,7 +695,7 @@
         
         const claimAllBtn = document.getElementById('claimAllBtn');
         if (claimAllBtn) {
-            claimAllBtn.disabled = !hasClaimable || isWeekend(now);
+            claimAllBtn.disabled = isWeekend(now) || !hasClaimable || claimingBlocked;
         }
     }
 
