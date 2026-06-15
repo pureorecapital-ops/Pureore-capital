@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Chat | Pureore Capital</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -75,6 +74,7 @@
             border-radius: 24px;
             word-wrap: break-word;
             animation: fadeIn 0.3s ease;
+            line-height: 1.4;
         }
         .user-message {
             align-self: flex-end;
@@ -96,7 +96,6 @@
             border-radius: 60px;
             padding: 0.3rem 0.5rem;
             align-items: center;
-            position: relative;
         }
         .input-area input {
             flex: 1;
@@ -107,37 +106,25 @@
             font-size: 1rem;
             outline: none;
         }
-        .icon-btn {
-            background: #2C2C3A;
+        .send-btn {
+            background: #2ecc71;
             border: none;
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             transition: 0.2s;
             flex-shrink: 0;
-        }
-        .icon-btn:hover {
-            background: #2ecc71;
             color: #0A0A0C;
-        }
-        .send-btn {
-            background: #2ecc71;
-            color: #0A0A0C;
+            font-weight: bold;
         }
         .send-btn:hover {
             background: #27ae60;
             transform: scale(1.02);
-        }
-        .file-label {
-            cursor: pointer;
-        }
-        input[type="file"] {
-            display: none;
         }
         .typing {
             font-style: italic;
@@ -149,39 +136,14 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .emoji-picker {
-            position: absolute;
-            bottom: 70px;
-            left: 10px;
-            background: #1E1E2A;
-            border-radius: 20px;
-            padding: 10px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            width: 220px;
-            border: 1px solid #2ecc71;
-            z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        .emoji-picker span {
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 12px;
-            transition: 0.1s;
-        }
-        .emoji-picker span:hover {
-            background: #2ecc71;
-        }
-        .hidden {
-            display: none;
+        .empty-msg {
+            text-align: center;
+            color: #aaa;
+            padding: 2rem;
         }
         @media (max-width: 600px) {
             .message { max-width: 90%; }
             .input-area input { font-size: 0.9rem; }
-            .emoji-picker { width: 180px; gap: 5px; }
-            .emoji-picker span { font-size: 1.2rem; }
         }
     </style>
 </head>
@@ -190,17 +152,9 @@
     <div class="back-arrow" onclick="window.location.href='dashboard.html'">← Back</div>
     <div class="animated-title">🤖 Pureore African Assistant</div>
     <div class="chat-box" id="chatBox"></div>
-    <div class="input-area" id="inputArea">
-        <button class="icon-btn" id="emojiBtn">😊</button>
+    <div class="input-area">
         <input type="text" id="userInput" placeholder="Ask me anything about Pureore Capital...">
-        <label class="icon-btn file-label" id="imageBtn">🖼️</label>
-        <input type="file" id="imageUpload" accept="image/*">
-        <button class="icon-btn send-btn" id="sendBtn">▶️</button>
-    </div>
-    <div id="emojiPicker" class="emoji-picker hidden">
-        <span>😊</span><span>😂</span><span>❤️</span><span>👍</span><span>🎉</span>
-        <span>🔥</span><span>💰</span><span>📈</span><span>🏦</span><span>🤝</span>
-        <span>⭐</span><span>💎</span>
+        <button class="send-btn" id="sendBtn">➤</button>
     </div>
 </div>
 
@@ -219,30 +173,26 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
-    db.settings({ persistence: true }); // allow offline reading
+    db.settings({ persistence: true });
 
     // DOM elements
     const chatBox = document.getElementById('chatBox');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
-    const imageUpload = document.getElementById('imageUpload');
-    const imageBtn = document.getElementById('imageBtn');
-    const emojiBtn = document.getElementById('emojiBtn');
-    const emojiPicker = document.getElementById('emojiPicker');
 
     let currentUserId = null;
     let messagesRef = null;
     let unsubscribe = null;
 
-    // Helper: scroll to bottom
     function scrollToBottom() {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Add a message to Firestore
     async function saveMessage(text, isUser) {
         if (!currentUserId) return;
-        if (!messagesRef) messagesRef = db.collection('chats').doc(currentUserId).collection('messages');
+        if (!messagesRef) {
+            messagesRef = db.collection('chats').doc(currentUserId).collection('messages');
+        }
         await messagesRef.add({
             text: text,
             isUser: isUser,
@@ -250,127 +200,151 @@
         });
     }
 
-    // Render a single message from Firestore
     function displayMessage(doc) {
         const data = doc.data();
         if (!data.text) return;
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${data.isUser ? 'user-message' : 'ai-message'}`;
         msgDiv.innerText = data.text;
-        msgDiv.setAttribute('data-id', doc.id);
         chatBox.appendChild(msgDiv);
         scrollToBottom();
     }
 
-    // Load all messages from Firestore and listen for new ones
     function loadChatHistory() {
         if (unsubscribe) unsubscribe();
         if (!currentUserId) return;
         messagesRef = db.collection('chats').doc(currentUserId).collection('messages');
         const query = messagesRef.orderBy('timestamp', 'asc');
         unsubscribe = query.onSnapshot((snapshot) => {
-            // Clear chat box but preserve order
             chatBox.innerHTML = '';
             snapshot.forEach(doc => displayMessage(doc));
-            // If no messages, show welcome message (and also save it to Firestore once)
             if (snapshot.empty) {
                 const welcomeText = "Hello! I'm Pureore African, your personal assistant. Ask me anything about deposits, withdrawals, investments, daily income, platform rules, or referral bonuses. I can also explain how to use any page: Register, Login, Dashboard, Deposit, Withdraw, Treasure, Voucher, Loan, News, Change Password, Income, Team, Mk Vip, J Product, and even WhatsApp groups. How can I help you today?";
-                // Save welcome message only if not already saved (check if empty)
-                saveMessage(welcomeText, false).then(() => {
-                    // after saving, it will appear via snapshot
-                }).catch(console.warn);
+                saveMessage(welcomeText, false).catch(console.warn);
             }
         }, error => {
             console.error("Chat listener error:", error);
-            chatBox.innerHTML = '<div class="empty-msg">Error loading chat. Please refresh.</div>';
+            chatBox.innerHTML = '<div class="empty-msg">Error loading chat. Please refresh. Make sure Firestore rules allow reading "chats" collection.</div>';
         });
     }
 
-    // AI response generator (same as before, but returns string)
+    // AI response generator (improved)
     function getAIResponse(userMessage) {
         const msg = userMessage.toLowerCase();
 
-        if (msg.includes('deposit pending') || (msg.includes('pending') && msg.includes('deposit'))) {
-            return "Admin is busy. I will approve it around 18:00hrs.";
-        }
+        // Blocked topics (admin/owner info)
         const blockedKeywords = ['admin', 'owner', 'pathy', 'ceo', 'founder', 'who runs', 'who created', 'server password', 'hack', 'exploit', 'danger', 'illegal'];
         for (let kw of blockedKeywords) {
             if (msg.includes(kw)) {
                 return "I cannot share admin or owner information for security and privacy reasons. If you have an account issue, please contact our customer support via WhatsApp: Assistant +260 96 139 1022 or Manager +260 95 135 9357. I'm here to help with platform features!";
             }
         }
+
+        // Origin
         if (msg.includes('origin') || msg.includes('where from') || msg.includes('uk') || msg.includes('africa') || msg.includes('country') || msg.includes('friends')) {
             return "Pureore Capital was first launched in Manchester, United Kingdom – a small but innovative place. Today we have a growing family of members both in the UK and across Africa. The scrolling flags you see (UK, Congo, Tanzania, Ghana, Zimbabwe, Zambia) represent our friendly global community. We believe in friendship and financial growth together!";
         }
+
+        // Agent explanation
         if (msg.includes('agent') || msg.includes('zambian agent') || msg.includes('why agent')) {
             return "The Zambian agents (John Kabwe, Getrude Sonpo for MTN; John Kabwe for Airtel; Jeremiah Ilunga for Zamtel) are carefully chosen to help our African users build their futures and grow their income. They assist with deposits and provide local support. All agents are verified and committed to your financial success.";
         }
+
+        // WhatsApp & support
         if (msg.includes('whatsapp') || msg.includes('contact support') || msg.includes('blocked') || msg.includes('manager') || msg.includes('assistant')) {
             return "For direct support:\n📞 Assistant (Deposit/Withdraw issues): +260 96 139 1022 (WhatsApp)\n📞 Manager (Account & blocking issues): +260 95 135 9357 (WhatsApp)\nJoin our WhatsApp group for community updates: https://chat.whatsapp.com/KnggKPDuxj98Wxo1HAE6FP\nWhatsApp Channel: https://whatsapp.com/channel/0029VbCoP1qFcowAHv8uFV2Y\nTelegram: https://t.me/pureorecapital\nIf your account is blocked, please contact the Manager immediately.";
         }
+
+        // Registration
         if (msg.includes('register') || msg.includes('create account') || msg.includes('sign up')) {
-            return "To register, go to the main page and click 'Get started now'. Fill in your full name, email, password (min 6 chars), and optional referral code. You'll receive a 20 ZMW welcome bonus instantly. After registration, you'll be redirected to your dashboard.";
+            return "To register, go to the Register page. Fill in your full name, email, password (min 6 chars), and a valid referral code (required). You'll receive a 20 ZMW welcome bonus instantly. After registration, you'll be redirected to your dashboard.";
         }
-        if (msg.includes('login') || msg.includes('sign in') || msg.includes('log in')) {
+
+        // Login
+        if (msg.includes('login') || msg.includes('sign in')) {
             return "Go to the login page, enter your email and password. If you forgot your password, use the 'Forgot password?' link in the profile page (Me > Change Password > Forgot password) – you'll need to contact the manager via WhatsApp for recovery.";
         }
+
+        // Dashboard
         if (msg.includes('dashboard')) {
             return "Your dashboard shows your current balance, deposit and withdraw buttons, and three quick actions: Treasure, Loan, and Voucher. Below that, you'll find investment plans. Use the floating buttons for transaction history and support.";
         }
-        if (msg.includes('deposit') || msg.includes('how to deposit')) {
-            return "To deposit: Go to Dashboard → tap 'Deposit'. Choose your network (MTN/Airtel/Zamtel). Enter your phone number (9 digits after +260). Select an amount (min 70 ZMW) or type custom amount. Check 'I'm ready to pay'. You'll see agent details. Send the exact amount to the agent, then paste the SMS and upload a screenshot. After admin approval (usually within 24h), your balance increases.";
+
+        // Deposit
+        if (msg.includes('deposit')) {
+            return "To deposit: Go to Dashboard → tap 'Deposit'. Choose your network (MTN/Airtel/Zamtel). Enter your phone number (9 digits after +260) and your full name. Select an amount (min 70 ZMW) or type custom amount. Check 'I'm ready to pay'. You'll see agent details. Send the exact amount to the agent, then paste the SMS you received. Click Verify & Complete. After admin approval (usually within 24h), your balance increases. No screenshot needed anymore.";
         }
-        if (msg.includes('withdraw') || msg.includes('withdrawal')) {
-            return "To withdraw: Go to Dashboard → tap 'Withdraw'. Choose network or bank. For mobile money, enter your phone number; for bank, select bank and enter 16‑digit card number. Enter amount (min 20 ZMW). A 20% fee applies. You must have at least one completed deposit and one active investment, and no active loans. Withdrawals are processed Monday–Friday. After submission, admin approves within 24h.";
+
+        // Withdraw
+        if (msg.includes('withdraw')) {
+            return "To withdraw: Go to Dashboard → tap 'Withdraw'. Choose network or bank. For mobile money, enter your phone number and account name; for bank, select bank and enter 16‑digit card number. Enter amount (min 20 ZMW). A 20% fee applies. You must have at least one completed deposit and one active investment, and no active loans. Withdrawals are processed Monday–Friday. After submission, admin approves within 24h.";
         }
+
+        // Investment plans
         if (msg.includes('invest') || msg.includes('investment plan') || msg.includes('mkvip') || msg.includes('jproduct')) {
-            return "We offer two investment sections: Mk Vip and J Product. Each has multiple plans with different investment ranges, daily returns, and durations. To invest, go to the respective page (from bottom navigation or dashboard), choose a plan, tap 'Invest Now', and enter the amount within the plan’s limits. Your balance will be deducted, and you'll start earning daily returns. You can view active plans in the 'Income' page.";
+            return "We offer two investment sections: Mk Vip and J Product. Each has multiple plans with different investment amounts, daily returns, and durations. To invest, go to the respective page (from bottom navigation or dashboard), choose a plan, tap 'Invest Now'. Your balance will be deducted, and you'll start earning daily returns. You can view active plans in the 'Income' page.";
         }
+
+        // Daily income claim
         if (msg.includes('claim') || msg.includes('daily income') || msg.includes('income page')) {
-            return "In the 'Income' page, you'll see your active plans under 'Active' tab. After 24 hours have passed since your last claim (or since the start date), the 'Claim Daily Income' button turns green. Tap it to receive that day's profit directly into your balance. Claims are only allowed on weekdays (Monday–Friday). You can claim once every 24 hours per investment.";
+            return "In the 'Income' page, you'll see your active plans under 'Active' tab. After 24 hours have passed since your last claim (or since the start date), the 'Claim Daily Income' button turns green. Tap it to receive that day's profit directly into your balance. Claims are only allowed on weekdays (Monday–Friday). You can claim once every 24 hours per investment. If you have only one active plan and it has 2 days or less remaining, claiming is blocked until you purchase a second plan – this encourages reinvestment.";
         }
+
+        // Platform rules
         if (msg.includes('rule') || msg.includes('rules') || msg.includes('policy')) {
             return "📌 Key rules:\n• Minimum deposit: 70 ZMW\n• Minimum withdrawal: 20 ZMW (20% fee)\n• Withdrawals require at least one completed deposit and one active investment\n• No active loans allowed for withdrawal\n• Withdrawals only Monday–Friday\n• Loans: 15% interest, due in 15 days\n• Daily income: claim once every 24 hours (weekdays only)\n• Referral bonus: 5% of first deposit (when referred user invests)\n• No fraud or multiple accounts. Read full Terms in footer.";
         }
+
+        // Referral / Team
         if (msg.includes('referral') || msg.includes('team') || msg.includes('bonus') || msg.includes('invite')) {
             return "Your referral code is in the 'Team' page. Share your unique link. When someone registers using your code, makes their first completed deposit (any amount) AND purchases their first investment plan, you receive 5% of that deposit as a bonus. There's no limit on team size. The bonus is automatically added to your balance and appears in your 'Team' earnings.";
         }
+
+        // Loan
         if (msg.includes('loan')) {
             return "Loans are available from the dashboard middle icon (Loan). You can request between 6,000 and 100,000 ZMW (multiples of 6,000). 15% interest, repayable in 15 days. You need a balance of at least 10,000 ZMW, total invested amount ≥ 15,000 ZMW, and at least 15 team members who have both deposited and invested. After repayment, you must contact admin to enable new loan requests.";
         }
+
+        // Treasure / Voucher
         if (msg.includes('treasure') || msg.includes('voucher')) {
             return "Treasure and Voucher are promotional features. Enter unique codes (treasure codes are 7 characters, vouchers are 10 characters with amount embedded) in the respective pages. Codes are posted on our WhatsApp group and channel. Each code can be used only once and gives you free ZMW. Stay tuned for daily codes!";
         }
+
+        // News
         if (msg.includes('news')) {
             return "The News page shows official announcements, updates, and new investment opportunities. Check it regularly to stay informed.";
         }
+
+        // Change password / Me
         if (msg.includes('change password') || msg.includes('me page') || msg.includes('profile')) {
             return "To change your password: Go to 'Me' page (bottom navigation). Tap 'Change Password'. Enter your email, old password, new password (min 6 chars), and confirm. After successful change, you'll be logged out. If you forgot your password, use the 'Forgot password?' link there – you'll need to contact the manager via WhatsApp for recovery.";
         }
+
+        // Team page (referral list)
         if (msg.includes('team members') || (msg.includes('team') && !msg.includes('referral'))) {
             return "The 'Team' page shows your referral link, how many people have joined using your code, and the total bonus you've earned from referrals. Each referred user appears in the list with their bonus amount.";
         }
+
+        // Greetings
         if (msg.match(/^(hi|hello|hey|good morning|good afternoon|good evening)$/)) {
             return "Hello! I'm Pureore African, your personal assistant. Ask me anything about deposits, withdrawals, investments, daily income, rules, referral bonuses, or any platform feature. How can I help you today?";
         }
-        return "I'm here to help with Pureore Capital! You can ask about registration, login, dashboard, deposit, withdrawal, investment plans (Mk Vip / J Product), daily income claiming, loans, treasure/voucher codes, news, changing password, team referrals, WhatsApp support, platform rules, and more. Please rephrase your question or tap one of the suggested topics.";
+
+        // Default response
+        return "I'm here to help with Pureore Capital! You can ask about registration, login, dashboard, deposit, withdrawal, investment plans (Mk Vip / J Product), daily income claiming, loans, treasure/voucher codes, news, changing password, team referrals, WhatsApp support, platform rules, and more. Please rephrase your question or ask something specific.";
     }
 
-    // Send message: save user message, get AI response, save AI response
     async function sendMessage(text) {
         if (!text.trim()) return;
         if (!currentUserId) return;
-        // Save user message
         await saveMessage(text, true);
-        // Simulate typing and generate AI reply
         const reply = getAIResponse(text);
-        // Small delay to feel natural
+        // Simulate typing delay (optional)
         setTimeout(async () => {
             await saveMessage(reply, false);
-        }, 600);
+        }, 500);
     }
 
-    // Send button click
     function handleSend() {
         const text = userInput.value.trim();
         if (text) {
@@ -379,7 +353,7 @@
         }
     }
 
-    // Auth state: set up chat history listener
+    // Auth state
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             window.location.href = 'login.html';
@@ -393,56 +367,6 @@
     sendBtn.addEventListener('click', handleSend);
     userInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleSend();
-    });
-
-    // Emoji picker
-    emojiBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        emojiPicker.classList.toggle('hidden');
-    });
-    document.addEventListener('click', (e) => {
-        if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-            emojiPicker.classList.add('hidden');
-        }
-    });
-    document.querySelectorAll('#emojiPicker span').forEach(span => {
-        span.addEventListener('click', () => {
-            userInput.value += span.innerText;
-            userInput.focus();
-            emojiPicker.classList.add('hidden');
-        });
-    });
-
-    // Image upload (same as before, but does not save to Firestore – only AI reply)
-    imageBtn.addEventListener('click', () => imageUpload.click());
-    imageUpload.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (!file.type.startsWith('image/')) {
-            await saveMessage("Please upload an image file (PNG, JPG, etc.).", false);
-            imageUpload.value = '';
-            return;
-        }
-        await saveMessage("📷 I've uploaded a screenshot. Let me analyze...", true);
-        const fileName = file.name.toLowerCase();
-        let reply = "";
-        if (fileName.includes('deposit') || fileName.includes('payment') || fileName.includes('screenshot')) {
-            reply = "This looks like a deposit screenshot. After sending money to the agent, paste the SMS and upload the screenshot in the verification step. Click 'Verify'. If you have issues, contact support via WhatsApp.";
-        } else if (fileName.includes('dashboard') || fileName.includes('balance')) {
-            reply = "This seems to be your dashboard. Your balance is shown at the top. Use Deposit and Withdraw buttons. Investment plans are below. The floating buttons show history and support.";
-        } else if (fileName.includes('withdraw') || fileName.includes('withdrawal')) {
-            reply = "This is the withdrawal page. Select network or bank, enter amount, and confirm. Remember you need at least one completed deposit and one active investment to withdraw, and no active loans.";
-        } else if (fileName.includes('income') || fileName.includes('claim')) {
-            reply = "Income page shows your active investments. The green Claim button appears after 24 hours (weekdays only). Tap it to receive daily profit.";
-        } else if (fileName.includes('history')) {
-            reply = "History page shows your deposits, withdrawals, and loans. Pending items are marked in yellow. Once admin approves, status changes to completed.";
-        } else {
-            reply = "I cannot clearly identify this screenshot. Could you describe which page it is from? I can help with deposit, withdrawal, investment, income, history, or dashboard views.";
-        }
-        setTimeout(async () => {
-            await saveMessage(reply, false);
-        }, 600);
-        imageUpload.value = '';
     });
 </script>
 </body>
