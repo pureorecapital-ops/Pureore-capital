@@ -255,6 +255,45 @@
     db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
+    // ========== TOAST FUNCTION ==========
+    function showToast(msg, isError = false) {
+        const toast = document.createElement('div');
+        toast.innerText = msg;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '90px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = isError ? '#ef4444' : '#2ecc71';
+        toast.style.color = 'white';
+        toast.style.padding = '10px 20px';
+        toast.style.borderRadius = '40px';
+        toast.style.zIndex = '9999';
+        toast.style.fontWeight = 'bold';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ========== BLOCK LISTENER ==========
+    let userBlockListener = null;
+
+    function watchBlockStatus(userId) {
+        if (userBlockListener) userBlockListener();
+        userBlockListener = db.collection('users').doc(userId)
+            .onSnapshot((doc) => {
+                if (doc.exists && doc.data().isBlocked === true) {
+                    showToast('⚠️ Your account has been blocked. Redirecting to login...', true);
+                    setTimeout(async () => {
+                        await auth.signOut();
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }, (err) => console.warn('Block listener error:', err));
+    }
+
+    window.addEventListener('beforeunload', () => {
+        if (userBlockListener) userBlockListener();
+    });
+
     const claimBtn = document.getElementById('claimBtn');
     const codeInput = document.getElementById('treasureCode');
     const messageArea = document.getElementById('messageArea');
@@ -271,6 +310,8 @@
             window.location.href = 'login.html';
             return;
         }
+        // Start watching for block
+        watchBlockStatus(user.uid);
     });
 
     claimBtn.addEventListener('click', async () => {
@@ -333,10 +374,10 @@
                 const currentBalance = userSnap.data().balance || 0;
                 const newBalance = currentBalance + amount;
                 transaction.update(userRef, { balance: newBalance });
-                transaction.update(codeDoc.ref, { 
-                    used: true, 
-                    usedBy: user.uid, 
-                    usedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                transaction.update(codeDoc.ref, {
+                    used: true,
+                    usedBy: user.uid,
+                    usedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             });
 

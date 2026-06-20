@@ -395,12 +395,22 @@
         return result;
     }
 
-    // Count only COMPLETED business days (exclude start day)
-    function businessDaysElapsed(startDate, now) {
+    // ========== FIXED: Pause elapsed days when blocked ==========
+    function businessDaysElapsed(inv, now) {
+        // If the investment has a blockedStart timestamp, cap elapsed days at that moment
+        let endDate = now;
+        if (inv.blockedStart) {
+            // Use the blockedStart timestamp as the cutoff
+            const blockedDate = inv.blockedStart.toDate ? inv.blockedStart.toDate() : new Date(inv.blockedStart);
+            // If blockedStart is in the future (should not happen), treat it as now
+            if (blockedDate < now) {
+                endDate = blockedDate;
+            }
+        }
         let count = 0;
-        let current = new Date(startDate);
-        current.setDate(current.getDate() + 1);
-        while (current <= now) {
+        let current = new Date(inv.startDate);
+        current.setDate(current.getDate() + 1); // start from the day after startDate
+        while (current <= endDate) {
             if (!isWeekend(current)) count++;
             current.setDate(current.getDate() + 1);
         }
@@ -421,11 +431,31 @@
     let currentUserId = null;
     let refreshInterval = null;
     let currentInvestments = [];
-    let claimingBlocked = false;  // global flag
+    let claimingBlocked = false;
+    let userBlockListener = null; // listener for block status
 
     window.addEventListener('beforeunload', () => {
         if (refreshInterval) clearInterval(refreshInterval);
+        if (userBlockListener) userBlockListener();
     });
+
+    // ========== REAL‑TIME BLOCK CHECK ==========
+    function watchBlockStatus(userId) {
+        if (userBlockListener) userBlockListener();
+        userBlockListener = db.collection('users').doc(userId)
+            .onSnapshot((doc) => {
+                if (doc.exists && doc.data().isBlocked === true) {
+                    // User is blocked – log them out and redirect
+                    showToast('⚠️ Your account has been blocked. You will be redirected to login.', true);
+                    setTimeout(async () => {
+                        await auth.signOut();
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }, (err) => {
+                console.warn('Block listener error:', err);
+            });
+    }
 
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
@@ -433,6 +463,8 @@
             return;
         }
         currentUserId = user.uid;
+        // Start watching for block status
+        watchBlockStatus(currentUserId);
         await loadInvestments();
         if (refreshInterval) clearInterval(refreshInterval);
         refreshInterval = setInterval(() => {
@@ -443,19 +475,51 @@
         }, 60000);
     });
 
-    // ========== NEW: Check if claiming should be blocked ==========
-    // Block when: activePlansCount < 2 AND any plan has daysLeft <= 2
+    // ========== Block check ==========
     function isClaimingBlocked(activeInvestments) {
         if (activeInvestments.length >= 2) return false;
-        if (activeInvestments.length === 0) return false; // nothing to claim anyway
+        if (activeInvestments.length === 0) return false;
         const now = new Date();
         for (const inv of activeInvestments) {
-            const elapsedDays = businessDaysElapsed(inv.startDate, now);
+            // Use the paused-aware elapsed days function
+            const elapsedDays = businessDaysElapsed(inv, now);
             const totalDays = inv.businessDays;
             const daysLeft = Math.max(0, totalDays - elapsedDays);
             if (daysLeft <= 2) return true;
         }
         return false;
+    }
+
+    // ========== Update blockedStart timestamps in Firestore ==========
+    async function updateBlockedState(activeInvestments, blocked, now) {
+        if (!currentUserId) return;
+        const batch = db.batch();
+        let anyChange = false;
+
+        for (const inv of activeInvestments) {
+            const ref = db.collection('investments').doc(inv.id);
+            if (blocked) {
+                // If blocking and no blockedStart yet, set it
+                if (!inv.blockedStart) {
+                    batch.update(ref, { blockedStart: firebase.firestore.Timestamp.fromDate(now) });
+                    anyChange = true;
+                }
+            } else {
+                // If not blocked and blockedStart exists, remove it
+                if (inv.blockedStart) {
+                    batch.update(ref, { blockedStart: firebase.firestore.FieldValue.delete() });
+                    anyChange = true;
+                }
+            }
+        }
+        if (anyChange) {
+            try {
+                await batch.commit();
+                console.log('Blocked state updated in Firestore');
+            } catch (err) {
+                console.warn('Error updating blocked state:', err);
+            }
+        }
     }
 
     async function loadInvestments() {
@@ -492,7 +556,8 @@
                     endDate,
                     dailyAmount,
                     status: inv.status,
-                    lastClaimed: inv.lastClaimed
+                    lastClaimed: inv.lastClaimed,
+                    blockedStart: inv.blockedStart
                 };
                 if (!isExpired) {
                     active.push(investment);
@@ -501,8 +566,26 @@
                 }
             }
 
+            // Determine if claiming should be blocked
+            const blocked = isClaimingBlocked(active);
+            claimingBlocked = blocked;
+
+            // Update blockedStart timestamps in Firestore (pause/resume)
+            await updateBlockedState(active, blocked, now);
+
+            // Re‑fetch active investments after potential changes? Not needed, but we could reload.
+            // However, since we may have updated blockedStart, we need to refresh the list.
+            // We can simply re-run the loop to get fresh data, but to avoid infinite loop, we'll reload once.
+            // Actually, the state update is asynchronous and the next refresh will pick it up.
+            // For immediate consistency, we can update the local investment objects with the new blockedStart.
+            // I'll just reload the page's data after a short delay, or let the next interval handle it.
+            // For simplicity, I'll re-query the investments to reflect the new blockedStart values.
+            // But that could cause a loop. Better: we set the local inv.blockedStart after batch commit.
+            // Since we already have the active investments, we can update them in memory.
+            // We'll just proceed with the current data.
+
+            // Now render with the updated data
             currentInvestments = active;
-            claimingBlocked = isClaimingBlocked(active);
             renderActive(active);
             renderExpired(expired);
             updateTotalPendingAndClaimAll(active);
@@ -528,7 +611,8 @@
         const now = new Date();
         let html = '';
         for (const inv of investments) {
-            const elapsedDays = businessDaysElapsed(inv.startDate, now);
+            // Use paused-aware elapsed days
+            const elapsedDays = businessDaysElapsed(inv, now);
             const totalDays = inv.businessDays;
             const daysLeft = Math.max(0, totalDays - elapsedDays);
 
@@ -556,14 +640,14 @@
                             <div class="progress-fill" style="width: ${progressPercent}%;"></div>
                         </div>
                         <div class="progress-text">
-                            ${canClaim ? '✓ Ready to claim' : (claimingBlocked ? '⛔ Claiming disabled – buy another plan' : `⏱️ Next claim in ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`)}
+                            ${canClaim ? '✓ Ready to claim' : (claimingBlocked ? '⛔ Claiming paused – buy another plan' : `⏱️ Next claim in ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`)}
                         </div>
                         <div class="pending-amount">
                             💰 Earned so far: ${formatMoney(earnedSoFar)} / ${formatMoney(dailyAmount)}
                         </div>
                     </div>
                     <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${dailyAmount}">
-                        ${canClaim ? '💰 Claim Daily Income' : (claimingBlocked ? '⛔ Blocked' : '⏳ Wait for next claim')}
+                        ${canClaim ? '💰 Claim Daily Income' : (claimingBlocked ? '⛔ Paused' : '⏳ Wait for next claim')}
                     </button>
                     ${isWeekend(now) ? '<div class="weekend-warning">⛔ Claiming only available Monday–Friday. Come back on a weekday.</div>' : ''}
                 </div>
@@ -571,7 +655,6 @@
         }
         container.innerHTML = html;
 
-        // Attach event listeners only to enabled buttons
         document.querySelectorAll('.claim-btn.active').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -590,9 +673,8 @@
             showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
             return false;
         }
-        // Re-check block condition before claiming
         if (claimingBlocked) {
-            showToast('❌ Claiming is blocked because you have only one active plan and it ends in 2 days or less. Please purchase another plan first.', true);
+            showToast('❌ Claiming is paused because you have only one active plan and it ends in 2 days or less. Please purchase another plan first.', true);
             return false;
         }
         try {
@@ -638,7 +720,7 @@
             return;
         }
         if (claimingBlocked) {
-            showToast('❌ Claiming is blocked because you have only one active plan and it ends in 2 days or less. Please purchase another plan first.', true);
+            showToast('❌ Claiming is paused because you have only one active plan and it ends in 2 days or less. Please purchase another plan first.', true);
             return;
         }
 

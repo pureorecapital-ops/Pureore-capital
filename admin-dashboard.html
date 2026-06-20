@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     <style>
+        /* (all existing styles remain unchanged) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', system-ui, sans-serif;
@@ -221,7 +222,31 @@
         .btn-small.warning { background: #f1c40f; color: #050816; }
         .btn-small.danger { background: #e74c3c; color: white; }
         .btn-small.success { background: #2ecc71; color: #050816; }
-        
+        .btn-small.plan-delete {
+            background: #e74c3c;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.5rem;
+            margin: 0.1rem;
+        }
+        .btn-small.plan-delete:hover {
+            background: #c0392b;
+        }
+        .plans-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            align-items: center;
+        }
+        .plan-item {
+            background: #1a2a1a;
+            border-radius: 20px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
         .edit-balance { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .edit-balance input, .plan-form input, .news-form input, .news-form textarea, .code-form input, .support-reply textarea {
             background: #1a2a1a;
@@ -920,7 +945,7 @@
     document.getElementById('blockAllUsersBtn').addEventListener('click', () => blockAllNonAdminUsers(true));
     document.getElementById('unblockAllUsersBtn').addEventListener('click', () => blockAllNonAdminUsers(false));
 
-    // ========== ALL EXISTING FUNCTIONS (unchanged except withdrawal functions replaced) ==========
+    // ========== ALL EXISTING FUNCTIONS (unchanged except loadUsers modified to include plans column) ==========
     function setupPendingListeners() {
         db.collection('deposits').where('status', '==', 'pending').onSnapshot(snap => {
             const count = snap.size;
@@ -964,11 +989,46 @@
         document.getElementById('recentActivities').innerHTML = html || '<div>No recent activity</div>';
     }
 
+    // ========== UPDATED loadUsers with Plans column ==========
     async function loadUsers() {
-        const users = await db.collection('users').get();
-        let html = `<table class="users-table"><thead><tr><th>Name</th><th>Email</th><th>Balance</th><th>Role</th><th>Blocked</th><th>Can Request Loan</th><th>Actions</th></tr></thead><tbody>`;
-        for (const doc of users.docs) {
+        const usersSnap = await db.collection('users').get();
+        // Fetch all investments in one go to avoid N+1
+        const investmentsSnap = await db.collection('investments').where('status', '==', 'active').get();
+        const investmentsByUser = {};
+        investmentsSnap.forEach(doc => {
+            const data = doc.data();
+            const userId = data.userId;
+            if (!investmentsByUser[userId]) investmentsByUser[userId] = [];
+            investmentsByUser[userId].push({ id: doc.id, ...data });
+        });
+
+        let html = `<table class="users-table"><thead><tr>
+            <th>Name</th><th>Email</th><th>Balance</th><th>Role</th><th>Blocked</th>
+            <th>Can Request Loan</th>
+            <th>Plans</th>
+            <th>Actions</th>
+        </tr></thead><tbody>`;
+
+        for (const doc of usersSnap.docs) {
             const u = doc.data();
+            const userId = doc.id;
+            const userPlans = investmentsByUser[userId] || [];
+            let plansHtml = '';
+            if (userPlans.length === 0) {
+                plansHtml = '<span style="color:#aaa;">No active plans</span>';
+            } else {
+                plansHtml = '<div class="plans-list">';
+                userPlans.forEach(plan => {
+                    const planName = escapeHtml(plan.planName || 'Unknown');
+                    const daysLeft = plan.daysLeft !== undefined ? plan.daysLeft : '?';
+                    plansHtml += `<div class="plan-item">
+                        ${planName} <span style="font-size:0.6rem;color:#aaa;">(${daysLeft}d)</span>
+                        <button class="btn-small plan-delete" onclick="deleteUserPlan('${plan.id}', '${userId}')">✕</button>
+                    </div>`;
+                });
+                plansHtml += '</div>';
+            }
+
             html += `<tr>
                 <td>${escapeHtml(u.fullName || '-')}</td>
                 <td>${escapeHtml(u.email)}</td>
@@ -976,13 +1036,39 @@
                 <td><select class="role-select" data-id="${doc.id}"><option ${u.role==='admin'?'selected':''}>admin</option><option ${u.role==='user'?'selected':''}>user</option></select></td>
                 <td><button class="btn-small ${u.isBlocked ? 'warning' : 'danger'}" onclick="toggleBlock('${doc.id}', ${u.isBlocked})">${u.isBlocked ? 'Unblock' : 'Block'}</button></td>
                 <td><button class="btn-small ${u.canRequestLoan===false ? 'warning' : 'success'}" onclick="toggleLoanFlag('${doc.id}', ${u.canRequestLoan===false})">${u.canRequestLoan===false ? 'Allow Loan' : 'Disable Loan'}</button></td>
-                <td><div class="edit-balance"><input type="number" id="bal_${doc.id}" placeholder="New balance"><button class="btn-small" onclick="updateBalance('${doc.id}')">Set</button></div><button class="btn-small warning" onclick="resetUserPassword('${u.email}')">Reset Password</button><button class="btn-small danger" onclick="deleteUserAccount('${doc.id}', '${u.email}')">Delete Account</button></td>
+                <td>${plansHtml}</td>
+                <td>
+                    <div class="edit-balance">
+                        <input type="number" id="bal_${doc.id}" placeholder="New balance">
+                        <button class="btn-small" onclick="updateBalance('${doc.id}')">Set</button>
+                    </div>
+                    <button class="btn-small warning" onclick="resetUserPassword('${u.email}')">Reset Password</button>
+                    <button class="btn-small danger" onclick="deleteUserAccount('${doc.id}', '${u.email}')">Delete Account</button>
+                </td>
             </tr>`;
         }
         html += `</tbody></table>`;
         document.getElementById('usersList').innerHTML = html;
-        document.querySelectorAll('.role-select').forEach(sel => sel.addEventListener('change', async (e) => { await db.collection('users').doc(sel.dataset.id).update({ role: sel.value }); showToast('Role updated'); loadUsers(); }));
+        document.querySelectorAll('.role-select').forEach(sel => sel.addEventListener('change', async (e) => {
+            await db.collection('users').doc(sel.dataset.id).update({ role: sel.value });
+            showToast('Role updated');
+            loadUsers();
+        }));
     }
+
+    // ========== NEW: Delete a user's plan ==========
+    window.deleteUserPlan = async (investmentId, userId) => {
+        if (!confirm('Are you sure you want to delete this investment plan? This cannot be undone.')) return;
+        try {
+            await db.collection('investments').doc(investmentId).delete();
+            showToast('Plan deleted successfully.', false);
+            loadUsers(); // refresh the table
+        } catch (err) {
+            console.error(err);
+            showToast('Error deleting plan: ' + err.message, true);
+        }
+    };
+
     window.toggleBlock = async (uid, isBlocked) => { await db.collection('users').doc(uid).update({ isBlocked: !isBlocked }); loadUsers(); };
     window.toggleLoanFlag = async (uid, isDisabled) => { await db.collection('users').doc(uid).update({ canRequestLoan: isDisabled }); loadUsers(); };
     window.updateBalance = async (uid) => { const newBal = parseFloat(document.getElementById(`bal_${uid}`).value); if(isNaN(newBal)) return; await db.collection('users').doc(uid).update({ balance: newBal }); showToast('Balance updated'); loadUsers(); loadStats(); };
@@ -1011,6 +1097,7 @@
         } catch (err) { showToast(err.message, true); }
     };
 
+    // ========== REST OF YOUR FUNCTIONS (unchanged) ==========
     async function loadPendingDeposits() {
         const pending = await db.collection('deposits').where('status', '==', 'pending').get();
         let html = `<tr><th>User</th><th>Amount</th><th>Method</th><th>Screenshot</th><th>SMS Preview (150 chars)</th><th>Date/Time</th><th>Actions</th></tr>`;

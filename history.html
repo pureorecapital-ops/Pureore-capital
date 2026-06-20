@@ -255,6 +255,45 @@
     db.settings({ persistence: false });
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
+    // ========== TOAST FUNCTION ==========
+    function showToast(msg, isError = false) {
+        const toast = document.createElement('div');
+        toast.innerText = msg;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '90px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = isError ? '#ef4444' : '#2ecc71';
+        toast.style.color = 'white';
+        toast.style.padding = '10px 20px';
+        toast.style.borderRadius = '40px';
+        toast.style.zIndex = '9999';
+        toast.style.fontWeight = 'bold';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ========== BLOCK LISTENER ==========
+    let userBlockListener = null;
+
+    function watchBlockStatus(userId) {
+        if (userBlockListener) userBlockListener();
+        userBlockListener = db.collection('users').doc(userId)
+            .onSnapshot((doc) => {
+                if (doc.exists && doc.data().isBlocked === true) {
+                    showToast('⚠️ Your account has been blocked. Redirecting to login...', true);
+                    setTimeout(async () => {
+                        await auth.signOut();
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }, (err) => console.warn('Block listener error:', err));
+    }
+
+    window.addEventListener('beforeunload', () => {
+        if (userBlockListener) userBlockListener();
+    });
+
     function formatDate(timestamp) {
         if (!timestamp) return 'N/A';
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -297,12 +336,13 @@
             window.location.href = 'login.html';
             return;
         }
+        // Start watching for block
+        watchBlockStatus(user.uid);
+
         if (unsubDeposits) unsubDeposits();
         if (unsubWithdrawals) unsubWithdrawals();
         if (unsubLoans) unsubLoans();
 
-        // Simple queries without composite indexes (orderBy may require index, but we can remove orderBy temporarily)
-        // We'll use orderBy with createdAt which is common; if error, we'll fallback to no order.
         try {
             unsubDeposits = listenDeposits(user.uid);
             unsubWithdrawals = listenWithdrawals(user.uid);
@@ -315,7 +355,6 @@
 
     function listenDeposits(userId) {
         const depositsList = document.getElementById('depositsList');
-        // Use a simple query without orderBy to avoid needing index (optional)
         const q = db.collection('deposits').where('userId', '==', userId);
         return q.onSnapshot((snapshot) => {
             if (snapshot.empty) {
@@ -323,7 +362,6 @@
                 updateTabBadge('deposits', 0);
                 return;
             }
-            // Convert to array and sort manually by createdAt descending
             const docs = [];
             snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
             docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));

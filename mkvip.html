@@ -424,6 +424,27 @@
 
     let userPurchaseCounts = {};
 
+    // ========== BLOCK LISTENER ==========
+    let userBlockListener = null;
+
+    function watchBlockStatus(userId) {
+        if (userBlockListener) userBlockListener();
+        userBlockListener = db.collection('users').doc(userId)
+            .onSnapshot((doc) => {
+                if (doc.exists && doc.data().isBlocked === true) {
+                    showToast('⚠️ Your account has been blocked. Redirecting to login...', true);
+                    setTimeout(async () => {
+                        await auth.signOut();
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }, (err) => console.warn('Block listener error:', err));
+    }
+
+    window.addEventListener('beforeunload', () => {
+        if (userBlockListener) userBlockListener();
+    });
+
     function getSafeImageUrl(url) {
         if (!url || url === '') return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
         let safeUrl = url.trim();
@@ -784,11 +805,14 @@
         }
     }
 
+    // ========== AUTH STATE WITH BLOCK LISTENER ==========
     auth.onAuthStateChanged(user => {
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
+        // Start watching for block
+        watchBlockStatus(user.uid);
         loadPlans();
     });
 
