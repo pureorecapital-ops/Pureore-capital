@@ -46,7 +46,7 @@
             z-index: -1;
         }
 
-        /* ===== STATIC 4‑COLOR ORBS (No animation, just glow) ===== */
+        /* ===== STATIC 4‑COLOR ORBS ===== */
         .orb {
             position: fixed;
             border-radius: 50%;
@@ -54,7 +54,6 @@
             opacity: 0.25;
             z-index: -1;
             pointer-events: none;
-            will-change: auto; /* prevents GPU overload */
         }
         .orb-1 {
             width: 300px; height: 300px;
@@ -87,14 +86,13 @@
             z-index: 10;
         }
 
-        /* ===== CARD (No blur, just solid semi-transparent) ===== */
+        /* ===== CARD (static gradient border) ===== */
         .auth-card {
             position: relative;
             background: rgba(15, 17, 29, 0.92);
             border-radius: 32px;
             padding: 2rem;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            /* Static 4‑color border (no animation) */
             border: 2px solid transparent;
             background-clip: padding-box;
             background-image: linear-gradient(rgba(15, 17, 29, 0.92), rgba(15, 17, 29, 0.92)),
@@ -103,7 +101,7 @@
             background-clip: padding-box, border-box;
         }
 
-        /* ===== HEADER (4‑Color animated gradient – this one is cheap) ===== */
+        /* ===== HEADER (animated gradient) ===== */
         h2 {
             text-align: center;
             margin-bottom: 1.5rem;
@@ -120,7 +118,7 @@
             100% { background-position: 100% 50%; }
         }
 
-        /* ===== BONUS NOTICE (Static glass, no spinning animation) ===== */
+        /* ===== BONUS NOTICE ===== */
         .bonus-notice {
             background: rgba(0, 230, 118, 0.08);
             border: 1px solid rgba(0, 230, 118, 0.25);
@@ -137,7 +135,7 @@
             font-weight: 700;
         }
 
-        /* ===== INPUTS (Static 4‑color border, no rotation animation) ===== */
+        /* ===== INPUTS ===== */
         input:not([type="checkbox"]) {
             width: 100%;
             padding: 0.9rem;
@@ -147,7 +145,6 @@
             color: white;
             font-size: 1rem;
             transition: 0.2s ease;
-            /* Static gradient border */
             border: 2px solid transparent;
             background-clip: padding-box;
             background-image: linear-gradient(rgba(15, 17, 29, 0.9), rgba(15, 17, 29, 0.9)),
@@ -158,7 +155,7 @@
         input:not([type="checkbox"]):focus {
             outline: none;
             border-color: transparent;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); /* single light glow */
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
         }
         input::placeholder {
             color: rgba(255,255,255,0.35);
@@ -191,7 +188,7 @@
             color: #FFD700;
         }
 
-        /* ===== BUTTON (Cycling 4‑Color Gradient – cheap on GPU) ===== */
+        /* ===== BUTTON ===== */
         .btn {
             width: 100%;
             background: linear-gradient(135deg, #00E676, #00E5FF, #2979FF);
@@ -222,7 +219,7 @@
             cursor: not-allowed;
         }
 
-        /* ===== AVATAR (Static, no floating) ===== */
+        /* ===== AVATAR ===== */
         #avatar-wrapper {
             display: flex;
             align-items: center;
@@ -283,25 +280,36 @@
             75% { transform: rotate(-8deg); }
         }
 
-        /* ===== OTHER ELEMENTS ===== */
-        .error {
-            background: rgba(239,68,68,0.15);
-            border: 1px solid #ef4444;
-            color: #ef4444;
-            padding: 0.6rem;
+        /* ===== STYLED ERROR / SUCCESS BOXES ===== */
+        .error, .success {
+            padding: 0.8rem 1rem;
             border-radius: 20px;
             text-align: center;
             margin-top: 1rem;
+            font-weight: 500;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            background-origin: border-box;
+            background-image: linear-gradient(rgba(15, 17, 29, 0.95), rgba(15, 17, 29, 0.95)),
+                              linear-gradient(135deg, #ef4444, #f59e0b, #ef4444);
+            background-clip: padding-box, border-box;
+            background-origin: padding-box, border-box;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
         }
         .success {
-            background: rgba(46,204,113,0.15);
-            border: 1px solid #2ecc71;
-            color: #2ecc71;
-            padding: 0.6rem;
-            border-radius: 20px;
-            text-align: center;
-            margin-top: 1rem;
+            background-image: linear-gradient(rgba(15, 17, 29, 0.95), rgba(15, 17, 29, 0.95)),
+                              linear-gradient(135deg, #10B981, #34D399, #10B981);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+            color: #6EE7B7;
         }
+        .error i, .success i {
+            font-style: normal;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* ===== OTHER ===== */
         .note {
             font-size: 0.75rem;
             color: #aaa;
@@ -336,7 +344,7 @@
 
     <div class="auth-container">
         <div class="auth-card">
-            <!-- ===== LIVE AVATAR ===== -->
+            <!-- ===== AVATAR ===== -->
             <div id="avatar-wrapper">
                 <div class="avatar-container">
                     <svg class="avatar-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -391,7 +399,7 @@
     </div>
 
     <script>
-        // ========== FIREBASE CONFIG (UNTOUCHED) ==========
+        // ========== FIREBASE CONFIG ==========
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
             authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -406,6 +414,13 @@
         var auth = firebase.auth();
         var db = firebase.firestore();
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ========== HELPER: Show styled message ==========
+        function showMessage(type, text) {
+            var icon = type === 'error' ? '❌' : '✅';
+            document.getElementById('message').innerHTML = 
+                '<div class="' + type + '"><i>' + icon + '</i> ' + text + '</div>';
+        }
 
         // ========== REFERRAL CODE EXTRACTOR ==========
         function getReferralCodeFromUrl() {
@@ -478,26 +493,27 @@
             var referralCode = document.getElementById('regReferralCode').value.trim().toUpperCase();
             var ageChecked = document.getElementById('ageCheck').checked;
             
+            // Validation checks
             if (!fullName || !email || !password || !confirm || !referralCode) {
-                messageDiv.innerHTML = '<div class="error">All fields are required.</div>';
+                showMessage('error', 'All fields are required.');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Register & Get 20 ZMW';
                 return;
             }
             if (!ageChecked) {
-                messageDiv.innerHTML = '<div class="error">You must confirm you are 18+ years old to register.</div>';
+                showMessage('error', 'You must confirm you are 18+ years old to register.');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Register & Get 20 ZMW';
                 return;
             }
             if (password.length < 6) {
-                messageDiv.innerHTML = '<div class="error">Password must be at least 6 characters.</div>';
+                showMessage('error', 'Password must be at least 6 characters.');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Register & Get 20 ZMW';
                 return;
             }
             if (password !== confirm) {
-                messageDiv.innerHTML = '<div class="error">Passwords do not match.</div>';
+                showMessage('error', 'Passwords do not match.');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Register & Get 20 ZMW';
                 return;
@@ -506,8 +522,14 @@
             // Validate referral code
             validateReferralCode(referralCode, function(isValid, errorMsg) {
                 if (!isValid) {
-                    var msg = errorMsg ? 'Referral check error: ' + errorMsg : '❌ Invalid referral code. Please check and try again.';
-                    messageDiv.innerHTML = '<div class="error">' + msg + '</div>';
+                    // Don't expose technical errors
+                    var userMsg = 'Invalid referral code. Please check and try again.';
+                    if (errorMsg === 'timed out') {
+                        userMsg = 'Referral validation timed out. Please check your internet connection.';
+                    } else if (errorMsg && errorMsg.includes('permission')) {
+                        userMsg = 'Unable to verify referral code. Please try again later.';
+                    }
+                    showMessage('error', userMsg);
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Register & Get 20 ZMW';
                     return;
@@ -539,24 +561,37 @@
                         });
                     });
                 }).then(function() {
-                    messageDiv.innerHTML = '<div class="success">✅ Registration successful! Redirecting to dashboard...</div>';
+                    showMessage('success', 'Registration successful! Redirecting to dashboard...');
                     setTimeout(function() {
                         window.location.href = 'dashboard.html';
                     }, 1500);
                 }).catch(function(error) {
                     console.error("Registration error:", error);
-                    var errorMsg = error.message;
-                    if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered. Please login.';
-                    if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
-                    if (error.code === 'auth/weak-password') errorMsg = 'Password too weak. Use at least 6 characters.';
-                    messageDiv.innerHTML = '<div class="error">❌ ' + errorMsg + '</div>';
+                    var userFriendlyMsg = 'Registration failed. Please try again.';
+                    switch (error.code) {
+                        case 'auth/email-already-in-use':
+                            userFriendlyMsg = 'Email already registered. Please login.';
+                            break;
+                        case 'auth/invalid-email':
+                            userFriendlyMsg = 'Invalid email address.';
+                            break;
+                        case 'auth/weak-password':
+                            userFriendlyMsg = 'Password too weak. Use at least 6 characters.';
+                            break;
+                        case 'auth/network-request-failed':
+                            userFriendlyMsg = 'Network error. Please check your internet connection.';
+                            break;
+                        default:
+                            userFriendlyMsg = 'Registration failed. Please check your details and try again.';
+                    }
+                    showMessage('error', userFriendlyMsg);
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Register & Get 20 ZMW';
                 });
             });
         });
 
-        // ===== LIVE AVATAR GREETING LOGIC (Lightweight JS) =====
+        // ===== LIVE AVATAR GREETING LOGIC =====
         (function() {
             const greetEl = document.getElementById('greeting-text');
             if (!greetEl) return;
