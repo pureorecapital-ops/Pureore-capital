@@ -9,31 +9,67 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
+        /* ===== RESET & BASE ===== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         body {
-            background: #0A0A0C;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            background: #0A0A0C;
             color: #FFFFFF;
             padding-bottom: 85px;
             position: relative;
-            min-height: 100vh;
+            overflow-x: hidden;
         }
+
+        /* ===== STATIC BACKGROUND (no animation) ===== */
         body::before {
-            content: '';
+            content: "";
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: radial-gradient(circle at 25% 40%, rgba(46, 204, 113, 0.03) 1.5px, transparent 1.5px);
-            background-size: 28px 28px;
-            pointer-events: none;
-            z-index: 0;
+            background: linear-gradient(135deg, #0A0A0C 0%, #0d1a0d 30%, #0a0d1a 60%, #1a0d0a 100%);
+            z-index: -3;
+            will-change: auto;
         }
+
+        /* ===== STATIC ORBS (no animation, reduced blur) ===== */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(20px);
+            opacity: 0.20;
+            z-index: -2;
+            pointer-events: none;
+            will-change: auto;
+        }
+        .orb-1 {
+            width: 400px; height: 400px;
+            background: #00E676;
+            top: -10%; left: -10%;
+        }
+        .orb-2 {
+            width: 350px; height: 350px;
+            background: #00E5FF;
+            bottom: -10%; right: -10%;
+        }
+        .orb-3 {
+            width: 300px; height: 300px;
+            background: #FFD700;
+            top: 40%; left: 75%;
+        }
+        .orb-4 {
+            width: 280px; height: 280px;
+            background: #2979FF;
+            bottom: 30%; left: -5%;
+        }
+
+        /* ===== CONTAINER ===== */
         .container {
             max-width: 1280px;
             margin: 0 auto;
@@ -41,9 +77,15 @@
             position: relative;
             z-index: 2;
         }
+
+        /* ===== HEADER WITH WHATSAPP AVATAR ===== */
         .header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
         .brand-logo {
             font-size: 2.5rem;
@@ -51,32 +93,60 @@
             letter-spacing: -0.5px;
             display: inline-flex;
             flex-wrap: wrap;
-            justify-content: center;
             gap: 0.1rem;
-            background: linear-gradient(135deg, #2ecc71, #f1c40f, #e67e22);
+            background: linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
+            background-size: 300% 300%;
+            animation: gradientShift 6s ease-in-out infinite alternate;
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            animation: glowShift 4s infinite alternate;
         }
-        @keyframes glowShift {
-            0% { text-shadow: 0 0 3px rgba(46, 204, 113, 0.3); }
-            50% { text-shadow: 0 0 12px rgba(241, 196, 15, 0.4); }
-            100% { text-shadow: 0 0 8px rgba(230, 126, 34, 0.4); }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
         }
+
+        /* ===== WHATSAPP AVATAR ===== */
+        .whatsapp-avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+            text-decoration: none;
+        }
+        .whatsapp-avatar:hover {
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 8px 30px rgba(37, 211, 102, 0.5);
+        }
+        .whatsapp-avatar svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
         .tagline {
             font-size: 0.9rem;
             color: #B0B3B8;
             margin-top: 0.3rem;
+            flex-basis: 100%;
         }
+
+        /* ===== FLAGS MARQUEE ===== */
         .flags-container {
-            background: rgba(18, 18, 24, 0.6);
-            backdrop-filter: blur(8px);
+            background: rgba(18, 18, 24, 0.5);
             border-radius: 40px;
             padding: 0.5rem 0;
             margin: 1rem 0 1.5rem;
             overflow: hidden;
-            border: 1px solid rgba(46,204,113,0.2);
+            border: 1px solid rgba(0, 230, 118, 0.15);
         }
         .flags-marquee {
             display: flex;
@@ -102,46 +172,91 @@
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
+
+        /* ===== TWO BALANCES ===== */
+        .balances-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 500px) {
+            .balances-row {
+                grid-template-columns: 1fr;
+            }
+        }
         .balance-card {
-            background: rgba(18, 18, 24, 0.8);
-            backdrop-filter: blur(8px);
-            border-radius: 40px;
-            padding: 1.8rem 1.5rem;
+            background: rgba(18, 18, 24, 0.75);
+            border-radius: 28px;
+            padding: 1.5rem 1rem;
             text-align: center;
-            border: 1px solid rgba(46, 204, 113, 0.3);
-            box-shadow: 0 0 25px rgba(46, 204, 113, 0.1);
-            margin-bottom: 2rem;
-            transition: transform 0.2s;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            background-image: linear-gradient(rgba(18, 18, 24, 0.75), rgba(18, 18, 24, 0.75)),
+                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
+            background-origin: padding-box, border-box;
+            background-clip: padding-box, border-box;
+            transition: transform 0.2s ease;
         }
         .balance-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(241, 196, 15, 0.5);
+            transform: translateY(-3px);
+        }
+        .balance-card.deposit {
+            border-color: transparent;
+        }
+        .balance-card.wallet {
+            border-color: transparent;
         }
         .balance-label {
-            font-size: 1rem;
+            font-size: 0.85rem;
             letter-spacing: 1px;
             color: #C0C4CC;
-            margin-bottom: 0.6rem;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .balance-label .currency-badge {
+            font-size: 0.6rem;
+            background: rgba(255,255,255,0.08);
+            padding: 2px 10px;
+            border-radius: 20px;
+            color: #aaa;
         }
         .balance-amount {
-            font-size: 3.2rem;
+            font-size: 2.6rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #2ecc71, #f1c40f);
+            background: linear-gradient(135deg, #00E676, #00E5FF);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.2rem;
+        }
+        .balance-card.deposit .balance-amount {
+            background: linear-gradient(135deg, #FFD700, #F59E0B);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .balance-card.wallet .balance-amount {
+            background: linear-gradient(135deg, #00E5FF, #2979FF);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
         }
         .secure-note {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: #7E8299;
-            margin-bottom: 1.8rem;
         }
+
+        /* ===== BUTTON GROUP ===== */
         .button-group {
             display: flex;
-            gap: 1.2rem;
+            gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
+            margin-top: 0.5rem;
         }
         .btn-deposit, .btn-withdraw {
             padding: 0.85rem 2rem;
@@ -155,16 +270,19 @@
             box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
         }
         .btn-deposit {
-            background: linear-gradient(135deg, #2ecc71, #239b56);
+            background: linear-gradient(135deg, #00E676, #00C853);
         }
         .btn-withdraw {
-            background: linear-gradient(135deg, #e67e22, #c0392b);
+            background: linear-gradient(135deg, #FFD700, #F59E0B);
+            color: #0A0A0C;
         }
         .btn-deposit:hover, .btn-withdraw:hover {
             transform: translateY(-3px);
             filter: brightness(1.05);
             box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
         }
+
+        /* ===== MIDDLE ROW ===== */
         .middle-row {
             display: flex;
             justify-content: space-around;
@@ -174,25 +292,25 @@
         }
         .middle-item {
             flex: 1;
-            background: #111116;
+            background: rgba(17, 17, 22, 0.85);
             border-radius: 28px;
             padding: 1rem 0.5rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 1px solid #1E1F28;
+            border: 1px solid rgba(255,255,255,0.05);
             min-width: 90px;
         }
         .middle-item:hover {
             transform: translateY(-5px);
-            border-color: #2ecc71;
-            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.2);
+            border-color: #00E676;
+            box-shadow: 0 10px 20px rgba(0, 230, 118, 0.15);
         }
         .middle-icon {
             width: 55px;
             height: 55px;
             margin: 0 auto 8px;
-            background: rgba(46, 204, 113, 0.08);
+            background: rgba(0, 230, 118, 0.08);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -202,58 +320,94 @@
         .middle-icon img {
             width: 100%;
             max-width: 42px;
-            filter: drop-shadow(0 0 5px rgba(46,204,113,0.3));
+            filter: drop-shadow(0 0 5px rgba(0,230,118,0.3));
         }
         .middle-label {
             font-weight: 600;
             font-size: 0.85rem;
             color: #ddd;
         }
+
+        /* ===== BOTTOM NAV - STYLISH ===== */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(15, 15, 20, 0.95);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(46, 204, 113, 0.2);
+            background: rgba(10, 10, 14, 0.98);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border-top: 2px solid transparent;
+            background-clip: padding-box;
+            background-image: linear-gradient(rgba(10, 10, 14, 0.98), rgba(10, 10, 14, 0.98)),
+                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
+            background-origin: padding-box, border-box;
+            background-clip: padding-box, border-box;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 8px 12px 20px;
+            padding: 6px 6px 18px;
             z-index: 30;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
         }
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             flex: 1;
             text-align: center;
+            padding: 4px 2px;
+            border-radius: 16px;
+            position: relative;
         }
         .nav-item:hover {
             transform: translateY(-3px);
         }
         .nav-icon {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             object-fit: contain;
-            filter: brightness(0.8);
-            transition: 0.2s;
+            filter: brightness(0.6) grayscale(0.4);
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            padding: 2px;
         }
         .nav-item.active .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 6px #2ecc71);
+            filter: brightness(1) drop-shadow(0 0 8px rgba(0, 230, 118, 0.5));
+            transform: scale(1.03);
+        }
+        .nav-item.glow .nav-icon {
+            filter: brightness(1) drop-shadow(0 0 10px rgba(0, 229, 255, 0.6));
+            transform: scale(1.05);
+        }
+        .nav-item.glow-gold .nav-icon {
+            filter: brightness(1) drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+            transform: scale(1.05);
+        }
+        .nav-item.glow-purple .nav-icon {
+            filter: brightness(1) drop-shadow(0 0 10px rgba(41, 121, 255, 0.6));
+            transform: scale(1.05);
         }
         .nav-label {
-            font-size: 0.7rem;
-            color: #aaa;
+            font-size: 0.65rem;
+            color: #888;
             font-weight: 500;
+            transition: color 0.3s ease;
+            letter-spacing: 0.3px;
         }
         .nav-item.active .nav-label {
-            color: #2ecc71;
+            color: #00E676;
         }
+        .nav-item.glow .nav-label,
+        .nav-item.glow-gold .nav-label,
+        .nav-item.glow-purple .nav-label {
+            color: #fff;
+        }
+
+        /* ===== FLOATING BUTTONS ===== */
         .floating-buttons {
             position: fixed;
             bottom: 95px;
@@ -280,7 +434,7 @@
             background: linear-gradient(145deg, #3498db, #2980b9);
         }
         .floating-btn.support {
-            background: linear-gradient(145deg, #2ecc71, #f1c40f, #3498db);
+            background: linear-gradient(135deg, #00E676, #00E5FF, #2979FF);
             background-size: 200% 200%;
             animation: colorFlowBtn 4s ease infinite;
         }
@@ -290,9 +444,11 @@
             100% { background-position: 0% 0%; }
         }
         .floating-btn:hover {
-            transform: scale(1.08);
+            transform: scale(1.06);
             box-shadow: 0 8px 25px rgba(0,0,0,0.4);
         }
+
+        /* ===== SUPPORT MODAL ===== */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -300,7 +456,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(3px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -319,7 +475,12 @@
             width: 90%;
             max-width: 450px;
             padding: 1.8rem;
-            border: 1px solid #2ecc71;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            background-image: linear-gradient(#14161F, #14161F),
+                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
+            background-origin: padding-box, border-box;
+            background-clip: padding-box, border-box;
             position: relative;
             color: #fff;
             max-height: 85vh;
@@ -334,6 +495,11 @@
             background: none;
             border: none;
             color: #aaa;
+            transition: 0.2s;
+        }
+        .close-modal:hover {
+            color: #fff;
+            transform: rotate(90deg);
         }
         .support-modal h3 {
             font-size: 1.6rem;
@@ -375,6 +541,163 @@
             opacity: 0.9;
             transform: scale(1.02);
         }
+
+        /* ===== ANNOUNCEMENT POPUP ===== */
+        .announcement-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.4s ease;
+            padding: 1rem;
+        }
+        .announcement-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .announcement-modal {
+            background: #14161F;
+            border-radius: 36px;
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            background-image: linear-gradient(#14161F, #14161F),
+                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
+            background-origin: padding-box, border-box;
+            background-clip: padding-box, border-box;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            color: #fff;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+        .announcement-modal::-webkit-scrollbar {
+            width: 4px;
+        }
+        .announcement-modal::-webkit-scrollbar-thumb {
+            background: #00E676;
+            border-radius: 10px;
+        }
+        .announcement-modal::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .announcement-close {
+            position: sticky;
+            top: 0;
+            float: right;
+            font-size: 32px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            z-index: 5;
+            backdrop-filter: blur(4px);
+        }
+        .announcement-close:hover {
+            background: rgba(239, 68, 68, 0.5);
+            transform: rotate(90deg);
+        }
+        .announcement-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #FFD700, #F59E0B);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .announcement-subtitle {
+            text-align: center;
+            color: #B0B3B8;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+        .announcement-plan {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid #00E676;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .announcement-plan h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #FFD700;
+        }
+        .announcement-plan .plan-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.2rem 0;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        .announcement-plan .plan-detail span:last-child {
+            color: #fff;
+            font-weight: 600;
+        }
+        .announcement-divider {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            margin: 1.2rem 0;
+        }
+        .announcement-howto {
+            background: rgba(0, 230, 118, 0.05);
+            border-radius: 16px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .announcement-howto p {
+            padding: 0.2rem 0;
+            color: #ddd;
+            font-size: 0.9rem;
+        }
+        .announcement-howto p::before {
+            content: "✅ ";
+        }
+        .announcement-notice {
+            background: rgba(239, 68, 68, 0.08);
+            border-radius: 16px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(239, 68, 68, 0.15);
+        }
+        .announcement-notice p {
+            padding: 0.2rem 0;
+            color: #fca5a5;
+            font-size: 0.85rem;
+        }
+        .announcement-notice p::before {
+            content: "⚠️ ";
+        }
+        .announcement-footer {
+            text-align: center;
+            margin-top: 1.2rem;
+            font-size: 1rem;
+            color: #FFD700;
+            font-weight: 600;
+        }
+
+        /* ===== FOOTER ===== */
         .footer-links {
             text-align: center;
             margin-top: 40px;
@@ -389,11 +712,15 @@
             color: #8E92AA;
             text-decoration: none;
         }
+        .footer-links a:hover {
+            color: #00E5FF;
+        }
+
         @media (max-width: 600px) {
-            .balance-amount { font-size: 2.2rem; }
             .brand-logo { font-size: 1.8rem; }
-            .nav-icon { width: 24px; height: 24px; }
-            .nav-label { font-size: 0.6rem; }
+            .balance-amount { font-size: 2rem; }
+            .nav-icon { width: 28px; height: 28px; }
+            .nav-label { font-size: 0.55rem; }
             .middle-icon { width: 45px; height: 45px; }
             .middle-icon img { max-width: 34px; }
             .middle-label { font-size: 0.7rem; }
@@ -402,243 +729,420 @@
             .flag-icon { font-size: 1.5rem; }
             .floating-buttons { bottom: 85px; right: 12px; gap: 8px; }
             .floating-btn { width: 48px; height: 48px; font-size: 24px; }
+            .announcement-modal { padding: 1.2rem; }
+            .announcement-title { font-size: 1.3rem; }
+            .whatsapp-avatar { width: 45px; height: 45px; }
+            .whatsapp-avatar svg { width: 24px; height: 24px; }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <div class="brand-logo">
-            <span>P</span><span>U</span><span>R</span><span>E</span><span>O</span><span>R</span><span>E</span>
-            <span style="margin-left: 8px;">C</span><span>A</span><span>P</span><span>I</span><span>T</span><span>A</span><span>L</span>
+
+    <!-- ===== STATIC ORBS ===== -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+
+    <!-- ===== ANNOUNCEMENT POPUP ===== -->
+    <div class="announcement-overlay" id="announcementPopup">
+        <div class="announcement-modal">
+            <button class="announcement-close" id="announcementClose">&times;</button>
+
+            <div class="announcement-title">🚀 WELCOME TO PUREORECAPITAL 🚀</div>
+            <div class="announcement-subtitle">Dear Members,<br>Start earning daily income with our investment plans designed to help you grow your earnings.</div>
+
+            <!-- MKVIP PLAN -->
+            <div class="announcement-plan">
+                <h4>🔥 MKVIP STARTER PLAN</h4>
+                <div class="plan-detail"><span>💰 Investment Amount:</span><span>ZMW 70</span></div>
+                <div class="plan-detail"><span>💵 Daily Income:</span><span>ZMW 25</span></div>
+                <div class="plan-detail"><span>📅 Duration:</span><span>5 Days</span></div>
+                <div class="plan-detail"><span>💸 Total Income:</span><span>ZMW 125</span></div>
+                <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">This plan is perfect for beginners. After 5 days, the plan will expire automatically once the total income of ZMW 125 has been generated. To purchase this plan, tap the <strong style="color:#00E676;">MKVIP</strong> section.</div>
+            </div>
+
+            <!-- JPRODUCT PLAN -->
+            <div class="announcement-plan">
+                <h4>⭐ JPRODUCT PLAN</h4>
+                <div class="plan-detail"><span>💰 Investment Amount:</span><span>ZMW 480</span></div>
+                <div class="plan-detail"><span>💵 Daily Income:</span><span>ZMW 17</span></div>
+                <div class="plan-detail"><span>📅 Duration:</span><span>55 Days</span></div>
+                <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">This plan offers steady daily earnings for members looking for long-term income opportunities. Find this plan in the <strong style="color:#00E5FF;">JPRODUCT</strong> section.</div>
+            </div>
+
+            <!-- PREMIUM PLAN -->
+            <div class="announcement-plan">
+                <h4>💎 PREMIUM PLAN</h4>
+                <div class="plan-detail"><span>💰 Investment Amount:</span><span>ZMW 1,600</span></div>
+                <div class="plan-detail"><span>💵 Daily Income:</span><span>ZMW 150</span></div>
+                <div class="plan-detail"><span>📅 Duration:</span><span>40 Days</span></div>
+                <div class="plan-detail"><span>💸 Total Income:</span><span>ZMW 6,000</span></div>
+                <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">This plan is designed for members who want higher daily earnings and greater returns.</div>
+            </div>
+
+            <hr class="announcement-divider">
+
+            <div class="announcement-howto">
+                <p><strong style="color:#FFD700;">📌 HOW TO START</strong></p>
+                <p>Recharge your account.</p>
+                <p>Open MKVIP or JPRODUCT.</p>
+                <p>Select your preferred plan.</p>
+                <p>Purchase the plan.</p>
+                <p>Claim your daily income every day.</p>
+            </div>
+
+            <div class="announcement-notice">
+                <p><strong style="color:#fca5a5;">IMPORTANT NOTICE</strong></p>
+                <p>Daily income can only be claimed while a plan is active.</p>
+                <p>Expired plans stop generating income.</p>
+                <p>Members can upgrade or purchase new plans at any time.</p>
+                <p>The earlier you start, the sooner you begin earning.</p>
+            </div>
+
+            <div class="announcement-footer">
+                🎉 Thank you for choosing PureOreCapital. We wish you success and profitable earnings.<br>
+                🚀 PUREORECAPITAL – INVEST TODAY, EARN TOMORROW! 💰
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="container">
+
+        <!-- ===== HEADER WITH WHATSAPP AVATAR ===== -->
+        <div class="header">
+            <div class="brand-logo">
+                <span>P</span><span>U</span><span>R</span><span>E</span><span>O</span><span>R</span><span>E</span>
+                <span style="margin-left: 8px;">C</span><span>A</span><span>P</span><span>I</span><span>T</span><span>A</span><span>L</span>
+            </div>
+            <!-- WhatsApp Avatar -->
+            <a href="https://chat.whatsapp.com/CKRUGVPtL3TDuwFwUV5JBf?s=cl&p=a&mlu=4" target="_blank" class="whatsapp-avatar" title="Join our WhatsApp Group">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+            </a>
         </div>
         <div class="tagline">Welcome back. Build your future with confidence.</div>
-    </div>
 
-    <div class="flags-container">
-        <div class="flags-marquee" id="flagsMarquee"></div>
-    </div>
+        <!-- ===== FLAGS MARQUEE ===== -->
+        <div class="flags-container">
+            <div class="flags-marquee" id="flagsMarquee"></div>
+        </div>
 
-    <div class="balance-card">
-        <div class="balance-label">Available Balance</div>
-        <div class="balance-amount" id="userBalanceSpan">0.00 ZMW</div>
-        <div class="secure-note">🔒 Secure account balance</div>
+        <!-- ===== TWO BALANCES ===== -->
+        <div class="balances-row">
+            <!-- Deposit Balance (TZS) -->
+            <div class="balance-card deposit">
+                <div class="balance-label">
+                    💰 Deposit Balance
+                    <span class="currency-badge">TZS</span>
+                </div>
+                <div class="balance-amount" id="depositBalanceSpan">0.00</div>
+                <div class="secure-note">🔒 Used for purchasing plans</div>
+            </div>
+            <!-- Wallet Balance (ZMW) -->
+            <div class="balance-card wallet">
+                <div class="balance-label">
+                    💳 Wallet Balance
+                    <span class="currency-badge">ZMW</span>
+                </div>
+                <div class="balance-amount" id="walletBalanceSpan">0.00</div>
+                <div class="secure-note">🔒 Used for bonuses &amp; withdrawals</div>
+            </div>
+        </div>
+
+        <!-- ===== BUTTON GROUP ===== -->
         <div class="button-group">
             <button class="btn-deposit" id="depositBtn">💸 Deposit</button>
             <button class="btn-withdraw" id="withdrawBtn">💳 Withdraw</button>
         </div>
-    </div>
 
-    <div class="middle-row">
-        <div class="middle-item" onclick="location.href='treasure.html';">
-            <div class="middle-icon"><img src="https://i.ibb.co/zhHL7zW5/IMG-20260527-204336.jpg" alt="Treasure"></div>
-            <div class="middle-label">Treasure</div>
+        <!-- ===== MIDDLE ROW ===== -->
+        <div class="middle-row">
+            <div class="middle-item" onclick="location.href='treasure.html';">
+                <div class="middle-icon"><img src="https://i.ibb.co/zhHL7zW5/IMG-20260527-204336.jpg" alt="Treasure"></div>
+                <div class="middle-label">Treasure</div>
+            </div>
+            <div class="middle-item" onclick="location.href='loan.html';">
+                <div class="middle-icon"><img src="https://i.ibb.co/wZ3dDNTV/IMG-20260527-204420.jpg" alt="Loan"></div>
+                <div class="middle-label">Loan</div>
+            </div>
+            <div class="middle-item" onclick="location.href='voucher.html';">
+                <div class="middle-icon"><img src="https://i.ibb.co/QvmJxMkk/IMG-20260527-204350.jpg" alt="Voucher"></div>
+                <div class="middle-label">Voucher</div>
+            </div>
         </div>
-        <div class="middle-item" onclick="location.href='loan.html';">
-            <div class="middle-icon"><img src="https://i.ibb.co/wZ3dDNTV/IMG-20260527-204420.jpg" alt="Loan"></div>
-            <div class="middle-label">Loan</div>
+    </div>
+
+    <!-- ===== BOTTOM NAV ===== -->
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="dashboard.html">
+            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home">
+            <span class="nav-label">Home</span>
         </div>
-        <div class="middle-item" onclick="location.href='voucher.html';">
-            <div class="middle-icon"><img src="https://i.ibb.co/QvmJxMkk/IMG-20260527-204350.jpg" alt="Voucher"></div>
-            <div class="middle-label">Voucher</div>
+        <div class="nav-item" data-page="mkvip.html">
+            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip">
+            <span class="nav-label">Mkvip</span>
+        </div>
+        <div class="nav-item" data-page="jproduct.html">
+            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product">
+            <span class="nav-label">Jproduct</span>
+        </div>
+        <div class="nav-item" data-page="income.html">
+            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income">
+            <span class="nav-label">Income</span>
+        </div>
+        <div class="nav-item" data-page="team.html">
+            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team">
+            <span class="nav-label">Team</span>
+        </div>
+        <div class="nav-item" data-page="me.html">
+            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me">
+            <span class="nav-label">Me</span>
         </div>
     </div>
-</div>
 
-<div class="bottom-nav">
-    <div class="nav-item" data-page="dashboard.html">
-        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
+    <!-- ===== FLOATING BUTTONS ===== -->
+    <div class="floating-buttons">
+        <button class="floating-btn history" id="historyFloatBtn">📜</button>
+        <button class="floating-btn support" id="supportFloatBtn">💬</button>
     </div>
-    <div class="nav-item" data-page="mkvip.html">
-        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
-    </div>
-    <div class="nav-item" data-page="jproduct.html">
-        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
-    </div>
-    <div class="nav-item" data-page="income.html">
-        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
-    </div>
-    <div class="nav-item" data-page="team.html">
-        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
-    </div>
-    <div class="nav-item" data-page="me.html">
-        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
-    </div>
-</div>
 
-<div class="floating-buttons">
-    <button class="floating-btn history" id="historyFloatBtn">📜</button>
-    <button class="floating-btn support" id="supportFloatBtn">💬</button>
-</div>
-
-<div id="supportModal" class="modal-overlay">
-    <div class="support-modal">
-        <button class="close-modal" id="closeModalBtn">&times;</button>
-        <h3>📢 Support & Community</h3>
-        <div class="support-line">
-            <strong>📞 Assistant (Deposit/Withdraw)</strong>
-            <span>0961391022</span><br>
-            <button class="support-btn" onclick="window.open('https://wa.me/260961391022', '_blank')">💬 WhatsApp Assistant</button>
+    <!-- ===== SUPPORT MODAL ===== -->
+    <div id="supportModal" class="modal-overlay">
+        <div class="support-modal">
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+            <h3>📢 Support &amp; Community</h3>
+            <div class="support-line">
+                <strong>📞 Assistant (Deposit/Withdraw)</strong>
+                <span>0961391022</span><br>
+                <button class="support-btn" onclick="window.open('https://wa.me/260961391022', '_blank')">💬 WhatsApp Assistant</button>
+            </div>
+            <div class="support-line">
+                <strong>📞 Manager (All Accounts)</strong>
+                <span>0951359357</span><br>
+                <button class="support-btn" onclick="window.open('https://wa.me/260951359357', '_blank')">💬 WhatsApp Manager</button>
+            </div>
+            <div class="support-line">
+                <strong>👥 WhatsApp Group</strong>
+                <span>Join our investor community</span><br>
+                <button class="support-btn whatsapp-group" onclick="window.open('https://chat.whatsapp.com/KnggKPDuxj98Wxo1HAE6FP', '_blank')">📱 Join Group</button>
+            </div>
+            <div class="support-line">
+                <strong>📢 WhatsApp Channel</strong>
+                <span>Get news &amp; updates</span><br>
+                <button class="support-btn whatsapp-channel" onclick="window.open('https://whatsapp.com/channel/0029VbCoP1qFcowAHv8uFV2Y', '_blank')">🔔 Follow Channel</button>
+            </div>
+            <div class="support-line">
+                <strong>✈️ Telegram Community</strong>
+                <span>Stay connected</span><br>
+                <button class="support-btn telegram" onclick="window.open('https://t.me/pureorecapital', '_blank')">📨 Join Telegram</button>
+                <div style="font-size: 0.7rem; margin-top: 5px; color: #aaa;">(Official link – coming soon)</div>
+            </div>
+            <div style="font-size: 11px; margin-top: 12px; text-align:center;">We're here 24/7 to help you grow.</div>
         </div>
-        <div class="support-line">
-            <strong>📞 Manager (All Accounts)</strong>
-            <span>0951359357</span><br>
-            <button class="support-btn" onclick="window.open('https://wa.me/260951359357', '_blank')">💬 WhatsApp Manager</button>
-        </div>
-        <div class="support-line">
-            <strong>👥 WhatsApp Group</strong>
-            <span>Join our investor community</span><br>
-            <button class="support-btn whatsapp-group" onclick="window.open('https://chat.whatsapp.com/KnggKPDuxj98Wxo1HAE6FP', '_blank')">📱 Join Group</button>
-        </div>
-        <div class="support-line">
-            <strong>📢 WhatsApp Channel</strong>
-            <span>Get news & updates</span><br>
-            <button class="support-btn whatsapp-channel" onclick="window.open('https://whatsapp.com/channel/0029VbCoP1qFcowAHv8uFV2Y', '_blank')">🔔 Follow Channel</button>
-        </div>
-        <div class="support-line">
-            <strong>✈️ Telegram Community</strong>
-            <span>Stay connected</span><br>
-            <button class="support-btn telegram" onclick="window.open('https://t.me/pureorecapital', '_blank')">📨 Join Telegram</button>
-            <div style="font-size: 0.7rem; margin-top: 5px; color: #aaa;">(Official link – coming soon)</div>
-        </div>
-        <div style="font-size: 11px; margin-top: 12px; text-align:center;">We're here 24/7 to help you grow.</div>
     </div>
-</div>
 
-<div class="footer-links">
-    <a href="term.html">Terms of Service</a>
-    <a href="privacy.html">Privacy Policy</a>
-    <a href="risk-disclaimer.html">Risk Disclaimer</a>
-    <span>© Pureore Capital 2025</span>
-</div>
+    <!-- ===== FOOTER ===== -->
+    <div class="footer-links">
+        <a href="term.html">Terms of Service</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="risk-disclaimer.html">Risk Disclaimer</a>
+        <span>© Pureore Capital 2025</span>
+    </div>
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
-        authDomain: "pureore-capital-zambia.firebaseapp.com",
-        projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.appspot.com",
-        messagingSenderId: "78967797858",
-        appId: "1:78967797858:web:379b9692951429c345793b",
-        measurementId: "G-FQKC29NYE9"
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    
-    db.settings({ persistence: false });
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+    <script>
+        // ===== FIREBASE CONFIG =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b",
+            measurementId: "G-FQKC29NYE9"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    // ========== TOAST FUNCTION ==========
-    function showToast(msg, isError = false) {
-        const toast = document.createElement('div');
-        toast.innerText = msg;
-        toast.style.position = 'fixed';
-        toast.style.bottom = '90px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.background = isError ? '#ef4444' : '#2ecc71';
-        toast.style.color = 'white';
-        toast.style.padding = '10px 20px';
-        toast.style.borderRadius = '40px';
-        toast.style.zIndex = '9999';
-        toast.style.fontWeight = 'bold';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
+        db.settings({ persistence: false });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    // ========== BLOCK LISTENER ==========
-    let userBlockListener = null;
+        // ===== TOAST FUNCTION =====
+        function showToast(msg, isError = false) {
+            const toast = document.createElement('div');
+            toast.innerText = msg;
+            toast.style.position = 'fixed';
+            toast.style.bottom = '90px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = isError ? '#ef4444' : '#2ecc71';
+            toast.style.color = 'white';
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '40px';
+            toast.style.zIndex = '9999';
+            toast.style.fontWeight = 'bold';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
 
-    function watchBlockStatus(userId) {
-        if (userBlockListener) userBlockListener();
-        userBlockListener = db.collection('users').doc(userId)
-            .onSnapshot((doc) => {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked. Redirecting to login...', true);
-                    setTimeout(async () => {
-                        await auth.signOut();
-                        window.location.href = 'login.html';
-                    }, 2000);
+        // ===== BLOCK LISTENER =====
+        let userBlockListener = null;
+
+        function watchBlockStatus(userId) {
+            if (userBlockListener) userBlockListener();
+            userBlockListener = db.collection('users').doc(userId)
+                .onSnapshot((doc) => {
+                    if (doc.exists && doc.data().isBlocked === true) {
+                        showToast('⚠️ Your account has been blocked. Redirecting to login...', true);
+                        setTimeout(async () => {
+                            await auth.signOut();
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    }
+                }, (err) => console.warn('Block listener error:', err));
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (userBlockListener) userBlockListener();
+        });
+
+        // ===== COUNTRIES MARQUEE =====
+        const countries = [
+            { name: "UK", emoji: "🇬🇧" },
+            { name: "Tanzania", emoji: "🇹🇿" },
+            { name: "Ghana", emoji: "🇬🇭" },
+            { name: "Zimbabwe", emoji: "🇿🇼" },
+            { name: "Congo", emoji: "🇨🇬" },
+            { name: "Zambia", emoji: "🇿🇲" }
+        ];
+        const marquee = document.getElementById('flagsMarquee');
+        function buildMarquee() {
+            let html = '';
+            for (let i = 0; i < 2; i++) {
+                countries.forEach(country => {
+                    html += `<div class="flag-item"><div class="flag-icon">${country.emoji}</div><div class="flag-name">${country.name}</div></div>`;
+                });
+            }
+            marquee.innerHTML = html;
+        }
+        buildMarquee();
+
+        // ===== AUTH + BALANCE LISTENERS (Immediate load) =====
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            watchBlockStatus(user.uid);
+
+            const userId = user.uid;
+            // Get initial data immediately (no delay)
+            try {
+                const doc = await db.collection('users').doc(userId).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    const depositBalance = data.depositBalance || 0;
+                    document.getElementById('depositBalanceSpan').innerHTML = depositBalance.toFixed(2);
+                    const walletBalance = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
+                    document.getElementById('walletBalanceSpan').innerHTML = walletBalance.toFixed(2);
                 }
-            }, (err) => console.warn('Block listener error:', err));
-    }
+            } catch (e) {
+                console.warn("Initial balance load:", e);
+            }
 
-    window.addEventListener('beforeunload', () => {
-        if (userBlockListener) userBlockListener();
-    });
-
-    // ========== COUNTRIES MARQUEE ==========
-    const countries = [
-        { name: "UK", emoji: "🇬🇧" },
-        { name: "Tanzania", emoji: "🇹🇿" },
-        { name: "Ghana", emoji: "🇬🇭" },
-        { name: "Zimbabwe", emoji: "🇿🇼" },
-        { name: "Congo", emoji: "🇨🇬" },
-        { name: "Zambia", emoji: "🇿🇲" }
-    ];
-    const marquee = document.getElementById('flagsMarquee');
-    function buildMarquee() {
-        let html = '';
-        for (let i = 0; i < 2; i++) {
-            countries.forEach(country => {
-                html += `<div class="flag-item"><div class="flag-icon">${country.emoji}</div><div class="flag-name">${country.name}</div></div>`;
+            // Then listen for real-time updates
+            db.collection('users').doc(userId).onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const depositBalance = data.depositBalance || 0;
+                    document.getElementById('depositBalanceSpan').innerHTML = depositBalance.toFixed(2);
+                    const walletBalance = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
+                    document.getElementById('walletBalanceSpan').innerHTML = walletBalance.toFixed(2);
+                } else {
+                    document.getElementById('depositBalanceSpan').innerHTML = '0.00';
+                    document.getElementById('walletBalanceSpan').innerHTML = '0.00';
+                }
+            }, (error) => {
+                console.error("Balance listener error:", error);
+                document.getElementById('depositBalanceSpan').innerHTML = '0.00';
+                document.getElementById('walletBalanceSpan').innerHTML = '0.00';
             });
-        }
-        marquee.innerHTML = html;
-    }
-    buildMarquee();
-
-    // ========== AUTH + BLOCK LISTENER ==========
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
-        }
-        // Start watching for block
-        watchBlockStatus(user.uid);
-
-        const userId = user.uid;
-        db.collection('users').doc(userId).onSnapshot((doc) => {
-            if (doc.exists) {
-                let balance = doc.data().balance || 0;
-                document.getElementById('userBalanceSpan').innerHTML = balance.toFixed(2) + ' ZMW';
-            } else {
-                document.getElementById('userBalanceSpan').innerHTML = '0.00 ZMW';
-            }
-        }, (error) => {
-            console.error("Balance listener error:", error);
-            document.getElementById('userBalanceSpan').innerHTML = '0.00 ZMW (offline?)';
         });
-    });
 
-    document.getElementById('depositBtn')?.addEventListener('click', () => window.location.href = 'deposit.html');
-    document.getElementById('withdrawBtn')?.addEventListener('click', () => window.location.href = 'withdraw.html');
+        // ===== BUTTON EVENTS =====
+        document.getElementById('depositBtn')?.addEventListener('click', () => window.location.href = 'deposit.html');
+        document.getElementById('withdrawBtn')?.addEventListener('click', () => window.location.href = 'withdraw.html');
 
-    document.getElementById('historyFloatBtn')?.addEventListener('click', () => {
-        window.location.href = 'history.html';
-    });
+        document.getElementById('historyFloatBtn')?.addEventListener('click', () => {
+            window.location.href = 'history.html';
+        });
 
-    const modal = document.getElementById('supportModal');
-    const supportBtn = document.getElementById('supportFloatBtn');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    supportBtn?.addEventListener('click', () => modal.classList.add('active'));
-    closeModalBtn?.addEventListener('click', () => modal.classList.remove('active'));
-    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+        // ===== SUPPORT MODAL =====
+        const modal = document.getElementById('supportModal');
+        const supportBtn = document.getElementById('supportFloatBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        supportBtn?.addEventListener('click', () => modal.classList.add('active'));
+        closeModalBtn?.addEventListener('click', () => modal.classList.remove('active'));
+        modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
-    const navItems = document.querySelectorAll('.nav-item');
-    const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
-    navItems.forEach(item => {
-        const targetPage = item.getAttribute('data-page');
-        if (currentPage === targetPage) {
-            item.classList.add('active');
+        // ===== ANNOUNCEMENT POPUP =====
+        const announcementPopup = document.getElementById('announcementPopup');
+        const announcementClose = document.getElementById('announcementClose');
+
+        if (!sessionStorage.getItem('announcementShown')) {
+            setTimeout(() => {
+                announcementPopup.classList.add('active');
+                sessionStorage.setItem('announcementShown', 'true');
+            }, 800);
         }
-        item.addEventListener('click', () => {
-            if (targetPage && !window.location.pathname.includes(targetPage)) {
-                window.location.href = targetPage;
+
+        announcementClose?.addEventListener('click', () => {
+            announcementPopup.classList.remove('active');
+        });
+
+        announcementPopup?.addEventListener('click', (e) => {
+            if (e.target === announcementPopup) {
+                announcementPopup.classList.remove('active');
             }
         });
-    });
-</script>
+
+        // ===== NAVIGATION =====
+        const navItems = document.querySelectorAll('.nav-item');
+        const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
+
+        navItems.forEach(item => {
+            const targetPage = item.getAttribute('data-page');
+            if (currentPage === targetPage) {
+                item.classList.add('active');
+            }
+            item.addEventListener('click', () => {
+                if (targetPage && !window.location.pathname.includes(targetPage)) {
+                    window.location.href = targetPage;
+                }
+            });
+        });
+
+        // ===== NAV ICON AUTO-GLOW (every 3 seconds) =====
+        const glowColors = ['glow', 'glow-gold', 'glow-purple', ''];
+        let glowIndex = 0;
+
+        function cycleGlow() {
+            navItems.forEach(item => {
+                item.classList.remove('glow', 'glow-gold', 'glow-purple');
+            });
+
+            if (glowColors[glowIndex]) {
+                const targetIndex = glowIndex % navItems.length;
+                navItems[targetIndex].classList.add(glowColors[glowIndex]);
+            }
+
+            glowIndex = (glowIndex + 1) % (navItems.length + 1);
+        }
+
+        setInterval(cycleGlow, 3000);
+    </script>
 </body>
 </html>

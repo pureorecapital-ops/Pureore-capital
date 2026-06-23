@@ -9,50 +9,134 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ===== RESET & BASE ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            min-height: 100vh;
             background: #0A0A0C;
-            font-family: 'Inter', system-ui, sans-serif;
             color: #FFFFFF;
             padding: 1rem;
             padding-bottom: 85px;
-            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0A0A0C 0%, #0d1a0d 25%, #0a0d1a 50%, #1a0d0a 75%, #0A0A0C 100%);
+            background-size: 400% 400%;
+            animation: bgShift 12s ease-in-out infinite alternate;
+            z-index: -3;
         }
+        @keyframes bgShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ===== 4 FLOATING ORBS ===== */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.20;
+            z-index: -2;
+            pointer-events: none;
+            animation: floatOrb 12s ease-in-out infinite alternate;
+        }
+        .orb-1 { width: 400px; height: 400px; background: #00E676; top: -10%; left: -10%; animation-delay: 0s; }
+        .orb-2 { width: 350px; height: 350px; background: #00E5FF; bottom: -10%; right: -10%; animation-delay: 3s; }
+        .orb-3 { width: 300px; height: 300px; background: #FFD700; top: 40%; left: 75%; animation-delay: 6s; }
+        .orb-4 { width: 280px; height: 280px; background: #2979FF; bottom: 30%; left: -5%; animation-delay: 9s; }
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, -20px) scale(1.1); }
+        }
+
+        /* ===== CONTAINER ===== */
+        .container { max-width: 800px; margin: 0 auto; position: relative; z-index: 2; }
+
+        /* ===== HEADER ===== */
         .header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
-        .brand-logo {
+        .header-left {
+            display: flex;
+            flex-direction: column;
+        }
+        .page-title {
             font-size: 1.8rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #2ecc71, #f1c40f, #e67e22);
+            background: linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
+            background-size: 300% 300%;
+            animation: gradientShift 6s ease-in-out infinite alternate;
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            display: inline-block;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
         }
         .back-link {
-            display: inline-block;
-            margin-top: 0.5rem;
-            color: #2ecc71;
+            color: #00E676;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: 0.3s;
         }
+        .back-link:hover {
+            color: #FFD700;
+            transform: translateX(-3px);
+        }
+
+        /* ===== HISTORY AVATAR ===== */
+        .history-avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00E5FF, #2979FF, #00E676);
+            background-size: 200% 200%;
+            animation: avatarFlow 4s ease-in-out infinite alternate;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+        @keyframes avatarFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        .history-avatar svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        /* ===== TABS ===== */
         .tabs {
             display: flex;
             gap: 0.5rem;
             margin-bottom: 1.5rem;
-            background: #111116;
+            background: rgba(18, 18, 24, 0.7);
+            backdrop-filter: blur(8px);
             border-radius: 60px;
             padding: 0.3rem;
+            border: 1px solid rgba(255,255,255,0.05);
         }
         .tab-btn {
             flex: 1;
@@ -61,460 +145,624 @@
             padding: 0.7rem;
             border-radius: 50px;
             font-weight: 600;
+            font-size: 0.85rem;
             color: #aaa;
             cursor: pointer;
-            transition: 0.2s;
+            transition: 0.3s;
+            position: relative;
         }
         .tab-btn.active {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            color: white;
-            box-shadow: 0 2px 8px rgba(46,204,113,0.3);
+            background: linear-gradient(135deg, #00E676, #00E5FF);
+            color: #0A0A0C;
+            box-shadow: 0 4px 20px rgba(0, 230, 118, 0.2);
         }
+        .tab-btn:hover:not(.active) {
+            color: #fff;
+        }
+        .tab-badge {
+            background: #f1c40f;
+            color: #0A0A0C;
+            border-radius: 30px;
+            padding: 0.1rem 0.6rem;
+            font-size: 0.65rem;
+            font-weight: 700;
+            margin-left: 4px;
+            display: inline-block;
+        }
+
+        /* ===== TAB CONTENT ===== */
         .tab-content {
             display: none;
             animation: fadeIn 0.3s ease;
         }
-        .tab-content.active {
-            display: block;
-        }
+        .tab-content.active { display: block; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* ===== HISTORY CARDS ===== */
         .history-card {
-            background: rgba(18, 18, 24, 0.9);
+            background: rgba(18, 18, 24, 0.85);
             backdrop-filter: blur(8px);
-            border-radius: 24px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid;
-            transition: 0.2s;
+            border-radius: 20px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 0.8rem;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            background-image: linear-gradient(rgba(18, 18, 24, 0.85), rgba(18, 18, 24, 0.85)),
+                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
+            background-origin: padding-box, border-box;
+            background-clip: padding-box, border-box;
+            transition: 0.3s;
         }
         .history-card:hover {
             transform: translateX(4px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
             flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .card-left {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
         }
         .amount {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 700;
         }
+        .amount.positive { color: #00E676; }
+        .amount.negative { color: #ef4444; }
+
         .status {
             padding: 0.2rem 0.8rem;
             border-radius: 30px;
             font-size: 0.7rem;
             font-weight: 600;
         }
-        .status.pending { background: #f1c40f20; color: #f1c40f; border: 1px solid #f1c40f; }
-        .status.completed { background: #2ecc7120; color: #2ecc71; border: 1px solid #2ecc71; }
-        .status.rejected { background: #ef444420; color: #ef4444; border: 1px solid #ef4444; }
-        .status.active { background: #2ecc7120; color: #2ecc71; border: 1px solid #2ecc71; }
-        .status.paid { background: #2ecc7120; color: #2ecc71; border: 1px solid #2ecc71; }
-        .status.overdue { background: #ef444420; color: #ef4444; border: 1px solid #ef4444; }
+        .status.pending { background: rgba(241, 196, 15, 0.15); color: #f1c40f; border: 1px solid rgba(241, 196, 15, 0.3); }
+        .status.completed { background: rgba(0, 230, 118, 0.15); color: #00E676; border: 1px solid rgba(0, 230, 118, 0.3); }
+        .status.rejected { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .status.active { background: rgba(0, 230, 118, 0.15); color: #00E676; border: 1px solid rgba(0, 230, 118, 0.3); }
+        .status.paid { background: rgba(0, 230, 118, 0.15); color: #00E676; border: 1px solid rgba(0, 230, 118, 0.3); }
+        .status.overdue { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .balance-tag {
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 0.1rem 0.6rem;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.06);
+            color: #aaa;
+            display: inline-block;
+        }
+        .balance-tag.deposit { color: #FFD700; border: 1px solid rgba(255, 215, 0, 0.2); }
+        .balance-tag.wallet { color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.2); }
+
         .details {
             font-size: 0.8rem;
             color: #aaa;
             margin-top: 0.3rem;
+            line-height: 1.5;
         }
+        .details strong { color: #ddd; }
+        .details .highlight { color: #FFD700; }
+
+        .empty-msg {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            font-size: 0.9rem;
+        }
+
         .screenshot-thumb {
             max-width: 80px;
             border-radius: 12px;
             margin-top: 0.5rem;
             cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .empty-msg {
+
+        /* ===== FOOTER ===== */
+        .footer {
             text-align: center;
-            color: #aaa;
-            padding: 2rem;
-        }
-        .pending-badge {
-            background: #f1c40f;
-            color: #0A0A0C;
-            border-radius: 30px;
-            padding: 0.2rem 0.6rem;
             font-size: 0.7rem;
-            font-weight: bold;
-            margin-left: 0.5rem;
+            color: #555;
+            margin-top: 1.5rem;
+            padding: 0.5rem;
+            border-top: 1px solid rgba(255,255,255,0.03);
         }
-        .error-msg {
-            color: #ef4444;
-            text-align: center;
-            padding: 1rem;
-        }
+        .footer span { color: #666; }
+
+        /* ===== BOTTOM NAV - ONLY NEW ICONS ===== */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(15, 15, 20, 0.95);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(46, 204, 113, 0.2);
+            background: rgba(10, 10, 14, 0.97);
+            backdrop-filter: blur(16px);
+            border-top: 2px solid transparent;
+            background-clip: padding-box;
+            background-image: linear-gradient(rgba(10, 10, 14, 0.97), rgba(10, 10, 14, 0.97)),
+                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
+            background-origin: padding-box, border-box;
+            background-clip: padding-box, border-box;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 8px 12px 20px;
+            padding: 6px 6px 18px;
             z-index: 30;
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
         }
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             flex: 1;
             text-align: center;
+            padding: 4px 2px;
+            border-radius: 16px;
         }
-        .nav-item:hover { transform: translateY(-3px); }
+        .nav-item:hover { transform: translateY(-4px); }
         .nav-icon {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             object-fit: contain;
-            filter: brightness(0.8);
+            filter: brightness(0.5) grayscale(0.5);
+            transition: 0.4s;
+            border-radius: 8px;
+            padding: 2px;
+        }
+        .nav-item.active .nav-icon {
+            filter: brightness(1) drop-shadow(0 0 12px rgba(0, 230, 118, 0.7));
+            transform: scale(1.05);
+        }
+        /* Auto-glow cycling */
+        .nav-item.glow .nav-icon {
+            filter: brightness(1) drop-shadow(0 0 16px rgba(0, 229, 255, 0.8));
+            transform: scale(1.08);
+        }
+        .nav-item.glow-gold .nav-icon {
+            filter: brightness(1) drop-shadow(0 0 16px rgba(255, 215, 0, 0.8));
+            transform: scale(1.08);
+        }
+        .nav-item.glow-purple .nav-icon {
+            filter: brightness(1) drop-shadow(0 0 16px rgba(41, 121, 255, 0.8));
+            transform: scale(1.08);
         }
         .nav-label {
-            font-size: 0.7rem;
-            color: #aaa;
+            font-size: 0.65rem;
+            color: #888;
             font-weight: 500;
+            letter-spacing: 0.3px;
         }
-        .nav-item.active .nav-label { color: #2ecc71; }
+        .nav-item.active .nav-label { color: #00E676; }
+        .nav-item.glow .nav-label,
+        .nav-item.glow-gold .nav-label,
+        .nav-item.glow-purple .nav-label {
+            color: #fff;
+        }
+
         @media (max-width: 600px) {
-            .tab-btn { font-size: 0.8rem; padding: 0.5rem; }
+            .page-title { font-size: 1.3rem; }
+            .tab-btn { font-size: 0.7rem; padding: 0.5rem; }
             .amount { font-size: 1rem; }
+            .history-avatar { width: 45px; height: 45px; }
+            .history-avatar svg { width: 24px; height: 24px; }
+            .nav-icon { width: 28px; height: 28px; }
+            .nav-label { font-size: 0.55rem; }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <div class="brand-logo">📜 Transaction History</div>
-        <br>
-        <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+
+    <!-- ===== 4 FLOATING ORBS ===== -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+
+    <div class="container">
+
+        <!-- ===== HEADER ===== -->
+        <div class="header">
+            <div class="header-left">
+                <div class="page-title">📜 Transaction History</div>
+                <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+            </div>
+            <!-- History Avatar -->
+            <div class="history-avatar" title="Transaction History">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- ===== TABS ===== -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="deposits">💸 Deposits</button>
+            <button class="tab-btn" data-tab="withdrawals">💳 Withdrawals</button>
+            <button class="tab-btn" data-tab="loans">🏦 Loans</button>
+        </div>
+
+        <!-- ===== TAB CONTENT ===== -->
+        <div id="depositsTab" class="tab-content active">
+            <div id="depositsList"></div>
+        </div>
+        <div id="withdrawalsTab" class="tab-content">
+            <div id="withdrawalsList"></div>
+        </div>
+        <div id="loansTab" class="tab-content">
+            <div id="loansList"></div>
+        </div>
+
+        <!-- ===== FOOTER ===== -->
+        <div class="footer">
+            <span>© Pureore Capital 2025</span>
+        </div>
+
     </div>
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="deposits">💸 Deposits</button>
-        <button class="tab-btn" data-tab="withdrawals">💳 Withdrawals</button>
-        <button class="tab-btn" data-tab="loans">🏦 Loans</button>
+    <!-- ===== BOTTOM NAV - ONLY NEW ICONS ===== -->
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="dashboard.html">
+            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home">
+            <span class="nav-label">Home</span>
+        </div>
+        <div class="nav-item" data-page="mkvip.html">
+            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip">
+            <span class="nav-label">Mkvip</span>
+        </div>
+        <div class="nav-item" data-page="jproduct.html">
+            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product">
+            <span class="nav-label">Jproduct</span>
+        </div>
+        <div class="nav-item" data-page="income.html">
+            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income">
+            <span class="nav-label">Income</span>
+        </div>
+        <div class="nav-item" data-page="team.html">
+            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team">
+            <span class="nav-label">Team</span>
+        </div>
+        <div class="nav-item" data-page="me.html">
+            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me">
+            <span class="nav-label">Me</span>
+        </div>
     </div>
 
-    <div id="depositsTab" class="tab-content active">
-        <div id="depositsList"></div>
-    </div>
-    <div id="withdrawalsTab" class="tab-content">
-        <div id="withdrawalsList"></div>
-    </div>
-    <div id="loansTab" class="tab-content">
-        <div id="loansList"></div>
-    </div>
+    <script>
+        // ===== FIREBASE CONFIG =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b",
+            measurementId: "G-FQKC29NYE9"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        db.settings({ persistence: false });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-    <div class="footer">
-        <span>© Pureore Capital 2025</span> — <span>Pending requests are reviewed by admin</span>
-    </div>
-</div>
-
-<div class="bottom-nav">
-    <div class="nav-item" data-page="dashboard.html">
-        <img class="nav-icon" src="https://i.ibb.co/6LG91dH/IMG-20260525-114357.jpg" alt="Home"><span class="nav-label">Home</span>
-    </div>
-    <div class="nav-item" data-page="mkvip.html">
-        <img class="nav-icon" src="https://i.ibb.co/MyN2M3qT/IMG-20260525-114308.jpg" alt="Mk vip"><span class="nav-label">Mk vip</span>
-    </div>
-    <div class="nav-item" data-page="jproduct.html">
-        <img class="nav-icon" src="https://i.ibb.co/qYHdfQ2R/IMG-20260525-114242.jpg" alt="J product"><span class="nav-label">J product</span>
-    </div>
-    <div class="nav-item" data-page="income.html">
-        <img class="nav-icon" src="https://i.ibb.co/mrsbXQrm/IMG-20260525-114226.jpg" alt="Income"><span class="nav-label">Income</span>
-    </div>
-    <div class="nav-item" data-page="team.html">
-        <img class="nav-icon" src="https://i.ibb.co/N6R038GQ/IMG-20260525-114127.jpg" alt="Team"><span class="nav-label">Team</span>
-    </div>
-    <div class="nav-item" data-page="me.html">
-        <img class="nav-icon" src="https://i.ibb.co/21XdB8zF/IMG-20260525-114324.jpg" alt="Me"><span class="nav-label">Me</span>
-    </div>
-</div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
-        authDomain: "pureore-capital-zambia.firebaseapp.com",
-        projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.appspot.com",
-        messagingSenderId: "78967797858",
-        appId: "1:78967797858:web:379b9692951429c345793b",
-        measurementId: "G-FQKC29NYE9"
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    db.settings({ persistence: false });
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
-
-    // ========== TOAST FUNCTION ==========
-    function showToast(msg, isError = false) {
-        const toast = document.createElement('div');
-        toast.innerText = msg;
-        toast.style.position = 'fixed';
-        toast.style.bottom = '90px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.background = isError ? '#ef4444' : '#2ecc71';
-        toast.style.color = 'white';
-        toast.style.padding = '10px 20px';
-        toast.style.borderRadius = '40px';
-        toast.style.zIndex = '9999';
-        toast.style.fontWeight = 'bold';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ========== BLOCK LISTENER ==========
-    let userBlockListener = null;
-
-    function watchBlockStatus(userId) {
-        if (userBlockListener) userBlockListener();
-        userBlockListener = db.collection('users').doc(userId)
-            .onSnapshot((doc) => {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked. Redirecting to login...', true);
-                    setTimeout(async () => {
-                        await auth.signOut();
-                        window.location.href = 'login.html';
-                    }, 2000);
-                }
-            }, (err) => console.warn('Block listener error:', err));
-    }
-
-    window.addEventListener('beforeunload', () => {
-        if (userBlockListener) userBlockListener();
-    });
-
-    function formatDate(timestamp) {
-        if (!timestamp) return 'N/A';
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleDateString('en-GB'); // DD/MM/YYYY
-    }
-
-    function formatDateTime(timestamp) {
-        if (!timestamp) return 'N/A';
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleString('en-GB');
-    }
-
-    function formatMoney(amount) {
-        return 'K' + parseFloat(amount).toFixed(2);
-    }
-
-    // Tab switching
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabs = {
-        deposits: document.getElementById('depositsTab'),
-        withdrawals: document.getElementById('withdrawalsTab'),
-        loans: document.getElementById('loansTab')
-    };
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabId = btn.dataset.tab;
-            tabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            Object.values(tabs).forEach(tab => tab.classList.remove('active'));
-            if (tabs[tabId]) tabs[tabId].classList.add('active');
-        });
-    });
-
-    let unsubDeposits = null;
-    let unsubWithdrawals = null;
-    let unsubLoans = null;
-
-    auth.onAuthStateChanged((user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
+        // ===== TOAST =====
+        function showToast(msg, isError = false) {
+            const toast = document.createElement('div');
+            toast.innerText = msg;
+            toast.style.position = 'fixed';
+            toast.style.bottom = '90px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = isError ? '#ef4444' : '#2ecc71';
+            toast.style.color = 'white';
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '40px';
+            toast.style.zIndex = '9999';
+            toast.style.fontWeight = 'bold';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
-        // Start watching for block
-        watchBlockStatus(user.uid);
 
-        if (unsubDeposits) unsubDeposits();
-        if (unsubWithdrawals) unsubWithdrawals();
-        if (unsubLoans) unsubLoans();
+        // ===== BLOCK LISTENER =====
+        let userBlockListener = null;
+        function watchBlockStatus(userId) {
+            if (userBlockListener) userBlockListener();
+            userBlockListener = db.collection('users').doc(userId)
+                .onSnapshot((doc) => {
+                    if (doc.exists && doc.data().isBlocked === true) {
+                        showToast('⚠️ Your account has been blocked. Redirecting to login...', true);
+                        setTimeout(async () => {
+                            await auth.signOut();
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    }
+                }, (err) => console.warn('Block listener error:', err));
+        }
+        window.addEventListener('beforeunload', () => {
+            if (userBlockListener) userBlockListener();
+        });
 
-        try {
+        // ===== HELPERS =====
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleDateString('en-GB');
+        }
+
+        function formatDateTime(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleString('en-GB');
+        }
+
+        function formatMoney(amount) {
+            return 'K' + parseFloat(amount).toFixed(2);
+        }
+
+        // ===== TAB SWITCHING =====
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabs = {
+            deposits: document.getElementById('depositsTab'),
+            withdrawals: document.getElementById('withdrawalsTab'),
+            loans: document.getElementById('loansTab')
+        };
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                Object.values(tabs).forEach(tab => tab.classList.remove('active'));
+                if (tabs[tabId]) tabs[tabId].classList.add('active');
+            });
+        });
+
+        // ===== LISTENERS =====
+        let unsubDeposits = null;
+        let unsubWithdrawals = null;
+        let unsubLoans = null;
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            watchBlockStatus(user.uid);
+
+            if (unsubDeposits) unsubDeposits();
+            if (unsubWithdrawals) unsubWithdrawals();
+            if (unsubLoans) unsubLoans();
+
             unsubDeposits = listenDeposits(user.uid);
             unsubWithdrawals = listenWithdrawals(user.uid);
             unsubLoans = listenLoans(user.uid);
-        } catch (err) {
-            console.error("Failed to start listeners", err);
-            document.getElementById('depositsList').innerHTML = '<div class="error-msg">Error connecting to database. Please refresh.</div>';
-        }
-    });
-
-    function listenDeposits(userId) {
-        const depositsList = document.getElementById('depositsList');
-        const q = db.collection('deposits').where('userId', '==', userId);
-        return q.onSnapshot((snapshot) => {
-            if (snapshot.empty) {
-                depositsList.innerHTML = '<div class="empty-msg">No deposit records found.</div>';
-                updateTabBadge('deposits', 0);
-                return;
-            }
-            const docs = [];
-            snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
-            docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-            
-            let html = '';
-            let pendingCount = 0;
-            docs.forEach(data => {
-                if (data.status === 'pending') pendingCount++;
-                const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
-                const borderColor = data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444');
-                html += `
-                    <div class="history-card" style="border-left-color: ${borderColor}">
-                        <div class="card-header">
-                            <span class="amount">${formatMoney(data.amount)}</span>
-                            <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
-                        </div>
-                        <div class="details">
-                            <strong>Method:</strong> ${data.paymentMethod || 'N/A'}<br>
-                            <strong>Phone/Card:</strong> ${data.phone || data.cardNumber || 'N/A'}<br>
-                            <strong>Date:</strong> ${formatDateTime(data.createdAt)}
-                        </div>
-                        ${data.screenshotUrl ? `<img src="${data.screenshotUrl}" class="screenshot-thumb" onclick="window.open('${data.screenshotUrl}','_blank')" alt="screenshot">` : ''}
-                    </div>
-                `;
-            });
-            depositsList.innerHTML = html;
-            updateTabBadge('deposits', pendingCount);
-        }, (error) => {
-            console.error("Deposit listener error:", error);
-            depositsList.innerHTML = '<div class="error-msg">Error loading deposits. Check console for details.</div>';
         });
-    }
 
-    function listenWithdrawals(userId) {
-        const withdrawalsList = document.getElementById('withdrawalsList');
-        const q = db.collection('withdrawals').where('userId', '==', userId);
-        return q.onSnapshot((snapshot) => {
-            if (snapshot.empty) {
-                withdrawalsList.innerHTML = '<div class="empty-msg">No withdrawal records found.</div>';
-                updateTabBadge('withdrawals', 0);
-                return;
-            }
-            const docs = [];
-            snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
-            docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-            
-            let html = '';
-            let pendingCount = 0;
-            docs.forEach(data => {
-                if (data.status === 'pending') pendingCount++;
-                const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
-                const borderColor = data.status === 'completed' ? '#2ecc71' : (data.status === 'pending' ? '#f1c40f' : '#ef4444');
-                html += `
-                    <div class="history-card" style="border-left-color: ${borderColor}">
-                        <div class="card-header">
-                            <span class="amount">${formatMoney(data.amount)}</span>
-                            <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
-                        </div>
-                        <div class="details">
-                            <strong>Network:</strong> ${data.network || 'N/A'}<br>
-                            <strong>Contact:</strong> ${data.phone || data.cardNumber || 'N/A'}<br>
-                            <strong>Received after fee:</strong> ${formatMoney(data.netAmount || data.amount)}<br>
-                            <strong>Date:</strong> ${formatDateTime(data.createdAt)}
-                        </div>
-                    </div>
-                `;
-            });
-            withdrawalsList.innerHTML = html;
-            updateTabBadge('withdrawals', pendingCount);
-        }, (error) => {
-            console.error("Withdrawal listener error:", error);
-            withdrawalsList.innerHTML = '<div class="error-msg">Error loading withdrawals.</div>';
-        });
-    }
-
-    function listenLoans(userId) {
-        const loansList = document.getElementById('loansList');
-        const q = db.collection('loans').where('userId', '==', userId);
-        return q.onSnapshot((snapshot) => {
-            if (snapshot.empty) {
-                loansList.innerHTML = '<div class="empty-msg">No loan records found.</div>';
-                updateTabBadge('loans', 0);
-                return;
-            }
-            const docs = [];
-            snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
-            docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-            
-            let html = '';
-            let activeCount = 0;
-            docs.forEach(data => {
-                if (data.status === 'active') activeCount++;
-                let statusClass = 'active';
-                let borderColor = '#f1c40f';
-                if (data.status === 'paid') {
-                    statusClass = 'paid';
-                    borderColor = '#2ecc71';
-                } else if (data.status === 'overdue') {
-                    statusClass = 'overdue';
-                    borderColor = '#ef4444';
-                } else if (data.status === 'pending') {
-                    statusClass = 'pending';
-                    borderColor = '#f1c40f';
+        // ===== DEPOSITS =====
+        function listenDeposits(userId) {
+            const list = document.getElementById('depositsList');
+            const q = db.collection('deposits').where('userId', '==', userId);
+            return q.onSnapshot((snapshot) => {
+                if (snapshot.empty) {
+                    list.innerHTML = '<div class="empty-msg">No deposit records found.</div>';
+                    updateTabBadge('deposits', 0);
+                    return;
                 }
-                html += `
-                    <div class="history-card" style="border-left-color: ${borderColor}">
-                        <div class="card-header">
-                            <span class="amount">${formatMoney(data.amount)}</span>
-                            <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
+                const docs = [];
+                snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+                docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+                let html = '';
+                let pendingCount = 0;
+                docs.forEach(data => {
+                    if (data.status === 'pending') pendingCount++;
+                    const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
+                    const isPending = data.status === 'pending';
+                    const isCompleted = data.status === 'completed';
+                    const isRejected = data.status === 'rejected';
+
+                    let balanceTag = '';
+                    if (isCompleted) {
+                        balanceTag = `<span class="balance-tag deposit">➕ Deposit Balance (TZS)</span>`;
+                    } else if (isPending) {
+                        balanceTag = `<span class="balance-tag" style="color:#f1c40f;border-color:rgba(241,196,15,0.2);">⏳ Wait for admin approval</span>`;
+                    } else if (isRejected) {
+                        balanceTag = `<span class="balance-tag" style="color:#ef4444;border-color:rgba(239,68,68,0.2);">❌ Rejected</span>`;
+                    }
+
+                    html += `
+                        <div class="history-card">
+                            <div class="card-header">
+                                <div class="card-left">
+                                    <span class="amount positive">+${formatMoney(data.amount)}</span>
+                                    <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
+                                </div>
+                                ${balanceTag}
+                            </div>
+                            <div class="details">
+                                <strong>Method:</strong> ${data.paymentMethod || 'N/A'} &nbsp;|&nbsp;
+                                <strong>Phone/Card:</strong> ${data.phone || data.cardNumber || 'N/A'}<br>
+                                <strong>Date:</strong> ${formatDateTime(data.createdAt)}
+                            </div>
+                            ${data.screenshotUrl ? `<img src="${data.screenshotUrl}" class="screenshot-thumb" onclick="window.open('${data.screenshotUrl}','_blank')" alt="screenshot">` : ''}
                         </div>
-                        <div class="details">
-                            <strong>To repay:</strong> ${formatMoney(data.repayTotal)}<br>
-                            <strong>Due date:</strong> ${formatDate(data.dueDate)}<br>
-                            <strong>Created:</strong> ${formatDateTime(data.createdAt)}
-                        </div>
-                    </div>
-                `;
+                    `;
+                });
+                list.innerHTML = html;
+                updateTabBadge('deposits', pendingCount);
+            }, (error) => {
+                console.error("Deposit listener error:", error);
+                list.innerHTML = '<div class="empty-msg">Error loading deposits.</div>';
             });
-            loansList.innerHTML = html;
-            updateTabBadge('loans', activeCount);
-        }, (error) => {
-            console.error("Loan listener error:", error);
-            loansList.innerHTML = '<div class="error-msg">Error loading loans.</div>';
-        });
-    }
-
-    function updateTabBadge(tabName, count) {
-        const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
-        if (!btn) return;
-        const baseText = {
-            deposits: '💸 Deposits',
-            withdrawals: '💳 Withdrawals',
-            loans: '🏦 Loans'
-        }[tabName];
-        if (count > 0) {
-            btn.innerHTML = `${baseText} <span class="pending-badge">${count}</span>`;
-        } else {
-            btn.innerHTML = baseText;
         }
-    }
 
-    // Bottom navigation active state
-    const navItems = document.querySelectorAll('.nav-item');
-    const currentPage = window.location.pathname.split('/').pop() || 'history.html';
-    navItems.forEach(item => {
-        const targetPage = item.getAttribute('data-page');
-        if (currentPage === targetPage) item.classList.add('active');
-        item.addEventListener('click', () => {
-            if (targetPage && !window.location.pathname.includes(targetPage)) {
-                window.location.href = targetPage;
+        // ===== WITHDRAWALS =====
+        function listenWithdrawals(userId) {
+            const list = document.getElementById('withdrawalsList');
+            const q = db.collection('withdrawals').where('userId', '==', userId);
+            return q.onSnapshot((snapshot) => {
+                if (snapshot.empty) {
+                    list.innerHTML = '<div class="empty-msg">No withdrawal records found.</div>';
+                    updateTabBadge('withdrawals', 0);
+                    return;
+                }
+                const docs = [];
+                snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+                docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+                let html = '';
+                let pendingCount = 0;
+                docs.forEach(data => {
+                    if (data.status === 'pending') pendingCount++;
+                    const statusClass = data.status === 'pending' ? 'pending' : (data.status === 'completed' ? 'completed' : 'rejected');
+                    const isPending = data.status === 'pending';
+                    const isCompleted = data.status === 'completed';
+                    const isRejected = data.status === 'rejected';
+
+                    let balanceTag = '';
+                    if (isCompleted) {
+                        balanceTag = `<span class="balance-tag wallet">➖ Wallet Balance (ZMW)</span>`;
+                    } else if (isPending) {
+                        balanceTag = `<span class="balance-tag" style="color:#f1c40f;border-color:rgba(241,196,15,0.2);">⏳ Wait for admin approval</span>`;
+                    } else if (isRejected) {
+                        balanceTag = `<span class="balance-tag" style="color:#ef4444;border-color:rgba(239,68,68,0.2);">❌ Rejected</span>`;
+                    }
+
+                    html += `
+                        <div class="history-card">
+                            <div class="card-header">
+                                <div class="card-left">
+                                    <span class="amount negative">-${formatMoney(data.amount)}</span>
+                                    <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
+                                </div>
+                                ${balanceTag}
+                            </div>
+                            <div class="details">
+                                <strong>Network:</strong> ${data.network || 'N/A'} &nbsp;|&nbsp;
+                                <strong>Contact:</strong> ${data.phone || data.cardNumber || 'N/A'}<br>
+                                <strong>Received after fee:</strong> <span class="highlight">${formatMoney(data.netAmount || data.amount)}</span><br>
+                                <strong>Date:</strong> ${formatDateTime(data.createdAt)}
+                            </div>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+                updateTabBadge('withdrawals', pendingCount);
+            }, (error) => {
+                console.error("Withdrawal listener error:", error);
+                list.innerHTML = '<div class="empty-msg">Error loading withdrawals.</div>';
+            });
+        }
+
+        // ===== LOANS =====
+        function listenLoans(userId) {
+            const list = document.getElementById('loansList');
+            const q = db.collection('loans').where('userId', '==', userId);
+            return q.onSnapshot((snapshot) => {
+                if (snapshot.empty) {
+                    list.innerHTML = '<div class="empty-msg">No loan records found.</div>';
+                    updateTabBadge('loans', 0);
+                    return;
+                }
+                const docs = [];
+                snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+                docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+                let html = '';
+                let activeCount = 0;
+                docs.forEach(data => {
+                    if (data.status === 'active') activeCount++;
+                    let statusClass = 'active';
+                    if (data.status === 'paid') statusClass = 'paid';
+                    else if (data.status === 'overdue') statusClass = 'overdue';
+                    else if (data.status === 'pending') statusClass = 'pending';
+
+                    html += `
+                        <div class="history-card">
+                            <div class="card-header">
+                                <div class="card-left">
+                                    <span class="amount">${formatMoney(data.amount)}</span>
+                                    <span class="status ${statusClass}">${data.status.toUpperCase()}</span>
+                                </div>
+                                <span class="balance-tag">🏦 Loan</span>
+                            </div>
+                            <div class="details">
+                                <strong>To repay:</strong> ${formatMoney(data.repayTotal)} &nbsp;|&nbsp;
+                                <strong>Due date:</strong> ${formatDate(data.dueDate)}<br>
+                                <strong>Created:</strong> ${formatDateTime(data.createdAt)}
+                            </div>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+                updateTabBadge('loans', activeCount);
+            }, (error) => {
+                console.error("Loan listener error:", error);
+                list.innerHTML = '<div class="empty-msg">Error loading loans.</div>';
+            });
+        }
+
+        // ===== UPDATE TAB BADGE =====
+        function updateTabBadge(tabName, count) {
+            const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+            if (!btn) return;
+            const baseText = {
+                deposits: '💸 Deposits',
+                withdrawals: '💳 Withdrawals',
+                loans: '🏦 Loans'
+            }[tabName];
+            if (count > 0) {
+                btn.innerHTML = `${baseText} <span class="tab-badge">${count}</span>`;
+            } else {
+                btn.innerHTML = baseText;
             }
+        }
+
+        // ===== NAVIGATION =====
+        const navItems = document.querySelectorAll('.nav-item');
+        const currentPage = window.location.pathname.split('/').pop() || 'history.html';
+
+        navItems.forEach(item => {
+            const targetPage = item.getAttribute('data-page');
+            if (currentPage === targetPage) {
+                item.classList.add('active');
+            }
+            item.addEventListener('click', () => {
+                if (targetPage && !window.location.pathname.includes(targetPage)) {
+                    window.location.href = targetPage;
+                }
+            });
         });
-    });
-</script>
+
+        // ===== NAV ICON AUTO-GLOW (every 3 seconds) =====
+        const glowColors = ['glow', 'glow-gold', 'glow-purple', ''];
+        let glowIndex = 0;
+
+        function cycleGlow() {
+            navItems.forEach(item => {
+                item.classList.remove('glow', 'glow-gold', 'glow-purple');
+            });
+
+            if (glowColors[glowIndex]) {
+                const targetIndex = glowIndex % navItems.length;
+                navItems[targetIndex].classList.add(glowColors[glowIndex]);
+            }
+
+            glowIndex = (glowIndex + 1) % (navItems.length + 1);
+        }
+
+        setInterval(cycleGlow, 3000);
+    </script>
 </body>
 </html>
