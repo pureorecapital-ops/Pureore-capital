@@ -108,7 +108,6 @@
             align-items: center;
             gap: 8px;
         }
-        /* ===== WITHDRAWAL AVATAR ===== */
         .withdraw-avatar {
             width: 55px;
             height: 55px;
@@ -345,6 +344,23 @@
         }
         .btn-edit:hover { background: rgba(0,229,255,0.25); }
 
+        .btn-add-small {
+            background: linear-gradient(135deg, #FFD700, #F59E0B);
+            padding: 0.3rem 0.8rem;
+            border: none;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #0A0A0C;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 2px 10px rgba(255,215,0,0.2);
+        }
+        .btn-add-small:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(255,215,0,0.3);
+        }
+
         /* ===== SAVED NETWORKS LIST ===== */
         .saved-network-item {
             background: rgba(255,255,255,0.03);
@@ -474,7 +490,6 @@
         <!-- ===== HEADER WITH AVATAR ===== -->
         <div class="header">
             <div class="page-title">💰 Withdraw</div>
-            <!-- Withdrawal Avatar (Coins/Wallet) -->
             <div class="withdraw-avatar" title="Withdraw Funds">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
@@ -545,7 +560,10 @@
             <div id="savedNetworksContainer">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
                     <span style="font-size:0.85rem; color:#aaa;">Your saved networks:</span>
-                    <button class="btn-edit" id="manageNetworksBtn">⚙️ Manage</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn-add-small" id="quickAddBtn">➕ Add</button>
+                        <button class="btn-edit" id="manageNetworksBtn">⚙️</button>
+                    </div>
                 </div>
                 <div id="savedNetworksList"></div>
             </div>
@@ -645,6 +663,7 @@
         const closeModalBtn = document.getElementById('closeModalBtn');
         const addNewFromModal = document.getElementById('addNewFromModal');
         const manageNetworksBtn = document.getElementById('manageNetworksBtn');
+        const quickAddBtn = document.getElementById('quickAddBtn');
         const dynamicRulesMsg = document.getElementById('dynamicRulesMsg');
 
         // ===== TOAST =====
@@ -688,7 +707,6 @@
             });
             networkDetails.classList.remove('hidden');
 
-            // Update labels
             if (network === 'Bank') {
                 numberLabel.textContent = '🏦 Bank Account Number';
                 numberHint.textContent = 'Enter your bank account number (16 digits recommended)';
@@ -703,13 +721,20 @@
             accountNumberInput.value = '';
         }
 
-        // ===== ADD NETWORK =====
+        // ===== ADD NETWORK (with duplicate check) =====
         async function addNetwork() {
             const name = accountNameInput.value.trim();
             let number = accountNumberInput.value.trim();
 
             if (!name) { setupError.textContent = '❌ Please enter your full name.'; return; }
             if (!number) { setupError.textContent = '❌ Please enter your ' + (selectedNetwork === 'Bank' ? 'account number' : 'phone number') + '.'; return; }
+
+            // ✅ DUPLICATE CHECK: Only one network per type
+            const existing = savedNetworks.find(item => item.network === selectedNetwork);
+            if (existing && !isEditing) {
+                setupError.textContent = `❌ You already have a saved ${selectedNetwork} network. Please edit it instead.`;
+                return;
+            }
 
             // Validate phone number for mobile networks
             if (selectedNetwork !== 'Bank') {
@@ -729,7 +754,6 @@
                 }
             }
 
-            // Validate bank account (optional min length check)
             if (selectedNetwork === 'Bank') {
                 number = number.replace(/\D/g, '');
                 if (number.length < 8) {
@@ -741,7 +765,6 @@
             setupError.textContent = '';
 
             if (isEditing && editId) {
-                // Update existing
                 const updated = savedNetworks.map(item => {
                     if (item.id === editId) {
                         return { ...item, name, number };
@@ -754,7 +777,6 @@
                 addNetworkBtn.textContent = '➕ Add Network';
                 showToast('✅ Network updated successfully!', 'success');
             } else {
-                // Add new
                 const newNetwork = {
                     id: Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
                     network: selectedNetwork,
@@ -766,13 +788,11 @@
                 showToast(`✅ ${selectedNetwork} added successfully!`, 'success');
             }
 
-            // Save to Firestore
             try {
                 await db.collection('users').doc(userId).update({
                     savedNetworks: savedNetworks
                 });
             } catch (e) {
-                // If field doesn't exist, set it
                 await db.collection('users').doc(userId).set({
                     savedNetworks: savedNetworks
                 }, { merge: true });
@@ -785,7 +805,6 @@
             networkDetails.classList.add('hidden');
             selectedNetwork = null;
 
-            // Refresh UI
             checkSavedNetworks();
         }
 
@@ -798,7 +817,6 @@
                 setupCard.classList.add('hidden');
                 withdrawCard.classList.remove('hidden');
                 renderSavedNetworks();
-                // Auto-select if only one
                 if (savedNetworks.length === 1) {
                     selectedNetworkForWithdraw = savedNetworks[0].id;
                 } else {
@@ -808,7 +826,7 @@
             }
         }
 
-        // ===== RENDER SAVED NETWORKS (Withdraw Card) =====
+        // ===== RENDER SAVED NETWORKS =====
         function renderSavedNetworks() {
             if (savedNetworks.length === 0) {
                 savedNetworksList.innerHTML = '<div style="color:#666; font-size:0.85rem; text-align:center; padding:0.5rem;">No networks saved. Please add one.</div>';
@@ -818,7 +836,7 @@
             let html = '';
             const showRadio = savedNetworks.length > 1;
 
-            savedNetworks.forEach((item, index) => {
+            savedNetworks.forEach((item) => {
                 const isSelected = selectedNetworkForWithdraw === item.id;
                 html += `
                     <div class="saved-network-item" style="${isSelected ? 'border-color:#00E676; background:rgba(0,230,118,0.05);' : ''}">
@@ -840,7 +858,6 @@
 
             savedNetworksList.innerHTML = html;
 
-            // If only one network, auto-select
             if (savedNetworks.length === 1) {
                 selectedNetworkForWithdraw = savedNetworks[0].id;
                 updateWithdrawUI();
@@ -896,13 +913,20 @@
 
         // ===== WITHDRAW =====
         async function processWithdraw() {
+            // ✅ If no saved networks, go to setup card
+            if (savedNetworks.length === 0) {
+                setupCard.classList.remove('hidden');
+                withdrawCard.classList.add('hidden');
+                showToast('⚠️ Please add a withdrawal network first.', 'warning');
+                return;
+            }
+
             if (!validateWithdrawForm()) return;
 
             const amount = parseFloat(withdrawAmount.value);
             const fee = amount * 0.2;
             const netAmount = amount - fee;
 
-            // Get selected network details
             let selectedItem;
             if (savedNetworks.length === 1) {
                 selectedItem = savedNetworks[0];
@@ -915,7 +939,6 @@
                 return;
             }
 
-            // Check weekend
             const day = new Date().getDay();
             if (day === 0 || day === 6) {
                 withdrawError.textContent = '⛔ Withdrawals are only allowed Monday–Friday. Please try again on a weekday.';
@@ -926,7 +949,6 @@
             withdrawBtn.textContent = 'Processing...';
 
             try {
-                // Create withdrawal request
                 const withdrawalData = {
                     userId: userId,
                     amount: amount,
@@ -939,7 +961,6 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                // Use transaction to deduct balance and create withdrawal
                 await db.runTransaction(async (transaction) => {
                     const userRef = db.collection('users').doc(userId);
                     const userSnap = await transaction.get(userRef);
@@ -994,7 +1015,6 @@
                 console.error('Load user data error:', e);
             }
 
-            // Listen for real-time updates
             db.collection('users').doc(userId).onSnapshot((doc) => {
                 if (doc.exists) {
                     const data = doc.data();
@@ -1026,7 +1046,7 @@
             }
 
             let html = '';
-            savedNetworks.forEach((item, index) => {
+            savedNetworks.forEach((item) => {
                 html += `
                     <div class="saved-network-item" style="margin-bottom:0.6rem;">
                         <div class="info">
@@ -1048,11 +1068,9 @@
             if (!item) return;
 
             closeManageModal();
-            // Switch to setup card with pre-filled data
             setupCard.classList.remove('hidden');
             withdrawCard.classList.add('hidden');
 
-            // Select the network card
             document.querySelectorAll('.network-card').forEach(el => {
                 el.classList.toggle('selected', el.dataset.network === item.network);
             });
@@ -1063,7 +1081,6 @@
             accountNameInput.value = item.name;
             accountNumberInput.value = item.number;
 
-            // Update labels
             if (item.network === 'Bank') {
                 numberLabel.textContent = '🏦 Bank Account Number';
                 numberHint.textContent = 'Enter your bank account number (16 digits recommended)';
@@ -1115,6 +1132,22 @@
         withdrawBtn.addEventListener('click', processWithdraw);
 
         manageNetworksBtn.addEventListener('click', openManageModal);
+
+        quickAddBtn.addEventListener('click', () => {
+            closeManageModal();
+            setupCard.classList.remove('hidden');
+            withdrawCard.classList.add('hidden');
+            document.querySelectorAll('.network-card').forEach(el => el.classList.remove('selected'));
+            networkDetails.classList.add('hidden');
+            selectedNetwork = null;
+            isEditing = false;
+            editId = null;
+            addNetworkBtn.textContent = '➕ Add Network';
+            accountNameInput.value = '';
+            accountNumberInput.value = '';
+            setupError.textContent = '';
+        });
+
         closeModalBtn.addEventListener('click', closeManageModal);
         manageModal.addEventListener('click', (e) => {
             if (e.target === manageModal) closeManageModal();
@@ -1144,7 +1177,6 @@
             loadWithdrawalRules();
         });
 
-        // ===== KEYBOARD SHORTCUT =====
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeManageModal();
         });

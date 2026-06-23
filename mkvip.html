@@ -796,7 +796,7 @@
             <div class="modal-details">
                 <div class="modal-detail-item">
                     <span class="label">💰 Investment</span>
-                    <span class="value gold" id="modalInvestAmount">0.00 ZMW</span>
+                    <span class="value gold" id="modalInvestAmount">0.00 TZS</span>
                 </div>
                 <div class="modal-detail-item">
                     <span class="label">📈 Daily Income</span>
@@ -1082,7 +1082,7 @@
                         <div class="plan-details">
                             <div class="detail-item">
                                 <span class="detail-label">💰 Investment</span>
-                                <span class="detail-value gold">${minAmount.toFixed(2)} ZMW</span>
+                                <span class="detail-value gold">${minAmount.toFixed(2)} TZS</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">📈 Daily Income</span>
@@ -1167,9 +1167,8 @@
         function showConfirmationModal(plan) {
             selectedPlan = plan;
 
-            // Populate modal with plan details
             modalPlanName.textContent = plan.name || 'Investment Plan';
-            modalInvestAmount.textContent = plan.investAmount.toFixed(2) + ' ZMW';
+            modalInvestAmount.textContent = plan.investAmount.toFixed(2) + ' TZS';
             modalDailyIncome.textContent = plan.dailyAmount.toFixed(2) + ' ZMW';
             modalDuration.textContent = plan.days + ' Days';
             modalExpiry.textContent = plan.expiry || 'Auto';
@@ -1178,7 +1177,6 @@
             modalOverlay.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
 
-            // Reset confirm button state
             modalConfirmBtn.disabled = false;
             modalConfirmBtn.textContent = '✅ Confirm Investment';
         }
@@ -1189,18 +1187,15 @@
             selectedPlan = null;
         }
 
-        // Modal event listeners
         modalCloseBtn.addEventListener('click', closeConfirmationModal);
         modalCancelBtn.addEventListener('click', closeConfirmationModal);
 
-        // Close on overlay click
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) {
                 closeConfirmationModal();
             }
         });
 
-        // Confirm button - triggers investment
         modalConfirmBtn.addEventListener('click', async () => {
             if (!selectedPlan) return;
             if (modalConfirmBtn.disabled) return;
@@ -1208,13 +1203,12 @@
             modalConfirmBtn.disabled = true;
             modalConfirmBtn.textContent = 'Processing...';
 
-            // Close modal and proceed with investment
             closeConfirmationModal();
             await investInPlan(selectedPlan);
         });
 
         // ============================================================
-        // ===== INVEST IN PLAN =====
+        // ===== INVEST IN PLAN (FIXED: uses depositBalance) =====
         // ============================================================
         async function investInPlan(plan) {
             console.log("investInPlan called with plan:", plan);
@@ -1272,25 +1266,28 @@
                 }
             }
 
-            // Fetch user balance
-            let userDoc, currentBalance;
+            // ✅ FIXED: Fetch deposit balance (TZS) – NOT wallet balance
+            let userDoc, depositBalance;
             try {
                 userDoc = await db.collection('users').doc(userId).get();
                 if (!userDoc.exists) {
                     showToast('User data not found.', true);
                     return;
                 }
-                currentBalance = userDoc.data().balance || 0;
-                console.log("Current balance:", currentBalance, "Invest amount:", investAmount);
+                depositBalance = userDoc.data().depositBalance || 0;
+                console.log("Deposit balance (TZS):", depositBalance, "Invest amount:", investAmount);
             } catch (err) {
                 console.error("Balance fetch error:", err);
                 showToast("Error fetching balance. Please try again.", true);
                 return;
             }
 
-            // Check balance with tolerance
-            if (currentBalance + 0.001 < investAmount) {
-                showToast(`Insufficient balance! You need ${investAmount} ZMW. Your balance: ${currentBalance.toFixed(2)} ZMW.`, true);
+            // ✅ FIXED: Check deposit balance with tolerance
+            if (depositBalance + 0.001 < investAmount) {
+                showToast(
+                    `❌ Insufficient deposit balance! You need ${investAmount.toFixed(2)} TZS. Your deposit balance: ${depositBalance.toFixed(2)} TZS.`,
+                    true
+                );
                 return;
             }
 
@@ -1341,10 +1338,12 @@
             allBtns.forEach(btn => btn.disabled = true);
 
             try {
-                // 1. Update user balance
-                const newBalance = currentBalance - investAmount;
-                await db.collection('users').doc(userId).update({ balance: newBalance });
-                console.log("User balance updated to", newBalance);
+                // ✅ FIXED: Deduct from depositBalance (TZS), not wallet
+                const newDepositBalance = depositBalance - investAmount;
+                await db.collection('users').doc(userId).update({
+                    depositBalance: newDepositBalance
+                });
+                console.log("Deposit balance updated to", newDepositBalance);
 
                 // 2. Create investment document
                 let startDate = new Date();
@@ -1367,7 +1366,8 @@
                     businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),
                     lastClaimed: firebase.firestore.Timestamp.fromDate(startDate),
                     status: 'active',
-                    totalReturn: 0
+                    totalReturn: 0,
+                    claimsCount: 0 // NEW: track claims
                 });
                 console.log("Investment created:", investmentRef.id);
 
@@ -1376,12 +1376,12 @@
                     userId: userId,
                     type: 'investment',
                     amount: investAmount,
-                    description: `Purchased ${plan.name} (MK VIP)`,
+                    description: `Purchased ${plan.name} (MK VIP) using deposit balance`,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 console.log("Investment transaction recorded");
 
-                // 4. Handle referral bonus if applicable
+                // 4. Handle referral bonus if applicable (goes to wallet balance)
                 let bonusSuccess = false;
                 if (canGiveBonus && referrerId) {
                     try {
@@ -1414,12 +1414,14 @@
                 }
 
                 showFireworks();
-                if (bonusSuccess) {
-                    const bonusAmount = investAmount * 0.05;
-                    showToast(`✅ Success! Invested ${investAmount} ZMW. Your referrer earned ${bonusAmount.toFixed(2)} ZMW bonus! Redirecting...`, false);
-                } else {
-                    showToast(`✅ Success! Invested ${investAmount} ZMW in ${plan.name}. Redirecting to Income page...`, false);
-                }
+                // ✅ FIXED: Success message clearly states deposit balance
+                const bonusMsg = bonusSuccess
+                    ? `Your referrer earned ${(investAmount * 0.05).toFixed(2)} ZMW bonus!`
+                    : '';
+                showToast(
+                    `✅ Success! Invested ${investAmount.toFixed(2)} TZS from your deposit balance. ${bonusMsg}`,
+                    false
+                );
                 setTimeout(() => {
                     window.location.href = 'income.html';
                 }, 2000);
@@ -1444,7 +1446,6 @@
             const btn = e.currentTarget;
             try {
                 const plan = JSON.parse(btn.dataset.plan);
-                // Show confirmation modal instead of directly investing
                 showConfirmationModal(plan);
             } catch (err) {
                 console.error("Failed to parse plan data:", err);
