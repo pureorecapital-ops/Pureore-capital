@@ -9,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        /* (all existing styles unchanged) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0A0A0C;
@@ -824,7 +823,7 @@
                     status: inv.status,
                     lastClaimed: inv.lastClaimed,
                     blockedStart: inv.blockedStart,
-                    claimsCount: inv.claimsCount || 0      // ← NEW: track number of claims
+                    claimsCount: inv.claimsCount || 0
                 };
                 if (!isExpired) {
                     active.push(investment);
@@ -853,25 +852,31 @@
     }
 
     // ================================================================
-    //  CLAIM STATUS – NEW LOGIC (based on plan purchase time)
+    //  FIXED: CLAIM STATUS WITH 24-HOUR WINDOW
     // ================================================================
     function getClaimStatus(inv, now) {
         const start = inv.startDate;
         const claimsCount = inv.claimsCount || 0;
-        // Next milestone: start + (claimsCount + 1) * 24 hours
-        const nextClaimTime = new Date(start.getTime() + (claimsCount + 1) * 24 * 60 * 60 * 1000);
-        const available = (!isWeekend(now) && now >= nextClaimTime);
+        const dailyAmount = inv.dailyAmount;
 
-        // For progress: time since last milestone (start + claimsCount * 24h)
+        // Next scheduled claim time: start + (claimsCount + 1) * 24 hours
+        const nextClaimTime = new Date(start.getTime() + (claimsCount + 1) * 24 * 60 * 60 * 1000);
+        // Window closes 24 hours after the scheduled time
+        const windowEnd = new Date(nextClaimTime.getTime() + 24 * 60 * 60 * 1000);
+
+        // ✅ FIXED: Available only if: weekday, within the 24-hour window, and not expired
+        const available = (!isWeekend(now) && now >= nextClaimTime && now < windowEnd);
+
+        // For progress: time since last milestone
         const lastMilestone = new Date(start.getTime() + claimsCount * 24 * 60 * 60 * 1000);
         const hoursSince = (now - lastMilestone) / (1000 * 60 * 60);
-        const dailyAmount = inv.dailyAmount;
         const hourlyRate = dailyAmount / 24;
         let earnedSoFar = Math.min(dailyAmount, hourlyRate * hoursSince);
         if (hoursSince >= 24) earnedSoFar = dailyAmount;
+
         const hoursRemaining = Math.max(0, (nextClaimTime - now) / (1000 * 60 * 60));
 
-        return { available, hoursSince, dailyAmount, earnedSoFar, hoursRemaining, nextClaimTime };
+        return { available, hoursSince, dailyAmount, earnedSoFar, hoursRemaining, nextClaimTime, windowEnd };
     }
 
     // ================================================================
@@ -892,12 +897,23 @@
             const daysLeft = Math.max(0, totalDays - elapsedDays);
 
             const claimStatus = getClaimStatus(inv, now);
-            let canClaim = claimStatus.available;
-            if (claimingBlocked) canClaim = false;
+            let canClaim = claimStatus.available && !claimingBlocked;
             const hoursRemaining = claimStatus.hoursRemaining;
             const earnedSoFar = claimStatus.earnedSoFar;
             const dailyAmount = claimStatus.dailyAmount;
             const progressPercent = claimStatus.hoursSince >= 24 ? 100 : (claimStatus.hoursSince / 24) * 100;
+
+            // Determine status message
+            let statusText = '';
+            if (claimingBlocked) {
+                statusText = '⛔ Claiming paused – buy another plan';
+            } else if (canClaim) {
+                statusText = '✅ Ready to claim';
+            } else if (hoursRemaining > 0) {
+                statusText = `⏳ Next claim in ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`;
+            } else {
+                statusText = '⏳ Claim window closed – next claim tomorrow';
+            }
 
             html += `
                 <div class="plan-card" data-id="${inv.id}">
@@ -914,9 +930,7 @@
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${Math.min(progressPercent, 100)}%;"></div>
                         </div>
-                        <div class="progress-text">
-                            ${canClaim ? '✓ Ready to claim' : (claimingBlocked ? '⛔ Claiming paused – buy another plan' : `⏱️ Next claim in ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`)}
-                        </div>
+                        <div class="progress-text">${statusText}</div>
                         <div class="pending-amount">
                             💰 Earned so far: ${formatMoney(earnedSoFar)} / ${formatMoney(dailyAmount)}
                         </div>
@@ -941,7 +955,7 @@
     }
 
     // ================================================================
-    //  CLAIM DAILY INCOME (with claimsCount increment)
+    //  FIXED: CLAIM DAILY INCOME (adds to walletBalance)
     // ================================================================
     async function claimDailyIncome(investmentId, dailyAmount, refreshAfter = true) {
         const user = auth.currentUser;
@@ -965,18 +979,26 @@
                 const start = invData.startDate.toDate();
                 const claimsCount = invData.claimsCount || 0;
                 const nextClaimTime = new Date(start.getTime() + (claimsCount + 1) * 24 * 60 * 60 * 1000);
-                if (now < nextClaimTime) throw new Error('Not yet time to claim (fixed schedule)');
+                const windowEnd = new Date(nextClaimTime.getTime() + 24 * 60 * 60 * 1000);
 
-                // Update user balance
+                // ✅ FIXED: Strict window check
+                if (now < nextClaimTime) throw new Error('Not yet time to claim (fixed schedule)');
+                if (now >= windowEnd) throw new Error('Claim window for this day has closed. Next claim available tomorrow.');
+
+                // ✅ FIXED: Update walletBalance (ZMW) – NOT balance
                 const userRef = db.collection('users').doc(user.uid);
                 const userSnap = await transaction.get(userRef);
-                const newBalance = (userSnap.data().balance || 0) + dailyAmount;
-                transaction.update(userRef, { balance: newBalance });
+                const currentWallet = userSnap.data().walletBalance || 0;
+                const newWallet = currentWallet + dailyAmount;
+                transaction.update(userRef, {
+                    walletBalance: newWallet,
+                    balance: newWallet // sync for safety
+                });
 
                 // Increment claimsCount
                 transaction.update(invRef, { claimsCount: firebase.firestore.FieldValue.increment(1) });
 
-                // Optionally update lastClaimed for record
+                // Update lastClaimed timestamp
                 transaction.update(invRef, { lastClaimed: firebase.firestore.Timestamp.fromDate(now) });
 
                 // Record transaction
@@ -1019,7 +1041,7 @@
         const claimable = [];
         for (const inv of currentInvestments) {
             const status = getClaimStatus(inv, now);
-            if (status.available) {
+            if (status.available && !claimingBlocked) {
                 claimable.push({ id: inv.id, dailyAmount: status.dailyAmount });
             }
         }
@@ -1063,9 +1085,9 @@
         let total = 0;
         let hasClaimable = false;
         for (const inv of investments) {
-            const claimStatus = getClaimStatus(inv, now);
-            if (claimStatus.available && !claimingBlocked) {
-                total += claimStatus.dailyAmount;
+            const status = getClaimStatus(inv, now);
+            if (status.available && !claimingBlocked) {
+                total += status.dailyAmount;
                 hasClaimable = true;
             }
         }
