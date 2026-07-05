@@ -453,8 +453,8 @@
         <div class="nav-item" data-page="income.html">
             <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income"><span class="nav-label">Income</span>
         </div>
-        <div class="nav-item active" data-page="team.html">
-            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team"><span class="nav-label">Team</span>
+        <div class="nav-item active" data-page="treasure.html">
+            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Treasure"><span class="nav-label">Treasure</span>
         </div>
         <div class="nav-item" data-page="me.html">
             <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me"><span class="nav-label">Me</span>
@@ -533,7 +533,7 @@
         });
 
         // ================================================================
-        // ════════ FIXED: CLAIM TREASURE (UPDATES walletBalance) ════════
+        // ════════ FIXED: ADD to walletBalance only (never replace) ════════
         // ================================================================
         claimBtn.addEventListener('click', async () => {
             let code = codeInput.value.trim().toUpperCase();
@@ -580,13 +580,13 @@
 
                 const amount = codeData.amount;
                 if (!amount || amount <= 0) {
-                    showMessage('❌ Invalid amount for this code. Contact admin.', 'error');
+                    showMessage('❌ Invalid amount for this code (must be positive).', 'error');
                     claimBtn.disabled = false;
                     claimBtn.innerText = '🔓 Claim Treasure';
                     return;
                 }
 
-                // ✅ FIXED: Use transaction to update walletBalance (ZMW)
+                // ✅ ONLY update walletBalance – ADD to existing, never replace
                 await db.runTransaction(async (transaction) => {
                     const userRef = db.collection('users').doc(user.uid);
                     const userSnap = await transaction.get(userRef);
@@ -594,14 +594,16 @@
                         throw new Error('User document not found. Please contact support.');
                     }
 
-                    // ✅ FIXED: Update walletBalance instead of balance
+                    // Get current wallet balance (default to 0 if missing)
                     const currentWallet = userSnap.data().walletBalance || 0;
                     const newWallet = currentWallet + amount;
+
+                    // Update ONLY walletBalance – leave 'balance' untouched
                     transaction.update(userRef, {
-                        walletBalance: newWallet,
-                        balance: newWallet // sync for safety
+                        walletBalance: newWallet
                     });
 
+                    // Mark code as used
                     transaction.update(codeDoc.ref, {
                         used: true,
                         usedBy: user.uid,
@@ -609,7 +611,7 @@
                     });
                 });
 
-                // Record transaction
+                // Record transaction (optional, but keeps history)
                 await db.collection('transactions').add({
                     userId: user.uid,
                     type: 'treasure',
@@ -618,7 +620,7 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                showMessage(`🎉 SUCCESS! You earned ${amount} ZMW! 🎉`, 'success');
+                showMessage(`🎉 SUCCESS! You earned ${amount} ZMW! Wallet balance updated. 🎉`, 'success');
                 codeInput.value = '';
 
                 setTimeout(() => {
