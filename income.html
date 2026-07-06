@@ -665,10 +665,11 @@
         return day === 0 || day === 6;
     }
 
-    function addWeekdays(startDate, days) {
+    // Add business days (Mon-Fri) to a date
+    function addBusinessDays(startDate, numDays) {
         let result = new Date(startDate);
         let added = 0;
-        while (added < days) {
+        while (added < numDays) {
             result.setDate(result.getDate() + 1);
             if (!isWeekend(result)) added++;
         }
@@ -807,8 +808,7 @@
             for (const inv of investments) {
                 const startDate = inv.startDate.toDate();
                 const businessDays = inv.businessDays || inv.days;
-                const endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addWeekdays(startDate, businessDays);
-                const dailyAmount = inv.dailyReturn;
+                const endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addBusinessDays(startDate, businessDays);
                 const today = new Date();
                 today.setHours(0,0,0,0);
                 const isExpired = inv.status !== 'active' || today > endDate;
@@ -819,7 +819,7 @@
                     startDate,
                     businessDays,
                     endDate,
-                    dailyAmount,
+                    dailyAmount: inv.dailyReturn,
                     status: inv.status,
                     lastClaimed: inv.lastClaimed,
                     blockedStart: inv.blockedStart,
@@ -852,31 +852,81 @@
     }
 
     // ================================================================
-    //  FIXED: CLAIM STATUS WITH 24-HOUR WINDOW
+    //  FIXED: CLAIM STATUS WITH 24-HOUR WINDOW AND WEEKEND SKIP
     // ================================================================
     function getClaimStatus(inv, now) {
         const start = inv.startDate;
         const claimsCount = inv.claimsCount || 0;
         const dailyAmount = inv.dailyAmount;
+        const totalBusinessDays = inv.businessDays;
 
-        // Next scheduled claim time: start + (claimsCount + 1) * 24 hours
-        const nextClaimTime = new Date(start.getTime() + (claimsCount + 1) * 24 * 60 * 60 * 1000);
-        // Window closes 24 hours after the scheduled time
-        const windowEnd = new Date(nextClaimTime.getTime() + 24 * 60 * 60 * 1000);
+        // Iterate from claimsCount upward to find the first available or waiting day
+        let index = claimsCount;
+        while (index < totalBusinessDays) {
+            // Due date for this index: start + (index+1) business days
+            const dueDate = addBusinessDays(start, index + 1);
+            // Set time to same as start time (to keep the 24-hour window aligned)
+            const claimStart = new Date(dueDate);
+            claimStart.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
+            const windowEnd = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
 
-        // ✅ FIXED: Available only if: weekday, within the 24-hour window, and not expired
-        const available = (!isWeekend(now) && now >= nextClaimTime && now < windowEnd);
+            // Check if this day is already passed (window closed)
+            if (now >= windowEnd) {
+                // This day is lost, move to next index
+                index++;
+                continue;
+            }
 
-        // For progress: time since last milestone
-        const lastMilestone = new Date(start.getTime() + claimsCount * 24 * 60 * 60 * 1000);
-        const hoursSince = (now - lastMilestone) / (1000 * 60 * 60);
-        const hourlyRate = dailyAmount / 24;
-        let earnedSoFar = Math.min(dailyAmount, hourlyRate * hoursSince);
-        if (hoursSince >= 24) earnedSoFar = dailyAmount;
+            // Check if window is currently open
+            if (now >= claimStart && now < windowEnd) {
+                // Available if today is a weekday (claimStart is always weekday)
+                const available = !isWeekend(now) && !claimingBlocked;
+                const hoursSince = Math.max(0, (now - claimStart) / (1000 * 60 * 60));
+                const earnedSoFar = Math.min(dailyAmount, dailyAmount * (hoursSince / 24));
+                const progress = Math.min(100, (hoursSince / 24) * 100);
+                return {
+                    available,
+                    nextClaimTime: claimStart,
+                    windowEnd: windowEnd,
+                    dailyAmount,
+                    earnedSoFar,
+                    hoursSince,
+                    progress,
+                    index: index,
+                    status: available ? 'ready' : 'waiting' // if not available due to weekend/block
+                };
+            }
 
-        const hoursRemaining = Math.max(0, (nextClaimTime - now) / (1000 * 60 * 60));
+            // Not yet time (now < claimStart)
+            if (now < claimStart) {
+                const hoursRemaining = (claimStart - now) / (1000 * 60 * 60);
+                return {
+                    available: false,
+                    nextClaimTime: claimStart,
+                    windowEnd: windowEnd,
+                    dailyAmount,
+                    earnedSoFar: 0,
+                    hoursSince: 0,
+                    progress: 0,
+                    index: index,
+                    status: 'waiting',
+                    hoursRemaining: hoursRemaining
+                };
+            }
+        }
 
-        return { available, hoursSince, dailyAmount, earnedSoFar, hoursRemaining, nextClaimTime, windowEnd };
+        // No more claimable days
+        return {
+            available: false,
+            nextClaimTime: null,
+            windowEnd: null,
+            dailyAmount: dailyAmount,
+            earnedSoFar: 0,
+            hoursSince: 0,
+            progress: 0,
+            index: -1,
+            status: 'done'
+        };
     }
 
     // ================================================================
@@ -892,28 +942,29 @@
         const now = new Date();
         let html = '';
         for (const inv of investments) {
-            const elapsedDays = businessDaysElapsed(inv, now);
-            const totalDays = inv.businessDays;
-            const daysLeft = Math.max(0, totalDays - elapsedDays);
+            const status = getClaimStatus(inv, now);
+            const canClaim = status.available && !claimingBlocked && !isWeekend(now);
+            const daysLeft = inv.businessDays - (inv.claimsCount || 0);
 
-            const claimStatus = getClaimStatus(inv, now);
-            let canClaim = claimStatus.available && !claimingBlocked;
-            const hoursRemaining = claimStatus.hoursRemaining;
-            const earnedSoFar = claimStatus.earnedSoFar;
-            const dailyAmount = claimStatus.dailyAmount;
-            const progressPercent = claimStatus.hoursSince >= 24 ? 100 : (claimStatus.hoursSince / 24) * 100;
-
-            // Determine status message
             let statusText = '';
             if (claimingBlocked) {
                 statusText = '⛔ Claiming paused – buy another plan';
             } else if (canClaim) {
                 statusText = '✅ Ready to claim';
-            } else if (hoursRemaining > 0) {
-                statusText = `⏳ Next claim in ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`;
+            } else if (status.status === 'waiting' && status.hoursRemaining !== undefined) {
+                const hrs = Math.floor(status.hoursRemaining);
+                const mins = Math.floor((status.hoursRemaining % 1) * 60);
+                statusText = `⏳ Next claim in ${hrs}h ${mins}m`;
+            } else if (isWeekend(now)) {
+                statusText = '⏳ Weekends – claims resume Monday';
+            } else if (status.status === 'done') {
+                statusText = '✅ All claims completed';
             } else {
-                statusText = '⏳ Claim window closed – next claim tomorrow';
+                statusText = '⏳ Waiting for next claim window';
             }
+
+            const progress = status.progress || 0;
+            const earnedDisplay = status.earnedSoFar || 0;
 
             html += `
                 <div class="plan-card" data-id="${inv.id}">
@@ -923,20 +974,19 @@
                     </div>
                     <div class="plan-details">
                         <span>📅 Started: ${inv.startDate.toLocaleDateString()}</span>
-                        <span>💰 Daily: ${formatMoney(dailyAmount)}</span>
+                        <span>💰 Daily: ${formatMoney(inv.dailyAmount)}</span>
                         <span>⏱️ Days left: ${daysLeft}</span>
                     </div>
                     <div class="claim-info">
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${Math.min(progressPercent, 100)}%;"></div>
+                            <div class="progress-fill" style="width: ${Math.min(progress, 100)}%;"></div>
                         </div>
                         <div class="progress-text">${statusText}</div>
-                        <div class="pending-amount">
-                            💰 Earned so far: ${formatMoney(earnedSoFar)} / ${formatMoney(dailyAmount)}
-                        </div>
+                        ${canClaim ? `<div class="pending-amount">💰 Ready to claim: ${formatMoney(inv.dailyAmount)}</div>` :
+                        `<div class="pending-amount">💰 Earned so far: ${formatMoney(earnedDisplay)} / ${formatMoney(inv.dailyAmount)}</div>`}
                     </div>
-                    <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${dailyAmount}">
-                        ${canClaim ? '💰 Claim Daily Income' : (claimingBlocked ? '⛔ Paused' : '⏳ Wait for next claim')}
+                    <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${inv.dailyAmount}">
+                        ${canClaim ? '💰 Claim Daily Income' : (claimingBlocked ? '⛔ Paused' : (isWeekend(now) ? '⏳ Weekend' : '⏳ Wait'))}
                     </button>
                     ${isWeekend(now) ? '<div class="weekend-warning">⛔ Claiming only available Monday–Friday. Come back on a weekday.</div>' : ''}
                 </div>
@@ -978,14 +1028,21 @@
                 const invData = invSnap.data();
                 const start = invData.startDate.toDate();
                 const claimsCount = invData.claimsCount || 0;
-                const nextClaimTime = new Date(start.getTime() + (claimsCount + 1) * 24 * 60 * 60 * 1000);
-                const windowEnd = new Date(nextClaimTime.getTime() + 24 * 60 * 60 * 1000);
+                const totalBusinessDays = invData.businessDays || invData.days;
 
-                // ✅ FIXED: Strict window check
-                if (now < nextClaimTime) throw new Error('Not yet time to claim (fixed schedule)');
-                if (now >= windowEnd) throw new Error('Claim window for this day has closed. Next claim available tomorrow.');
+                // Verify claim is currently available
+                const status = getClaimStatus({
+                    startDate: start,
+                    claimsCount: claimsCount,
+                    dailyAmount: dailyAmount,
+                    businessDays: totalBusinessDays,
+                }, now);
 
-                // ✅ FIXED: Update walletBalance (ZMW) – NOT balance
+                if (!status.available) {
+                    throw new Error('Claim not available at this time');
+                }
+
+                // Update walletBalance
                 const userRef = db.collection('users').doc(user.uid);
                 const userSnap = await transaction.get(userRef);
                 const currentWallet = userSnap.data().walletBalance || 0;
@@ -1038,10 +1095,11 @@
             return;
         }
 
+        // Get all investments that are currently claimable
         const claimable = [];
         for (const inv of currentInvestments) {
             const status = getClaimStatus(inv, now);
-            if (status.available && !claimingBlocked) {
+            if (status.available && !claimingBlocked && !isWeekend(now)) {
                 claimable.push({ id: inv.id, dailyAmount: status.dailyAmount });
             }
         }
@@ -1086,7 +1144,7 @@
         let hasClaimable = false;
         for (const inv of investments) {
             const status = getClaimStatus(inv, now);
-            if (status.available && !claimingBlocked) {
+            if (status.available && !claimingBlocked && !isWeekend(now)) {
                 total += status.dailyAmount;
                 hasClaimable = true;
             }
