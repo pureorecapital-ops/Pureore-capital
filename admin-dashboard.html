@@ -797,6 +797,12 @@
         .inline-form .row select {
             width: 100%;
         }
+
+        /* Search input focus glow */
+        #userSearchInput:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px var(--gold-glow);
+        }
     </style>
 </head>
 <body>
@@ -849,11 +855,15 @@
             </div>
         </div>
 
-        <!-- USERS -->
+        <!-- ================================================================ -->
+        <!-- USERS (with search bar)                                           -->
+        <!-- ================================================================ -->
         <div id="usersTab" class="tab-content">
             <div class="admin-card">
                 <div class="card-title">◆ All Users</div>
-                <div style="margin-bottom:1rem;">
+                <div style="margin-bottom:1rem; display:flex; gap:0.8rem; align-items:center; flex-wrap:wrap;">
+                    <input type="text" id="userSearchInput" placeholder="🔍 Search users by name or email..." style="flex:1; min-width:200px; padding:0.6rem 1rem; border-radius:40px; background:rgba(255,255,255,0.03); border:1px solid var(--border); color:var(--text); transition:var(--transition);">
+                    <button id="clearUserSearchBtn" class="btn-small warning" style="display:none;">✕ Clear</button>
                     <button id="blockAllUsersBtn" class="btn-small warning">◆ Block All Non-Admin Users</button>
                     <button id="unblockAllUsersBtn" class="btn-small success">◆ Unblock All Non-Admin Users</button>
                 </div>
@@ -1014,7 +1024,7 @@
     <div id="supportReplyModal" class="modal"><div class="modal-content"><h3>Reply to Ticket</h3><input type="hidden" id="replyTicketId"><textarea id="replyMessage" rows="4" placeholder="Your reply..."></textarea><button id="sendReplyBtn" class="btn-small success">Send Reply</button><button class="btn-small" onclick="closeModal('supportReplyModal')">Cancel</button></div></div>
 
     <!-- ============================================================
-    CONFIRM DEPOSIT RULES MODAL  (NEW)
+    CONFIRM DEPOSIT RULES MODAL
     ============================================================ -->
     <div id="confirmDepositRulesModal" class="modal">
         <div class="modal-content" style="max-width:600px;">
@@ -1171,6 +1181,11 @@
             setTimeout(() => toast.remove(), 4000);
         }
 
+        function getSearchQuery() {
+            const input = document.getElementById('userSearchInput');
+            return input ? input.value : '';
+        }
+
         async function uploadPlanImage(file, pathPrefix) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1227,7 +1242,7 @@
 
             loadStats();
             loadRecentActivities();
-            loadUsers();
+            loadUsers(getSearchQuery());
             loadPendingDeposits();
             loadDepositsHistory();
             loadPendingWithdrawals();
@@ -1263,6 +1278,33 @@
             document.getElementById('confirmDepositRulesModal').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) closeModal('confirmDepositRulesModal');
             });
+
+            // ── User search listeners ──
+            const searchInput = document.getElementById('userSearchInput');
+            const clearBtn = document.getElementById('clearUserSearchBtn');
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const val = this.value;
+                    if (clearBtn) {
+                        clearBtn.style.display = val.trim() !== '' ? 'inline-block' : 'none';
+                    }
+                    searchTimeout = setTimeout(() => {
+                        loadUsers(val);
+                    }, 300);
+                });
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    const searchInput = document.getElementById('userSearchInput');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        this.style.display = 'none';
+                        loadUsers('');
+                    }
+                });
+            }
         });
 
         // ================================================================
@@ -1514,7 +1556,7 @@
                 await loadPendingDeposits();
                 await loadDepositsHistory();
                 await loadStats();
-                await loadUsers();
+                loadUsers(getSearchQuery());
                 if (typeof loadAgents === 'function') await loadAgents();
             } catch (error) {
                 console.error("◆ Approval error:", error);
@@ -1551,7 +1593,7 @@
                 await loadPendingWithdrawals();
                 await loadWithdrawalsHistory();
                 await loadStats();
-                await loadUsers();
+                loadUsers(getSearchQuery());
             } catch (error) {
                 console.error("◆ Withdrawal approval error:", error);
                 showToast('Error approving withdrawal: ' + error.message, true);
@@ -1590,7 +1632,7 @@
                 await loadPendingWithdrawals();
                 await loadWithdrawalsHistory();
                 await loadStats();
-                await loadUsers();
+                loadUsers(getSearchQuery());
             } catch (error) {
                 console.error("◆ Rejection error:", error);
                 showToast('Error rejecting withdrawal: ' + error.message, true);
@@ -1611,7 +1653,7 @@
             });
             await batch.commit();
             showToast(`${blockStatus ? 'Blocked' : 'Unblocked'} ${count} users.`, false);
-            loadUsers();
+            loadUsers(getSearchQuery());
         }
         document.getElementById('blockAllUsersBtn').addEventListener('click', () => blockAllNonAdminUsers(true));
         document.getElementById('unblockAllUsersBtn').addEventListener('click', () => blockAllNonAdminUsers(false));
@@ -1671,9 +1713,11 @@
         }
 
         // ================================================================
-        // USERS (with two balances)
+        // USERS (with search bar)
         // ================================================================
-        async function loadUsers() {
+        let allUsersData = [];
+
+        async function loadUsers(filterText = '') {
             const usersSnap = await db.collection('users').get();
             const investmentsSnap = await db.collection('investments').where('status', '==', 'active').get();
             const investmentsByUser = {};
@@ -1684,73 +1728,118 @@
                 investmentsByUser[userId].push({ id: doc.id, ...data });
             });
 
-            let html =
-                `<table class="users-table"><thead><tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Wallet Balance (ZMW)</th>
-            <th>Deposit Balance (TZS)</th>
-            <th>Role</th>
-            <th>Blocked</th>
-            <th>Can Request Loan</th>
-            <th>Plans</th>
-            <th>Actions</th>
-        </tr></thead><tbody>`;
-
+            const userData = [];
             for (const doc of usersSnap.docs) {
                 const u = doc.data();
                 const userId = doc.id;
                 const walletBalance = u.walletBalance !== undefined ? u.walletBalance : (u.balance || 0);
                 const depositBalance = u.depositBalance || 0;
                 const userPlans = investmentsByUser[userId] || [];
-                let plansHtml = '';
-                if (userPlans.length === 0) {
-                    plansHtml = '<span style="color:#aaa;">No active plans</span>';
-                } else {
-                    plansHtml = '<div class="plans-list">';
-                    userPlans.forEach(plan => {
-                        const planName = escapeHtml(plan.planName || 'Unknown');
-                        const daysLeft = plan.daysLeft !== undefined ? plan.daysLeft : '?';
-                        plansHtml += `<div class="plan-item">
+                userData.push({
+                    id: doc.id,
+                    fullName: u.fullName || '-',
+                    email: u.email || '',
+                    walletBalance: walletBalance,
+                    depositBalance: depositBalance,
+                    role: u.role || 'user',
+                    isBlocked: u.isBlocked || false,
+                    canRequestLoan: u.canRequestLoan !== false,
+                    plans: userPlans,
+                    raw: u
+                });
+            }
+            allUsersData = userData;
+
+            let filteredData = userData;
+            if (filterText && filterText.trim() !== '') {
+                const search = filterText.trim().toLowerCase();
+                filteredData = userData.filter(user =>
+                    user.fullName.toLowerCase().includes(search) ||
+                    user.email.toLowerCase().includes(search)
+                );
+            }
+
+            renderUsersTable(filteredData);
+            updateUserSearchUI(filterText);
+        }
+
+        function renderUsersTable(users) {
+            let html = `<table class="users-table"><thead><tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Wallet Balance (ZMW)</th>
+                <th>Deposit Balance (TZS)</th>
+                <th>Role</th>
+                <th>Blocked</th>
+                <th>Can Request Loan</th>
+                <th>Plans</th>
+                <th>Actions</th>
+            </tr></thead><tbody>`;
+
+            if (users.length === 0) {
+                html +=
+                    `<tr><td colspan="9" style="text-align:center; color:#888; padding:2rem;">No users found matching your search.</td></tr>`;
+            } else {
+                for (const user of users) {
+                    const userId = user.id;
+                    const userPlans = user.plans || [];
+                    let plansHtml = '';
+                    if (userPlans.length === 0) {
+                        plansHtml = '<span style="color:#aaa;">No active plans</span>';
+                    } else {
+                        plansHtml = '<div class="plans-list">';
+                        userPlans.forEach(plan => {
+                            const planName = escapeHtml(plan.planName || 'Unknown');
+                            const daysLeft = plan.daysLeft !== undefined ? plan.daysLeft : '?';
+                            plansHtml += `<div class="plan-item">
                         ${planName} <span style="font-size:0.6rem;color:#aaa;">(${daysLeft}d)</span>
                         <button class="btn-small plan-delete" onclick="deleteUserPlan('${plan.id}', '${userId}')">✕</button>
                     </div>`;
-                    });
-                    plansHtml += '</div>';
-                }
+                        });
+                        plansHtml += '</div>';
+                    }
 
-                html += `<tr>
-                <td>${escapeHtml(u.fullName || '-')}</td>
-                <td>${escapeHtml(u.email)}</td>
-                <td style="color:#00E5FF; font-weight:600;">${formatMoney(walletBalance)}</td>
-                <td style="color:#FFD700; font-weight:600;">${formatMoney(depositBalance)}</td>
-                <td><select class="role-select" data-id="${doc.id}"><option ${u.role==='admin'?'selected':''}>admin</option><option ${u.role==='user'?'selected':''}>user</option></select></td>
-                <td><button class="btn-small ${u.isBlocked ? 'warning' : 'danger'}" onclick="toggleBlock('${doc.id}', ${u.isBlocked})">${u.isBlocked ? 'Unblock' : 'Block'}</button></td>
-                <td><button class="btn-small ${u.canRequestLoan===false ? 'warning' : 'success'}" onclick="toggleLoanFlag('${doc.id}', ${u.canRequestLoan===false})">${u.canRequestLoan===false ? 'Allow Loan' : 'Disable Loan'}</button></td>
+                    html += `<tr>
+                <td>${escapeHtml(user.fullName)}</td>
+                <td>${escapeHtml(user.email)}</td>
+                <td style="color:#00E5FF; font-weight:600;">${formatMoney(user.walletBalance)}</td>
+                <td style="color:#FFD700; font-weight:600;">${formatMoney(user.depositBalance)}</td>
+                <td><select class="role-select" data-id="${userId}"><option ${user.role==='admin'?'selected':''}>admin</option><option ${user.role==='user'?'selected':''}>user</option></select></td>
+                <td><button class="btn-small ${user.isBlocked ? 'warning' : 'danger'}" onclick="toggleBlock('${userId}', ${user.isBlocked})">${user.isBlocked ? 'Unblock' : 'Block'}</button></td>
+                <td><button class="btn-small ${!user.canRequestLoan ? 'warning' : 'success'}" onclick="toggleLoanFlag('${userId}', ${!user.canRequestLoan})">${!user.canRequestLoan ? 'Allow Loan' : 'Disable Loan'}</button></td>
                 <td>${plansHtml}</td>
                 <td>
                     <div class="balance-edit">
                         <span style="font-size:0.7rem;color:#aaa;">Wallet:</span>
-                        <input type="number" id="wallet_${doc.id}" placeholder="Wallet (ZMW)" step="0.01">
-                        <button class="btn-small" onclick="updateWalletBalance('${doc.id}')">Set</button>
+                        <input type="number" id="wallet_${userId}" placeholder="Wallet (ZMW)" step="0.01">
+                        <button class="btn-small" onclick="updateWalletBalance('${userId}')">Set</button>
                     </div>
                     <div class="balance-edit" style="margin-top:0.3rem;">
                         <span style="font-size:0.7rem;color:#aaa;">Deposit:</span>
-                        <input type="number" id="deposit_${doc.id}" placeholder="Deposit (TZS)" step="0.01">
-                        <button class="btn-small" onclick="updateDepositBalance('${doc.id}')">Set</button>
+                        <input type="number" id="deposit_${userId}" placeholder="Deposit (TZS)" step="0.01">
+                        <button class="btn-small" onclick="updateDepositBalance('${userId}')">Set</button>
                     </div>
-                    <button class="btn-small warning" onclick="resetUserPassword('${u.email}')">Reset Password</button>
-                    <button class="btn-small danger" onclick="deleteUserAccount('${doc.id}', '${u.email}')">Delete Account</button>
+                    <button class="btn-small warning" onclick="resetUserPassword('${escapeHtml(user.email)}')">Reset Password</button>
+                    <button class="btn-small danger" onclick="deleteUserAccount('${userId}', '${escapeHtml(user.email)}')">Delete Account</button>
                 </td>
             </tr>`;
+                }
             }
             html += `</tbody></table>`;
             document.getElementById('usersList').innerHTML = html;
+
             document.querySelectorAll('.role-select').forEach(sel => sel.addEventListener('change', async (e) => {
                 await db.collection('users').doc(sel.dataset.id).update({ role: sel.value });
                 showToast('Role updated');
-                loadUsers();
+                loadUsers(getSearchQuery());
             }));
+        }
+
+        function updateUserSearchUI(filterText) {
+            const clearBtn = document.getElementById('clearUserSearchBtn');
+            if (clearBtn) {
+                clearBtn.style.display = (filterText && filterText.trim() !== '') ? 'inline-block' : 'none';
+            }
         }
 
         window.deleteUserPlan = async (investmentId, userId) => {
@@ -1758,19 +1847,22 @@
             try {
                 await db.collection('investments').doc(investmentId).delete();
                 showToast('Plan deleted successfully.', false);
-                loadUsers();
+                loadUsers(getSearchQuery());
             } catch (err) {
                 console.error(err);
                 showToast('Error deleting plan: ' + err.message, true);
             }
         };
 
-        window.toggleBlock = async (uid, isBlocked) => { await db.collection('users').doc(uid).update({ isBlocked: !
-                isBlocked });
-            loadUsers(); };
-        window.toggleLoanFlag = async (uid, isDisabled) => { await db.collection('users').doc(uid).update({ canRequestLoan: !
-                isDisabled });
-            loadUsers(); };
+        window.toggleBlock = async (uid, isBlocked) => {
+            await db.collection('users').doc(uid).update({ isBlocked: !isBlocked });
+            loadUsers(getSearchQuery());
+        };
+
+        window.toggleLoanFlag = async (uid, isDisabled) => {
+            await db.collection('users').doc(uid).update({ canRequestLoan: !isDisabled });
+            loadUsers(getSearchQuery());
+        };
 
         window.updateWalletBalance = async (uid) => {
             const input = document.getElementById(`wallet_${uid}`);
@@ -1779,7 +1871,7 @@
             if (isNaN(newBal)) { showToast('Please enter a valid number for Wallet Balance', true); return; }
             await db.collection('users').doc(uid).update({ walletBalance: newBal, balance: newBal });
             showToast(`◆ Wallet balance updated to ${formatMoney(newBal)} ZMW`, false);
-            loadUsers();
+            loadUsers(getSearchQuery());
             loadStats();
         };
 
@@ -1790,7 +1882,7 @@
             if (isNaN(newBal)) { showToast('Please enter a valid number for Deposit Balance', true); return; }
             await db.collection('users').doc(uid).update({ depositBalance: newBal });
             showToast(`◆ Deposit balance updated to ${formatMoney(newBal)} TZS`, false);
-            loadUsers();
+            loadUsers(getSearchQuery());
             loadStats();
         };
 
@@ -1821,7 +1913,7 @@
                 await batch.commit();
                 await db.collection('users').doc(uid).set({ deleted: true }, { merge: true });
                 showToast(`User ${email} deleted (Firestore data removed).`, false);
-                loadUsers();
+                loadUsers(getSearchQuery());
                 loadStats();
             } catch (err) { showToast(err.message, true); }
         };
@@ -2301,7 +2393,6 @@
 
         // ── CONFIRM MODAL LOGIC ──
         function showDepositConfirmModal() {
-            // read current checkbox states
             const checks = {
                 amountMatch: document.getElementById('depositRequireAmountMatch').checked,
                 agentName: document.getElementById('depositRequireAgentName').checked,
@@ -2309,7 +2400,6 @@
                 txKeyword: document.getElementById('depositRequireTxKeyword').checked,
                 futureDate: document.getElementById('depositRequireFutureDate').checked
             };
-            // build summary grid
             const grid = document.getElementById('confirmSummaryGrid');
             const labels = [
                 { key: 'amountMatch', label: 'SMS amount matches deposit amount' },
@@ -2544,7 +2634,7 @@
                 if (created > 0) { msgDiv.innerHTML =
                         `<span style="color:var(--primary);">◆ Created ${created} missing user documents. ${failed} failed.</span>`;
                     showToast(`${created} missing documents created.`, false);
-                    loadUsers();
+                    loadUsers(getSearchQuery());
                     loadStats(); } else { msgDiv.innerHTML =
                         `<span style="color:var(--gold);">◆◆ No missing documents found. All Auth users have Firestore documents.</span>`; }
             } catch (err) { console.error(err);

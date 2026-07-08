@@ -185,12 +185,15 @@
         }
         .custom-amount input::placeholder { color: rgba(255,255,255,0.3); }
 
-        /* ===== NETWORK OPTIONS ===== */
+        /* ===== NETWORK OPTIONS (All 3 networks, but Airtel has no agents) ===== */
         .network-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 0.8rem;
             margin: 1rem 0;
+        }
+        @media (max-width: 450px) {
+            .network-grid { grid-template-columns: 1fr 1fr 1fr; }
         }
         .network-option {
             background: rgba(255,255,255,0.04);
@@ -620,22 +623,20 @@
         }
 
         // ============================================================
-        // ===== AGENT LOGIC (Updated MTN Agent) =====
+        // ===== AGENT LOGIC (No agents for Airtel) =====
         // ============================================================
         function getHardcodedAgents(network) {
-            // MTN Agents - UPDATED: John Kabwe number changed to 0963070992
+            // MTN Agents
             const mtnAgents = [
                 { name: "John Kabwe", number: "0963070992", agentId: null },
                 { name: "Getrude Sompo", number: "0960338304", agentId: null }
             ];
-            const airtelAgents = [
-                { name: "John Kabwe", number: "0775552002", agentId: null }
-            ];
+            // Zamtel Agents
             const zamtelAgents = [
                 { name: "Jeremiah Ilunga", number: "0951359357", agentId: null }
             ];
+            // ❌ No agents for Airtel
             if (network === 'mtn') return mtnAgents;
-            if (network === 'airtel') return airtelAgents;
             if (network === 'zamtel') return zamtelAgents;
             return [];
         }
@@ -679,6 +680,12 @@
 
         async function loadAndSetAgentForNetwork(network) {
             if (!network) return null;
+
+            // 🚫 No agents for Airtel – return null immediately
+            if (network === 'airtel') {
+                return null;
+            }
+
             const firestoreAgents = await loadFirestoreAgents(network);
             const hardcodedAgents = getHardcodedAgents(network);
             const combined = mergeAgents(firestoreAgents, hardcodedAgents);
@@ -692,15 +699,21 @@
         // ============================================================
         function displayAgent(agent) {
             if (!agent) {
+                // Show different messages based on network
+                let message = '⚠️ No agent found for this network. Please contact admin.';
+                if (selectedNetwork === 'airtel') {
+                    message = 'Agents coming soon – try other available agents for other networks.';
+                }
                 agentInfoDiv.innerHTML = `
                     <div class="agent-card">
-                        <div class="agent-header">⚠️ No agent found</div>
-                        <div style="color:#ef4444; font-size:0.9rem;">Please contact admin for support.</div>
+                        <div class="agent-header">ℹ️ Information</div>
+                        <div style="color:#FFD700; font-size:0.95rem; text-align:center;">${message}</div>
                     </div>
                 `;
                 return;
             }
 
+            // Display agent details for MTN and Zamtel
             const agentHtml = `
                 <div class="agent-card">
                     <div class="agent-header">📌 PAYMENT AGENT (${selectedNetwork.toUpperCase()})</div>
@@ -806,7 +819,18 @@
         function validatePayButton() {
             const amountOk = selectedAmount && selectedAmount >= 70;
             const networkOk = selectedNetwork !== null;
-            const agentOk = currentAgent !== null;
+            // Agent must be present for MTN and Zamtel, but for Airtel we skip this check
+            let agentOk = true;
+            if (selectedNetwork !== 'airtel') {
+                agentOk = currentAgent !== null;
+            } else {
+                // For Airtel, we don't require an agent to enable the button, but we should still show the message.
+                // Actually, let's keep the button disabled if no agent is found, so the user can't proceed.
+                // Wait, the user said "Let all three select networks shows only agents information on airtel remove it".
+                // This means they just want the info removed, but they might still want to pay.
+                // However, if there's no agent, they can't pay. So disabling the button is correct.
+                agentOk = false; // Since we return null for Airtel, this will be false.
+            }
             const phoneOk = validatePhone();
             const ready = readyCheckbox.checked;
             payNowBtn.disabled = !(amountOk && networkOk && agentOk && phoneOk && ready);
@@ -851,6 +875,8 @@
                 payNowBtn.disabled = true;
                 payNowBtn.innerText = 'Loading agent...';
                 currentAgent = await loadAndSetAgentForNetwork(selectedNetwork);
+                // Display agent info (or the "coming soon" message)
+                displayAgent(currentAgent);
                 payNowBtn.disabled = false;
                 payNowBtn.innerText = '💸 Pay Now';
                 validatePhone();
@@ -873,13 +899,17 @@
         // ============================================================
         payNowBtn.addEventListener('click', async () => {
             if (payNowBtn.disabled) return;
+
+            // If no agent is found, show a message and return
             if (!currentAgent) {
-                currentAgent = await loadAndSetAgentForNetwork(selectedNetwork);
-            }
-            if (!currentAgent) {
-                alert('No agent available for this network. Please contact admin.');
+                if (selectedNetwork === 'airtel') {
+                    alert('Agents coming soon – try other available agents for other networks.');
+                } else {
+                    alert('No agent available for this network. Please contact admin.');
+                }
                 return;
             }
+
             displayAgent(currentAgent);
 
             // Store deposit info in session
@@ -993,7 +1023,7 @@
         });
 
         console.log('✅ Deposit page loaded successfully!');
-        console.log('📌 MTN Agent updated to: John Kabwe - 0963070992');
+        console.log('📌 MTN & Zamtel agents available. Airtel agents removed.');
     </script>
 </body>
 </html>
