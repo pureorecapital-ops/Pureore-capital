@@ -1249,7 +1249,7 @@
         });
 
         // ================================================================
-        // POPUP ADS – TELEGRAM & WHATSAPP (EVERY 4 SECONDS)
+        // POPUP ADS – TELEGRAM & WHATSAPP (ONLY ON HOME ICON CLICK)
         // ================================================================
         const adPopup = document.getElementById('adPopup');
         const adCloseBtn = document.getElementById('adCloseBtn');
@@ -1306,32 +1306,32 @@
             if (e.target === adPopup) hideAd();
         });
 
-        // Show ad when Home nav item is clicked
-        document.getElementById('homeNavItem')?.addEventListener('click', function(e) {
-            if (window.location.pathname.includes('dashboard.html')) {
+        // ================================================================
+        // SHOW AD ONLY ON HOME ICON CLICK – ONE AD PER CLICK, ALTERNATES
+        // ================================================================
+        const homeNavItem = document.getElementById('homeNavItem');
+        if (homeNavItem) {
+            homeNavItem.addEventListener('click', function(e) {
                 e.preventDefault();
-                showAd();
-            }
-        });
-
-        // ================================================================
-        // AUTO SHOW AD EVERY 4 SECONDS (4,000ms) – FAST FOR ALL USERS
-        // ================================================================
-        let adTimer;
-        function scheduleAd() {
-            adTimer = setTimeout(() => {
-                if (!adPopup.classList.contains('active') && window.location.pathname.includes('dashboard.html')) {
+                // If already on dashboard, show ad
+                if (window.location.pathname.includes('dashboard.html') || 
+                    window.location.pathname === '/' || 
+                    window.location.pathname === '') {
                     showAd();
+                } else {
+                    // Navigate to dashboard
+                    window.location.href = 'dashboard.html';
                 }
-                scheduleAd(); // Reschedule
-            }, 4000); // 4 seconds
+            });
         }
-        scheduleAd();
+
+        // Also handle if user manually refreshes and clicks Home again
+        // The adIndex will persist in memory, alternating each click
 
         // ================================================================
-        // NAVIGATION
+        // NAVIGATION (for other nav items)
         // ================================================================
-        const navItems = document.querySelectorAll('.nav-item');
+        const navItems = document.querySelectorAll('.nav-item:not(#homeNavItem)');
         const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
 
         navItems.forEach(item => {
@@ -1346,35 +1346,22 @@
             });
         });
 
-        // Override home nav click to show ad
-        const homeNav = document.getElementById('homeNavItem');
-        if (homeNav) {
-            homeNav.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (window.location.pathname.includes('dashboard.html') || window.location.pathname === '/' || window
-                    .location.pathname === '') {
-                    showAd();
-                } else {
-                    window.location.href = 'dashboard.html';
-                }
-            });
-        }
-
         // ================================================================
         // NAV ICON AUTO-GLOW
         // ================================================================
+        const allNavItems = document.querySelectorAll('.nav-item');
         const glowColors = ['glow', 'glow-gold', 'glow-purple', ''];
         let glowIndex = 0;
 
         function cycleGlow() {
-            navItems.forEach(item => {
+            allNavItems.forEach(item => {
                 item.classList.remove('glow', 'glow-gold', 'glow-purple');
             });
             if (glowColors[glowIndex]) {
-                const targetIndex = glowIndex % navItems.length;
-                navItems[targetIndex].classList.add(glowColors[glowIndex]);
+                const targetIndex = glowIndex % allNavItems.length;
+                allNavItems[targetIndex].classList.add(glowColors[glowIndex]);
             }
-            glowIndex = (glowIndex + 1) % (navItems.length + 1);
+            glowIndex = (glowIndex + 1) % (allNavItems.length + 1);
         }
         setInterval(cycleGlow, 3000);
     </script>
