@@ -853,6 +853,7 @@
 
     // ================================================================
     //  FIXED: CLAIM STATUS WITH 24-HOUR WINDOW AND WEEKEND SKIP
+    //  First claim available immediately at purchase time.
     // ================================================================
     function getClaimStatus(inv, now) {
         const start = inv.startDate;
@@ -863,8 +864,8 @@
         // Iterate from claimsCount upward to find the first available or waiting day
         let index = claimsCount;
         while (index < totalBusinessDays) {
-            // Due date for this index: start + (index+1) business days
-            const dueDate = addBusinessDays(start, index + 1);
+            // Due date: first claim at start, subsequent claims add business days
+            const dueDate = index === 0 ? start : addBusinessDays(start, index);
             // Set time to same as start time (to keep the 24-hour window aligned)
             const claimStart = new Date(dueDate);
             claimStart.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);

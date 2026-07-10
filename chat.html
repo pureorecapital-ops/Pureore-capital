@@ -223,7 +223,7 @@
             border-radius: 20px;
             word-wrap: break-word;
             animation: fadeIn 0.3s ease;
-            line-height: 1.5;
+            line-height: 1.6;
             font-size: 0.95rem;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             border: 1px solid transparent;
@@ -251,6 +251,13 @@
         }
         .ai-message .msg-icon {
             filter: brightness(0) invert(1);
+        }
+        .ai-message a {
+            color: #FFD700;
+            text-decoration: none;
+        }
+        .ai-message a:hover {
+            text-decoration: underline;
         }
 
         /* ===== INPUT AREA ===== */
@@ -464,7 +471,12 @@
             if (!data.text) return;
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${data.isUser ? 'user-message' : 'ai-message'}`;
-            msgDiv.innerText = data.text;
+            // Convert line breaks to <br> for proper formatting
+            if (!data.isUser) {
+                msgDiv.innerHTML = data.text.replace(/\n/g, '<br>');
+            } else {
+                msgDiv.innerText = data.text;
+            }
             chatBox.appendChild(msgDiv);
             scrollToBottom();
         }
@@ -479,7 +491,7 @@
                 snapshot.forEach(doc => displayMessage(doc));
                 if (snapshot.empty) {
                     const welcomeText =
-                        "Hello! I'm Pureore Assistant, your personal guide. Ask me anything about deposits, withdrawals, investments, daily income, platform rules, or referral bonuses. I can explain how to use every page: Register, Login, Dashboard, Deposit, Withdraw, Treasure, Voucher, Loan, News, Change Password, Income, Team, Mk Vip, J Product, and even WhatsApp groups. How can I help you today?";
+                        "Hello! I'm Pureore Assistant, your personal guide.\n\nAsk me anything about deposits, withdrawals, investments, daily income, platform rules, or referral bonuses.\n\nI can explain how to use every page: Register, Login, Dashboard, Deposit, Withdraw, Treasure, Voucher, Loan, News, Change Password, Income, Team, Mk Vip, J Product, and more.\n\nHow can I help you today?";
                     saveMessage(welcomeText, false).catch(console.warn);
                 }
             }, error => {
@@ -489,102 +501,208 @@
             });
         }
 
-        // ===== AI RESPONSE GENERATOR =====
+        // ================================================================
+        // AI RESPONSE GENERATOR – UPDATED: No manager numbers, Telegram only
+        // ================================================================
         function getAIResponse(userMessage) {
             const msg = userMessage.toLowerCase();
 
+            // Blocked keywords – no admin/owner info
             const blockedKeywords = ['admin', 'owner', 'pathy', 'ceo', 'founder', 'who runs', 'who created', 'server password',
                 'hack', 'exploit', 'danger', 'illegal'
             ];
             for (let kw of blockedKeywords) {
                 if (msg.includes(kw)) {
-                    return "I cannot share admin or owner information for security and privacy reasons. If you have an account issue, please contact our customer support via WhatsApp: Assistant +260 96 139 1022 or Manager +260 95 135 9357. I'm here to help with platform features!";
+                    return "I cannot share admin or owner information for security and privacy reasons.\n\nIf you have an account issue, please reach out to our official Telegram community: @pureorecapital.\n\nI'm here to help with platform features!";
                 }
             }
 
-            // ===== NEW: EXPLAIN WHY FIND MANAGER BEFORE DEPOSIT =====
-            if ((msg.includes('deposit') && (msg.includes('why') || msg.includes('find') || msg.includes('manager') || msg
-                    .includes('before'))) ||
-                (msg.includes('manager') && msg.includes('deposit'))) {
-                return "Before making any deposit, it is crucial to contact the manager or an official agent first. Here's why:\n\n• Verified Agent Details: Agent numbers can change. The manager provides the currently active and verified agent number for your chosen network (MTN/Airtel/Zamtel).\n\n• Avoid Scams: Only the manager can confirm the exact agent you should pay. This prevents you from sending money to a fake account.\n\n• Deposit Tracking: The manager ensures your deposit is recorded correctly and linked to your account. They will confirm the amount and network before you send.\n\n• SMS Verification: After payment, you'll need to paste the SMS you receive. The manager will guide you on what to expect and how to verify it.\n\n• Support: If you encounter any issues during the deposit process, the manager is your first point of contact for immediate help.\n\nAlways reach out to the manager via WhatsApp (Assistant: +260 96 139 1022, Manager: +260 95 135 9357) or join our WhatsApp group for the latest updates before depositing.";
+            // ── Contact / Support ──
+            if (msg.includes('contact') || msg.includes('support') || msg.includes('whatsapp') || msg.includes('telegram') ||
+                msg.includes('help')) {
+                return "You can connect with us through these channels:\n\n" +
+                    "📱 Telegram: @pureorecapital (official community & support)\n" +
+                    "💬 WhatsApp Group: https://chat.whatsapp.com/CAphZ7CmNScGkp9un8MSjB\n\n" +
+                    "Join our community for real‑time updates, news, and direct assistance from the Pureore team.";
             }
 
+            // ── Why find manager/agent before deposit ──
+            if ((msg.includes('deposit') && (msg.includes('why') || msg.includes('find') || msg.includes('before'))) ||
+                (msg.includes('agent') && msg.includes('deposit'))) {
+                return "Before making any deposit, it is important to verify the correct agent details.\n\n" +
+                    "Here's why:\n" +
+                    "• Agent numbers may change – always confirm with an official representative.\n" +
+                    "• To avoid scams – only use verified agent numbers provided by Pureore.\n" +
+                    "• To ensure your deposit is tracked correctly to your account.\n" +
+                    "• The agent will confirm the amount and network before you send.\n" +
+                    "• After payment, they will guide you on SMS verification.\n\n" +
+                    "For the latest agent details and support, join our Telegram: @pureorecapital or WhatsApp: https://chat.whatsapp.com/CAphZ7CmNScGkp9un8MSjB";
+            }
+
+            // ── Origin / Where from ──
             if (msg.includes('origin') || msg.includes('where from') || msg.includes('uk') || msg.includes('africa') || msg
-                .includes('country') || msg.includes('friends')) {
-                return "Pureore Capital was first launched in Manchester, United Kingdom – a small but innovative place. Today we have a growing family of members both in the UK and across Africa. The scrolling flags you see (UK, Congo, Tanzania, Ghana, Zimbabwe, Zambia) represent our friendly global community. We believe in friendship and financial growth together!";
+                .includes('country')) {
+                return "Pureore Capital was first launched in Manchester, United Kingdom – a small but innovative place.\n\n" +
+                    "Today we have a growing family of members both in the UK and across Africa. The scrolling flags you see (UK, Congo, Tanzania, Ghana, Zimbabwe, Zambia) represent our friendly global community.\n\nWe believe in friendship and financial growth together!";
             }
 
-            if (msg.includes('agent') || msg.includes('zambian agent') || msg.includes('why agent')) {
-                return "The Zambian agents (John Kabwe, Getrude Sonpo for MTN; John Kabwe for Airtel; Jeremiah Ilunga for Zamtel) are carefully chosen to help our African users build their futures and grow their income. They assist with deposits and provide local support. All agents are verified and committed to your financial success.";
+            // ── Agent information ──
+            if (msg.includes('agent') && !msg.includes('why')) {
+                return "Pureore has verified agents for each network:\n\n" +
+                    "• MTN: John Kabwe, Getrude Sonpo\n" +
+                    "• Airtel: John Kabwe\n" +
+                    "• Zamtel: Jeremiah Ilunga\n\n" +
+                    "All agents are committed to your financial success. For the latest updates, join our Telegram: @pureorecapital.";
             }
 
-            if (msg.includes('whatsapp') || msg.includes('contact support') || msg.includes('blocked') || msg.includes(
-                    'manager') || msg.includes('assistant')) {
-                return "For direct support:\nAssistant (Deposit/Withdraw issues): +260 96 139 1022 (WhatsApp)\nManager (Account & blocking issues): +260 95 135 9357 (WhatsApp)\nJoin our WhatsApp group for community updates: https://chat.whatsapp.com/KnggKPDuxj98Wxo1HAE6FP\nWhatsApp Channel: https://whatsapp.com/channel/0029VbCoP1qFcowAHv8uFV2Y\nTelegram: https://t.me/pureorecapital\nIf your account is blocked, please contact the Manager immediately.";
-            }
-
+            // ── Register ──
             if (msg.includes('register') || msg.includes('create account') || msg.includes('sign up')) {
-                return "To register, go to the Register page. Fill in your full name, email, password (min 6 chars), and a valid referral code (required). You'll receive a 20 ZMW welcome bonus instantly. After registration, you'll be redirected to your dashboard.";
+                return "To register, go to the Register page.\n\n" +
+                    "Fill in your full name, email, password (min 6 chars), and a valid referral code (required).\n\n" +
+                    "You'll receive a 20 ZMW welcome bonus instantly.\n\n" +
+                    "After registration, you'll be redirected to your dashboard.";
             }
 
+            // ── Login ──
             if (msg.includes('login') || msg.includes('sign in')) {
-                return "Go to the login page, enter your email and password. If you forgot your password, use the 'Forgot password?' link in the profile page (Me > Change Password > Forgot password) – you'll need to contact the manager via WhatsApp for recovery.";
+                return "Go to the login page, enter your email and password.\n\n" +
+                    "If you forgot your password, use the 'Forgot password?' link in the profile page (Me > Change Password > Forgot password).\n\n" +
+                    "For assistance, contact us on Telegram: @pureorecapital.";
             }
 
+            // ── Dashboard ──
             if (msg.includes('dashboard')) {
-                return "Your dashboard shows your current balance, deposit and withdraw buttons, and three quick actions: Treasure, Loan, and Voucher. Below that, you'll find investment plans. Use the floating buttons for transaction history and support.";
+                return "Your dashboard shows your current balance, deposit and withdraw buttons, and three quick actions: Treasure, Loan, and Voucher.\n\n" +
+                    "Below that, you'll find investment plans. Use the floating buttons for transaction history and support.";
             }
 
-            if (msg.includes('deposit') && !msg.includes('why') && !msg.includes('manager')) {
-                return "To deposit: Go to Dashboard -> tap 'Deposit'. Choose your network (MTN/Airtel/Zamtel). Enter your phone number (9 digits after +260) and your full name. Select an amount (min 70 ZMW) or type custom amount. Check 'I'm ready to pay'. You'll see agent details. Important: Before sending any money, contact the manager to confirm the correct agent number and avoid scams. After sending, paste the SMS you received and click Verify & Complete. Admin approval (usually within 24h) adds the funds to your balance.";
+            // ── Deposit ──
+            if (msg.includes('deposit') && !msg.includes('why') && !msg.includes('agent')) {
+                return "To deposit:\n\n" +
+                    "1. Go to Dashboard → tap 'Deposit'\n" +
+                    "2. Choose your network (MTN / Airtel / Zamtel)\n" +
+                    "3. Enter your phone number (9 digits after +260)\n" +
+                    "4. Select an amount (min 70 ZMW) or type custom amount\n" +
+                    "5. Check 'I'm ready to pay'\n" +
+                    "6. You'll see agent details – confirm with us on Telegram: @pureorecapital\n" +
+                    "7. Send the exact amount to the agent\n" +
+                    "8. Paste the SMS you received → Click Verify & Complete\n\n" +
+                    "Admin approval (usually within 24h) adds the funds to your balance.";
             }
 
+            // ── Withdraw ──
             if (msg.includes('withdraw')) {
-                return "To withdraw: Go to Dashboard -> tap 'Withdraw'. Choose network or bank. For mobile money, enter your phone number and account name; for bank, select bank and enter 16-digit card number. Enter amount (min 20 ZMW). A 20% fee applies. You must have at least one completed deposit and one active investment, and no active loans. Withdrawals are processed Monday–Friday. After submission, admin approves within 24h.";
+                return "To withdraw:\n\n" +
+                    "1. Go to Dashboard → tap 'Withdraw'\n" +
+                    "2. Choose network or bank\n" +
+                    "3. For mobile money: enter your phone number and account name\n" +
+                    "4. For bank: select bank and enter 16‑digit card number\n" +
+                    "5. Enter amount (min 20 ZMW) – a 20% fee applies\n" +
+                    "6. You must have at least one completed deposit and one active investment\n" +
+                    "7. No active loans allowed for withdrawal\n" +
+                    "8. Withdrawals are processed Monday–Friday\n\n" +
+                    "After submission, admin approves within 24h.";
             }
 
+            // ── Investment plans ──
             if (msg.includes('invest') || msg.includes('investment plan') || msg.includes('mkvip') || msg.includes(
                 'jproduct')) {
-                return "We offer two investment sections: Mk Vip and J Product. Each has multiple plans with different investment amounts, daily returns, and durations. To invest, go to the respective page (from bottom navigation or dashboard), choose a plan, tap 'Invest Now'. Your balance will be deducted, and you'll start earning daily returns. You can view active plans in the 'Income' page.";
+                return "We offer two investment sections:\n\n" +
+                    "• Mk Vip – multiple plans with different investment amounts, daily returns, and durations.\n" +
+                    "• J Product – designed for steady, long‑term earnings.\n\n" +
+                    "To invest, go to the respective page (from bottom navigation or dashboard), choose a plan, tap 'Invest Now'.\n\n" +
+                    "Your balance will be deducted, and you'll start earning daily returns. You can view active plans in the 'Income' page.";
             }
 
+            // ── Claim daily income ──
             if (msg.includes('claim') || msg.includes('daily income') || msg.includes('income page')) {
-                return "In the 'Income' page, you'll see your active plans under 'Active' tab. After 24 hours have passed since your last claim (or since the start date), the 'Claim Daily Income' button turns green. Tap it to receive that day's profit directly into your balance. Claims are only allowed on weekdays (Monday–Friday). You can claim once every 24 hours per investment. If you have only one active plan and it has 2 days or less remaining, claiming is blocked until you purchase a second plan – this encourages reinvestment.";
+                return "In the 'Income' page, you'll see your active plans under the 'Active' tab.\n\n" +
+                    "After 24 hours have passed since your last claim (or since the start date), the 'Claim Daily Income' button turns green.\n\n" +
+                    "Tap it to receive that day's profit directly into your balance.\n\n" +
+                    "Claims are only allowed on weekdays (Monday–Friday). You can claim once every 24 hours per investment.\n\n" +
+                    "If you have only one active plan and it has 2 days or less remaining, claiming is blocked until you purchase a second plan – this encourages reinvestment.";
             }
 
+            // ── Rules ──
             if (msg.includes('rule') || msg.includes('rules') || msg.includes('policy')) {
-                return "Key rules:\n- Minimum deposit: 70 ZMW\n- Minimum withdrawal: 20 ZMW (20% fee)\n- Withdrawals require at least one completed deposit and one active investment\n- No active loans allowed for withdrawal\n- Withdrawals only Monday–Friday\n- Loans: 15% interest, due in 15 days\n- Daily income: claim once every 24 hours (weekdays only)\n- Referral bonus: 5% of first deposit (when referred user invests)\n- No fraud or multiple accounts. Read full Terms in footer.";
+                return "Key rules:\n\n" +
+                    "• Minimum deposit: 70 ZMW\n" +
+                    "• Minimum withdrawal: 20 ZMW (20% fee)\n" +
+                    "• Withdrawals require at least one completed deposit and one active investment\n" +
+                    "• No active loans allowed for withdrawal\n" +
+                    "• Withdrawals only Monday–Friday\n" +
+                    "• Loans: 15% interest, due in 15 days\n" +
+                    "• Daily income: claim once every 24 hours (weekdays only)\n" +
+                    "• Referral bonus: 5% of first deposit (when referred user invests)\n" +
+                    "• No fraud or multiple accounts. Read full Terms in footer.";
             }
 
+            // ── Referral / Team ──
             if (msg.includes('referral') || msg.includes('team') || msg.includes('bonus') || msg.includes('invite')) {
-                return "Your referral code is in the 'Team' page. Share your unique link. When someone registers using your code, makes their first completed deposit (any amount) AND purchases their first investment plan, you receive 5% of that deposit as a bonus. There's no limit on team size. The bonus is automatically added to your balance and appears in your 'Team' earnings.";
+                return "Your referral code is in the 'Team' page. Share your unique link.\n\n" +
+                    "When someone registers using your code, makes their first completed deposit (any amount) AND purchases their first investment plan, you receive 5% of that deposit as a bonus.\n\n" +
+                    "There's no limit on team size. The bonus is automatically added to your balance and appears in your 'Team' earnings.";
             }
 
+            // ── Loan ──
             if (msg.includes('loan')) {
-                return "Loans are available from the dashboard middle icon (Loan). You can request between 6,000 and 100,000 ZMW (multiples of 6,000). 15% interest, repayable in 15 days. You need a balance of at least 10,000 ZMW, total invested amount >= 15,000 ZMW, and at least 15 team members who have both deposited and invested. After repayment, you must contact admin to enable new loan requests.";
+                return "Loans are available from the dashboard middle icon (Loan).\n\n" +
+                    "You can request between 6,000 and 100,000 ZMW (multiples of 6,000).\n" +
+                    "• 15% interest, repayable in 15 days\n" +
+                    "• You need a balance of at least 10,000 ZMW\n" +
+                    "• Total invested amount ≥ 15,000 ZMW\n" +
+                    "• At least 15 team members who have both deposited and invested\n\n" +
+                    "After repayment, you must contact admin to enable new loan requests.";
             }
 
+            // ── Treasure / Voucher ──
             if (msg.includes('treasure') || msg.includes('voucher')) {
-                return "Treasure and Voucher are promotional features. Enter unique codes (treasure codes are 7 characters, vouchers are 10 characters with amount embedded) in the respective pages. Codes are posted on our WhatsApp group and channel. Each code can be used only once and gives you free ZMW. Stay tuned for daily codes!";
+                return "Treasure and Voucher are promotional features.\n\n" +
+                    "• Treasure codes: 7 characters (letters + numbers)\n" +
+                    "• Vouchers: 10 characters with amount embedded\n\n" +
+                    "Enter unique codes in the respective pages. Codes are posted on our Telegram: @pureorecapital and WhatsApp group.\n\n" +
+                    "Each code can be used only once and gives you free ZMW. Stay tuned for daily codes!";
             }
 
+            // ── News ──
             if (msg.includes('news')) {
-                return "The News page shows official announcements, updates, and new investment opportunities. Check it regularly to stay informed.";
+                return "The News page shows official announcements, updates, and new investment opportunities.\n\nCheck it regularly to stay informed about the latest developments at Pureore Capital.";
             }
 
+            // ── Change Password ──
             if (msg.includes('change password') || msg.includes('me page') || msg.includes('profile')) {
-                return "To change your password: Go to 'Me' page (bottom navigation). Tap 'Change Password'. Enter your email, old password, new password (min 6 chars), and confirm. After successful change, you'll be logged out. If you forgot your password, use the 'Forgot password?' link there – you'll need to contact the manager via WhatsApp for recovery.";
+                return "To change your password:\n\n" +
+                    "1. Go to 'Me' page (bottom navigation)\n" +
+                    "2. Tap 'Change Password'\n" +
+                    "3. Enter your email, old password, new password (min 6 chars), and confirm\n" +
+                    "4. After successful change, you'll be logged out\n\n" +
+                    "If you forgot your password, use the 'Forgot password?' link there – you'll need to contact us on Telegram: @pureorecapital for recovery.";
             }
 
+            // ── Team members ──
             if (msg.includes('team members') || (msg.includes('team') && !msg.includes('referral'))) {
-                return "The 'Team' page shows your referral link, how many people have joined using your code, and the total bonus you've earned from referrals. Each referred user appears in the list with their bonus amount.";
+                return "The 'Team' page shows your referral link, how many people have joined using your code, and the total bonus you've earned from referrals.\n\nEach referred user appears in the list with their bonus amount.";
             }
 
+            // ── Greetings ──
             if (msg.match(/^(hi|hello|hey|good morning|good afternoon|good evening)$/)) {
-                return "Hello! I'm Pureore Assistant, your personal guide. Ask me anything about deposits, withdrawals, investments, daily income, rules, referral bonuses, or any platform feature. How can I help you today?";
+                return "Hello! I'm Pureore Assistant, your personal guide.\n\nAsk me anything about deposits, withdrawals, investments, daily income, rules, referral bonuses, or any platform feature.\n\nHow can I help you today?";
             }
 
-            return "I'm here to help with Pureore Capital! You can ask about registration, login, dashboard, deposit, withdrawal, investment plans (Mk Vip / J Product), daily income claiming, loans, treasure/voucher codes, news, changing password, team referrals, WhatsApp support, platform rules, and more. Please rephrase your question or ask something specific.";
+            // ── Default ──
+            return "I'm here to help with Pureore Capital!\n\n" +
+                "You can ask about:\n" +
+                "• Registration, Login, Dashboard\n" +
+                "• Deposit, Withdrawal\n" +
+                "• Investment plans (Mk Vip / J Product)\n" +
+                "• Daily income claiming\n" +
+                "• Loans, Treasure, Voucher codes\n" +
+                "• News, Changing password\n" +
+                "• Team referrals\n" +
+                "• WhatsApp / Telegram support\n" +
+                "• Platform rules\n\n" +
+                "Please rephrase your question or ask something specific.\n\n" +
+                "For direct support, join our Telegram: @pureorecapital or WhatsApp group: https://chat.whatsapp.com/CAphZ7CmNScGkp9un8MSjB";
         }
 
         async function sendMessage(text) {
