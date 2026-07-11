@@ -1024,6 +1024,25 @@
     <div id="supportReplyModal" class="modal"><div class="modal-content"><h3>Reply to Ticket</h3><input type="hidden" id="replyTicketId"><textarea id="replyMessage" rows="4" placeholder="Your reply..."></textarea><button id="sendReplyBtn" class="btn-small success">Send Reply</button><button class="btn-small" onclick="closeModal('supportReplyModal')">Cancel</button></div></div>
 
     <!-- ============================================================
+    GENERATE PASSWORD MODAL (NEW)
+    ============================================================ -->
+    <div id="genPasswordModal" class="modal">
+        <div class="modal-content">
+            <h3>🔑 Generate New Password</h3>
+            <p style="color:var(--text-muted);">New password for <span id="genUserEmail" style="color:#FFD700;"></span></p>
+            <div style="display:flex; align-items:center; gap:0.5rem; margin:1rem 0; background:rgba(0,0,0,0.3); padding:0.5rem 1rem; border-radius:40px; border:1px solid var(--gold);">
+                <span id="genPasswordDisplay" style="font-family:monospace; font-size:1.2rem; letter-spacing:1px; color:#fff; word-break:break-all;"></span>
+                <button id="copyGenPasswordBtn" class="btn-small" style="margin-left:auto;">📋 Copy</button>
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:1rem;">
+                <button id="applyGenPasswordBtn" class="btn-small success" style="flex:1;">✅ Apply Password</button>
+                <button id="cancelGenPasswordBtn" class="btn-small danger" style="flex:1;">Cancel</button>
+            </div>
+            <div id="genPasswordMsg" style="margin-top:0.5rem;"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================
     CONFIRM DEPOSIT RULES MODAL
     ============================================================ -->
     <div id="confirmDepositRulesModal" class="modal">
@@ -1220,6 +1239,82 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         // ================================================================
+        // GENERATE PASSWORD FUNCTIONS
+        // ================================================================
+        function generateSecurePassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        }
+
+        let genPasswordData = null; // { userId, email, password }
+
+        function openGenPasswordModal(userId, email) {
+            const password = generateSecurePassword();
+            genPasswordData = { userId, email, password };
+            document.getElementById('genUserEmail').textContent = email;
+            document.getElementById('genPasswordDisplay').textContent = password;
+            document.getElementById('genPasswordMsg').innerHTML = '';
+            document.getElementById('genPasswordModal').style.display = 'flex';
+        }
+
+        function copyGeneratedPassword() {
+            const display = document.getElementById('genPasswordDisplay');
+            if (!display) return;
+            const password = display.textContent;
+            navigator.clipboard.writeText(password).then(() => {
+                showToast('Password copied to clipboard!', false);
+            }).catch(() => {
+                // fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = password;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                textArea.remove();
+                showToast('Password copied!', false);
+            });
+        }
+
+        async function applyGeneratedPassword() {
+            if (!genPasswordData) return;
+            const { userId, email, password } = genPasswordData;
+            const msgDiv = document.getElementById('genPasswordMsg');
+            msgDiv.innerHTML = '<div style="color:#FFD700;">⏳ Applying password...</div>';
+
+            // === IMPORTANT ===
+            // Firebase Auth does not allow setting a user's password from the client without their current password.
+            // To implement this, you need a Cloud Function (or backend endpoint) that uses the Firebase Admin SDK.
+            // Example Cloud Function:
+            // exports.setUserPassword = functions.https.onCall(async (data, context) => {
+            //   // Verify admin authentication
+            //   if (!context.auth || context.auth.token.admin !== true) throw new Error('Unauthorized');
+            //   const { uid, newPassword } = data;
+            //   await admin.auth().updateUser(uid, { password: newPassword });
+            //   return { success: true };
+            // });
+            // 
+            // Then call it here:
+            // try {
+            //   const setPassword = firebase.functions().httpsCallable('setUserPassword');
+            //   await setPassword({ uid: userId, newPassword: password });
+            //   showToast(`Password for ${email} updated successfully!`, false);
+            //   msgDiv.innerHTML = '<div style="color:var(--primary);">✅ Password applied successfully.</div>';
+            //   closeModal('genPasswordModal');
+            // } catch (err) {
+            //   msgDiv.innerHTML = `<div style="color:#ef4444;">❌ Error: ${err.message}</div>`;
+            //   showToast('Error applying password: ' + err.message, true);
+            // }
+
+            // For now, we'll simulate success and show a warning that this needs backend implementation.
+            msgDiv.innerHTML = `<div style="color:var(--gold);">⚠️ To apply the password, you must set up a Cloud Function (see code comments).<br>For now, please copy the password and inform the user.</div>`;
+            showToast('Password generated. Copy it and provide to the user.', false);
+        }
+
+        // ================================================================
         // AUTH STATE
         // ================================================================
         auth.onAuthStateChanged(async (user) => {
@@ -1274,7 +1369,6 @@
                 closeModal('confirmDepositRulesModal');
             });
             document.getElementById('confirmSaveDepositBtn').addEventListener('click', confirmSaveDepositRules);
-            // close on backdrop click
             document.getElementById('confirmDepositRulesModal').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) closeModal('confirmDepositRulesModal');
             });
@@ -1305,6 +1399,21 @@
                     }
                 });
             }
+
+            // ── Generate Password modal listeners ──
+            document.getElementById('copyGenPasswordBtn').addEventListener('click', copyGeneratedPassword);
+            document.getElementById('applyGenPasswordBtn').addEventListener('click', applyGeneratedPassword);
+            document.getElementById('cancelGenPasswordBtn').addEventListener('click', () => {
+                closeModal('genPasswordModal');
+                genPasswordData = null;
+            });
+            // close modal on backdrop click
+            document.getElementById('genPasswordModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal('genPasswordModal');
+                    genPasswordData = null;
+                }
+            });
         });
 
         // ================================================================
@@ -1820,6 +1929,7 @@
                         <button class="btn-small" onclick="updateDepositBalance('${userId}')">Set</button>
                     </div>
                     <button class="btn-small warning" onclick="resetUserPassword('${escapeHtml(user.email)}')">Reset Password</button>
+                    <button class="btn-small success" onclick="openGenPasswordModal('${userId}', '${escapeHtml(user.email)}')">🔑 Gen Password</button>
                     <button class="btn-small danger" onclick="deleteUserAccount('${userId}', '${escapeHtml(user.email)}')">Delete Account</button>
                 </td>
             </tr>`;

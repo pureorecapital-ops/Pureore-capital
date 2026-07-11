@@ -8,6 +8,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- QRCode.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         /* ===== RESET & BASE ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -97,6 +99,7 @@
             border: 1px solid rgba(255,215,0,0.15);
             text-decoration: none;
             margin-bottom: 0.5rem;
+            width: fit-content;
         }
         .back-arrow:hover {
             background: #FFD700;
@@ -213,6 +216,65 @@
         .copy-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 8px 25px rgba(255,215,0,0.25);
+        }
+
+        /* ===== QR CODE ===== */
+        .qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0.8rem 0;
+            padding: 0.5rem;
+        }
+        #qrCodeContainer {
+            background: white;
+            padding: 0.8rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(255,215,0,0.1);
+            border: 2px solid rgba(255,215,0,0.15);
+        }
+        #qrCodeContainer img,
+        #qrCodeContainer canvas {
+            display: block;
+            border-radius: 8px;
+        }
+        .qr-label {
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== COMMISSION INFO BOX ===== */
+        .commission-info {
+            background: rgba(255,215,0,0.04);
+            border: 1px solid rgba(255,215,0,0.08);
+            border-radius: 20px;
+            padding: 1rem 1.2rem;
+            margin-top: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            justify-content: space-around;
+        }
+        .commission-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        .commission-item .badge {
+            font-weight: 700;
+            color: #FFD700;
+            background: rgba(0,0,0,0.3);
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+        }
+        .commission-item .highlight {
+            color: #00C853;
+            font-weight: 700;
         }
 
         /* ===== STATS ===== */
@@ -406,6 +468,8 @@
             .nav-label { font-size: 0.55rem; }
             .card { padding: 1rem; }
             .referral-code-box { padding: 0.6rem 0.8rem; }
+            .commission-info { flex-direction: column; align-items: center; gap: 0.5rem; }
+            #qrCodeContainer { transform: scale(0.9); }
         }
     </style>
 </head>
@@ -444,6 +508,28 @@
             <div class="referral-code-box">
                 <span class="referral-code" id="referralCodeDisplay">Loading...</span>
                 <button class="copy-btn" id="copyReferralBtn">📋 Copy Link</button>
+            </div>
+
+            <!-- QR CODE -->
+            <div class="qr-section">
+                <div id="qrCodeContainer">
+                    <div id="qrCodeCanvas"></div>
+                </div>
+                <div class="qr-label">📲 Scan to share your referral link</div>
+            </div>
+
+            <!-- ===== COMMISSION INFO ===== -->
+            <div class="commission-info">
+                <div class="commission-item">
+                    <span>💰 Invite & Earn</span>
+                    <span class="badge">10%</span>
+                    <span class="highlight">on deposits</span>
+                </div>
+                <div class="commission-item">
+                    <span>📈 Investment Bonus</span>
+                    <span class="badge">10%</span>
+                    <span class="highlight">on plan purchases</span>
+                </div>
             </div>
 
             <div class="stats-grid">
@@ -558,6 +644,7 @@
         const teamCountSpan = document.getElementById('teamCount');
         const totalBonusSpan = document.getElementById('totalBonus');
         const teamListDiv = document.getElementById('teamList');
+        const qrContainer = document.getElementById('qrCodeCanvas');
 
         let currentUserId = null;
         let currentReferralCode = null;
@@ -572,6 +659,7 @@
             watchBlockStatus(currentUserId);
             await loadUserData();
             await loadTeamData();
+            generateQR();
         });
 
         // ===== LOAD USER DATA =====
@@ -590,6 +678,39 @@
             } catch (err) {
                 console.error(err);
                 referralCodeSpan.innerText = 'Error loading code';
+            }
+        }
+
+        // ===== GENERATE QR CODE =====
+        function generateQR() {
+            if (!qrContainer) return;
+            // Clear previous QR
+            qrContainer.innerHTML = '';
+
+            const link = getReferralLink();
+
+            // Use QRCode.js to generate QR
+            try {
+                new QRCode(qrContainer, {
+                    text: link,
+                    width: 160,
+                    height: 160,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (err) {
+                console.warn('QR generation failed, using fallback:', err);
+                // Fallback: show text link
+                qrContainer.innerHTML = `
+                    <div style="
+                        width:160px; height:160px;
+                        display:flex; align-items:center; justify-content:center;
+                        background:white; color:#000; font-size:12px;
+                        border-radius:8px; text-align:center; padding:10px;
+                        word-break:break-all;
+                    ">${escapeHtml(link)}</div>
+                `;
             }
         }
 
