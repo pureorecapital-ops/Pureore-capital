@@ -788,20 +788,23 @@
         </div>
     </div>
 
-    <!-- ===== ANNOUNCEMENT POPUP ===== -->
+    <!-- ===== ANNOUNCEMENT POPUP (UPDATED) ===== -->
     <div class="announcement-overlay" id="announcementPopup">
         <div class="announcement-modal glass-card">
             <button class="announcement-close" id="announcementClose">&times;</button>
             <div class="announcement-title">🚀 WELCOME TO PUREORECAPITAL 🚀</div>
             <div class="announcement-subtitle">Dear Members,<br>Start earning daily income with our investment plans designed to help you grow your earnings.</div>
+
+            <!-- NEW PLAN: 150 ZMW, daily 10, 30 days -->
             <div class="announcement-plan">
-                <h4>🔥 MKVIP STARTER PLAN</h4>
-                <div class="plan-detail"><span>💰 Investment Amount:</span><span>ZMW 70</span></div>
-                <div class="plan-detail"><span>💵 Daily Income:</span><span>ZMW 25</span></div>
-                <div class="plan-detail"><span>📅 Duration:</span><span>5 Days</span></div>
-                <div class="plan-detail"><span>💸 Total Income:</span><span>ZMW 125</span></div>
-                <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">This plan is perfect for beginners. After 5 days, the plan will expire automatically once the total income of ZMW 125 has been generated. To purchase this plan, tap the <strong style="color:#00E676;">MKVIP</strong> section.</div>
+                <h4>🔥 NEW STARTER PLAN</h4>
+                <div class="plan-detail"><span>💰 Investment Amount:</span><span>ZMW 150</span></div>
+                <div class="plan-detail"><span>💵 Daily Income:</span><span>ZMW 10</span></div>
+                <div class="plan-detail"><span>📅 Duration:</span><span>30 Days</span></div>
+                <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">A new plan for steady growth. Perfect for those looking to build their income over a month.</div>
             </div>
+
+            <!-- JPRODUCT PLAN -->
             <div class="announcement-plan">
                 <h4>⭐ JPRODUCT PLAN</h4>
                 <div class="plan-detail"><span>💰 Investment Amount:</span><span>ZMW 480</span></div>
@@ -809,6 +812,8 @@
                 <div class="plan-detail"><span>📅 Duration:</span><span>55 Days</span></div>
                 <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">This plan offers steady daily earnings for members looking for long-term income opportunities. Find this plan in the <strong style="color:#00E5FF;">JPRODUCT</strong> section.</div>
             </div>
+
+            <!-- PREMIUM PLAN -->
             <div class="announcement-plan">
                 <h4>💎 PREMIUM PLAN</h4>
                 <div class="plan-detail"><span>💰 Investment Amount:</span><span>ZMW 1,600</span></div>
@@ -817,6 +822,7 @@
                 <div class="plan-detail"><span>💸 Total Income:</span><span>ZMW 6,000</span></div>
                 <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">This plan is designed for members who want higher daily earnings and greater returns.</div>
             </div>
+
             <hr class="announcement-divider">
             <div class="announcement-howto">
                 <p><strong style="color:#FFD700;">📌 HOW TO START</strong></p>
@@ -1138,7 +1144,7 @@
         });
 
         // ================================================================
-        // POPUP ADS – AUTO ROTATE: 1st after 1s, 2nd after 13s, restarts on revisit
+        // POPUP ADS – AUTO ROTATE: 1st after 1s, 2nd after 35s, restarts on revisit
         // ================================================================
         const adPopup = document.getElementById('adPopup');
         const adCloseBtn = document.getElementById('adCloseBtn');
@@ -1193,8 +1199,8 @@
             if (e.target === adPopup) hideAd();
         });
 
-        // Auto-show sequence: first ad after 1s, second after 13s (after closing first)
-        // The sequence restarts when user revisits the page (because sessionStorage is used for announcement only, not ads)
+        // Auto-show sequence: first ad after 1s, second after 35s (after closing first)
+        // The sequence restarts when user revisits the page
         function startAdSequence() {
             // Clear any existing timeout
             if (adTimeout) clearTimeout(adTimeout);
@@ -1202,27 +1208,17 @@
             adIndex = 0;
             // Show first ad after 1 second
             adTimeout = setTimeout(() => {
-                // Only show if not already visible and page is dashboard
                 if (!adPopup.classList.contains('active') && 
                     (window.location.pathname.includes('dashboard.html') || window.location.pathname === '/' || window.location.pathname === '')) {
                     showAd();
                 }
-                // Schedule second ad after 13 seconds from now, but only if the first was shown
-                // We'll use a listener on ad close to trigger the second one
             }, 1000);
         }
 
-        // When user closes the first ad, schedule the second one after 13 seconds
-        const originalHideAd = hideAd;
+        // When user closes the first ad, schedule the second one after 35 seconds
         let secondAdScheduled = false;
 
-        // Override hideAd to also handle scheduling the next ad
-        const originalCloseHandler = adCloseBtn._listeners ? null : null;
-        // We'll use a mutation observer approach or simply modify the click handler
-
-        // Better approach: listen for ad closing via a custom event
         function onAdClosed() {
-            // If the second ad hasn't been scheduled yet and we're not already showing
             if (!secondAdScheduled && !adPopup.classList.contains('active')) {
                 secondAdScheduled = true;
                 adTimeout = setTimeout(() => {
@@ -1232,17 +1228,15 @@
                     }
                     // Reset for next cycle
                     secondAdScheduled = false;
-                }, 13000); // 13 seconds
+                }, 35000); // 35 seconds
             }
         }
 
-        // Patch the close button click
         adCloseBtn.addEventListener('click', function() {
             hideAd();
             onAdClosed();
         });
 
-        // Also if user clicks outside
         adPopup.addEventListener('click', function(e) {
             if (e.target === adPopup) {
                 hideAd();
