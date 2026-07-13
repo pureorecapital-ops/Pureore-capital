@@ -1,28 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <meta name="referrer" content="no-referrer">
-    <title>Treasure | Pureore Capital</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Treasure – PC • Pureore Capital</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
+    </script>
     <style>
-        /* ===== RESET & BASE ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-            min-height: 100vh;
-            background: #050505;
-            color: #FFFFFF;
-            padding: 1rem;
-            padding-bottom: 85px;
-            position: relative;
-            overflow-x: hidden;
+        /* ----- RESET & BASE ----- */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* ===== ANIMATED BACKGROUND ===== */
+        :root {
+            --gold: #f6c96e;
+            --gold-glow: rgba(246, 201, 110, 0.25);
+            --cyan: #5dd9f2;
+            --cyan-glow: rgba(93, 217, 242, 0.20);
+            --violet: #7c6df0;
+            --violet-glow: rgba(124, 109, 240, 0.30);
+            --green: #4ade80;
+            --green-glow: rgba(74, 222, 128, 0.15);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.15);
+            --radius-lg: 28px;
+            --radius-md: 18px;
+            --radius-sm: 12px;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        html,
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            color: #fff;
+            background: #0a0815;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 90px;
+        }
+
+        /* ----- BACKGROUND with Ravi Sharma image & brightness reduction ----- */
         body::before {
             content: "";
             position: fixed;
@@ -30,440 +57,857 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #050505 0%, #0a0a0a 25%, #111111 50%, #0a0a0a 75%, #050505 100%);
-            background-size: 400% 400%;
-            animation: bgShift 12s ease-in-out infinite alternate;
+            background-image: url('https://i.ibb.co/Vcg0rgNY/ravi-sharma-h-Nv5s6-NEYig-unsplash.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            filter: brightness(0.30) saturate(1.1) contrast(1.05);
             z-index: -3;
         }
-        @keyframes bgShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.06) 0%, transparent 50%);
+            z-index: -2;
+            pointer-events: none;
         }
 
-        /* ===== 4 FLOATING ORBS ===== */
+        /* ----- FLOATING ORBS ----- */
         .orb {
             position: fixed;
             border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.12;
-            z-index: -2;
+            filter: blur(70px);
+            opacity: 0.08;
+            z-index: -1;
             pointer-events: none;
-            animation: floatOrb 12s ease-in-out infinite alternate;
+            animation: orbFloat 16s ease-in-out infinite alternate;
         }
-        .orb-1 { width: 400px; height: 400px; background: #FFD700; top: -10%; left: -10%; animation-delay: 0s; }
-        .orb-2 { width: 350px; height: 350px; background: #00E5FF; bottom: -10%; right: -10%; animation-delay: 3s; }
-        .orb-3 { width: 300px; height: 300px; background: #FFD700; top: 40%; left: 75%; animation-delay: 6s; }
-        .orb-4 { width: 280px; height: 280px; background: #00C853; bottom: 30%; left: -5%; animation-delay: 9s; }
-        @keyframes floatOrb {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(30px, -20px) scale(1.1); }
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--violet);
+            top: -8%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: var(--cyan);
+            bottom: -8%;
+            right: -10%;
+            animation-delay: 5s;
+        }
+        .orb-3 {
+            width: 280px;
+            height: 280px;
+            background: var(--gold);
+            top: 40%;
+            left: 70%;
+            animation-delay: 10s;
+            opacity: 0.06;
         }
 
-        /* ===== CONTAINER ===== */
+        @keyframes orbFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(25px, -35px) scale(1.06);
+            }
+            66% {
+                transform: translate(-15px, 25px) scale(0.94);
+            }
+            100% {
+                transform: translate(20px, -10px) scale(1.02);
+            }
+        }
+
+        /* ----- CONTAINER ----- */
         .container {
-            max-width: 600px;
+            max-width: 560px;
             margin: 0 auto;
+            padding: 1rem 1.2rem 2rem;
             position: relative;
             z-index: 2;
         }
 
-        /* ===== HEADER ===== */
+        /* ----- HEADER / BRAND ----- */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
-        .header-left {
-            display: flex;
-            flex-direction: column;
-        }
-        .back-arrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(8px);
-            border-radius: 40px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #FFD700;
-            cursor: pointer;
-            transition: 0.3s;
-            border: 1px solid rgba(255,215,0,0.15);
-            text-decoration: none;
-            margin-bottom: 0.3rem;
-        }
-        .back-arrow:hover {
-            background: #FFD700;
-            color: #050505;
-            transform: translateX(-4px);
-            box-shadow: 0 0 30px rgba(255,215,0,0.2);
-        }
-        .back-arrow svg { width: 18px; height: 18px; fill: currentColor; }
 
-        .page-title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #FFD700, #F59E0B);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
+        .brand {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        .page-title .icon { font-size: 1.8rem; }
 
-        /* ===== TREASURE AVATAR ===== */
-        .treasure-avatar {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #FFD700, #F59E0B, #00C853);
-            background-size: 200% 200%;
-            animation: avatarFlow 4s ease-in-out infinite alternate;
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--violet), var(--cyan));
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
-            border: 2px solid rgba(255,215,0,0.2);
+            box-shadow: 0 4px 20px var(--violet-glow);
             flex-shrink: 0;
         }
-        @keyframes avatarFlow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        .treasure-avatar svg {
-            width: 30px;
-            height: 30px;
-            fill: white;
+
+        .brand-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: #fff;
+            stroke-width: 2.2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
-        /* ===== MAIN CARD ===== */
-        .treasure-card {
-            background: rgba(17, 17, 17, 0.95);
-            backdrop-filter: blur(8px);
-            border-radius: 28px;
-            padding: 2rem 1.5rem;
+        .brand-name {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-name .pc {
+            color: var(--gold);
+            -webkit-text-fill-color: var(--gold);
+            font-weight: 900;
+        }
+
+        .brand-badge {
+            font-size: 9px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 3px 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* ----- BACK BUTTON ----- */
+        .back-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 0.8rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            transform: translateX(-3px);
+        }
+
+        .back-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ----- PAGE TITLE ----- */
+        .page-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 0.2rem;
+            background: linear-gradient(135deg, var(--gold), #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-sub {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 1.2rem;
+            font-weight: 400;
+        }
+
+        /* ----- MAIN GLASS CARD ----- */
+        .glass-card {
+            background: rgba(10, 8, 21, 0.55);
+            backdrop-filter: blur(16px) saturate(1.3);
+            -webkit-backdrop-filter: blur(16px) saturate(1.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            padding: 1.8rem 1.5rem;
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
             text-align: center;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(17, 17, 17, 0.95), rgba(17, 17, 17, 0.95)),
-                              linear-gradient(135deg, #FFD700, #00C853, #FFD700);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
-            margin-bottom: 1.5rem;
-            transition: transform 0.3s ease;
-        }
-        .treasure-card:hover {
-            transform: translateY(-3px);
-        }
-        .treasure-icon {
-            font-size: 4rem;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        .treasure-subtitle {
-            color: #ccc;
-            font-size: 0.95rem;
             margin-bottom: 1.2rem;
         }
 
-        /* ===== CODE INPUT ===== */
-        .code-input {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1.2rem;
-            text-align: center;
-            letter-spacing: 3px;
-            background: rgba(255,255,255,0.03);
-            border: 2px solid transparent;
-            border-radius: 60px;
-            color: white;
-            font-family: monospace;
-            text-transform: uppercase;
-            transition: 0.3s;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(20,22,36,0.9), rgba(20,22,36,0.9)),
-                              linear-gradient(135deg, #FFD700, #00C853, #FFD700);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
-        }
-        .code-input:focus {
-            outline: none;
-            border-color: transparent;
-            box-shadow: 0 0 30px rgba(255,215,0,0.05);
-        }
-        .code-input::placeholder {
-            color: rgba(255,255,255,0.3);
-            font-weight: 300;
-            letter-spacing: 1px;
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -20%;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 109, 240, 0.04) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        /* ===== BUTTON ===== */
-        .claim-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #00C853, #009624);
-            padding: 1rem;
-            border: none;
-            border-radius: 60px;
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card .card-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(246, 201, 110, 0.06);
+            border: 1px solid rgba(246, 201, 110, 0.08);
+            margin-bottom: 0.6rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .glass-card .card-icon svg {
+            width: 36px;
+            height: 36px;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .glass-card .card-title {
+            font-size: 1.2rem;
             font-weight: 700;
+            color: #fff;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 0.2rem;
+        }
+
+        .glass-card .card-subtitle {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.35);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 1.2rem;
+            line-height: 1.5;
+        }
+
+        /* ----- CODE INPUT ----- */
+        .input-wrap {
+            position: relative;
+            margin-bottom: 0.3rem;
+            z-index: 1;
+        }
+
+        .input-wrap .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+            transition: stroke 0.3s ease;
+        }
+
+        .input-wrap:focus-within .input-icon {
+            stroke: var(--gold);
+        }
+
+        .input-wrap input {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 50px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
             font-size: 1.1rem;
-            color: #050505;
+            font-family: 'Monaco', 'Menlo', monospace;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            transition: all 0.3s ease;
+            outline: none;
+            text-align: center;
+        }
+
+        .input-wrap input:focus {
+            border-color: rgba(246, 201, 110, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 30px rgba(246, 201, 110, 0.02);
+        }
+
+        .input-wrap input::placeholder {
+            color: rgba(255, 255, 255, 0.1);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1px;
+            text-transform: none;
+        }
+
+        .input-wrap .char-counter {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+        }
+
+        .input-error {
+            font-size: 0.75rem;
+            color: var(--red);
+            margin-top: 0.3rem;
+            min-height: 1.2rem;
+            text-align: left;
+            padding-left: 4px;
+            z-index: 1;
+            position: relative;
+        }
+
+        /* ----- CLAIM BUTTON ----- */
+        .btn-claim {
+            width: 100%;
+            padding: 0.9rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0a0815;
+            background: linear-gradient(135deg, var(--gold), #f5a623);
             cursor: pointer;
-            margin-top: 1.2rem;
-            transition: 0.3s;
-            box-shadow: 0 4px 30px rgba(0,200,83,0.15);
+            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 4px 30px var(--gold-glow);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+            margin-top: 0.8rem;
+            z-index: 1;
         }
-        .claim-btn:hover {
+
+        .btn-claim::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .btn-claim:hover::after {
+            opacity: 1;
+        }
+
+        .btn-claim:hover {
             transform: translateY(-2px);
-            filter: brightness(1.1);
-            box-shadow: 0 8px 40px rgba(0,200,83,0.25);
+            box-shadow: 0 8px 40px var(--gold-glow);
         }
-        .claim-btn:disabled {
+
+        .btn-claim:active {
+            transform: scale(0.97);
+        }
+
+        .btn-claim:disabled {
             opacity: 0.4;
             transform: none;
             cursor: not-allowed;
             box-shadow: none;
         }
 
-        /* ===== MESSAGE ===== */
-        .message {
-            margin-top: 1rem;
+        .btn-claim .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-claim .btn-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ----- MESSAGE BOX ----- */
+        .msg-box {
             padding: 0.8rem 1rem;
-            border-radius: 30px;
+            border-radius: var(--radius-sm);
             text-align: center;
             font-weight: 500;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            background-origin: border-box;
-            background-clip: padding-box, border-box;
-        }
-        .message.success {
-            background: rgba(0, 200, 83, 0.08);
-            border-color: #00C853;
-            color: #00C853;
-        }
-        .message.error {
-            background: rgba(239, 68, 68, 0.08);
-            border-color: #ef4444;
-            color: #ef4444;
-        }
-
-        /* ===== INFO CARD ===== */
-        .info-card {
-            background: rgba(17, 17, 17, 0.7);
-            backdrop-filter: blur(4px);
-            border-radius: 24px;
-            padding: 1.2rem 1.5rem;
-            border: 1px solid rgba(255,255,255,0.04);
-            margin-top: 1rem;
-        }
-        .info-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: #FFD700;
-        }
-        .info-text {
-            color: #aaa;
-            line-height: 1.6;
             font-size: 0.9rem;
+            margin-top: 0.8rem;
+            display: none;
+            border: 1.5px solid transparent;
+            position: relative;
+            z-index: 1;
         }
-        .info-note {
-            font-size: 0.75rem;
-            color: #666;
-            margin-top: 0.5rem;
-        }
-        .info-note strong { color: #FFD700; }
 
-        /* ===== TOAST ===== */
+        .msg-box.success {
+            display: block;
+            background: rgba(74, 222, 128, 0.06);
+            border-color: rgba(74, 222, 128, 0.12);
+            color: #6ee7b7;
+        }
+
+        .msg-box.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.06);
+            border-color: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+        }
+
+        .msg-box svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        /* ----- INFO CARD ----- */
+        .info-card {
+            background: rgba(10, 8, 21, 0.40);
+            backdrop-filter: blur(12px) saturate(1.2);
+            -webkit-backdrop-filter: blur(12px) saturate(1.2);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: var(--radius-md);
+            padding: 1.2rem 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .info-card .info-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-card .info-header svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--gold);
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        .info-card .info-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .info-card .info-text {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.35);
+            line-height: 1.6;
+            padding-left: 30px;
+        }
+
+        .info-card .info-note {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-top: 0.5rem;
+            padding-left: 30px;
+            line-height: 1.5;
+        }
+
+        .info-card .info-note strong {
+            color: var(--gold);
+        }
+
+        .info-card .info-note svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        /* ----- TOAST ----- */
         .toast {
             position: fixed;
             bottom: 90px;
             left: 50%;
             transform: translateX(-50%);
             padding: 12px 24px;
-            border-radius: 40px;
+            border-radius: 60px;
             font-weight: 600;
+            font-size: 0.85rem;
             z-index: 9999;
-            animation: toastIn 0.4s ease;
+            background: rgba(10, 8, 21, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            animation: toastIn 0.3s ease;
             max-width: 90%;
             text-align: center;
         }
-        .toast.success { background: #00C853; color: #050505; }
-        .toast.error { background: #ef4444; color: white; }
-        .toast.warning { background: #FFD700; color: #050505; }
-        @keyframes toastIn {
-            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
         }
 
-        /* ===== BOTTOM NAV ===== */
+        .toast.success {
+            border-color: rgba(74, 222, 128, 0.15);
+            color: #6ee7b7;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+
+        /* ----- BOTTOM NAV ----- */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(10, 10, 14, 0.97);
-            backdrop-filter: blur(16px);
-            border-top: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(10, 10, 14, 0.97), rgba(10, 10, 14, 0.97)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
+            background: rgba(10, 8, 21, 0.92);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 6px 6px 18px;
+            padding: 6px 4px 14px;
             z-index: 30;
-            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
         }
+
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
             cursor: pointer;
             transition: all 0.3s ease;
             flex: 1;
             text-align: center;
             padding: 4px 2px;
             border-radius: 16px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
         }
-        .nav-item:hover { transform: translateY(-4px); }
-        .nav-icon {
-            width: 32px;
-            height: 32px;
+
+        .nav-item .nav-icon {
+            width: 26px;
+            height: 26px;
             object-fit: contain;
-            filter: brightness(0.5) grayscale(0.5);
-            transition: 0.4s;
-            border-radius: 8px;
-            padding: 2px;
+            filter: brightness(0.35) grayscale(0.6);
+            transition: all 0.3s ease;
+            border-radius: 6px;
         }
+
         .nav-item.active .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 12px rgba(255, 215, 0, 0.7));
-            transform: scale(1.05);
+            filter: brightness(1) drop-shadow(0 0 12px rgba(93, 217, 242, 0.35));
+            transform: scale(1.06);
         }
-        .nav-item.glow .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 16px rgba(0, 229, 255, 0.8));
-            transform: scale(1.08);
-        }
-        .nav-item.glow-gold .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 16px rgba(255, 215, 0, 0.8));
-            transform: scale(1.08);
-        }
-        .nav-item.glow-purple .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 16px rgba(41, 121, 255, 0.8));
-            transform: scale(1.08);
-        }
-        .nav-label {
-            font-size: 0.65rem;
-            color: #888;
+
+        .nav-item .nav-label {
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.2);
             font-weight: 500;
+            transition: color 0.3s ease;
             letter-spacing: 0.3px;
         }
-        .nav-item.active .nav-label { color: #FFD700; }
 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 600px) {
-            .page-title { font-size: 1.4rem; }
-            .treasure-card { padding: 1.2rem; }
-            .treasure-icon { font-size: 3rem; }
-            .code-input { font-size: 1rem; padding: 0.8rem; }
-            .claim-btn { font-size: 1rem; padding: 0.8rem; }
-            .treasure-avatar { width: 45px; height: 45px; }
-            .treasure-avatar svg { width: 24px; height: 24px; }
-            .nav-icon { width: 28px; height: 28px; }
-            .nav-label { font-size: 0.55rem; }
+        .nav-item.active .nav-label {
+            color: var(--cyan);
         }
 
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #FFD700; border-radius: 10px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        /* ----- RESPONSIVE ----- */
+        @media (max-width: 600px) {
+            .container {
+                padding: 0.8rem 0.8rem 1.5rem;
+            }
+            .brand-name {
+                font-size: 17px;
+            }
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+            }
+            .brand-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+            .brand-badge {
+                font-size: 7px;
+                padding: 2px 8px;
+            }
+            .page-title {
+                font-size: 1.3rem;
+            }
+            .glass-card {
+                padding: 1.2rem 1rem;
+            }
+            .glass-card .card-icon {
+                width: 60px;
+                height: 60px;
+            }
+            .glass-card .card-icon svg {
+                width: 30px;
+                height: 30px;
+            }
+            .glass-card .card-title {
+                font-size: 1rem;
+            }
+            .glass-card .card-subtitle {
+                font-size: 0.8rem;
+            }
+            .input-wrap input {
+                font-size: 0.95rem;
+                padding: 0.75rem 1rem 0.75rem 44px;
+                letter-spacing: 3px;
+            }
+            .input-wrap .input-icon {
+                left: 14px;
+                width: 18px;
+                height: 18px;
+            }
+            .btn-claim {
+                font-size: 0.9rem;
+                padding: 0.8rem;
+            }
+            .info-card .info-text {
+                font-size: 0.8rem;
+                padding-left: 0;
+            }
+            .info-card .info-note {
+                padding-left: 0;
+            }
+            .info-card .info-header {
+                flex-wrap: wrap;
+            }
+            .back-btn {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+            .nav-item .nav-icon {
+                width: 22px;
+                height: 22px;
+            }
+            .nav-item .nav-label {
+                font-size: 0.45rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .glass-card .card-icon {
+                width: 52px;
+                height: 52px;
+            }
+            .glass-card .card-icon svg {
+                width: 26px;
+                height: 26px;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- ===== 4 FLOATING ORBS ===== -->
+    <!-- ===== ORBS ===== -->
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
 
+    <!-- ===== MAIN CONTAINER ===== -->
     <div class="container">
 
         <!-- ===== HEADER ===== -->
         <div class="header">
-            <div class="header-left">
-                <a href="dashboard.html" class="back-arrow">
-                    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                    Back
-                </a>
-                <div class="page-title">
-                    <span class="icon">🎁</span> Treasure Hunt
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="6 6 18 6 6 18 18 18" />
+                    </svg>
                 </div>
-            </div>
-            <div class="treasure-avatar" title="Treasure Hunt">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 6h-2v2h-2V6h-2V4h2V2h2v2h2v2zm-10 3c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 4c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                    <path d="M5 2v2h2V2H5z"/>
-                </svg>
+                <span class="brand-name">Pureore<span class="pc">·PC</span></span>
+                <span class="brand-badge">Treasure</span>
             </div>
         </div>
 
+        <!-- ===== BACK ROW ===== -->
+        <div class="back-row">
+            <button class="back-btn" id="backBtn">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+                Back
+            </button>
+        </div>
+
+        <!-- ===== PAGE TITLE ===== -->
+        <div class="page-title">🎁 Treasure Hunt</div>
+        <div class="page-sub">Enter a secret code to claim your reward</div>
+
         <!-- ===== MAIN CARD ===== -->
-        <div class="treasure-card">
-            <span class="treasure-icon">💎</span>
-            <p class="treasure-subtitle">Enter the secret code to claim your reward</p>
-            <input type="text" id="treasureCode" class="code-input" placeholder="e.g., GOLD7XP" maxlength="7" autocomplete="off">
-            <button id="claimBtn" class="claim-btn">🔓 Claim Treasure</button>
-            <div id="messageArea"></div>
+        <div class="glass-card">
+            <div class="card-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                    <path d="M2 7v10" />
+                    <path d="M22 7v10" />
+                </svg>
+            </div>
+            <div class="card-title">Enter Treasure Code</div>
+            <div class="card-subtitle">Use the code you received from our community</div>
+
+            <div class="input-wrap">
+                <svg class="input-icon" viewBox="0 0 24 24">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <input type="text" id="treasureCode" placeholder="e.g. GOLD7XP" maxlength="7" autocomplete="off" />
+                <span class="char-counter" id="charCounter">0/7</span>
+            </div>
+            <div class="input-error" id="codeError"></div>
+
+            <button class="btn-claim" id="claimBtn">
+                <span class="btn-icon">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                    Claim Treasure
+                </span>
+            </button>
+
+            <div class="msg-box" id="messageArea"></div>
         </div>
 
         <!-- ===== INFO CARD ===== -->
         <div class="info-card">
-            <div class="info-title">📢 How to get Treasure Codes?</div>
+            <div class="info-header">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                <span class="info-title">How to get Treasure Codes</span>
+            </div>
             <div class="info-text">
                 Join our official WhatsApp group and channel. We post exclusive treasure codes there daily! Missing out means losing free ZMW.
             </div>
-            <div class="info-note">🔑 Codes are <strong>7 characters</strong> (letters &amp; numbers). Each code can be used only once – be fast!</div>
+            <div class="info-note">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                Codes are <strong>7 characters</strong> (letters &amp; numbers). Each code can be used only once – be fast!
+            </div>
         </div>
 
     </div>
 
     <!-- ===== BOTTOM NAV ===== -->
     <div class="bottom-nav">
-        <div class="nav-item" data-page="dashboard.html">
-            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home"><span class="nav-label">Home</span>
-        </div>
-        <div class="nav-item" data-page="mkvip.html">
-            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip"><span class="nav-label">Mkvip</span>
-        </div>
-        <div class="nav-item" data-page="jproduct.html">
-            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product"><span class="nav-label">Jproduct</span>
-        </div>
-        <div class="nav-item" data-page="income.html">
-            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income"><span class="nav-label">Income</span>
-        </div>
-        <div class="nav-item active" data-page="treasure.html">
-            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Treasure"><span class="nav-label">Treasure</span>
-        </div>
-        <div class="nav-item" data-page="me.html">
-            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me"><span class="nav-label">Me</span>
-        </div>
+        <button class="nav-item" data-page="dashboard.html">
+            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home" />
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-page="mkvip.html">
+            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mkvip" />
+            <span class="nav-label">Mkvip</span>
+        </button>
+        <button class="nav-item" data-page="jproduct.html">
+            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="Jproduct" />
+            <span class="nav-label">Jproduct</span>
+        </button>
+        <button class="nav-item" data-page="income.html">
+            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income" />
+            <span class="nav-label">Income</span>
+        </button>
+        <button class="nav-item active" data-page="treasure.html">
+            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Treasure" />
+            <span class="nav-label">Treasure</span>
+        </button>
+        <button class="nav-item" data-page="me.html">
+            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me" />
+            <span class="nav-label">Me</span>
+        </button>
     </div>
 
     <script>
-        // ===== FIREBASE CONFIG =====
-        const firebaseConfig = {
+        // ================================================================
+        // FIREBASE CONFIG (unchanged)
+        // ================================================================
+        var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
             authDomain: "pureore-capital-zambia.firebaseapp.com",
             projectId: "pureore-capital-zambia",
@@ -473,58 +917,84 @@
             measurementId: "G-FQKC29NYE9"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        var auth = firebase.auth();
+        var db = firebase.firestore();
         db.settings({ persistence: false });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ===== TOAST =====
-        function showToast(msg, type = 'success') {
-            const existing = document.querySelector('.toast');
+        // ================================================================
+        // HELPERS
+        // ================================================================
+        function showToast(msg, isError) {
+            var existing = document.querySelector('.toast');
             if (existing) existing.remove();
-            const toast = document.createElement('div');
-            toast.className = 'toast ' + type;
-            toast.innerText = msg;
+            var toast = document.createElement('div');
+            toast.className = 'toast' + (isError ? ' error' : ' success');
+            toast.textContent = msg;
             document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
+            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
         }
 
-        // ===== BLOCK LISTENER =====
-        let userBlockListener = null;
+        // ================================================================
+        // BLOCK LISTENER
+        // ================================================================
+        var blockUnsub = null;
 
         function watchBlockStatus(userId) {
-            if (userBlockListener) userBlockListener();
-            userBlockListener = db.collection('users').doc(userId)
-                .onSnapshot((doc) => {
-                    if (doc.exists && doc.data().isBlocked === true) {
-                        showToast('⚠️ Your account has been blocked. Redirecting to login...', 'error');
-                        setTimeout(async () => {
-                            await auth.signOut();
-                            window.location.href = 'login.html';
-                        }, 2000);
-                    }
-                }, (err) => console.warn('Block listener error:', err));
+            if (blockUnsub) blockUnsub();
+            blockUnsub = db.collection('users').doc(userId).onSnapshot(function(doc) {
+                if (doc.exists && doc.data().isBlocked === true) {
+                    showToast('⚠️ Your account has been blocked. Redirecting...', true);
+                    setTimeout(function() {
+                        auth.signOut().then(function() { window.location.href = 'login.html'; });
+                    }, 2000);
+                }
+            }, function(err) { console.warn('Block listener error:', err); });
         }
+        window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
-        window.addEventListener('beforeunload', () => {
-            if (userBlockListener) userBlockListener();
+        // ================================================================
+        // DOM REFS
+        // ================================================================
+        var claimBtn = document.getElementById('claimBtn');
+        var codeInput = document.getElementById('treasureCode');
+        var charCounter = document.getElementById('charCounter');
+        var codeError = document.getElementById('codeError');
+        var messageArea = document.getElementById('messageArea');
+
+        // ================================================================
+        // CHARACTER COUNTER
+        // ================================================================
+        codeInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+            charCounter.textContent = this.value.length + '/7';
+            codeError.textContent = '';
         });
 
-        // ===== DOM REFS =====
-        const claimBtn = document.getElementById('claimBtn');
-        const codeInput = document.getElementById('treasureCode');
-        const messageArea = document.getElementById('messageArea');
-
-        // ===== SHOW MESSAGE =====
+        // ================================================================
+        // SHOW MESSAGE
+        // ================================================================
         function showMessage(msg, type) {
-            messageArea.innerHTML = `<div class="message ${type}">${msg}</div>`;
-            setTimeout(() => {
-                if (messageArea.innerHTML.includes(msg)) messageArea.innerHTML = '';
+            messageArea.className = 'msg-box ' + type;
+            var icon = type === 'error' ?
+                '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' :
+                '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+            messageArea.innerHTML = icon + ' ' + msg;
+            messageArea.style.display = 'block';
+            setTimeout(function() {
+                messageArea.style.display = 'none';
             }, 5000);
         }
 
-        // ===== AUTH STATE =====
-        auth.onAuthStateChanged(async (user) => {
+        function hideMessage() {
+            messageArea.style.display = 'none';
+            messageArea.className = 'msg-box';
+        }
+
+        // ================================================================
+        // AUTH STATE
+        // ================================================================
+        auth.onAuthStateChanged(function(user) {
             if (!user) {
                 window.location.href = 'login.html';
                 return;
@@ -533,77 +1003,77 @@
         });
 
         // ================================================================
-        // ════════ FIXED: ADD to walletBalance only (never replace) ════════
+        // CLAIM TREASURE
         // ================================================================
-        claimBtn.addEventListener('click', async () => {
-            let code = codeInput.value.trim().toUpperCase();
+        claimBtn.addEventListener('click', async function() {
+            hideMessage();
+            codeError.textContent = '';
+
+            var code = codeInput.value.trim();
             if (code.length !== 7) {
-                showMessage('Code must be exactly 7 characters (letters & numbers).', 'error');
+                codeError.textContent = 'Code must be exactly 7 characters (letters & numbers).';
                 return;
             }
             if (!/^[A-Z0-9]{7}$/.test(code)) {
-                showMessage('Use only letters A-Z and numbers 0-9.', 'error');
+                codeError.textContent = 'Use only letters A-Z and numbers 0-9.';
                 return;
             }
 
             claimBtn.disabled = true;
-            claimBtn.innerText = 'Checking...';
+            claimBtn.innerHTML = '<span class="btn-icon"><span class="spinner"></span> Checking...</span>';
 
-            const user = auth.currentUser;
+            var user = auth.currentUser;
             if (!user) {
                 window.location.href = 'login.html';
                 return;
             }
 
             try {
-                const codeQuery = await db.collection('treasureCodes')
+                var codeQuery = await db.collection('treasureCodes')
                     .where('code', '==', code)
                     .limit(1)
                     .get();
 
                 if (codeQuery.empty) {
-                    showMessage('❌ Invalid treasure code. No such code exists.', 'error');
+                    showMessage('Invalid treasure code. No such code exists.', 'error');
                     claimBtn.disabled = false;
-                    claimBtn.innerText = '🔓 Claim Treasure';
+                    claimBtn.innerHTML = '<span class="btn-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg> Claim Treasure</span>';
                     return;
                 }
 
-                const codeDoc = codeQuery.docs[0];
-                const codeData = codeDoc.data();
+                var codeDoc = codeQuery.docs[0];
+                var codeData = codeDoc.data();
 
                 if (codeData.used === true) {
-                    showMessage('⚠️ This treasure code has already been used.', 'error');
+                    showMessage('This treasure code has already been used.', 'error');
                     claimBtn.disabled = false;
-                    claimBtn.innerText = '🔓 Claim Treasure';
+                    claimBtn.innerHTML = '<span class="btn-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg> Claim Treasure</span>';
                     return;
                 }
 
-                const amount = codeData.amount;
+                var amount = codeData.amount;
                 if (!amount || amount <= 0) {
-                    showMessage('❌ Invalid amount for this code (must be positive).', 'error');
+                    showMessage('Invalid amount for this code.', 'error');
                     claimBtn.disabled = false;
-                    claimBtn.innerText = '🔓 Claim Treasure';
+                    claimBtn.innerHTML = '<span class="btn-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg> Claim Treasure</span>';
                     return;
                 }
 
                 // ✅ ONLY update walletBalance – ADD to existing, never replace
-                await db.runTransaction(async (transaction) => {
-                    const userRef = db.collection('users').doc(user.uid);
-                    const userSnap = await transaction.get(userRef);
+                await db.runTransaction(async function(transaction) {
+                    var userRef = db.collection('users').doc(user.uid);
+                    var userSnap = await transaction.get(userRef);
                     if (!userSnap.exists) {
                         throw new Error('User document not found. Please contact support.');
                     }
 
-                    // Get current wallet balance (default to 0 if missing)
-                    const currentWallet = userSnap.data().walletBalance || 0;
-                    const newWallet = currentWallet + amount;
+                    var currentWallet = userSnap.data().walletBalance || 0;
+                    var newWallet = currentWallet + amount;
 
-                    // Update ONLY walletBalance – leave 'balance' untouched
                     transaction.update(userRef, {
                         walletBalance: newWallet
                     });
 
-                    // Mark code as used
                     transaction.update(codeDoc.ref, {
                         used: true,
                         usedBy: user.uid,
@@ -611,19 +1081,20 @@
                     });
                 });
 
-                // Record transaction (optional, but keeps history)
+                // Record transaction
                 await db.collection('transactions').add({
                     userId: user.uid,
                     type: 'treasure',
                     amount: amount,
-                    description: `Treasure code: ${code}`,
+                    description: 'Treasure code: ' + code,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                showMessage(`🎉 SUCCESS! You earned ${amount} ZMW! Wallet balance updated. 🎉`, 'success');
+                showMessage('SUCCESS! You earned ' + amount + ' ZMW! Wallet balance updated.', 'success');
                 codeInput.value = '';
+                charCounter.textContent = '0/7';
 
-                setTimeout(() => {
+                setTimeout(function() {
                     window.location.href = 'dashboard.html';
                 }, 2000);
 
@@ -639,45 +1110,67 @@
                     showMessage('Server error. Please try again later.', 'error');
                 }
                 claimBtn.disabled = false;
-                claimBtn.innerText = '🔓 Claim Treasure';
+                claimBtn.innerHTML = '<span class="btn-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg> Claim Treasure</span>';
             }
         });
 
         // ================================================================
-        //  NAVIGATION
+        // ENTER KEY SUPPORT
         // ================================================================
-        const navItems = document.querySelectorAll('.nav-item');
-        const currentPage = window.location.pathname.split('/').pop() || 'treasure.html';
-        navItems.forEach(item => {
-            const targetPage = item.getAttribute('data-page');
+        codeInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                claimBtn.click();
+            }
+        });
+
+        // ================================================================
+        // BACK BUTTON
+        // ================================================================
+        document.getElementById('backBtn').addEventListener('click', function() {
+            window.location.href = 'dashboard.html';
+        });
+
+        // ================================================================
+        // BOTTOM NAV
+        // ================================================================
+        var navItems = document.querySelectorAll('.nav-item');
+        var currentPage = window.location.pathname.split('/').pop() || 'treasure.html';
+        navItems.forEach(function(item) {
+            var targetPage = item.getAttribute('data-page');
             if (currentPage === targetPage) item.classList.add('active');
-            item.addEventListener('click', () => {
-                if (targetPage && !window.location.pathname.includes(targetPage)) {
-                    window.location.href = targetPage;
+            item.addEventListener('click', function() {
+                var target = this.getAttribute('data-page');
+                if (target && !window.location.pathname.includes(target)) {
+                    window.location.href = target;
                 }
             });
         });
 
-        // ================================================================
-        //  AUTO-GLOW NAVIGATION
-        // ================================================================
-        const glowColors = ['glow', 'glow-gold', 'glow-purple', ''];
-        let glowIndex = 0;
-
-        function cycleGlow() {
-            navItems.forEach(item => {
-                item.classList.remove('glow', 'glow-gold', 'glow-purple');
-            });
-
-            if (glowColors[glowIndex]) {
-                const targetIndex = glowIndex % navItems.length;
-                navItems[targetIndex].classList.add(glowColors[glowIndex]);
-            }
-
-            glowIndex = (glowIndex + 1) % (navItems.length + 1);
-        }
-
-        setInterval(cycleGlow, 3000);
+        console.log('✨ Pureore Capital · Treasure (unique design)');
+        console.log('🎁 Glass-morphism with SVG icons');
+        console.log('🔐 Firebase config untouched');
+        console.log('💰 Adds to walletBalance only');
     </script>
+
+    <!-- ===== SPINNER STYLES (inline) ===== -->
+    <style>
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(10, 8, 21, 0.1);
+            border-top-color: #0a0815;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
 </body>
 </html>

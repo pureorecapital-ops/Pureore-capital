@@ -1,25 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Income | Pureore Capital</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>Income – PC • Pureore Capital</title>
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
+    </script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #0A0A0C;
-            font-family: 'Inter', system-ui, sans-serif;
-            color: #FFFFFF;
-            padding: 1rem;
-            padding-bottom: 85px;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
+        /* ----- RESET & BASE ----- */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        :root {
+            --gold: #f6c96e;
+            --gold-glow: rgba(246, 201, 110, 0.25);
+            --cyan: #5dd9f2;
+            --cyan-glow: rgba(93, 217, 242, 0.20);
+            --violet: #7c6df0;
+            --violet-glow: rgba(124, 109, 240, 0.30);
+            --green: #4ade80;
+            --green-glow: rgba(74, 222, 128, 0.15);
+            --red: #ef4444;
+            --radius-lg: 28px;
+            --radius-md: 18px;
+            --radius-sm: 12px;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        html,
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            color: #fff;
+            background: #0a0815;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 90px;
+        }
+
+        /* ----- BACKGROUND with Ravi Sharma image & brightness reduction ----- */
         body::before {
             content: "";
             position: fixed;
@@ -27,1254 +56,1676 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0A0A0C 0%, #0d1a0d 25%, #0a0d1a 50%, #1a0d0a 75%, #0A0A0C 100%);
-            background-size: 400% 400%;
-            animation: bgShift 12s ease-in-out infinite alternate;
+            background-image: url('https://i.ibb.co/Vcg0rgNY/ravi-sharma-h-Nv5s6-NEYig-unsplash.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            filter: brightness(0.30) saturate(1.1) contrast(1.05);
             z-index: -3;
         }
-        @keyframes bgShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.20;
-            z-index: -2;
-            pointer-events: none;
-            animation: floatOrb 12s ease-in-out infinite alternate;
-        }
-        .orb-1 { width: 400px; height: 400px; background: #00E676; top: -10%; left: -10%; animation-delay: 0s; }
-        .orb-2 { width: 350px; height: 350px; background: #00E5FF; bottom: -10%; right: -10%; animation-delay: 3s; }
-        .orb-3 { width: 300px; height: 300px; background: #FFD700; top: 40%; left: 75%; animation-delay: 6s; }
-        .orb-4 { width: 280px; height: 280px; background: #2979FF; bottom: 30%; left: -5%; animation-delay: 9s; }
-        @keyframes floatOrb {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(30px, -20px) scale(1.1); }
-        }
-        .container { max-width: 800px; margin: 0 auto; position: relative; z-index: 2; }
-        .back-arrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(30,30,42,0.8);
-            backdrop-filter: blur(8px);
-            border-radius: 40px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #00E676;
-            cursor: pointer;
-            transition: 0.3s;
-            border: 1px solid rgba(0,230,118,0.2);
-            margin-bottom: 0.5rem;
-            text-decoration: none;
-        }
-        .back-arrow:hover {
-            background: #00E676;
-            color: #0A0A0C;
-            transform: translateX(-4px);
-            box-shadow: 0 0 20px rgba(0,230,118,0.3);
-        }
-        .back-arrow svg { width: 18px; height: 18px; fill: currentColor; }
-        .animated-title {
-            text-align: center;
-            font-size: 2rem;
-            font-weight: 800;
-            margin: 0.5rem 0 1rem;
-            background: linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-size: 300% 300%;
-            animation: gradientShift 6s ease-in-out infinite alternate;
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        .total-hourly {
-            background: rgba(18,18,24,0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 32px;
-            padding: 1rem;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(18,18,24,0.9), rgba(18,18,24,0.9)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .total-hourly span {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #FFD700, #F59E0B);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-        .claim-all-btn {
-            background: linear-gradient(135deg, #00E676, #00E5FF, #2979FF);
-            background-size: 200% 200%;
-            animation: btnShift 4s ease-in-out infinite alternate;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 50px;
-            font-weight: bold;
-            font-size: 1rem;
-            color: #0A0A0C;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
-        @keyframes btnShift {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        .claim-all-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: #555;
-            color: #aaa;
-        }
-        .claim-all-btn:hover:not(:disabled) {
-            transform: scale(1.02);
-            filter: brightness(1.05);
-        }
-        .warning-block {
-            background: rgba(239,68,68,0.2);
-            border: 1px solid #ef4444;
-            border-radius: 20px;
-            padding: 0.8rem;
-            margin-bottom: 1rem;
-            text-align: center;
-            color: #ef4444;
-            font-size: 0.9rem;
-        }
-        .tabs {
-            display: flex;
-            gap: 1rem;
-            margin: 1rem 0;
-            background: rgba(18,18,24,0.7);
-            backdrop-filter: blur(8px);
-            border-radius: 60px;
-            padding: 0.3rem;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .tab-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 0.6rem;
-            border-radius: 50px;
-            font-weight: 600;
-            color: #aaa;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .tab-btn.active {
-            background: linear-gradient(135deg, #00E676, #00E5FF);
-            color: #0A0A0C;
-            box-shadow: 0 4px 20px rgba(0,230,118,0.2);
-        }
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .plan-card {
-            background: rgba(18, 18, 24, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 28px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(18,18,24,0.9), rgba(18,18,24,0.9)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
-            transition: 0.2s;
-        }
-        .plan-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        .plan-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 0.8rem;
-        }
-        .plan-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #FFD700;
-        }
-        .plan-amount {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #00E676;
-        }
-        .plan-details {
-            display: flex;
-            gap: 1rem;
-            margin: 0.5rem 0;
-            font-size: 0.85rem;
-            color: #ccc;
-            flex-wrap: wrap;
-        }
-        .claim-info {
-            margin: 0.8rem 0;
-        }
-        .progress-bar {
-            background: rgba(255,255,255,0.06);
-            border-radius: 20px;
-            height: 8px;
-            overflow: hidden;
-            margin: 0.3rem 0;
-        }
-        .progress-fill {
-            background: linear-gradient(90deg, #00E676, #00E5FF);
-            width: 0%;
-            height: 100%;
-            border-radius: 20px;
-        }
-        .progress-text {
-            font-size: 0.75rem;
-            color: #aaa;
-            text-align: right;
-        }
-        .pending-amount {
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #00E676;
-            margin-top: 0.3rem;
-        }
-        .claim-btn {
-            background: #ef4444;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 40px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 0.5rem;
-        }
-        .claim-btn.active {
-            background: linear-gradient(135deg, #00E676, #00E5FF);
-            color: #0A0A0C;
-            cursor: pointer;
-        }
-        .claim-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .weekend-warning {
-            font-size: 0.7rem;
-            color: #f1c40f;
-            margin-top: 0.3rem;
-            text-align: center;
-        }
-        .empty-msg {
-            text-align: center;
-            color: #aaa;
-            padding: 2rem;
-        }
-        .ad-overlay {
+        body::after {
+            content: "";
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            padding: 1rem;
-            animation: fadeIn 0.5s ease;
+            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.06) 0%, transparent 50%);
+            z-index: -2;
+            pointer-events: none;
         }
-        .ad-overlay.hidden { display: none; }
-        .ad-modal {
-            background: rgba(18, 18, 24, 0.95);
-            border-radius: 32px;
-            max-width: 550px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 2rem;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(18, 18, 24, 0.95), rgba(18, 18, 24, 0.95)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
-            position: relative;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-            animation: slideUp 0.5s ease;
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(40px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .ad-modal::-webkit-scrollbar { width: 4px; }
-        .ad-modal::-webkit-scrollbar-thumb { background: #00E676; border-radius: 10px; }
-        .ad-modal::-webkit-scrollbar-track { background: transparent; }
-        .ad-skip {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
+
+        /* ----- FLOATING ORBS ----- */
+        .orb {
+            position: fixed;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #aaa;
-            cursor: pointer;
-            transition: 0.3s;
-            z-index: 10;
+            filter: blur(70px);
+            opacity: 0.08;
+            z-index: -1;
+            pointer-events: none;
+            animation: orbFloat 16s ease-in-out infinite alternate;
         }
-        .ad-skip:hover {
-            background: rgba(239,68,68,0.2);
-            color: #fff;
-            transform: rotate(90deg);
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--violet);
+            top: -8%;
+            left: -10%;
+            animation-delay: 0s;
         }
-        .ad-title {
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #FFD700, #F59E0B);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: var(--cyan);
+            bottom: -8%;
+            right: -10%;
+            animation-delay: 5s;
         }
-        .ad-subtitle {
-            text-align: center;
-            color: #B0B3B8;
-            margin-bottom: 1.2rem;
-            font-size: 0.95rem;
-            line-height: 1.5;
+        .orb-3 {
+            width: 280px;
+            height: 280px;
+            background: var(--gold);
+            top: 40%;
+            left: 70%;
+            animation-delay: 10s;
+            opacity: 0.06;
         }
-        .ad-plan {
-            background: rgba(255,255,255,0.03);
-            border-radius: 16px;
-            padding: 0.8rem 1rem;
-            margin-bottom: 0.6rem;
-            border-left: 3px solid #00E676;
+
+        @keyframes orbFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(25px, -35px) scale(1.06);
+            }
+            66% {
+                transform: translate(-15px, 25px) scale(0.94);
+            }
+            100% {
+                transform: translate(20px, -10px) scale(1.02);
+            }
         }
-        .ad-plan h4 {
-            font-size: 1rem;
-            color: #FFD700;
-            margin-bottom: 0.2rem;
+
+        /* ----- CONTAINER ----- */
+        .container {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 1rem 1.2rem 2rem;
+            position: relative;
+            z-index: 2;
         }
-        .ad-plan .plan-line {
+
+        /* ----- HEADER / BRAND ----- */
+        .header {
             display: flex;
             justify-content: space-between;
-            font-size: 0.85rem;
-            color: #ccc;
-            padding: 0.1rem 0;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
-        .ad-plan .plan-line span:last-child {
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--violet), var(--cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px var(--violet-glow);
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: #fff;
+            stroke-width: 2.2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .brand-name {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-name .pc {
+            color: var(--gold);
+            -webkit-text-fill-color: var(--gold);
+            font-weight: 900;
+        }
+
+        .brand-badge {
+            font-size: 9px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 3px 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* ----- BACK BUTTON ----- */
+        .back-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 0.8rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
             color: #fff;
+            transform: translateX(-3px);
+        }
+
+        .back-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ----- PAGE TITLE ----- */
+        .page-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 0.2rem;
+            background: linear-gradient(135deg, var(--gold), #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-sub {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 1.2rem;
+            font-weight: 400;
+        }
+
+        /* ----- TOTAL EARNINGS BAR ----- */
+        .total-bar {
+            background: rgba(10, 8, 21, 0.55);
+            backdrop-filter: blur(16px) saturate(1.3);
+            -webkit-backdrop-filter: blur(16px) saturate(1.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.2rem;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .total-label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .total-amount {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold), #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .claim-all-btn {
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: linear-gradient(135deg, var(--gold), #f5a623);
+            color: #0a0815;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 24px var(--gold-glow);
+            white-space: nowrap;
+        }
+
+        .claim-all-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none !important;
+        }
+
+        .claim-all-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--gold-glow);
+        }
+
+        /* ----- WARNING BLOCK ----- */
+        .warning-block {
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: var(--radius-sm);
+            padding: 0.8rem 1rem;
+            text-align: center;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            margin-bottom: 1.2rem;
+            display: none;
+        }
+
+        .warning-block svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        /* ----- TABS ----- */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+            background: rgba(10, 8, 21, 0.4);
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 0.3rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0.6rem 0.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--violet), var(--cyan));
+            color: #fff;
+            box-shadow: 0 4px 20px var(--violet-glow);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ----- PLAN CARD (NEW DESIGN) ----- */
+        .plan-card {
+            background: rgba(10, 8, 21, 0.55);
+            backdrop-filter: blur(16px) saturate(1.3);
+            -webkit-backdrop-filter: blur(16px) saturate(1.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            padding: 1.2rem 1.2rem 1rem;
+            box-shadow: var(--shadow-card);
+            margin-bottom: 1rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -20%;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 109, 240, 0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .plan-card .plan-top {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .plan-card .plan-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .plan-card .plan-icon svg {
+            width: 30px;
+            height: 30px;
+            stroke: var(--gold);
+            stroke-width: 1.6;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .plan-card .plan-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .plan-card .plan-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.2px;
+        }
+
+        .plan-card .plan-meta {
+            display: flex;
+            gap: 0.8rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.3);
+            flex-wrap: wrap;
+            margin-top: 1px;
+        }
+
+        .plan-card .plan-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .plan-card .plan-meta svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .plan-card .plan-amount {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gold);
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* Claim Progress */
+        .plan-card .claim-progress {
+            margin: 0.6rem 0 0.8rem 0;
+        }
+
+        .plan-card .claim-progress .progress-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.3rem;
+        }
+
+        .plan-card .claim-progress .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--violet), var(--cyan));
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .plan-card .claim-progress .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .plan-card .claim-progress .progress-label .earned {
+            color: var(--cyan);
+        }
+
+        /* Claim Action */
+        .plan-card .claim-action {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding-top: 0.8rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .plan-card .claim-status {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .plan-card .claim-status .countdown {
+            color: var(--gold);
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .plan-card .claim-status .ready-text {
+            color: var(--green);
             font-weight: 600;
         }
-        .ad-divider {
+
+        .plan-card .claim-btn {
+            padding: 0.5rem 1.4rem;
             border: none;
-            border-top: 1px solid rgba(255,255,255,0.06);
-            margin: 0.8rem 0;
-        }
-        .ad-cta {
-            text-align: center;
-            margin: 1rem 0 0.5rem;
-        }
-        .ad-cta .btn-view {
-            background: linear-gradient(135deg, #00E676, #00E5FF);
-            border: none;
-            padding: 0.8rem 2.5rem;
-            border-radius: 50px;
+            border-radius: 40px;
             font-weight: 700;
-            font-size: 1rem;
-            color: #0A0A0C;
+            font-size: 0.8rem;
+            font-family: inherit;
             cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 20px rgba(0,230,118,0.2);
-            text-decoration: none;
-            display: inline-block;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
-        .ad-cta .btn-view:hover {
+
+        .plan-card .claim-btn.active {
+            background: linear-gradient(135deg, var(--gold), #f5a623);
+            color: #0a0815;
+            box-shadow: 0 4px 20px var(--gold-glow);
+            border: none;
+        }
+
+        .plan-card .claim-btn.active:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0,230,118,0.4);
-            filter: brightness(1.05);
+            box-shadow: 0 8px 30px var(--gold-glow);
         }
-        .ad-footer {
+
+        .plan-card .claim-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .plan-card .weekend-note {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-top: 0.3rem;
+            text-align: right;
+        }
+
+        /* ----- EMPTY STATE ----- */
+        .empty-state {
             text-align: center;
-            font-size: 0.7rem;
-            color: #555;
-            margin-top: 0.8rem;
+            padding: 2.5rem 1rem;
+            color: rgba(255, 255, 255, 0.2);
         }
-        .ad-footer strong { color: #FFD700; }
-        .ad-timer {
-            text-align: center;
-            font-size: 0.75rem;
-            color: #666;
-            margin-top: 0.5rem;
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            margin-bottom: 0.8rem;
         }
-        .ad-timer span { color: #00E5FF; font-weight: 600; }
+
+        .empty-state .title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .empty-state .sub {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-top: 0.2rem;
+        }
+
+        /* ----- BOTTOM NAV ----- */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(10, 10, 14, 0.97);
-            backdrop-filter: blur(16px);
-            border-top: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(10, 10, 14, 0.97), rgba(10, 10, 14, 0.97)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
+            background: rgba(10, 8, 21, 0.92);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 6px 6px 18px;
+            padding: 6px 4px 14px;
             z-index: 30;
-            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
         }
+
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
             cursor: pointer;
             transition: all 0.3s ease;
             flex: 1;
             text-align: center;
             padding: 4px 2px;
             border-radius: 16px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
         }
-        .nav-item:hover { transform: translateY(-4px); }
-        .nav-icon {
-            width: 32px;
-            height: 32px;
+
+        .nav-item .nav-icon {
+            width: 26px;
+            height: 26px;
             object-fit: contain;
-            filter: brightness(0.5) grayscale(0.5);
-            transition: 0.4s;
-            border-radius: 8px;
-            padding: 2px;
+            filter: brightness(0.35) grayscale(0.6);
+            transition: all 0.3s ease;
+            border-radius: 6px;
         }
+
         .nav-item.active .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 12px rgba(0, 230, 118, 0.7));
-            transform: scale(1.05);
+            filter: brightness(1) drop-shadow(0 0 12px rgba(93, 217, 242, 0.35));
+            transform: scale(1.06);
         }
-        .nav-label {
-            font-size: 0.65rem;
-            color: #888;
+
+        .nav-item .nav-label {
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.2);
             font-weight: 500;
+            transition: color 0.3s ease;
             letter-spacing: 0.3px;
         }
-        .nav-item.active .nav-label { color: #00E676; }
+
+        .nav-item.active .nav-label {
+            color: var(--cyan);
+        }
+
+        /* ----- RESPONSIVE ----- */
         @media (max-width: 600px) {
-            .animated-title { font-size: 1.5rem; }
-            .plan-name { font-size: 1rem; }
-            .total-hourly span { font-size: 1.4rem; }
-            .total-hourly { flex-direction: column; align-items: stretch; }
-            .claim-all-btn { width: 100%; }
-            .ad-title { font-size: 1.4rem; }
-            .ad-modal { padding: 1.2rem; }
-            .nav-icon { width: 28px; height: 28px; }
-            .nav-label { font-size: 0.55rem; }
+            .container {
+                padding: 0.8rem 0.8rem 1.5rem;
+            }
+            .brand-name {
+                font-size: 17px;
+            }
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+            }
+            .brand-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+            .brand-badge {
+                font-size: 7px;
+                padding: 2px 8px;
+            }
+            .page-title {
+                font-size: 1.3rem;
+            }
+            .total-amount {
+                font-size: 1.3rem;
+            }
+            .claim-all-btn {
+                font-size: 0.75rem;
+                padding: 0.5rem 1rem;
+            }
+            .plan-card .plan-top {
+                gap: 0.7rem;
+            }
+            .plan-card .plan-icon {
+                width: 44px;
+                height: 44px;
+            }
+            .plan-card .plan-icon svg {
+                width: 24px;
+                height: 24px;
+            }
+            .plan-card .plan-name {
+                font-size: 0.95rem;
+            }
+            .plan-card .plan-amount {
+                font-size: 0.85rem;
+            }
+            .plan-card .claim-action {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .plan-card .claim-status {
+                justify-content: center;
+                font-size: 0.7rem;
+            }
+            .plan-card .claim-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .back-btn {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .total-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .total-left {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .total-amount {
+                font-size: 1.1rem;
+            }
+            .plan-card .plan-meta {
+                font-size: 0.65rem;
+                gap: 0.4rem;
+            }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <a href="dashboard.html" class="back-arrow">
-        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-        Back
-    </a>
-    <div class="animated-title">💰 INCOME</div>
 
-    <div class="total-hourly" id="totalHourlyBox">
-        <div>📈 Total pending daily earnings: <span id="totalPending">0.00</span> ZMW</div>
-        <button id="claimAllBtn" class="claim-all-btn" disabled>💰 Claim All Available</button>
-    </div>
+    <!-- ===== ORBS ===== -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
 
-    <div id="claimBlockWarning" class="warning-block" style="display: none;">
-        ⚠️ You have only 1 active plan and it ends in 2 days or less.<br>
-        Please purchase another plan (Mk Vip or J Product) to continue claiming daily income.
-    </div>
+    <!-- ===== MAIN CONTAINER ===== -->
+    <div class="container">
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="normal">📈 Active</button>
-        <button class="tab-btn" data-tab="expired">⏰ Expired</button>
-    </div>
-
-    <div id="normalTab" class="tab-content active">
-        <div id="activeInvestments"></div>
-    </div>
-    <div id="expiredTab" class="tab-content">
-        <div id="expiredInvestments"></div>
-    </div>
-</div>
-
-<!-- ===== FULL-SCREEN AD POPUP ===== -->
-<div id="adPopup" class="ad-overlay hidden">
-    <div class="ad-modal">
-        <button class="ad-skip" id="adSkipBtn">✕</button>
-        <div class="ad-title">🚀 CONGRATULATIONS!</div>
-        <div class="ad-subtitle">
-            You have successfully claimed your daily income.<br>
-            <strong style="color:#FFD700;">Why stop here?</strong> Increase your earnings today with our premium investment plans!
-        </div>
-        <div class="ad-plan">
-            <h4>🔥 MKVIP STARTER PLAN</h4>
-            <div class="plan-line"><span>💰 Investment:</span><span>K70</span></div>
-            <div class="plan-line"><span>💵 Daily Income:</span><span>K25</span></div>
-            <div class="plan-line"><span>📅 Duration:</span><span>5 Days</span></div>
-            <div class="plan-line"><span>💸 Total Income:</span><span>K125</span></div>
-            <div style="font-size:0.7rem;color:#888;margin-top:0.2rem;">Perfect for beginners looking for quick returns.</div>
-        </div>
-        <div class="ad-plan" style="border-left-color:#00E5FF;">
-            <h4>⭐ JPRODUCT PLAN</h4>
-            <div class="plan-line"><span>💰 Investment:</span><span>K480</span></div>
-            <div class="plan-line"><span>💵 Daily Income:</span><span>K17</span></div>
-            <div class="plan-line"><span>📅 Duration:</span><span>55 Days</span></div>
-            <div style="font-size:0.7rem;color:#888;margin-top:0.2rem;">A steady long-term earning plan designed for consistent income.</div>
-        </div>
-        <div class="ad-plan" style="border-left-color:#FFD700;">
-            <h4>💎 PREMIUM PLAN</h4>
-            <div class="plan-line"><span>💰 Investment:</span><span>K1,600</span></div>
-            <div class="plan-line"><span>💵 Daily Income:</span><span>K150</span></div>
-            <div class="plan-line"><span>📅 Duration:</span><span>40 Days</span></div>
-            <div class="plan-line"><span>💸 Total Income:</span><span>K6,000</span></div>
-            <div style="font-size:0.7rem;color:#888;margin-top:0.2rem;">Unlock higher earnings and maximize your investment potential.</div>
-        </div>
-        <hr class="ad-divider">
-        <div style="text-align:center;margin-bottom:0.8rem;">
-            <div style="font-size:1rem;font-weight:700;color:#FFD700;">📈 WANT TO EARN MORE?</div>
-            <div style="font-size:0.85rem;color:#aaa;margin-top:0.2rem;">
-                Upgrade your investment today and enjoy higher daily income rewards.
-            </div>
-            <div style="display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-top:0.5rem;font-size:0.8rem;color:#888;">
-                <span>✅ More Daily Earnings</span>
-                <span>✅ More Profit Opportunities</span>
-                <span>✅ Multiple Active Plans</span>
-                <span>✅ Faster Income Growth</span>
+        <!-- ===== HEADER ===== -->
+        <div class="header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="6 6 18 6 6 18 18 18" />
+                    </svg>
+                </div>
+                <span class="brand-name">Pureore<span class="pc">·PC</span></span>
+                <span class="brand-badge">Income</span>
             </div>
         </div>
-        <div class="ad-cta">
-            <button class="btn-view" id="adViewPlansBtn">📊 VIEW PLANS</button>
+
+        <!-- ===== BACK ROW ===== -->
+        <div class="back-row">
+            <button class="back-btn" id="backBtn">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+                Back
+            </button>
         </div>
-        <div class="ad-footer">
-            <strong>PUREORECAPITAL</strong> — Invest Today • Earn Tomorrow 🚀💰
+
+        <!-- ===== PAGE TITLE ===== -->
+        <div class="page-title">💰 Daily Income</div>
+        <div class="page-sub">Claim your earnings from active investments</div>
+
+        <!-- ===== TOTAL EARNINGS BAR ===== -->
+        <div class="total-bar">
+            <div class="total-left">
+                <span class="total-label">Pending Earnings</span>
+                <span class="total-amount" id="totalPending">0.00 ZMW</span>
+            </div>
+            <button class="claim-all-btn" id="claimAllBtn" disabled>Claim All</button>
         </div>
-        <div class="ad-timer">
-            ⏳ Ad closes in <span id="adTimer">10</span> seconds
+
+        <!-- ===== WARNING BLOCK ===== -->
+        <div class="warning-block" id="claimBlockWarning">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            You have only 1 active plan and it ends in 2 days or less. Please purchase another plan to continue claiming daily income.
         </div>
-    </div>
-</div>
 
-<!-- ===== BOTTOM NAV ===== -->
-<div class="bottom-nav">
-    <div class="nav-item" data-page="dashboard.html">
-        <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home"><span class="nav-label">Home</span>
-    </div>
-    <div class="nav-item" data-page="mkvip.html">
-        <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip"><span class="nav-label">Mkvip</span>
-    </div>
-    <div class="nav-item" data-page="jproduct.html">
-        <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product"><span class="nav-label">Jproduct</span>
-    </div>
-    <div class="nav-item active" data-page="income.html">
-        <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income"><span class="nav-label">Income</span>
-    </div>
-    <div class="nav-item" data-page="team.html">
-        <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team"><span class="nav-label">Team</span>
-    </div>
-    <div class="nav-item" data-page="me.html">
-        <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me"><span class="nav-label">Me</span>
-    </div>
-</div>
+        <!-- ===== TABS ===== -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="normal">📈 Active</button>
+            <button class="tab-btn" data-tab="expired">⏰ Expired</button>
+        </div>
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
-        authDomain: "pureore-capital-zambia.firebaseapp.com",
-        projectId: "pureore-capital-zambia",
-        storageBucket: "pureore-capital-zambia.appspot.com",
-        messagingSenderId: "78967797858",
-        appId: "1:78967797858:web:379b9692951429c345793b",
-        measurementId: "G-FQKC29NYE9"
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    db.settings({ persistence: false });
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+        <!-- ===== ACTIVE PLANS ===== -->
+        <div id="normalTab" class="tab-content">
+            <div id="activeInvestments"></div>
+        </div>
 
-    // ================================================================
-    //  HELPERS
-    // ================================================================
-    function formatMoney(amount) {
-        return 'K' + parseFloat(amount).toFixed(2);
-    }
+        <!-- ===== EXPIRED PLANS ===== -->
+        <div id="expiredTab" class="tab-content" style="display:none;">
+            <div id="expiredInvestments"></div>
+        </div>
 
-    function showToast(msg, isError = false) {
-        const toast = document.createElement('div');
-        toast.innerText = msg;
-        toast.style.position = 'fixed';
-        toast.style.bottom = '90px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.background = isError ? '#ef4444' : '#2ecc71';
-        toast.style.color = 'white';
-        toast.style.padding = '10px 20px';
-        toast.style.borderRadius = '40px';
-        toast.style.zIndex = '9999';
-        toast.style.fontWeight = 'bold';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
+    </div>
 
-    function isWeekend(date) {
-        const day = date.getDay();
-        return day === 0 || day === 6;
-    }
+    <!-- ===== BOTTOM NAV ===== -->
+    <div class="bottom-nav">
+        <button class="nav-item" data-page="dashboard.html">
+            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home" />
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-page="mkvip.html">
+            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mkvip" />
+            <span class="nav-label">Mkvip</span>
+        </button>
+        <button class="nav-item" data-page="jproduct.html">
+            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="Jproduct" />
+            <span class="nav-label">Jproduct</span>
+        </button>
+        <button class="nav-item active" data-page="income.html">
+            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income" />
+            <span class="nav-label">Income</span>
+        </button>
+        <button class="nav-item" data-page="team.html">
+            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team" />
+            <span class="nav-label">Team</span>
+        </button>
+        <button class="nav-item" data-page="me.html">
+            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me" />
+            <span class="nav-label">Me</span>
+        </button>
+    </div>
 
-    // Add business days (Mon-Fri) to a date
-    function addBusinessDays(startDate, numDays) {
-        let result = new Date(startDate);
-        let added = 0;
-        while (added < numDays) {
-            result.setDate(result.getDate() + 1);
-            if (!isWeekend(result)) added++;
+    <script>
+        // ================================================================
+        // FIREBASE CONFIG (unchanged)
+        // ================================================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b",
+            measurementId: "G-FQKC29NYE9"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        db.settings({ persistence: false });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ================================================================
+        // HELPERS
+        // ================================================================
+        function formatMoney(amount) {
+            return 'K' + parseFloat(amount).toFixed(2);
         }
-        return result;
-    }
 
-    // ================================================================
-    //  STATE
-    // ================================================================
-    let currentUserId = null;
-    let refreshInterval = null;
-    let currentInvestments = [];
-    let claimingBlocked = false;
-    let userBlockListener = null;
+        function showToast(msg, isError) {
+            var existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            var toast = document.createElement('div');
+            toast.className = 'toast' + (isError ? ' error' : ' success');
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
+        }
 
-    window.addEventListener('beforeunload', () => {
-        if (refreshInterval) clearInterval(refreshInterval);
-        if (userBlockListener) userBlockListener();
-    });
+        function isWeekend(date) {
+            var day = date.getDay();
+            return day === 0 || day === 6;
+        }
 
-    function watchBlockStatus(userId) {
-        if (userBlockListener) userBlockListener();
-        userBlockListener = db.collection('users').doc(userId)
-            .onSnapshot((doc) => {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked. Redirecting to login...', true);
-                    setTimeout(async () => {
-                        await auth.signOut();
-                        window.location.href = 'login.html';
-                    }, 2000);
-                }
-            }, (err) => {
-                console.warn('Block listener error:', err);
+        function addBusinessDays(startDate, numDays) {
+            var result = new Date(startDate);
+            var added = 0;
+            while (added < numDays) {
+                result.setDate(result.getDate() + 1);
+                if (!isWeekend(result)) added++;
+            }
+            return result;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
             });
-    }
-
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
         }
-        currentUserId = user.uid;
-        watchBlockStatus(currentUserId);
-        await loadInvestments();
-        if (refreshInterval) clearInterval(refreshInterval);
-        refreshInterval = setInterval(() => {
-            const normalTab = document.getElementById('normalTab');
-            if (normalTab && normalTab.classList.contains('active')) {
-                loadInvestments();
-            }
-        }, 60000);
-    });
 
-    // ================================================================
-    //  BLOCK LOGIC (unchanged)
-    // ================================================================
-    function businessDaysElapsed(inv, now) {
-        let endDate = now;
-        if (inv.blockedStart) {
-            const blockedDate = inv.blockedStart.toDate ? inv.blockedStart.toDate() : new Date(inv.blockedStart);
-            if (blockedDate < now) {
-                endDate = blockedDate;
-            }
+        // ================================================================
+        // STATE
+        // ================================================================
+        var currentUserId = null;
+        var refreshInterval = null;
+        var timerInterval = null;
+        var currentInvestments = [];
+        var claimingBlocked = false;
+        var userBlockListener = null;
+
+        window.addEventListener('beforeunload', function() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            if (timerInterval) clearInterval(timerInterval);
+            if (userBlockListener) userBlockListener();
+        });
+
+        // ================================================================
+        // BLOCK LISTENER
+        // ================================================================
+        function watchBlockStatus(userId) {
+            if (userBlockListener) userBlockListener();
+            userBlockListener = db.collection('users').doc(userId)
+                .onSnapshot(function(doc) {
+                    if (doc.exists && doc.data().isBlocked === true) {
+                        showToast('⚠️ Your account has been blocked. Redirecting...', true);
+                        setTimeout(function() {
+                            auth.signOut().then(function() { window.location.href = 'login.html'; });
+                        }, 2000);
+                    }
+                }, function(err) { console.warn('Block listener error:', err); });
         }
-        let count = 0;
-        let current = new Date(inv.startDate);
-        current.setDate(current.getDate() + 1);
-        while (current <= endDate) {
-            if (!isWeekend(current)) count++;
+
+        // ================================================================
+        // AUTH
+        // ================================================================
+        auth.onAuthStateChanged(function(user) {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUserId = user.uid;
+            watchBlockStatus(currentUserId);
+            loadInvestments();
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(function() {
+                var normalTab = document.getElementById('normalTab');
+                if (normalTab && normalTab.style.display !== 'none') {
+                    loadInvestments();
+                }
+            }, 60000);
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimers, 1000);
+        });
+
+        // ================================================================
+        // BLOCK LOGIC
+        // ================================================================
+        function businessDaysElapsed(inv, now) {
+            var endDate = now;
+            if (inv.blockedStart) {
+                var blockedDate = inv.blockedStart.toDate ? inv.blockedStart.toDate() : new Date(inv.blockedStart);
+                if (blockedDate < now) {
+                    endDate = blockedDate;
+                }
+            }
+            var count = 0;
+            var current = new Date(inv.startDate);
             current.setDate(current.getDate() + 1);
-        }
-        return count;
-    }
-
-    function isClaimingBlocked(activeInvestments) {
-        if (activeInvestments.length >= 2) return false;
-        if (activeInvestments.length === 0) return false;
-        const now = new Date();
-        for (const inv of activeInvestments) {
-            const elapsedDays = businessDaysElapsed(inv, now);
-            const totalDays = inv.businessDays;
-            const daysLeft = Math.max(0, totalDays - elapsedDays);
-            if (daysLeft <= 2) return true;
-        }
-        return false;
-    }
-
-    async function updateBlockedState(activeInvestments, blocked, now) {
-        if (!currentUserId) return;
-        const batch = db.batch();
-        let anyChange = false;
-        for (const inv of activeInvestments) {
-            const ref = db.collection('investments').doc(inv.id);
-            if (blocked) {
-                if (!inv.blockedStart) {
-                    batch.update(ref, { blockedStart: firebase.firestore.Timestamp.fromDate(now) });
-                    anyChange = true;
-                }
-            } else {
-                if (inv.blockedStart) {
-                    batch.update(ref, { blockedStart: firebase.firestore.FieldValue.delete() });
-                    anyChange = true;
-                }
+            while (current <= endDate) {
+                if (!isWeekend(current)) count++;
+                current.setDate(current.getDate() + 1);
             }
+            return count;
         }
-        if (anyChange) {
-            try {
-                await batch.commit();
-                console.log('Blocked state updated in Firestore');
-            } catch (err) {
-                console.warn('Error updating blocked state:', err);
+
+        function isClaimingBlocked(activeInvestments) {
+            if (activeInvestments.length >= 2) return false;
+            if (activeInvestments.length === 0) return false;
+            var now = new Date();
+            for (var i = 0; i < activeInvestments.length; i++) {
+                var inv = activeInvestments[i];
+                var elapsedDays = businessDaysElapsed(inv, now);
+                var totalDays = inv.businessDays;
+                var daysLeft = Math.max(0, totalDays - elapsedDays);
+                if (daysLeft <= 2) return true;
             }
+            return false;
         }
-    }
 
-    // ================================================================
-    //  LOAD INVESTMENTS
-    // ================================================================
-    async function loadInvestments() {
-        if (!currentUserId) return;
-        try {
-            const snapshot = await db.collection('investments')
-                .where('userId', '==', currentUserId)
-                .get();
-
-            const investments = [];
-            snapshot.forEach(doc => {
-                investments.push({ id: doc.id, ...doc.data() });
-            });
-            investments.sort((a, b) => (b.startDate?.toMillis() || 0) - (a.startDate?.toMillis() || 0));
-
-            const active = [];
-            const expired = [];
-            const now = new Date();
-
-            for (const inv of investments) {
-                const startDate = inv.startDate.toDate();
-                const businessDays = inv.businessDays || inv.days;
-                const endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addBusinessDays(startDate, businessDays);
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                const isExpired = inv.status !== 'active' || today > endDate;
-
-                const investment = {
-                    id: inv.id,
-                    ...inv,
-                    startDate,
-                    businessDays,
-                    endDate,
-                    dailyAmount: inv.dailyReturn,
-                    status: inv.status,
-                    lastClaimed: inv.lastClaimed,
-                    blockedStart: inv.blockedStart,
-                    claimsCount: inv.claimsCount || 0
-                };
-                if (!isExpired) {
-                    active.push(investment);
+        async function updateBlockedState(activeInvestments, blocked, now) {
+            if (!currentUserId) return;
+            var batch = db.batch();
+            var anyChange = false;
+            for (var i = 0; i < activeInvestments.length; i++) {
+                var inv = activeInvestments[i];
+                var ref = db.collection('investments').doc(inv.id);
+                if (blocked) {
+                    if (!inv.blockedStart) {
+                        batch.update(ref, { blockedStart: firebase.firestore.Timestamp.fromDate(now) });
+                        anyChange = true;
+                    }
                 } else {
-                    expired.push(investment);
+                    if (inv.blockedStart) {
+                        batch.update(ref, { blockedStart: firebase.firestore.FieldValue.delete() });
+                        anyChange = true;
+                    }
+                }
+            }
+            if (anyChange) {
+                try {
+                    await batch.commit();
+                    console.log('Blocked state updated in Firestore');
+                } catch (err) {
+                    console.warn('Error updating blocked state:', err);
+                }
+            }
+        }
+
+        // ================================================================
+        // CLAIM STATUS (time based on purchase time, e.g., 14:00)
+        // ================================================================
+        function getClaimStatus(inv, now) {
+            var start = inv.startDate;
+            var claimsCount = inv.claimsCount || 0;
+            var dailyAmount = inv.dailyAmount;
+            var totalBusinessDays = inv.businessDays;
+
+            var index = claimsCount;
+            while (index < totalBusinessDays) {
+                var dueDate = index === 0 ? start : addBusinessDays(start, index);
+                var claimStart = new Date(dueDate);
+                claimStart.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
+                var windowEnd = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
+
+                if (now >= windowEnd) {
+                    index++;
+                    continue;
+                }
+
+                if (now >= claimStart && now < windowEnd) {
+                    var available = !isWeekend(now) && !claimingBlocked;
+                    var hoursSince = Math.max(0, (now - claimStart) / (1000 * 60 * 60));
+                    var earnedSoFar = Math.min(dailyAmount, dailyAmount * (hoursSince / 24));
+                    var progress = Math.min(100, (hoursSince / 24) * 100);
+                    return {
+                        available: available,
+                        nextClaimTime: claimStart,
+                        windowEnd: windowEnd,
+                        dailyAmount: dailyAmount,
+                        earnedSoFar: earnedSoFar,
+                        hoursSince: hoursSince,
+                        progress: progress,
+                        index: index,
+                        status: available ? 'ready' : 'waiting'
+                    };
+                }
+
+                if (now < claimStart) {
+                    var hoursRemaining = (claimStart - now) / (1000 * 60 * 60);
+                    return {
+                        available: false,
+                        nextClaimTime: claimStart,
+                        windowEnd: windowEnd,
+                        dailyAmount: dailyAmount,
+                        earnedSoFar: 0,
+                        hoursSince: 0,
+                        progress: 0,
+                        index: index,
+                        status: 'waiting',
+                        hoursRemaining: hoursRemaining
+                    };
                 }
             }
 
-            const blocked = isClaimingBlocked(active);
-            claimingBlocked = blocked;
-            await updateBlockedState(active, blocked, now);
-
-            currentInvestments = active;
-            renderActive(active);
-            renderExpired(expired);
-            updateTotalPendingAndClaimAll(active);
-            const warningDiv = document.getElementById('claimBlockWarning');
-            if (warningDiv) {
-                warningDiv.style.display = claimingBlocked ? 'block' : 'none';
-            }
-        } catch (err) {
-            console.error("Error loading investments:", err);
-            const container = document.getElementById('activeInvestments');
-            if (container) container.innerHTML = '<div class="empty-msg">Error loading investments. Please refresh.</div>';
-        }
-    }
-
-    // ================================================================
-    //  FIXED: CLAIM STATUS WITH 24-HOUR WINDOW AND WEEKEND SKIP
-    //  First claim available immediately at purchase time.
-    // ================================================================
-    function getClaimStatus(inv, now) {
-        const start = inv.startDate;
-        const claimsCount = inv.claimsCount || 0;
-        const dailyAmount = inv.dailyAmount;
-        const totalBusinessDays = inv.businessDays;
-
-        // Iterate from claimsCount upward to find the first available or waiting day
-        let index = claimsCount;
-        while (index < totalBusinessDays) {
-            // Due date: first claim at start, subsequent claims add business days
-            const dueDate = index === 0 ? start : addBusinessDays(start, index);
-            // Set time to same as start time (to keep the 24-hour window aligned)
-            const claimStart = new Date(dueDate);
-            claimStart.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
-            const windowEnd = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
-
-            // Check if this day is already passed (window closed)
-            if (now >= windowEnd) {
-                // This day is lost, move to next index
-                index++;
-                continue;
-            }
-
-            // Check if window is currently open
-            if (now >= claimStart && now < windowEnd) {
-                // Available if today is a weekday (claimStart is always weekday)
-                const available = !isWeekend(now) && !claimingBlocked;
-                const hoursSince = Math.max(0, (now - claimStart) / (1000 * 60 * 60));
-                const earnedSoFar = Math.min(dailyAmount, dailyAmount * (hoursSince / 24));
-                const progress = Math.min(100, (hoursSince / 24) * 100);
-                return {
-                    available,
-                    nextClaimTime: claimStart,
-                    windowEnd: windowEnd,
-                    dailyAmount,
-                    earnedSoFar,
-                    hoursSince,
-                    progress,
-                    index: index,
-                    status: available ? 'ready' : 'waiting' // if not available due to weekend/block
-                };
-            }
-
-            // Not yet time (now < claimStart)
-            if (now < claimStart) {
-                const hoursRemaining = (claimStart - now) / (1000 * 60 * 60);
-                return {
-                    available: false,
-                    nextClaimTime: claimStart,
-                    windowEnd: windowEnd,
-                    dailyAmount,
-                    earnedSoFar: 0,
-                    hoursSince: 0,
-                    progress: 0,
-                    index: index,
-                    status: 'waiting',
-                    hoursRemaining: hoursRemaining
-                };
-            }
+            return {
+                available: false,
+                nextClaimTime: null,
+                windowEnd: null,
+                dailyAmount: dailyAmount,
+                earnedSoFar: 0,
+                hoursSince: 0,
+                progress: 0,
+                index: -1,
+                status: 'done'
+            };
         }
 
-        // No more claimable days
-        return {
-            available: false,
-            nextClaimTime: null,
-            windowEnd: null,
-            dailyAmount: dailyAmount,
-            earnedSoFar: 0,
-            hoursSince: 0,
-            progress: 0,
-            index: -1,
-            status: 'done'
-        };
-    }
+        // ================================================================
+        // LOAD INVESTMENTS
+        // ================================================================
+        async function loadInvestments() {
+            if (!currentUserId) return;
+            try {
+                var snapshot = await db.collection('investments')
+                    .where('userId', '==', currentUserId)
+                    .get();
 
-    // ================================================================
-    //  RENDER ACTIVE PLANS
-    // ================================================================
-    function renderActive(investments) {
-        const container = document.getElementById('activeInvestments');
-        if (!container) return;
-        if (!investments.length) {
-            container.innerHTML = '<div class="empty-msg">📭 No active investment plans.</div>';
-            return;
+                var investments = [];
+                snapshot.forEach(function(doc) {
+                    investments.push({ id: doc.id, ...doc.data() });
+                });
+                investments.sort(function(a, b) {
+                    return (b.startDate?.toMillis() || 0) - (a.startDate?.toMillis() || 0);
+                });
+
+                var active = [];
+                var expired = [];
+                var now = new Date();
+
+                for (var i = 0; i < investments.length; i++) {
+                    var inv = investments[i];
+                    var startDate = inv.startDate.toDate();
+                    var businessDays = inv.businessDays || inv.days;
+                    var endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addBusinessDays(startDate, businessDays);
+                    var today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    var isExpired = inv.status !== 'active' || today > endDate;
+
+                    var investment = {
+                        id: inv.id,
+                        ...inv,
+                        startDate: startDate,
+                        businessDays: businessDays,
+                        endDate: endDate,
+                        dailyAmount: inv.dailyReturn,
+                        status: inv.status,
+                        lastClaimed: inv.lastClaimed,
+                        blockedStart: inv.blockedStart,
+                        claimsCount: inv.claimsCount || 0
+                    };
+                    if (!isExpired) {
+                        active.push(investment);
+                    } else {
+                        expired.push(investment);
+                    }
+                }
+
+                var blocked = isClaimingBlocked(active);
+                claimingBlocked = blocked;
+                await updateBlockedState(active, blocked, now);
+
+                currentInvestments = active;
+                renderActive(active);
+                renderExpired(expired);
+                updateTotalPendingAndClaimAll(active);
+                var warningDiv = document.getElementById('claimBlockWarning');
+                if (warningDiv) {
+                    warningDiv.style.display = claimingBlocked ? 'block' : 'none';
+                }
+            } catch (err) {
+                console.error("Error loading investments:", err);
+                var container = document.getElementById('activeInvestments');
+                if (container) container.innerHTML =
+                    '<div class="empty-state"><div class="title">Error loading investments</div><div class="sub">Please refresh the page</div></div>';
+            }
         }
-        const now = new Date();
-        let html = '';
-        for (const inv of investments) {
-            const status = getClaimStatus(inv, now);
-            const canClaim = status.available && !claimingBlocked && !isWeekend(now);
-            const daysLeft = inv.businessDays - (inv.claimsCount || 0);
 
-            let statusText = '';
-            if (claimingBlocked) {
-                statusText = '⛔ Claiming paused – buy another plan';
-            } else if (canClaim) {
-                statusText = '✅ Ready to claim';
-            } else if (status.status === 'waiting' && status.hoursRemaining !== undefined) {
-                const hrs = Math.floor(status.hoursRemaining);
-                const mins = Math.floor((status.hoursRemaining % 1) * 60);
-                statusText = `⏳ Next claim in ${hrs}h ${mins}m`;
-            } else if (isWeekend(now)) {
-                statusText = '⏳ Weekends – claims resume Monday';
-            } else if (status.status === 'done') {
-                statusText = '✅ All claims completed';
-            } else {
-                statusText = '⏳ Waiting for next claim window';
+        // ================================================================
+        // RENDER ACTIVE
+        // ================================================================
+        function renderActive(investments) {
+            var container = document.getElementById('activeInvestments');
+            if (!container) return;
+            if (!investments.length) {
+                container.innerHTML =
+                    '<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><div class="title">No active investments</div><div class="sub">Purchase a plan to start earning daily income</div></div>';
+                return;
             }
 
-            const progress = status.progress || 0;
-            const earnedDisplay = status.earnedSoFar || 0;
+            var now = new Date();
+            var html = '';
+            for (var i = 0; i < investments.length; i++) {
+                var inv = investments[i];
+                var status = getClaimStatus(inv, now);
+                var canClaim = status.available && !claimingBlocked && !isWeekend(now);
+                var daysLeft = inv.businessDays - (inv.claimsCount || 0);
 
-            html += `
-                <div class="plan-card" data-id="${inv.id}">
-                    <div class="plan-header">
-                        <span class="plan-name">${escapeHtml(inv.planName)}</span>
-                        <span class="plan-amount">${formatMoney(inv.investAmount)}</span>
-                    </div>
-                    <div class="plan-details">
-                        <span>📅 Started: ${inv.startDate.toLocaleDateString()}</span>
-                        <span>💰 Daily: ${formatMoney(inv.dailyAmount)}</span>
-                        <span>⏱️ Days left: ${daysLeft}</span>
-                    </div>
-                    <div class="claim-info">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${Math.min(progress, 100)}%;"></div>
+                // Determine icon based on plan name
+                var iconSvg = getPlanIcon(inv.planName);
+
+                var statusText = '';
+                var countdownText = '';
+                if (claimingBlocked) {
+                    statusText = '⛔ Paused – buy another plan';
+                } else if (canClaim) {
+                    statusText = '✅ Ready to claim';
+                } else if (status.status === 'waiting' && status.hoursRemaining !== undefined) {
+                    var hrs = Math.floor(status.hoursRemaining);
+                    var mins = Math.floor((status.hoursRemaining % 1) * 60);
+                    countdownText = hrs + 'h ' + mins + 'm';
+                    statusText = '⏳ Next claim in';
+                } else if (isWeekend(now)) {
+                    statusText = '⏳ Weekends – claims resume Monday';
+                } else if (status.status === 'done') {
+                    statusText = '✅ All claims completed';
+                } else {
+                    statusText = '⏳ Waiting for next window';
+                }
+
+                var progress = status.progress || 0;
+                var earnedDisplay = status.earnedSoFar || 0;
+                var dailyDisplay = status.dailyAmount || inv.dailyAmount;
+
+                html += `
+                    <div class="plan-card" data-id="${inv.id}" data-next-claim="${status.nextClaimTime ? status.nextClaimTime.getTime() : ''}" data-daily="${dailyDisplay}">
+                        <div class="plan-top">
+                            <div class="plan-icon">${iconSvg}</div>
+                            <div class="plan-info">
+                                <div class="plan-name">${escapeHtml(inv.planName)}</div>
+                                <div class="plan-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${inv.startDate.toLocaleDateString()}</span>
+                                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${formatMoney(dailyDisplay)}/day</span>
+                                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${daysLeft} days left</span>
+                                </div>
+                            </div>
+                            <div class="plan-amount">${formatMoney(inv.investAmount)}</div>
                         </div>
-                        <div class="progress-text">${statusText}</div>
-                        ${canClaim ? `<div class="pending-amount">💰 Ready to claim: ${formatMoney(inv.dailyAmount)}</div>` :
-                        `<div class="pending-amount">💰 Earned so far: ${formatMoney(earnedDisplay)} / ${formatMoney(inv.dailyAmount)}</div>`}
+
+                        <div class="claim-progress">
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: ${Math.min(progress, 100)}%;"></div>
+                            </div>
+                            <div class="progress-label">
+                                <span class="earned">Earned: ${formatMoney(earnedDisplay)}</span>
+                                <span>Daily target: ${formatMoney(dailyDisplay)}</span>
+                            </div>
+                        </div>
+
+                        <div class="claim-action">
+                            <div class="claim-status">
+                                ${statusText}
+                                ${countdownText ? `<span class="countdown" id="countdown-${inv.id}">${countdownText}</span>` : ''}
+                                ${canClaim ? '<span class="ready-text">● Ready</span>' : ''}
+                            </div>
+                            <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${dailyDisplay}">
+                                ${canClaim ? '💰 Claim' : (claimingBlocked ? '⛔ Paused' : (isWeekend(now) ? '⏳ Weekend' : '⏳ Wait'))}
+                            </button>
+                        </div>
+                        ${isWeekend(now) ? '<div class="weekend-note">⛔ Claims resume Monday</div>' : ''}
                     </div>
-                    <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${inv.dailyAmount}">
-                        ${canClaim ? '💰 Claim Daily Income' : (claimingBlocked ? '⛔ Paused' : (isWeekend(now) ? '⏳ Weekend' : '⏳ Wait'))}
-                    </button>
-                    ${isWeekend(now) ? '<div class="weekend-warning">⛔ Claiming only available Monday–Friday. Come back on a weekday.</div>' : ''}
-                </div>
-            `;
-        }
-        container.innerHTML = html;
+                `;
+            }
+            container.innerHTML = html;
 
-        document.querySelectorAll('.claim-btn.active').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const invId = btn.dataset.id;
-                const dailyAmount = parseFloat(btn.dataset.daily);
-                await claimDailyIncome(invId, dailyAmount, true);
+            // Attach claim events
+            document.querySelectorAll('.claim-btn.active').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var invId = this.dataset.id;
+                    var dailyAmount = parseFloat(this.dataset.daily);
+                    claimDailyIncome(invId, dailyAmount, true);
+                });
             });
-        });
-    }
 
-    // ================================================================
-    //  FIXED: CLAIM DAILY INCOME (adds to walletBalance)
-    // ================================================================
-    async function claimDailyIncome(investmentId, dailyAmount, refreshAfter = true) {
-        const user = auth.currentUser;
-        if (!user) return false;
-        const now = new Date();
-        if (isWeekend(now)) {
-            showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
-            return false;
-        }
-        if (claimingBlocked) {
-            showToast('❌ Claiming is paused because you have only one active plan and it ends in 2 days or less. Please purchase another plan first.', true);
-            return false;
+            // Start countdown timers for each card
+            updateTimers();
         }
 
-        try {
-            await db.runTransaction(async (transaction) => {
-                const invRef = db.collection('investments').doc(investmentId);
-                const invSnap = await transaction.get(invRef);
-                if (!invSnap.exists) throw new Error('Investment not found');
-                const invData = invSnap.data();
-                const start = invData.startDate.toDate();
-                const claimsCount = invData.claimsCount || 0;
-                const totalBusinessDays = invData.businessDays || invData.days;
+        // ================================================================
+        // PLAN ICONS
+        // ================================================================
+        function getPlanIcon(planName) {
+            var name = (planName || '').toLowerCase();
+            if (name.includes('ring') || name.includes('j ring')) {
+                return `<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17h8v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7z"/><path d="M9 21h6"/><path d="M12 17v4"/></svg>`;
+            }
+            if (name.includes('solar')) {
+                return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+            }
+            if (name.includes('vip') || name.includes('mkvip')) {
+                return `<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/><polyline points="9 12 11 14 15 10"/></svg>`;
+            }
+            if (name.includes('jproduct') || name.includes('product')) {
+                return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><polyline points="8 12 10 14 16 8"/></svg>`;
+            }
+            if (name.includes('premium')) {
+                return `<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
+            }
+            // Default
+            return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
+        }
 
-                // Verify claim is currently available
-                const status = getClaimStatus({
-                    startDate: start,
-                    claimsCount: claimsCount,
-                    dailyAmount: dailyAmount,
-                    businessDays: totalBusinessDays,
-                }, now);
+        // ================================================================
+        // UPDATE TIMERS (live countdown)
+        // ================================================================
+        function updateTimers() {
+            var now = new Date();
+            var cards = document.querySelectorAll('.plan-card');
+            cards.forEach(function(card) {
+                var nextClaim = card.dataset.nextClaim;
+                if (!nextClaim) return;
+                var targetTime = parseInt(nextClaim);
+                if (isNaN(targetTime)) return;
+                var diff = (targetTime - now.getTime()) / 1000;
+                var countdownEl = card.querySelector('.countdown');
+                if (!countdownEl) return;
 
-                if (!status.available) {
-                    throw new Error('Claim not available at this time');
+                if (diff <= 0) {
+                    // Claim window should be open, but we'll let the main logic handle it
+                    countdownEl.textContent = '0h 0m';
+                    // Optionally refresh the page to update button states
+                    // We rely on the 60s refresh interval for full state updates
+                    return;
                 }
 
-                // Update walletBalance
-                const userRef = db.collection('users').doc(user.uid);
-                const userSnap = await transaction.get(userRef);
-                const currentWallet = userSnap.data().walletBalance || 0;
-                const newWallet = currentWallet + dailyAmount;
-                transaction.update(userRef, {
-                    walletBalance: newWallet,
-                    balance: newWallet // sync for safety
-                });
-
-                // Increment claimsCount
-                transaction.update(invRef, { claimsCount: firebase.firestore.FieldValue.increment(1) });
-
-                // Update lastClaimed timestamp
-                transaction.update(invRef, { lastClaimed: firebase.firestore.Timestamp.fromDate(now) });
-
-                // Record transaction
-                const txRef = db.collection('transactions').doc();
-                transaction.set(txRef, {
-                    userId: user.uid,
-                    type: 'daily_income',
-                    amount: dailyAmount,
-                    description: `Daily income from ${invData.planName}`,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                var hrs = Math.floor(diff / 3600);
+                var mins = Math.floor((diff % 3600) / 60);
+                countdownEl.textContent = hrs + 'h ' + mins + 'm';
             });
-
-            showToast(`✅ ${formatMoney(dailyAmount)} claimed!`, false);
-            showAdPopup();
-            if (refreshAfter) await loadInvestments();
-            return true;
-        } catch (err) {
-            showToast(err.message || 'Claim failed', true);
-            return false;
-        }
-    }
-
-    // ================================================================
-    //  CLAIM ALL
-    // ================================================================
-    async function claimAllAvailable() {
-        const user = auth.currentUser;
-        if (!user) return;
-        const now = new Date();
-        if (isWeekend(now)) {
-            showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
-            return;
-        }
-        if (claimingBlocked) {
-            showToast('❌ Claiming is paused because you have only one active plan and it ends in 2 days or less. Please purchase another plan first.', true);
-            return;
         }
 
-        // Get all investments that are currently claimable
-        const claimable = [];
-        for (const inv of currentInvestments) {
-            const status = getClaimStatus(inv, now);
-            if (status.available && !claimingBlocked && !isWeekend(now)) {
-                claimable.push({ id: inv.id, dailyAmount: status.dailyAmount });
+        // ================================================================
+        // RENDER EXPIRED
+        // ================================================================
+        function renderExpired(investments) {
+            var container = document.getElementById('expiredInvestments');
+            if (!container) return;
+            if (!investments.length) {
+                container.innerHTML =
+                    '<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="title">No expired plans</div><div class="sub">All your investments are active</div></div>';
+                return;
             }
-        }
-
-        if (claimable.length === 0) {
-            showToast('No pending earnings to claim.', true);
-            return;
-        }
-
-        const claimBtn = document.getElementById('claimAllBtn');
-        claimBtn.disabled = true;
-        claimBtn.innerText = 'Claiming...';
-
-        let totalClaimed = 0;
-        let successCount = 0;
-        for (const item of claimable) {
-            const success = await claimDailyIncome(item.id, item.dailyAmount, false);
-            if (success) {
-                totalClaimed += item.dailyAmount;
-                successCount++;
-            }
-        }
-
-        await loadInvestments();
-        if (successCount > 0) {
-            showToast(`✅ Claimed ${formatMoney(totalClaimed)} from ${successCount} investment(s)!`, false);
-            showAdPopup();
-        } else {
-            showToast('No claims were successful. Please try again.', true);
-        }
-
-        claimBtn.disabled = false;
-        claimBtn.innerText = '💰 Claim All Available';
-    }
-
-    // ================================================================
-    //  UPDATE TOTALS
-    // ================================================================
-    function updateTotalPendingAndClaimAll(investments) {
-        const now = new Date();
-        let total = 0;
-        let hasClaimable = false;
-        for (const inv of investments) {
-            const status = getClaimStatus(inv, now);
-            if (status.available && !claimingBlocked && !isWeekend(now)) {
-                total += status.dailyAmount;
-                hasClaimable = true;
-            }
-        }
-        const totalSpan = document.getElementById('totalPending');
-        if (totalSpan) totalSpan.innerText = total.toFixed(2);
-
-        const claimAllBtn = document.getElementById('claimAllBtn');
-        if (claimAllBtn) {
-            claimAllBtn.disabled = isWeekend(now) || !hasClaimable || claimingBlocked;
-        }
-    }
-
-    // ================================================================
-    //  AD POPUP
-    // ================================================================
-    function showAdPopup() {
-        const adPopup = document.getElementById('adPopup');
-        const adTimer = document.getElementById('adTimer');
-        const adSkipBtn = document.getElementById('adSkipBtn');
-        const viewPlansBtn = document.getElementById('adViewPlansBtn');
-
-        adPopup.classList.remove('hidden');
-        let seconds = 10;
-        adTimer.textContent = seconds;
-
-        const timerInterval = setInterval(() => {
-            seconds--;
-            adTimer.textContent = seconds;
-            if (seconds <= 0) {
-                clearInterval(timerInterval);
-                adPopup.classList.add('hidden');
-            }
-        }, 1000);
-
-        adSkipBtn.onclick = function() {
-            clearInterval(timerInterval);
-            adPopup.classList.add('hidden');
-        };
-
-        viewPlansBtn.onclick = function() {
-            clearInterval(timerInterval);
-            adPopup.classList.add('hidden');
-            window.location.href = 'mkvip.html';
-        };
-
-        adPopup.onclick = function(e) {
-            if (e.target === adPopup) {
-                clearInterval(timerInterval);
-                adPopup.classList.add('hidden');
-            }
-        };
-    }
-
-    // ================================================================
-    //  RENDER EXPIRED
-    // ================================================================
-    function renderExpired(investments) {
-        const container = document.getElementById('expiredInvestments');
-        if (!container) return;
-        if (!investments.length) {
-            container.innerHTML = '<div class="empty-msg">📭 No expired or completed plans.</div>';
-            return;
-        }
-        let html = '';
-        for (const inv of investments) {
-            const statusText = inv.status === 'completed' ? 'Completed' : 'Expired';
-            html += `
-                <div class="plan-card">
-                    <div class="plan-header">
-                        <span class="plan-name">${escapeHtml(inv.planName)}</span>
-                        <span class="plan-amount">${formatMoney(inv.investAmount)}</span>
+            var html = '';
+            for (var i = 0; i < investments.length; i++) {
+                var inv = investments[i];
+                var statusText = inv.status === 'completed' ? 'Completed' : 'Expired';
+                var iconSvg = getPlanIcon(inv.planName);
+                html += `
+                    <div class="plan-card" style="opacity:0.6;">
+                        <div class="plan-top">
+                            <div class="plan-icon">${iconSvg}</div>
+                            <div class="plan-info">
+                                <div class="plan-name">${escapeHtml(inv.planName)}</div>
+                                <div class="plan-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${inv.startDate.toLocaleDateString()}</span>
+                                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${formatMoney(inv.dailyReturn)}/day</span>
+                                    <span>⏱️ ${statusText}</span>
+                                </div>
+                            </div>
+                            <div class="plan-amount">${formatMoney(inv.investAmount)}</div>
+                        </div>
                     </div>
-                    <div class="plan-details">
-                        <span>📅 Started: ${inv.startDate.toLocaleDateString()}</span>
-                        <span>💰 Daily: ${formatMoney(inv.dailyReturn)}</span>
-                        <span>⏱️ Status: ${statusText}</span>
-                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        // ================================================================
+        // UPDATE TOTALS
+        // ================================================================
+        function updateTotalPendingAndClaimAll(investments) {
+            var now = new Date();
+            var total = 0;
+            var hasClaimable = false;
+            for (var i = 0; i < investments.length; i++) {
+                var inv = investments[i];
+                var status = getClaimStatus(inv, now);
+                if (status.available && !claimingBlocked && !isWeekend(now)) {
+                    total += status.dailyAmount;
+                    hasClaimable = true;
+                }
+            }
+            var totalSpan = document.getElementById('totalPending');
+            if (totalSpan) totalSpan.innerText = total.toFixed(2) + ' ZMW';
+
+            var claimAllBtn = document.getElementById('claimAllBtn');
+            if (claimAllBtn) {
+                claimAllBtn.disabled = isWeekend(now) || !hasClaimable || claimingBlocked;
+            }
+        }
+
+        // ================================================================
+        // CLAIM DAILY INCOME
+        // ================================================================
+        async function claimDailyIncome(investmentId, dailyAmount, refreshAfter) {
+            var user = auth.currentUser;
+            if (!user) return false;
+            var now = new Date();
+            if (isWeekend(now)) {
+                showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
+                return false;
+            }
+            if (claimingBlocked) {
+                showToast('❌ Claiming is paused because you have only one active plan and it ends in 2 days or less.', true);
+                return false;
+            }
+
+            try {
+                await db.runTransaction(async function(transaction) {
+                    var invRef = db.collection('investments').doc(investmentId);
+                    var invSnap = await transaction.get(invRef);
+                    if (!invSnap.exists) throw new Error('Investment not found');
+                    var invData = invSnap.data();
+                    var start = invData.startDate.toDate();
+                    var claimsCount = invData.claimsCount || 0;
+                    var totalBusinessDays = invData.businessDays || invData.days;
+
+                    var status = getClaimStatus({
+                        startDate: start,
+                        claimsCount: claimsCount,
+                        dailyAmount: dailyAmount,
+                        businessDays: totalBusinessDays,
+                    }, now);
+
+                    if (!status.available) {
+                        throw new Error('Claim not available at this time');
+                    }
+
+                    var userRef = db.collection('users').doc(user.uid);
+                    var userSnap = await transaction.get(userRef);
+                    var currentWallet = userSnap.data().walletBalance || 0;
+                    var newWallet = currentWallet + dailyAmount;
+                    transaction.update(userRef, {
+                        walletBalance: newWallet,
+                        balance: newWallet
+                    });
+
+                    transaction.update(invRef, { claimsCount: firebase.firestore.FieldValue.increment(1) });
+                    transaction.update(invRef, { lastClaimed: firebase.firestore.Timestamp.fromDate(now) });
+
+                    var txRef = db.collection('transactions').doc();
+                    transaction.set(txRef, {
+                        userId: user.uid,
+                        type: 'daily_income',
+                        amount: dailyAmount,
+                        description: 'Daily income from ' + invData.planName,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+
+                showToast('✅ ' + formatMoney(dailyAmount) + ' claimed!', false);
+                if (refreshAfter) {
+                    await loadInvestments();
+                    // Show ad popup
+                    showAdPopup();
+                }
+                return true;
+            } catch (err) {
+                showToast(err.message || 'Claim failed', true);
+                return false;
+            }
+        }
+
+        // ================================================================
+        // CLAIM ALL
+        // ================================================================
+        async function claimAllAvailable() {
+            var user = auth.currentUser;
+            if (!user) return;
+            var now = new Date();
+            if (isWeekend(now)) {
+                showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
+                return;
+            }
+            if (claimingBlocked) {
+                showToast('❌ Claiming is paused because you have only one active plan and it ends in 2 days or less.', true);
+                return;
+            }
+
+            var claimable = [];
+            for (var i = 0; i < currentInvestments.length; i++) {
+                var inv = currentInvestments[i];
+                var status = getClaimStatus(inv, now);
+                if (status.available && !claimingBlocked && !isWeekend(now)) {
+                    claimable.push({ id: inv.id, dailyAmount: status.dailyAmount });
+                }
+            }
+
+            if (claimable.length === 0) {
+                showToast('No pending earnings to claim.', true);
+                return;
+            }
+
+            var claimBtn = document.getElementById('claimAllBtn');
+            claimBtn.disabled = true;
+            claimBtn.innerText = 'Claiming...';
+
+            var totalClaimed = 0;
+            var successCount = 0;
+            for (var j = 0; j < claimable.length; j++) {
+                var item = claimable[j];
+                var success = await claimDailyIncome(item.id, item.dailyAmount, false);
+                if (success) {
+                    totalClaimed += item.dailyAmount;
+                    successCount++;
+                }
+            }
+
+            await loadInvestments();
+            if (successCount > 0) {
+                showToast('✅ Claimed ' + formatMoney(totalClaimed) + ' from ' + successCount + ' plan(s)!', false);
+                showAdPopup();
+            } else {
+                showToast('No claims were successful. Please try again.', true);
+            }
+
+            claimBtn.disabled = false;
+            claimBtn.innerText = 'Claim All';
+        }
+
+        // ================================================================
+        // AD POPUP
+        // ================================================================
+        function showAdPopup() {
+            var adPopup = document.getElementById('adPopup');
+            if (!adPopup) return;
+            adPopup.classList.remove('hidden');
+            var seconds = 10;
+            var timerEl = document.getElementById('adTimer');
+            if (timerEl) timerEl.textContent = seconds;
+
+            if (window.adTimerInterval) clearInterval(window.adTimerInterval);
+            window.adTimerInterval = setInterval(function() {
+                seconds--;
+                if (timerEl) timerEl.textContent = seconds;
+                if (seconds <= 0) {
+                    clearInterval(window.adTimerInterval);
+                    adPopup.classList.add('hidden');
+                }
+            }, 1000);
+
+            document.getElementById('adSkipBtn').onclick = function() {
+                clearInterval(window.adTimerInterval);
+                adPopup.classList.add('hidden');
+            };
+            document.getElementById('adViewPlansBtn').onclick = function() {
+                clearInterval(window.adTimerInterval);
+                adPopup.classList.add('hidden');
+                window.location.href = 'mkvip.html';
+            };
+            adPopup.onclick = function(e) {
+                if (e.target === adPopup) {
+                    clearInterval(window.adTimerInterval);
+                    adPopup.classList.add('hidden');
+                }
+            };
+        }
+
+        // ================================================================
+        // TABS
+        // ================================================================
+        var tabBtns = document.querySelectorAll('.tab-btn');
+        var normalTab = document.getElementById('normalTab');
+        var expiredTab = document.getElementById('expiredTab');
+
+        tabBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var tabId = this.dataset.tab;
+                tabBtns.forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                if (tabId === 'normal') {
+                    normalTab.style.display = 'block';
+                    expiredTab.style.display = 'none';
+                    loadInvestments();
+                } else {
+                    normalTab.style.display = 'none';
+                    expiredTab.style.display = 'block';
+                }
+            });
+        });
+
+        document.getElementById('claimAllBtn')?.addEventListener('click', claimAllAvailable);
+
+        // ================================================================
+        // BACK BUTTON
+        // ================================================================
+        document.getElementById('backBtn').addEventListener('click', function() {
+            window.location.href = 'dashboard.html';
+        });
+
+        // ================================================================
+        // BOTTOM NAV
+        // ================================================================
+        var navItems = document.querySelectorAll('.nav-item');
+        var currentPage = window.location.pathname.split('/').pop() || 'income.html';
+        navItems.forEach(function(item) {
+            var targetPage = item.getAttribute('data-page');
+            if (currentPage === targetPage) item.classList.add('active');
+            item.addEventListener('click', function() {
+                var target = this.getAttribute('data-page');
+                if (target && !window.location.pathname.includes(target)) {
+                    window.location.href = target;
+                }
+            });
+        });
+
+        console.log('✨ Pureore Capital · Income (unique design)');
+        console.log('⏱️ Claim timer based on purchase time (e.g., 14:00)');
+        console.log('🔐 Firebase config untouched');
+    </script>
+
+    <!-- ===== AD POPUP HTML ===== -->
+    <div id="adPopup" class="ad-overlay hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;z-index:9999;padding:1rem;">
+        <div class="ad-modal" style="background:rgba(18,18,24,0.95);border-radius:32px;max-width:550px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:2px solid transparent;background-clip:padding-box;background-image:linear-gradient(rgba(18,18,24,0.95), rgba(18,18,24,0.95)), linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);background-origin:padding-box,border-box;background-clip:padding-box,border-box;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.8);animation:slideUp 0.5s ease;">
+            <button class="ad-skip" id="adSkipBtn" style="position:absolute;top:12px;right:16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:#aaa;cursor:pointer;transition:0.3s;z-index:10;">✕</button>
+            <div class="ad-title" style="text-align:center;font-size:1.8rem;font-weight:800;margin-bottom:0.5rem;background:linear-gradient(135deg, #FFD700, #F59E0B);background-clip:text;-webkit-background-clip:text;color:transparent;">🚀 CONGRATULATIONS!</div>
+            <div class="ad-subtitle" style="text-align:center;color:#B0B3B8;margin-bottom:1.2rem;font-size:0.95rem;line-height:1.5;">
+                You have successfully claimed your daily income.<br>
+                <strong style="color:#FFD700;">Why stop here?</strong> Increase your earnings today with our premium investment plans!
+            </div>
+            <div class="ad-plan" style="background:rgba(255,255,255,0.03);border-radius:16px;padding:0.8rem 1rem;margin-bottom:0.6rem;border-left:3px solid #00E676;">
+                <h4 style="font-size:1rem;color:#FFD700;margin-bottom:0.2rem;">🔥 MKVIP STARTER PLAN</h4>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>💰 Investment:</span><span>K70</span></div>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>💵 Daily Income:</span><span>K25</span></div>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>📅 Duration:</span><span>5 Days</span></div>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>💸 Total Income:</span><span>K125</span></div>
+                <div style="font-size:0.7rem;color:#888;margin-top:0.2rem;">Perfect for beginners looking for quick returns.</div>
+            </div>
+            <div class="ad-plan" style="background:rgba(255,255,255,0.03);border-radius:16px;padding:0.8rem 1rem;margin-bottom:0.6rem;border-left-color:#00E5FF;border-left:3px solid #00E5FF;">
+                <h4 style="font-size:1rem;color:#FFD700;margin-bottom:0.2rem;">⭐ JPRODUCT PLAN</h4>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>💰 Investment:</span><span>K480</span></div>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>💵 Daily Income:</span><span>K17</span></div>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>📅 Duration:</span><span>55 Days</span></div>
+                <div style="font-size:0.7rem;color:#888;margin-top:0.2rem;">A steady long-term earning plan designed for consistent income.</div>
+            </div>
+            <div class="ad-plan" style="background:rgba(255,255,255,0.03);border-radius:16px;padding:0.8rem 1rem;margin-bottom:0.6rem;border-left-color:#FFD700;border-left:3px solid #FFD700;">
+                <h4 style="font-size:1rem;color:#FFD700;margin-bottom:0.2rem;">💎 PREMIUM PLAN</h4>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>💰 Investment:</span><span>K1,600</span></div>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>💵 Daily Income:</span><span>K150</span></div>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>📅 Duration:</span><span>40 Days</span></div>
+                <div class="plan-line" style="display:flex;justify-content:space-between;font-size:0.85rem;color:#ccc;padding:0.1rem 0;"><span>💸 Total Income:</span><span>K6,000</span></div>
+                <div style="font-size:0.7rem;color:#888;margin-top:0.2rem;">Unlock higher earnings and maximize your investment potential.</div>
+            </div>
+            <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:0.8rem 0;">
+            <div style="text-align:center;margin-bottom:0.8rem;">
+                <div style="font-size:1rem;font-weight:700;color:#FFD700;">📈 WANT TO EARN MORE?</div>
+                <div style="font-size:0.85rem;color:#aaa;margin-top:0.2rem;">
+                    Upgrade your investment today and enjoy higher daily income rewards.
                 </div>
-            `;
+                <div style="display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-top:0.5rem;font-size:0.8rem;color:#888;">
+                    <span>✅ More Daily Earnings</span>
+                    <span>✅ More Profit Opportunities</span>
+                    <span>✅ Multiple Active Plans</span>
+                    <span>✅ Faster Income Growth</span>
+                </div>
+            </div>
+            <div style="text-align:center;margin:1rem 0 0.5rem;">
+                <button class="btn-view" id="adViewPlansBtn" style="background:linear-gradient(135deg, #00E676, #00E5FF);border:none;padding:0.8rem 2.5rem;border-radius:50px;font-weight:700;font-size:1rem;color:#0A0A0C;cursor:pointer;transition:0.3s;box-shadow:0 4px 20px rgba(0,230,118,0.2);">📊 VIEW PLANS</button>
+            </div>
+            <div style="text-align:center;font-size:0.7rem;color:#555;margin-top:0.8rem;">
+                <strong style="color:#FFD700;">PUREORECAPITAL</strong> — Invest Today • Earn Tomorrow 🚀💰
+            </div>
+            <div style="text-align:center;font-size:0.75rem;color:#666;margin-top:0.5rem;">
+                ⏳ Ad closes in <span id="adTimer" style="color:#00E5FF;font-weight:600;">10</span> seconds
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .ad-overlay.hidden {
+            display: none !important;
         }
-        container.innerHTML = html;
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    // ================================================================
-    //  TABS
-    // ================================================================
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabs = {
-        normal: document.getElementById('normalTab'),
-        expired: document.getElementById('expiredTab')
-    };
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabId = btn.dataset.tab;
-            tabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            Object.values(tabs).forEach(tab => tab.classList.remove('active'));
-            if (tabs[tabId]) tabs[tabId].classList.add('active');
-            if (tabId === 'normal') loadInvestments();
-        });
-    });
-
-    document.getElementById('claimAllBtn')?.addEventListener('click', claimAllAvailable);
-
-    // ================================================================
-    //  BOTTOM NAV
-    // ================================================================
-    const navItems = document.querySelectorAll('.nav-item');
-    const currentPage = window.location.pathname.split('/').pop() || 'income.html';
-    navItems.forEach(item => {
-        const targetPage = item.getAttribute('data-page');
-        if (currentPage === targetPage) item.classList.add('active');
-        item.addEventListener('click', () => {
-            if (targetPage && !window.location.pathname.includes(targetPage)) {
-                window.location.href = targetPage;
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            z-index: 9999;
+            background: rgba(10, 8, 21, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            animation: toastIn 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+        .toast.success {
+            border-color: rgba(74, 222, 128, 0.15);
+            color: #6ee7b7;
+        }
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px) scale(0.95);
             }
-        });
-    });
-</script>
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+
 </body>
 </html>

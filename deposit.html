@@ -1,27 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Deposit | Pureore Capital</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>Deposit – PC • Pureore Capital</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
+    </script>
     <style>
-        /* ===== RESET & BASE ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-            min-height: 100vh;
-            background: #0A0A0C;
-            color: #FFFFFF;
-            padding: 1rem;
-            padding-bottom: 100px;
-            position: relative;
-            overflow-x: hidden;
+        /* ----- RESET & BASE ----- */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* ===== ANIMATED BACKGROUND ===== */
+        :root {
+            --gold: #f6c96e;
+            --gold-glow: rgba(246, 201, 110, 0.25);
+            --cyan: #5dd9f2;
+            --cyan-glow: rgba(93, 217, 242, 0.20);
+            --violet: #7c6df0;
+            --violet-glow: rgba(124, 109, 240, 0.30);
+            --green: #4ade80;
+            --green-glow: rgba(74, 222, 128, 0.15);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.15);
+            --radius-lg: 28px;
+            --radius-md: 18px;
+            --radius-sm: 12px;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        html,
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            color: #fff;
+            background: #0a0815;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 30px;
+        }
+
+        /* ----- BACKGROUND with Ravi Sharma image & brightness reduction ----- */
         body::before {
             content: "";
             position: fixed;
@@ -29,535 +56,1314 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0A0A0C 0%, #0d1a0d 25%, #0a0d1a 50%, #1a0d0a 75%, #0A0A0C 100%);
-            background-size: 400% 400%;
-            animation: bgShift 12s ease-in-out infinite alternate;
+            background-image: url('https://i.ibb.co/Vcg0rgNY/ravi-sharma-h-Nv5s6-NEYig-unsplash.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            filter: brightness(0.30) saturate(1.1) contrast(1.05);
             z-index: -3;
         }
-        @keyframes bgShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.06) 0%, transparent 50%);
+            z-index: -2;
+            pointer-events: none;
         }
 
-        /* ===== 4 FLOATING ORBS ===== */
+        /* ----- FLOATING ORBS ----- */
         .orb {
             position: fixed;
             border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.20;
-            z-index: -2;
+            filter: blur(70px);
+            opacity: 0.08;
+            z-index: -1;
             pointer-events: none;
-            animation: floatOrb 12s ease-in-out infinite alternate;
+            animation: orbFloat 16s ease-in-out infinite alternate;
         }
-        .orb-1 { width: 400px; height: 400px; background: #00E676; top: -10%; left: -10%; animation-delay: 0s; }
-        .orb-2 { width: 350px; height: 350px; background: #00E5FF; bottom: -10%; right: -10%; animation-delay: 3s; }
-        .orb-3 { width: 300px; height: 300px; background: #FFD700; top: 40%; left: 75%; animation-delay: 6s; }
-        .orb-4 { width: 280px; height: 280px; background: #2979FF; bottom: 30%; left: -5%; animation-delay: 9s; }
-        @keyframes floatOrb {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(30px, -20px) scale(1.1); }
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--violet);
+            top: -8%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: var(--cyan);
+            bottom: -8%;
+            right: -10%;
+            animation-delay: 5s;
+        }
+        .orb-3 {
+            width: 280px;
+            height: 280px;
+            background: var(--gold);
+            top: 40%;
+            left: 70%;
+            animation-delay: 10s;
+            opacity: 0.06;
         }
 
-        /* ===== CONTAINER ===== */
-        .container { max-width: 600px; margin: 0 auto; position: relative; z-index: 2; }
+        @keyframes orbFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(25px, -35px) scale(1.06);
+            }
+            66% {
+                transform: translate(-15px, 25px) scale(0.94);
+            }
+            100% {
+                transform: translate(20px, -10px) scale(1.02);
+            }
+        }
 
-        /* ===== BACK BUTTON ===== */
-        .back-arrow {
+        /* ----- CONTAINER ----- */
+        .container {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 1rem 1.2rem 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ----- HEADER / BRAND ----- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--violet), var(--cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px var(--violet-glow);
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: #fff;
+            stroke-width: 2.2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .brand-name {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-name .pc {
+            color: var(--gold);
+            -webkit-text-fill-color: var(--gold);
+            font-weight: 900;
+        }
+
+        .brand-badge {
+            font-size: 9px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 3px 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* ----- BACK BUTTON ----- */
+        .back-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 0.8rem;
+        }
+
+        .back-btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgba(30,30,42,0.8);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 40px;
             padding: 8px 16px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
-            color: #00E676;
+            color: rgba(255, 255, 255, 0.5);
             cursor: pointer;
-            transition: 0.3s;
-            border: 1px solid rgba(0,230,118,0.2);
-            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
             text-decoration: none;
         }
-        .back-arrow:hover {
-            background: #00E676;
-            color: #0A0A0C;
-            transform: translateX(-4px);
-            box-shadow: 0 0 20px rgba(0,230,118,0.3);
-        }
-        .back-arrow svg { width: 18px; height: 18px; fill: currentColor; }
 
-        /* ===== HEADER ===== */
-        .page-title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #FFD700, #F59E0B, #00E676);
-            background-size: 200% 200%;
-            animation: gradientShift 4s ease-in-out infinite alternate;
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            transform: translateX(-3px);
         }
 
-        /* ===== GLASS CARD ===== */
-        .card {
-            background: rgba(18, 18, 24, 0.85);
-            backdrop-filter: blur(8px);
-            border-radius: 28px;
-            padding: 1.5rem;
+        .back-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ----- STEP INDICATOR ----- */
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             margin-bottom: 1.2rem;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(18, 18, 24, 0.85), rgba(18, 18, 24, 0.85)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
         }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            transition: all 0.5s ease;
+            border: none;
+            padding: 0;
+            cursor: default;
+        }
+
+        .step-dot.active {
+            background: var(--gold);
+            box-shadow: 0 0 20px var(--gold-glow);
+            transform: scale(1.2);
+        }
+
+        .step-dot.done {
+            background: var(--green);
+            box-shadow: 0 0 20px var(--green-glow);
+        }
+
+        .step-line {
+            width: 30px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 2px;
+            transition: background 0.5s ease;
+        }
+
+        .step-line.done {
+            background: var(--green);
+        }
+
+        .step-label {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.2);
+            text-align: center;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .step-dots-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ----- PAGE TITLE ----- */
+        .page-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 1.2rem;
+            background: linear-gradient(135deg, var(--gold), #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-sub {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.35);
+            margin-bottom: 1.2rem;
+            font-weight: 400;
+        }
+
+        /* ----- GLASS CARD ----- */
+        .card {
+            background: rgba(10, 8, 21, 0.55);
+            backdrop-filter: blur(16px) saturate(1.3);
+            -webkit-backdrop-filter: blur(16px) saturate(1.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem 1.5rem 1.8rem;
+            box-shadow: var(--shadow-card);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            right: -30%;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 109, 240, 0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
         .card-title {
-            font-size: 1rem;
+            font-size: 0.85rem;
             font-weight: 600;
-            margin-bottom: 1rem;
-            color: #ddd;
+            color: rgba(255, 255, 255, 0.5);
             display: flex;
             align-items: center;
             gap: 8px;
+            margin-bottom: 1rem;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
         }
 
-        /* ===== AMOUNT BUTTONS ===== */
+        .card-title svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--gold);
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ----- STEP CONTAINER ----- */
+        .step-container {
+            display: block;
+            animation: stepFadeIn 0.5s ease forwards;
+        }
+
+        .step-container.hidden {
+            display: none;
+        }
+
+        @keyframes stepFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ----- AMOUNT GRID ----- */
         .amount-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 0.6rem;
             margin-bottom: 0.8rem;
         }
+
         @media (max-width: 450px) {
-            .amount-grid { grid-template-columns: repeat(3, 1fr); }
+            .amount-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
+
         .amount-btn {
-            background: rgba(255,255,255,0.04);
-            border: 2px solid rgba(255,255,255,0.06);
-            border-radius: 16px;
-            padding: 0.6rem 0.3rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-sm);
+            padding: 0.7rem 0.2rem;
             font-weight: 700;
             font-size: 0.9rem;
-            color: #ccc;
+            color: rgba(255, 255, 255, 0.5);
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s ease;
             text-align: center;
+            font-family: inherit;
         }
+
         .amount-btn:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.8);
             transform: translateY(-2px);
-            border-color: rgba(0,230,118,0.3);
         }
+
         .amount-btn.active {
-            border-color: #00E676;
-            background: rgba(0,230,118,0.1);
-            color: #00E676;
-            box-shadow: 0 0 20px rgba(0,230,118,0.1);
+            border-color: var(--gold);
+            background: rgba(246, 201, 110, 0.06);
+            color: var(--gold);
+            box-shadow: 0 0 30px rgba(246, 201, 110, 0.04);
         }
 
-        /* ===== CUSTOM AMOUNT INPUT ===== */
-        .custom-amount input {
+        /* ----- CUSTOM AMOUNT ----- */
+        .custom-input-wrap {
+            position: relative;
+            margin-bottom: 0.3rem;
+        }
+
+        .custom-input-wrap .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+            transition: stroke 0.3s ease;
+        }
+
+        .custom-input-wrap:focus-within .input-icon {
+            stroke: var(--cyan);
+        }
+
+        .custom-input-wrap input {
             width: 100%;
-            padding: 0.85rem 1rem;
-            border-radius: 40px;
-            border: 2px solid transparent;
-            background: rgba(255,255,255,0.05);
-            color: white;
-            font-size: 1rem;
-            transition: 0.3s;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(20,22,36,0.9), rgba(20,22,36,0.9)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
-            text-align: center;
-        }
-        .custom-amount input:focus {
+            padding: 0.8rem 1rem 0.8rem 46px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
             outline: none;
-            box-shadow: 0 0 20px rgba(0,229,255,0.15);
         }
-        .custom-amount input::placeholder { color: rgba(255,255,255,0.3); }
 
-        /* ===== NETWORK OPTIONS (All 3 networks, but Airtel has no agents) ===== */
+        .custom-input-wrap input:focus {
+            border-color: rgba(93, 217, 242, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 30px rgba(93, 217, 242, 0.03);
+        }
+
+        .custom-input-wrap input::placeholder {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .input-error {
+            font-size: 0.75rem;
+            color: var(--red);
+            margin-top: 0.2rem;
+            min-height: 1.2rem;
+        }
+
+        /* ----- NETWORK GRID ----- */
         .network-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 0.8rem;
-            margin: 1rem 0;
+            margin: 0.8rem 0;
         }
+
         @media (max-width: 450px) {
-            .network-grid { grid-template-columns: 1fr 1fr 1fr; }
+            .network-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
         }
+
         .network-option {
-            background: rgba(255,255,255,0.04);
-            border: 2px solid rgba(255,255,255,0.06);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
             padding: 0.8rem 0.3rem;
             text-align: center;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s ease;
         }
+
         .network-option:hover {
             transform: translateY(-3px);
-            border-color: rgba(0,230,118,0.3);
+            border-color: rgba(255, 255, 255, 0.12);
         }
+
         .network-option.active {
-            border-color: #00E676;
-            background: rgba(0,230,118,0.08);
-            box-shadow: 0 0 20px rgba(0,230,118,0.1);
+            border-color: var(--cyan);
+            background: rgba(93, 217, 242, 0.04);
+            box-shadow: 0 0 30px rgba(93, 217, 242, 0.04);
         }
-        .network-option img {
-            width: 45px;
-            height: 45px;
-            object-fit: contain;
-            display: block;
+
+        .network-option .net-icon {
+            width: 44px;
+            height: 44px;
             margin: 0 auto 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: 1.4rem;
         }
-        .network-option .label {
-            font-size: 0.8rem;
+
+        .network-option .net-label {
+            font-size: 0.75rem;
             font-weight: 600;
-            color: #ccc;
+            color: rgba(255, 255, 255, 0.4);
+            transition: color 0.3s ease;
         }
 
-        /* ===== PHONE INPUT ===== */
-        .phone-prefix {
+        .network-option.active .net-label {
+            color: var(--cyan);
+        }
+
+        .network-option .net-icon svg {
+            width: 26px;
+            height: 26px;
+            stroke: rgba(255, 255, 255, 0.2);
+            stroke-width: 1.6;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.3s ease;
+        }
+
+        .network-option.active .net-icon svg {
+            stroke: var(--cyan);
+        }
+
+        /* ----- PHONE INPUT ----- */
+        .phone-wrap {
             display: flex;
             align-items: center;
-            background: rgba(255,255,255,0.05);
-            border-radius: 40px;
-            border: 2px solid transparent;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-sm);
             padding: 0 0.5rem;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(20,22,36,0.9), rgba(20,22,36,0.9)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
+            transition: border-color 0.3s ease;
+            margin-top: 0.6rem;
         }
-        .phone-prefix span { color: #aaa; padding: 0.85rem 0 0.85rem 0.5rem; font-weight: 600; }
-        .phone-prefix input {
-            border: none;
-            background: transparent;
-            flex: 1;
-            padding: 0.85rem 0.5rem;
-            color: white;
-            font-size: 1rem;
-        }
-        .phone-prefix input:focus { outline: none; }
-        .phone-prefix input::placeholder { color: rgba(255,255,255,0.3); }
 
-        /* ===== CHECKBOX ===== */
-        .checkbox {
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            margin: 1rem 0;
-            color: #ccc;
-            font-size: 0.9rem;
-            cursor: pointer;
+        .phone-wrap:focus-within {
+            border-color: rgba(93, 217, 242, 0.2);
         }
-        .checkbox input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            accent-color: #00E676;
-            cursor: pointer;
+
+        .phone-wrap .prefix {
+            color: rgba(255, 255, 255, 0.3);
+            padding: 0.8rem 0 0.8rem 0.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
             flex-shrink: 0;
         }
 
-        /* ===== BUTTONS ===== */
+        .phone-wrap input {
+            border: none;
+            background: transparent;
+            flex: 1;
+            padding: 0.8rem 0.5rem;
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .phone-wrap input::placeholder {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ----- CHECKBOX ----- */
+        .checkbox-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0.8rem 0 0.3rem 0;
+            cursor: pointer;
+        }
+
+        .checkbox-wrap input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkbox-wrap .check-box {
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            border-radius: 6px;
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+        }
+
+        .checkbox-wrap .check-box svg {
+            width: 14px;
+            height: 14px;
+            stroke: #fff;
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.25s ease;
+        }
+
+        .checkbox-wrap input[type="checkbox"]:checked+.check-box {
+            background: linear-gradient(135deg, var(--violet), var(--cyan));
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .checkbox-wrap input[type="checkbox"]:checked+.check-box svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .checkbox-wrap .check-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 500;
+        }
+
+        /* ----- BUTTONS ----- */
         .btn-primary {
             width: 100%;
-            background: linear-gradient(135deg, #00E676, #00E5FF, #2979FF);
-            background-size: 200% 200%;
-            animation: btnShift 4s ease-in-out infinite alternate;
             padding: 0.9rem;
             border: none;
-            border-radius: 40px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
             font-weight: 700;
             font-size: 1rem;
-            color: #0A0A0C;
+            color: #0a0815;
+            background: linear-gradient(135deg, var(--gold), #f5a623);
             cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 20px rgba(0,230,118,0.2);
-        }
-        @keyframes btnShift {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-            box-shadow: 0 8px 30px rgba(0,230,118,0.3);
-        }
-        .btn-primary:disabled {
-            opacity: 0.5;
-            transform: none;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .btn-success {
-            width: 100%;
-            background: linear-gradient(135deg, #00E676, #00C853);
-            padding: 0.9rem;
-            border: none;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #0A0A0C;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 20px rgba(0,230,118,0.2);
-        }
-        .btn-success:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-        }
-        .btn-success:disabled {
-            opacity: 0.5;
-            transform: none;
-            cursor: not-allowed;
-        }
-
-        /* ===== AGENT CARD ===== */
-        .agent-card {
-            background: rgba(255,215,0,0.05);
-            border-radius: 24px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-            border: 1px solid rgba(255,215,0,0.15);
+            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 4px 30px var(--gold-glow);
             position: relative;
             overflow: hidden;
+            letter-spacing: 0.3px;
+            margin-top: 0.8rem;
         }
-        .agent-card::before {
+
+        .btn-primary::after {
             content: '';
             position: absolute;
             top: -50%;
             left: -50%;
             width: 200%;
             height: 200%;
-            background: conic-gradient(from 0deg, transparent, rgba(255,215,0,0.03), transparent, rgba(0,229,255,0.03), transparent);
-            animation: spinAgent 10s linear infinite;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
             pointer-events: none;
         }
-        @keyframes spinAgent {
-            to { transform: rotate(360deg); }
+
+        .btn-primary:hover::after {
+            opacity: 1;
         }
-        .agent-card > * { position: relative; z-index: 1; }
-        .agent-header { font-size: 0.7rem; color: #aaa; letter-spacing: 1px; }
-        .agent-name { font-size: 1.3rem; font-weight: 700; color: #FFD700; }
-        .agent-number-wrapper {
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px var(--gold-glow);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            transform: none;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-primary .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary .btn-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn-success {
+            width: 100%;
+            padding: 0.9rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0a0815;
+            background: linear-gradient(135deg, var(--green), #22c55e);
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 4px 30px var(--green-glow);
+            letter-spacing: 0.3px;
+            margin-top: 0.8rem;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px var(--green-glow);
+        }
+
+        .btn-success:active {
+            transform: scale(0.97);
+        }
+
+        .btn-success:disabled {
+            opacity: 0.4;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        /* ----- AGENT CARD ----- */
+        .agent-card {
+            background: rgba(246, 201, 110, 0.04);
+            border-radius: var(--radius-md);
+            padding: 1.2rem 1.2rem 1rem;
+            border: 1px solid rgba(246, 201, 110, 0.08);
+            margin: 0.5rem 0 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card .agent-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255, 255, 255, 0.2);
+            margin-bottom: 0.3rem;
+        }
+
+        .agent-card .agent-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .agent-card .agent-number-row {
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 12px;
             margin-top: 0.3rem;
             flex-wrap: wrap;
         }
-        .agent-number {
-            font-size: 1.2rem;
-            font-family: monospace;
-            background: rgba(0,0,0,0.3);
-            padding: 0.3rem 1rem;
+
+        .agent-card .agent-number {
+            font-size: 1.1rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.25rem 1rem;
             border-radius: 40px;
             color: #fff;
+            letter-spacing: 0.5px;
         }
-        .copy-btn {
-            background: #00E676;
-            border: none;
-            padding: 0.3rem 1.2rem;
-            border-radius: 30px;
+
+        .agent-card .copy-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 40px;
+            padding: 0.25rem 1.2rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            font-size: 0.8rem;
-            color: #0A0A0C;
+            color: rgba(255, 255, 255, 0.5);
             cursor: pointer;
-            transition: 0.3s;
-        }
-        .copy-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(0,230,118,0.3);
+            transition: all 0.3s ease;
+            font-family: inherit;
         }
 
-        /* ===== SMS TEXTAREA ===== */
-        textarea {
+        .agent-card .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .agent-card .copy-btn.copied {
+            background: var(--green);
+            color: #0a0815;
+        }
+
+        .agent-card .agent-note {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-top: 0.4rem;
+        }
+
+        /* ----- SMS TEXTAREA ----- */
+        .sms-wrap textarea {
             width: 100%;
-            padding: 1rem;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.05);
-            border: 2px solid transparent;
-            color: white;
-            font-family: monospace;
+            padding: 0.9rem 1rem;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: 'Monaco', 'Menlo', monospace;
             resize: vertical;
-            min-height: 120px;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(20,22,36,0.9), rgba(20,22,36,0.9)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
+            min-height: 110px;
+            transition: all 0.3s ease;
+            outline: none;
         }
-        textarea:focus { outline: none; box-shadow: 0 0 20px rgba(0,229,255,0.1); }
 
-        /* ===== MESSAGES ===== */
-        .error-msg { color: #ef4444; font-size: 0.8rem; margin-top: 0.3rem; }
-        .success-msg { color: #00E676; font-size: 0.9rem; font-weight: 600; text-align: center; }
-        .warning-msg { color: #FFD700; font-size: 0.8rem; margin-top: 0.3rem; }
+        .sms-wrap textarea:focus {
+            border-color: rgba(93, 217, 242, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 30px rgba(93, 217, 242, 0.02);
+        }
 
-        /* ===== HIDDEN ===== */
-        .hidden { display: none !important; }
+        .sms-wrap textarea::placeholder {
+            color: rgba(255, 255, 255, 0.1);
+            font-family: 'Inter', sans-serif;
+        }
 
-        /* ===== TOAST ===== */
+        /* ----- MESSAGE BOX ----- */
+        .msg-box {
+            padding: 0.8rem 1rem;
+            border-radius: var(--radius-sm);
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-top: 0.8rem;
+            display: none;
+            border: 1.5px solid transparent;
+        }
+
+        .msg-box.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.06);
+            border-color: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+        }
+
+        .msg-box.success {
+            display: block;
+            background: rgba(74, 222, 128, 0.06);
+            border-color: rgba(74, 222, 128, 0.12);
+            color: #6ee7b7;
+        }
+
+        .msg-box.info {
+            display: block;
+            background: rgba(93, 217, 242, 0.06);
+            border-color: rgba(93, 217, 242, 0.12);
+            color: var(--cyan);
+        }
+
+        .msg-box svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        /* ----- CONFIRMATION CARD (Step 5) ----- */
+        .confirm-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .confirm-detail:last-child {
+            border-bottom: none;
+        }
+
+        .confirm-detail .label {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85rem;
+        }
+
+        .confirm-detail .value {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        .confirm-detail .value.gold {
+            color: var(--gold);
+        }
+        .confirm-detail .value.cyan {
+            color: var(--cyan);
+        }
+
+        /* ----- LOADING SPINNER ----- */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ----- SUCCESS ANIMATION ----- */
+        .success-icon {
+            display: block;
+            margin: 0 auto 0.8rem;
+            width: 64px;
+            height: 64px;
+        }
+
+        .success-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--green);
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ----- TOAST ----- */
         .toast {
             position: fixed;
             bottom: 90px;
             left: 50%;
             transform: translateX(-50%);
             padding: 12px 24px;
-            border-radius: 40px;
+            border-radius: 60px;
             font-weight: 600;
+            font-size: 0.85rem;
             z-index: 9999;
-            animation: toastIn 0.4s ease;
+            background: rgba(10, 8, 21, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            animation: toastIn 0.3s ease;
             max-width: 90%;
             text-align: center;
         }
-        .toast.success { background: #00E676; color: #0A0A0C; }
-        .toast.error { background: #ef4444; color: white; }
+
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+
+        .toast.success {
+            border-color: rgba(74, 222, 128, 0.15);
+            color: #6ee7b7;
+        }
+
         @keyframes toastIn {
-            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
         }
 
-        /* ===== FIREWORKS ===== */
-        #fireworksCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9998;
-            display: none;
-        }
-
+        /* ----- RESPONSIVE ----- */
         @media (max-width: 600px) {
-            .page-title { font-size: 1.4rem; }
-            .amount-grid { grid-template-columns: repeat(3, 1fr); }
-            .network-option img { width: 35px; height: 35px; }
-            .agent-number { font-size: 1rem; }
+            .container {
+                padding: 0.8rem 0.8rem 1.5rem;
+            }
+            .brand-name {
+                font-size: 17px;
+            }
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+            }
+            .brand-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+            .brand-badge {
+                font-size: 7px;
+                padding: 2px 8px;
+            }
+            .page-title {
+                font-size: 1.3rem;
+            }
+            .card {
+                padding: 1.2rem 1rem 1.4rem;
+            }
+            .amount-btn {
+                font-size: 0.8rem;
+                padding: 0.6rem 0.1rem;
+            }
+            .network-option .net-icon {
+                width: 36px;
+                height: 36px;
+            }
+            .network-option .net-icon svg {
+                width: 20px;
+                height: 20px;
+            }
+            .agent-card .agent-number {
+                font-size: 0.95rem;
+            }
+            .step-line {
+                width: 20px;
+            }
+            .back-btn {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .amount-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.4rem;
+            }
+            .network-grid {
+                gap: 0.5rem;
+            }
+            .network-option {
+                padding: 0.6rem 0.2rem;
+            }
+            .network-option .net-label {
+                font-size: 0.65rem;
+            }
+            .card-title {
+                font-size: 0.75rem;
+            }
+            .confirm-detail .label {
+                font-size: 0.75rem;
+            }
+            .confirm-detail .value {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== 4 FLOATING ORBS ===== -->
+    <!-- ===== ORBS ===== -->
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
 
-    <canvas id="fireworksCanvas"></canvas>
-
+    <!-- ===== MAIN CONTAINER ===== -->
     <div class="container">
 
-        <!-- ===== BACK BUTTON ===== -->
-        <a href="dashboard.html" class="back-arrow" id="backArrow">
-            <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-            Back
-        </a>
-
         <!-- ===== HEADER ===== -->
-        <div class="page-title">💰 Deposit Funds</div>
-
-        <!-- ======================================================== -->
-        <!-- ===== STEP 1: AMOUNT + NETWORK + PHONE ===== -->
-        <!-- ======================================================== -->
-        <div id="step1Card" class="card">
-            <div class="card-title">📊 Select Amount</div>
-
-            <!-- Amount Buttons -->
-            <div class="amount-grid">
-                <button class="amount-btn" data-amt="70">70</button>
-                <button class="amount-btn" data-amt="250">250</button>
-                <button class="amount-btn" data-amt="500">500</button>
-                <button class="amount-btn" data-amt="750">750</button>
-                <button class="amount-btn" data-amt="910">910</button>
-                <button class="amount-btn" data-amt="1000">1000</button>
-                <button class="amount-btn" data-amt="1700">1700</button>
-                <button class="amount-btn" data-amt="2500">2500</button>
-                <button class="amount-btn" data-amt="5000">5000</button>
-                <button class="amount-btn" data-amt="10000">10000</button>
-                <button class="amount-btn" data-amt="15000">15000</button>
-                <button class="amount-btn" data-amt="20000">20000</button>
-            </div>
-
-            <!-- Custom Amount -->
-            <div class="custom-amount">
-                <input type="number" id="customAmount" placeholder="Or type custom amount (min 70 ZMW)" min="70">
-            </div>
-            <div id="amountError" class="error-msg"></div>
-
-            <!-- Network Selection -->
-            <div class="card-title" style="margin-top: 1.2rem;">📡 Choose Network</div>
-            <div class="network-grid" id="networkGrid">
-                <div class="network-option" data-network="mtn">
-                    <img src="https://i.ibb.co/trWg074/IMG-20260506-091359.jpg" alt="MTN">
-                    <div class="label">MTN</div>
+        <div class="header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="6 6 18 6 6 18 18 18" />
+                    </svg>
                 </div>
-                <div class="network-option" data-network="airtel">
-                    <img src="https://i.ibb.co/W43DfRZg/IMG-20260506-091347.jpg" alt="Airtel">
-                    <div class="label">Airtel</div>
-                </div>
-                <div class="network-option" data-network="zamtel">
-                    <img src="https://i.ibb.co/b55b6nqX/IMG-20260506-091334.jpg" alt="Zamtel">
-                    <div class="label">Zamtel</div>
-                </div>
+                <span class="brand-name">Pureore<span class="pc">·PC</span></span>
+                <span class="brand-badge">Deposit</span>
             </div>
-
-            <!-- Phone Number -->
-            <div class="phone-prefix" style="margin-top: 0.8rem;">
-                <span>+260</span>
-                <input type="tel" id="phoneNumber" placeholder="9 digits (e.g., 963219651)" maxlength="9">
-            </div>
-            <div id="phoneError" class="error-msg"></div>
-
-            <!-- Ready Checkbox -->
-            <div class="checkbox">
-                <input type="checkbox" id="readyToPay">
-                <label for="readyToPay">✅ I'm ready to pay</label>
-            </div>
-
-            <button id="payNowBtn" class="btn-primary" disabled>💸 Pay Now</button>
         </div>
 
-        <!-- ======================================================== -->
-        <!-- ===== STEP 2: AGENT + SMS VERIFICATION ===== -->
-        <!-- ======================================================== -->
-        <div id="step2Card" class="card hidden">
-            <div class="card-title">📌 Agent Details</div>
+        <!-- ===== BACK ROW ===== -->
+        <div class="back-row">
+            <button class="back-btn" id="backBtn">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+                Back
+            </button>
+        </div>
 
-            <!-- Agent Info -->
-            <div id="agentInfo"></div>
-
-            <!-- SMS Verification -->
-            <div style="margin-top: 1rem;">
-                <div style="font-weight: 600; color: #ddd; margin-bottom: 0.5rem;">📝 Paste Your Transaction SMS</div>
-                <textarea id="smsText" rows="4" placeholder="Paste the SMS from MTN, Airtel or Zamtel here"></textarea>
-                <div style="font-size: 0.7rem; color: #666; margin-top: 0.3rem;">The system will verify the SMS content automatically.</div>
+        <!-- ===== STEP INDICATOR ===== -->
+        <div class="step-indicator" id="stepIndicator">
+            <div class="step-dots-wrapper">
+                <div class="step-dot active" id="dot1"></div>
+                <div class="step-label" id="label1">Amount</div>
             </div>
+            <div class="step-line" id="line1"></div>
+            <div class="step-dots-wrapper">
+                <div class="step-dot" id="dot2"></div>
+                <div class="step-label" id="label2">Network</div>
+            </div>
+            <div class="step-line" id="line2"></div>
+            <div class="step-dots-wrapper">
+                <div class="step-dot" id="dot3"></div>
+                <div class="step-label" id="label3">Agent</div>
+            </div>
+            <div class="step-line" id="line3"></div>
+            <div class="step-dots-wrapper">
+                <div class="step-dot" id="dot4"></div>
+                <div class="step-label" id="label4">SMS</div>
+            </div>
+            <div class="step-line" id="line4"></div>
+            <div class="step-dots-wrapper">
+                <div class="step-dot" id="dot5"></div>
+                <div class="step-label" id="label5">Done</div>
+            </div>
+        </div>
 
-            <button id="verifyBtn" class="btn-success" style="margin-top: 1.2rem;">🔍 Verify & Complete</button>
-            <div id="verifyMessage" style="margin-top: 0.8rem;"></div>
+        <!-- ========================================================== -->
+        <!-- ===== STEP 1: AMOUNT SELECTION ===== -->
+        <!-- ========================================================== -->
+        <div class="step-container" id="step1">
+            <div class="page-title">💰 Enter Amount</div>
+            <div class="page-sub">Choose a preset amount or enter your own</div>
+
+            <div class="card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    Select Amount
+                </div>
+
+                <div class="amount-grid" id="amountGrid">
+                    <button class="amount-btn" data-amt="70">70</button>
+                    <button class="amount-btn" data-amt="250">250</button>
+                    <button class="amount-btn" data-amt="500">500</button>
+                    <button class="amount-btn" data-amt="750">750</button>
+                    <button class="amount-btn" data-amt="910">910</button>
+                    <button class="amount-btn" data-amt="1000">1000</button>
+                    <button class="amount-btn" data-amt="1700">1700</button>
+                    <button class="amount-btn" data-amt="2500">2500</button>
+                    <button class="amount-btn" data-amt="5000">5000</button>
+                    <button class="amount-btn" data-amt="10000">10000</button>
+                    <button class="amount-btn" data-amt="15000">15000</button>
+                    <button class="amount-btn" data-amt="20000">20000</button>
+                </div>
+
+                <div class="custom-input-wrap">
+                    <svg class="input-icon" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" />
+                    </svg>
+                    <input type="number" id="customAmount" placeholder="Or type custom amount (min 70 ZMW)" min="70" />
+                </div>
+                <div class="input-error" id="amountError"></div>
+
+                <button class="btn-primary" id="step1Next">
+                    <span class="btn-icon">
+                        Continue
+                        <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18" /></svg>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- ===== STEP 2: NETWORK + PHONE ===== -->
+        <!-- ========================================================== -->
+        <div class="step-container hidden" id="step2">
+            <div class="page-title">📡 Select Network</div>
+            <div class="page-sub">Choose your mobile network and enter your phone number</div>
+
+            <div class="card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.5"/><path d="M8 2v20"/><path d="M16 2v20"/><path d="M2 8h20"/><path d="M2 16h20"/></svg>
+                    Network &amp; Phone
+                </div>
+
+                <div class="network-grid" id="networkGrid">
+                    <div class="network-option" data-network="mtn">
+                        <div class="net-icon">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="4"/><path d="M8 6v12"/><path d="M16 6v12"/><path d="M6 8h12"/><path d="M6 16h12"/></svg>
+                        </div>
+                        <div class="net-label">MTN</div>
+                    </div>
+                    <div class="network-option" data-network="airtel">
+                        <div class="net-icon">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        </div>
+                        <div class="net-label">Airtel</div>
+                    </div>
+                    <div class="network-option" data-network="zamtel">
+                        <div class="net-icon">
+                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </div>
+                        <div class="net-label">Zamtel</div>
+                    </div>
+                </div>
+                <div class="input-error" id="networkError"></div>
+
+                <div class="phone-wrap">
+                    <span class="prefix">+260</span>
+                    <input type="tel" id="phoneInput" placeholder="9 digits (e.g. 963219651)" maxlength="9" />
+                </div>
+                <div class="input-error" id="phoneError"></div>
+
+                <div class="checkbox-wrap">
+                    <input type="checkbox" id="readyCheck" />
+                    <span class="check-box">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                    <span class="check-label">I'm ready to pay</span>
+                </div>
+
+                <button class="btn-primary" id="step2Next" disabled>
+                    <span class="btn-icon">
+                        Pay Now
+                        <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18" /></svg>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- ===== STEP 3: AGENT INFORMATION ===== -->
+        <!-- ========================================================== -->
+        <div class="step-container hidden" id="step3">
+            <div class="page-title">📌 Agent Details</div>
+            <div class="page-sub">Send the exact amount to the agent below</div>
+
+            <div class="card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Payment Agent
+                </div>
+
+                <div id="agentInfo">
+                    <div style="text-align:center; padding:1rem 0; color:rgba(255,255,255,0.3);">
+                        <span class="spinner"></span> Loading agent...
+                    </div>
+                </div>
+
+                <button class="btn-success" id="step3Next">
+                    <span class="btn-icon">
+                        I've Paid
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- ===== STEP 4: SMS VERIFICATION ===== -->
+        <!-- ========================================================== -->
+        <div class="step-container hidden" id="step4">
+            <div class="page-title">📝 Verify Payment</div>
+            <div class="page-sub">Paste the SMS you received after sending payment</div>
+
+            <div class="card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    SMS Confirmation
+                </div>
+
+                <div class="sms-wrap">
+                    <textarea id="smsInput" placeholder="Paste the transaction SMS here..."></textarea>
+                </div>
+                <div class="input-error" id="smsError"></div>
+
+                <div class="msg-box" id="smsPreview"></div>
+
+                <button class="btn-success" id="step4Next">
+                    <span class="btn-icon">
+                        Verify &amp; Submit
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- ===== STEP 5: CONFIRMATION RESULT ===== -->
+        <!-- ========================================================== -->
+        <div class="step-container hidden" id="step5">
+            <div class="page-title">✅ Deposit Submitted</div>
+            <div class="page-sub">Your deposit request has been received</div>
+
+            <div class="card">
+                <div class="success-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="var(--green)" />
+                        <polyline points="20 6 9 17 4 12" stroke="var(--green)" />
+                    </svg>
+                </div>
+
+                <div style="text-align:center; margin-bottom:1.2rem;">
+                    <div style="font-size:1.1rem; font-weight:700; color:#fff;">Deposit Request Received</div>
+                    <div style="font-size:0.85rem; color:rgba(255,255,255,0.3); margin-top:0.2rem;">Admin will verify and credit your balance shortly</div>
+                </div>
+
+                <div style="background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); padding:0.8rem 1rem;">
+                    <div class="confirm-detail">
+                        <span class="label">Amount</span>
+                        <span class="value gold" id="confirmAmount">—</span>
+                    </div>
+                    <div class="confirm-detail">
+                        <span class="label">Network</span>
+                        <span class="value cyan" id="confirmNetwork">—</span>
+                    </div>
+                    <div class="confirm-detail">
+                        <span class="label">Phone</span>
+                        <span class="value" id="confirmPhone">—</span>
+                    </div>
+                    <div class="confirm-detail">
+                        <span class="label">Agent</span>
+                        <span class="value" id="confirmAgent">—</span>
+                    </div>
+                    <div class="confirm-detail">
+                        <span class="label">Status</span>
+                        <span class="value" style="color:var(--gold);">Pending Verification</span>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="step5Done" style="margin-top:1rem;">
+                    <span class="btn-icon">
+                        Go to History
+                        <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18" /></svg>
+                    </span>
+                </button>
+            </div>
         </div>
 
     </div>
 
     <script>
-        // ===== FIREBASE CONFIG =====
-        const firebaseConfig = {
+        // ================================================================
+        // FIREBASE CONFIG (unchanged)
+        // ================================================================
+        var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
             authDomain: "pureore-capital-zambia.firebaseapp.com",
             projectId: "pureore-capital-zambia",
@@ -567,463 +1373,524 @@
             measurementId: "G-FQKC29NYE9"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        var auth = firebase.auth();
+        var db = firebase.firestore();
         db.settings({ persistence: false });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ===== STATE =====
-        let currentUser = null;
-        let userId = null;
-        let selectedAmount = null;
-        let selectedNetwork = null;
-        let currentAgent = null;
-        let isProcessing = false;
-
-        // ===== DOM REFS =====
-        const step1Card = document.getElementById('step1Card');
-        const step2Card = document.getElementById('step2Card');
-        const amountBtns = document.querySelectorAll('.amount-btn');
-        const customAmountInput = document.getElementById('customAmount');
-        const amountError = document.getElementById('amountError');
-        const networkOptions = document.querySelectorAll('.network-option');
-        const phoneInput = document.getElementById('phoneNumber');
-        const phoneError = document.getElementById('phoneError');
-        const readyCheckbox = document.getElementById('readyToPay');
-        const payNowBtn = document.getElementById('payNowBtn');
-        const agentInfoDiv = document.getElementById('agentInfo');
-        const smsTextarea = document.getElementById('smsText');
-        const verifyBtn = document.getElementById('verifyBtn');
-        const verifyMessage = document.getElementById('verifyMessage');
-        const backArrow = document.getElementById('backArrow');
-
-        let depositRules = {
+        // ================================================================
+        // STATE
+        // ================================================================
+        var currentStep = 1;
+        var selectedAmount = null;
+        var selectedNetwork = null;
+        var currentAgent = null;
+        var userPhone = '';
+        var isSubmitting = false;
+        var depositRules = {
             requireAmountMatch: true,
             requireAgentName: true,
             requireNetworkKeyword: true,
             requireTxKeyword: true
         };
 
-        // ============================================================
-        // ===== LOAD DEPOSIT RULES =====
-        // ============================================================
-        async function loadDepositRules() {
-            try {
-                const doc = await db.collection('systemSettings').doc('depositRules').get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    depositRules.requireAmountMatch = data.requireAmountMatch !== false;
-                    depositRules.requireAgentName = data.requireAgentName !== false;
-                    depositRules.requireNetworkKeyword = data.requireNetworkKeyword !== false;
-                    depositRules.requireTxKeyword = data.requireTxKeyword !== false;
-                }
-            } catch (err) {
-                console.warn("Could not load deposit rules, using defaults", err);
-            }
+        // ================================================================
+        // DOM REFS
+        // ================================================================
+        var step1 = document.getElementById('step1');
+        var step2 = document.getElementById('step2');
+        var step3 = document.getElementById('step3');
+        var step4 = document.getElementById('step4');
+        var step5 = document.getElementById('step5');
+
+        var amountBtns = document.querySelectorAll('.amount-btn');
+        var customAmount = document.getElementById('customAmount');
+        var amountError = document.getElementById('amountError');
+        var step1Next = document.getElementById('step1Next');
+
+        var networkOptions = document.querySelectorAll('.network-option');
+        var networkError = document.getElementById('networkError');
+        var phoneInput = document.getElementById('phoneInput');
+        var phoneError = document.getElementById('phoneError');
+        var readyCheck = document.getElementById('readyCheck');
+        var step2Next = document.getElementById('step2Next');
+
+        var agentInfo = document.getElementById('agentInfo');
+        var step3Next = document.getElementById('step3Next');
+
+        var smsInput = document.getElementById('smsInput');
+        var smsError = document.getElementById('smsError');
+        var smsPreview = document.getElementById('smsPreview');
+        var step4Next = document.getElementById('step4Next');
+
+        var confirmAmount = document.getElementById('confirmAmount');
+        var confirmNetwork = document.getElementById('confirmNetwork');
+        var confirmPhone = document.getElementById('confirmPhone');
+        var confirmAgent = document.getElementById('confirmAgent');
+        var step5Done = document.getElementById('step5Done');
+
+        var backBtn = document.getElementById('backBtn');
+
+        var dots = [
+            document.getElementById('dot1'),
+            document.getElementById('dot2'),
+            document.getElementById('dot3'),
+            document.getElementById('dot4'),
+            document.getElementById('dot5')
+        ];
+        var labels = [
+            document.getElementById('label1'),
+            document.getElementById('label2'),
+            document.getElementById('label3'),
+            document.getElementById('label4'),
+            document.getElementById('label5')
+        ];
+        var lines = [
+            document.getElementById('line1'),
+            document.getElementById('line2'),
+            document.getElementById('line3'),
+            document.getElementById('line4')
+        ];
+
+        // ================================================================
+        // TOAST
+        // ================================================================
+        function showToast(msg, isError) {
+            var existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            var toast = document.createElement('div');
+            toast.className = 'toast' + (isError ? ' error' : ' success');
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
         }
 
-        // ============================================================
-        // ===== AGENT LOGIC (No agents for Airtel) =====
-        // ============================================================
-        function getHardcodedAgents(network) {
-            // MTN Agents
-            const mtnAgents = [
-                { name: "John Kabwe", number: "0963070992", agentId: null },
-                { name: "Getrude Sompo", number: "0960338304", agentId: null }
-            ];
-            // Zamtel Agents
-            const zamtelAgents = [
-                { name: "Jeremiah Ilunga", number: "0951359357", agentId: null }
-            ];
-            // ❌ No agents for Airtel
-            if (network === 'mtn') return mtnAgents;
-            if (network === 'zamtel') return zamtelAgents;
-            return [];
-        }
+        // ================================================================
+        // STEP NAVIGATION
+        // ================================================================
+        function goToStep(step) {
+            // Hide all steps
+            var allSteps = [step1, step2, step3, step4, step5];
+            allSteps.forEach(function(s) { s.classList.add('hidden'); });
 
-        async function loadFirestoreAgents(network) {
-            try {
-                const agentsSnap = await db.collection('agents').where('status', '==', 'active').get();
-                const firestoreAgents = [];
-                agentsSnap.forEach(doc => {
-                    const agent = doc.data();
-                    let number = null;
-                    if (network === 'mtn' && agent.mtnNumber) number = agent.mtnNumber;
-                    else if (network === 'airtel' && agent.airtelNumber) number = agent.airtelNumber;
-                    else if (network === 'zamtel' && agent.zamtelNumber) number = agent.zamtelNumber;
-                    if (number) {
-                        firestoreAgents.push({
-                            name: agent.name,
-                            number: number,
-                            agentId: doc.id,
-                            source: 'firestore'
-                        });
-                    }
+            // Show target
+            var target = allSteps[step - 1];
+            if (target) {
+                target.classList.remove('hidden');
+                target.style.animation = 'none';
+                requestAnimationFrame(function() {
+                    target.style.animation = 'stepFadeIn 0.45s ease forwards';
                 });
-                return firestoreAgents;
-            } catch (err) {
-                console.error("Error loading Firestore agents:", err);
-                return [];
             }
-        }
 
-        function mergeAgents(firestoreAgents, hardcodedAgents) {
-            const merged = [...firestoreAgents];
-            for (const hc of hardcodedAgents) {
-                const exists = merged.some(fa => fa.name === hc.name && fa.number === hc.number);
-                if (!exists) {
-                    merged.push({ ...hc, source: 'hardcoded' });
+            // Update dots
+            for (var i = 0; i < 5; i++) {
+                dots[i].classList.remove('active', 'done');
+                labels[i].style.color = 'rgba(255,255,255,0.15)';
+                if (i + 1 < step) {
+                    dots[i].classList.add('done');
+                    labels[i].style.color = 'rgba(74,222,128,0.5)';
+                } else if (i + 1 === step) {
+                    dots[i].classList.add('active');
+                    labels[i].style.color = 'rgba(246,201,110,0.7)';
                 }
             }
-            return merged;
-        }
 
-        async function loadAndSetAgentForNetwork(network) {
-            if (!network) return null;
-
-            // 🚫 No agents for Airtel – return null immediately
-            if (network === 'airtel') {
-                return null;
-            }
-
-            const firestoreAgents = await loadFirestoreAgents(network);
-            const hardcodedAgents = getHardcodedAgents(network);
-            const combined = mergeAgents(firestoreAgents, hardcodedAgents);
-            if (combined.length === 0) return null;
-            const randomIndex = Math.floor(Math.random() * combined.length);
-            return combined[randomIndex];
-        }
-
-        // ============================================================
-        // ===== DISPLAY AGENT =====
-        // ============================================================
-        function displayAgent(agent) {
-            if (!agent) {
-                // Show different messages based on network
-                let message = '⚠️ No agent found for this network. Please contact admin.';
-                if (selectedNetwork === 'airtel') {
-                    message = 'Agents coming soon – try other available agents for other networks.';
-                }
-                agentInfoDiv.innerHTML = `
-                    <div class="agent-card">
-                        <div class="agent-header">ℹ️ Information</div>
-                        <div style="color:#FFD700; font-size:0.95rem; text-align:center;">${message}</div>
-                    </div>
-                `;
-                return;
-            }
-
-            // Display agent details for MTN and Zamtel
-            const agentHtml = `
-                <div class="agent-card">
-                    <div class="agent-header">📌 PAYMENT AGENT (${selectedNetwork.toUpperCase()})</div>
-                    <div class="agent-name">${escapeHtml(agent.name)}</div>
-                    <div class="agent-number-wrapper">
-                        <span class="agent-number">${escapeHtml(agent.number)}</span>
-                        <button class="copy-btn" data-number="${escapeHtml(agent.number)}">📋 Copy</button>
-                    </div>
-                    ${agent.agentId ? `<div style="font-size:0.65rem; color:#666; margin-top:0.3rem;">✓ Official verified agent</div>` : ''}
-                    <div style="font-size:0.7rem; color:#888; margin-top:0.3rem;">Send the exact amount to this number</div>
-                </div>
-            `;
-            agentInfoDiv.innerHTML = agentHtml;
-
-            // Copy to clipboard
-            document.querySelectorAll('.copy-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const number = this.dataset.number;
-                    navigator.clipboard.writeText(number).then(() => {
-                        this.textContent = '✅ Copied!';
-                        setTimeout(() => { this.textContent = '📋 Copy'; }, 2000);
-                    }).catch(() => {
-                        // Fallback
-                        const textArea = document.createElement('textarea');
-                        textArea.value = number;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        textArea.remove();
-                        this.textContent = '✅ Copied!';
-                        setTimeout(() => { this.textContent = '📋 Copy'; }, 2000);
-                    });
-                });
-            });
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
-        }
-
-        // ============================================================
-        // ===== SMS VALIDATION =====
-        // ============================================================
-        function validateSms(sms, amount, network) {
-            const lowerSms = sms.toLowerCase();
-            if (depositRules.requireAmountMatch) {
-                const amountRegex = new RegExp(`\\b${amount}\\b`);
-                if (!amountRegex.test(sms)) {
-                    return { valid: false, error: `SMS amount does not match your deposit amount (${amount} ZMW).` };
+            // Update lines
+            for (var j = 0; j < 4; j++) {
+                lines[j].classList.remove('done');
+                if (j + 1 < step) {
+                    lines[j].classList.add('done');
                 }
             }
-            if (depositRules.requireNetworkKeyword) {
-                let networkKeyword = '';
-                if (network === 'mtn') networkKeyword = 'mtn';
-                else if (network === 'airtel') networkKeyword = 'airtel';
-                else if (network === 'zamtel') networkKeyword = 'zamtel';
-                if (!lowerSms.includes(networkKeyword)) {
-                    return { valid: false, error: `SMS does not contain the network name (${network.toUpperCase()}).` };
-                }
-            }
-            if (depositRules.requireAgentName && currentAgent) {
-                if (!lowerSms.includes(currentAgent.name.toLowerCase())) {
-                    return { valid: false, error: `SMS does not contain the agent name "${currentAgent.name}". Please make sure you paid the correct agent.` };
-                }
-            }
-            if (depositRules.requireTxKeyword) {
-                const txKeywords = /send|sent|received|deposit|paid|transfer|successful|payment/i;
-                if (!txKeywords.test(sms)) {
-                    return { valid: false, error: 'SMS does not contain a recognised transaction keyword (send, sent, received, etc.).' };
-                }
-            }
-            return { valid: true, error: null };
+
+            currentStep = step;
         }
 
-        // ============================================================
-        // ===== PHONE VALIDATION =====
-        // ============================================================
-        function validatePhone() {
-            const digits = phoneInput.value.trim();
-            if (!selectedNetwork) return false;
-            if (digits.length !== 9 || !/^\d{9}$/.test(digits)) {
-                phoneError.innerText = 'Enter exactly 9 digits after +260';
-                return false;
-            }
-            const prefix = digits.substring(0, 2);
-            let valid = false;
-            if (selectedNetwork === 'mtn') valid = (prefix === '96' || prefix === '76');
-            else if (selectedNetwork === 'airtel') valid = (prefix === '97' || prefix === '77' || prefix === '57');
-            else if (selectedNetwork === 'zamtel') valid = (prefix === '95' || prefix === '75');
-            phoneError.innerText = valid ? '' : `Invalid prefix for ${selectedNetwork.toUpperCase()}.`;
-            return valid;
-        }
-
-        function getFullPhone() {
-            const digits = phoneInput.value.trim();
-            return digits ? '+260' + digits : '';
-        }
-
-        // ============================================================
-        // ===== PAY BUTTON VALIDATION =====
-        // ============================================================
-        function validatePayButton() {
-            const amountOk = selectedAmount && selectedAmount >= 70;
-            const networkOk = selectedNetwork !== null;
-            // Agent must be present for MTN and Zamtel, but for Airtel we skip this check
-            let agentOk = true;
-            if (selectedNetwork !== 'airtel') {
-                agentOk = currentAgent !== null;
-            } else {
-                // For Airtel, we don't require an agent to enable the button, but we should still show the message.
-                // Actually, let's keep the button disabled if no agent is found, so the user can't proceed.
-                // Wait, the user said "Let all three select networks shows only agents information on airtel remove it".
-                // This means they just want the info removed, but they might still want to pay.
-                // However, if there's no agent, they can't pay. So disabling the button is correct.
-                agentOk = false; // Since we return null for Airtel, this will be false.
-            }
-            const phoneOk = validatePhone();
-            const ready = readyCheckbox.checked;
-            payNowBtn.disabled = !(amountOk && networkOk && agentOk && phoneOk && ready);
-        }
-
-        // ============================================================
-        // ===== EVENT LISTENERS =====
-        // ============================================================
-
-        // Amount Buttons
-        amountBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                selectedAmount = parseInt(btn.dataset.amt);
-                customAmountInput.value = selectedAmount;
-                amountBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+        // ================================================================
+        // AMOUNT SELECTION
+        // ================================================================
+        amountBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var val = parseInt(this.dataset.amt);
+                selectedAmount = val;
+                customAmount.value = val;
+                amountBtns.forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
                 amountError.innerText = '';
-                validatePayButton();
+                validateStep1();
             });
         });
 
-        // Custom Amount
-        customAmountInput.addEventListener('input', () => {
-            let val = parseFloat(customAmountInput.value);
+        customAmount.addEventListener('input', function() {
+            var val = parseFloat(this.value);
+            amountBtns.forEach(function(b) { b.classList.remove('active'); });
             if (!isNaN(val) && val >= 70) {
                 selectedAmount = val;
-                amountBtns.forEach(b => b.classList.remove('active'));
                 amountError.innerText = '';
             } else {
                 selectedAmount = null;
-                if (customAmountInput.value !== '') amountError.innerText = 'Minimum amount is 70 ZMW';
+                if (this.value !== '') amountError.innerText = 'Minimum amount is 70 ZMW';
+                else amountError.innerText = '';
             }
-            validatePayButton();
+            validateStep1();
         });
 
-        // Network Selection
-        networkOptions.forEach(opt => {
-            opt.addEventListener('click', async () => {
-                networkOptions.forEach(o => o.classList.remove('active'));
-                opt.classList.add('active');
-                selectedNetwork = opt.dataset.network;
-                payNowBtn.disabled = true;
-                payNowBtn.innerText = 'Loading agent...';
-                currentAgent = await loadAndSetAgentForNetwork(selectedNetwork);
-                // Display agent info (or the "coming soon" message)
-                displayAgent(currentAgent);
-                payNowBtn.disabled = false;
-                payNowBtn.innerText = '💸 Pay Now';
-                validatePhone();
-                validatePayButton();
+        function validateStep1() {
+            step1Next.disabled = !(selectedAmount && selectedAmount >= 70);
+        }
+
+        step1Next.addEventListener('click', function() {
+            if (this.disabled) return;
+            goToStep(2);
+        });
+
+        // ================================================================
+        // NETWORK + PHONE
+        // ================================================================
+        networkOptions.forEach(function(opt) {
+            opt.addEventListener('click', function() {
+                networkOptions.forEach(function(o) { o.classList.remove('active'); });
+                this.classList.add('active');
+                selectedNetwork = this.dataset.network;
+                networkError.innerText = '';
+                validateStep2();
             });
         });
 
-        // Phone Input
-        phoneInput.addEventListener('input', () => {
-            phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 9);
-            validatePhone();
-            validatePayButton();
+        phoneInput.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 9);
+            validateStep2();
         });
 
-        // Ready Checkbox
-        readyCheckbox.addEventListener('change', validatePayButton);
+        readyCheck.addEventListener('change', validateStep2);
 
-        // ============================================================
-        // ===== PAY NOW =====
-        // ============================================================
-        payNowBtn.addEventListener('click', async () => {
-            if (payNowBtn.disabled) return;
+        function validateStep2() {
+            var networkOk = selectedNetwork !== null;
+            var digits = phoneInput.value.trim();
+            var phoneOk = digits.length === 9 && /^\d{9}$/.test(digits);
+            var ready = readyCheck.checked;
 
-            // If no agent is found, show a message and return
-            if (!currentAgent) {
-                if (selectedNetwork === 'airtel') {
-                    alert('Agents coming soon – try other available agents for other networks.');
-                } else {
-                    alert('No agent available for this network. Please contact admin.');
+            phoneError.innerText = '';
+            if (digits.length > 0 && digits.length !== 9) {
+                phoneError.innerText = 'Enter exactly 9 digits';
+                phoneOk = false;
+            } else if (digits.length === 9 && /^\d{9}$/.test(digits)) {
+                // Validate prefix
+                var prefix = digits.substring(0, 2);
+                var validPrefix = false;
+                if (selectedNetwork === 'mtn') validPrefix = (prefix === '96' || prefix === '76');
+                else if (selectedNetwork === 'airtel') validPrefix = (prefix === '97' || prefix === '77' || prefix === '57');
+                else if (selectedNetwork === 'zamtel') validPrefix = (prefix === '95' || prefix === '75');
+                if (!validPrefix && selectedNetwork) {
+                    phoneError.innerText = 'Invalid prefix for ' + selectedNetwork.toUpperCase();
+                    phoneOk = false;
                 }
+            }
+
+            if (!networkOk) networkError.innerText = 'Please select a network';
+            else networkError.innerText = '';
+
+            step2Next.disabled = !(networkOk && phoneOk && ready);
+        }
+
+        // ================================================================
+        // AGENT LOADING (hardcoded – no Airtel agents)
+        // ================================================================
+        function getAgentsForNetwork(network) {
+            if (network === 'mtn') {
+                return [
+                    { name: 'John Kabwe', number: '0963070992' },
+                    { name: 'Getrude Sompo', number: '0960338304' }
+                ];
+            } else if (network === 'zamtel') {
+                return [
+                    { name: 'Jeremiah Ilunga', number: '0951359357' }
+                ];
+            } else if (network === 'airtel') {
+                return []; // No agents for Airtel
+            }
+            return [];
+        }
+
+        function loadAndDisplayAgent(network) {
+            var agents = getAgentsForNetwork(network);
+            if (agents.length === 0) {
+                var msg = '⚠️ No agent available for this network. Please try another network.';
+                if (network === 'airtel') {
+                    msg = 'ℹ️ Airtel payments are not supported yet. Please use MTN or Zamtel.';
+                }
+                agentInfo.innerHTML =
+                    '<div style="text-align:center; padding:1rem 0; color:rgba(255,255,255,0.4);">' + msg + '</div>';
+                currentAgent = null;
+                step3Next.disabled = true;
                 return;
             }
 
-            displayAgent(currentAgent);
+            var randomIdx = Math.floor(Math.random() * agents.length);
+            var agent = agents[randomIdx];
+            currentAgent = agent;
 
-            // Store deposit info in session
-            sessionStorage.setItem('depositAmount', selectedAmount);
-            sessionStorage.setItem('depositNetwork', selectedNetwork);
-            sessionStorage.setItem('depositPhone', getFullPhone());
-            sessionStorage.setItem('depositPhoneDigits', phoneInput.value);
+            var html = '<div class="agent-card">';
+            html += '<div class="agent-label">📌 Payment Agent (' + network.toUpperCase() + ')</div>';
+            html += '<div class="agent-name">' + agent.name + '</div>';
+            html += '<div class="agent-number-row">';
+            html += '<span class="agent-number">' + agent.number + '</span>';
+            html += '<button class="copy-btn" data-number="' + agent.number + '">📋 Copy</button>';
+            html += '</div>';
+            html +=
+            '<div class="agent-note">Send the exact amount of ZMW ' + selectedAmount + ' to this number</div>';
+            html += '</div>';
 
-            step1Card.classList.add('hidden');
-            step2Card.classList.remove('hidden');
+            agentInfo.innerHTML = html;
+
+            // Copy handler
+            agentInfo.querySelector('.copy-btn').addEventListener('click', function() {
+                var num = this.dataset.number;
+                navigator.clipboard.writeText(num).then(function() {
+                    var btn = document.querySelector('.copy-btn');
+                    btn.textContent = '✅ Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(function() {
+                        btn.textContent = '📋 Copy';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }).catch(function() {
+                    // Fallback
+                    var ta = document.createElement('textarea');
+                    ta.value = num;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    ta.remove();
+                    var btn = document.querySelector('.copy-btn');
+                    btn.textContent = '✅ Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(function() {
+                        btn.textContent = '📋 Copy';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+
+            step3Next.disabled = false;
+        }
+
+        step2Next.addEventListener('click', function() {
+            if (this.disabled) return;
+            userPhone = '+260' + phoneInput.value.trim();
+            goToStep(3);
+            loadAndDisplayAgent(selectedNetwork);
         });
 
-        // ============================================================
-        // ===== BACK BUTTON =====
-        // ============================================================
-        backArrow.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (!step2Card.classList.contains('hidden')) {
-                step2Card.classList.add('hidden');
-                step1Card.classList.remove('hidden');
-            } else {
-                window.location.href = 'dashboard.html';
+        step3Next.addEventListener('click', function() {
+            if (this.disabled) return;
+            goToStep(4);
+        });
+
+        // ================================================================
+        // SMS VERIFICATION
+        // ================================================================
+        function validateSms(sms, amount, network, agent) {
+            var lower = sms.toLowerCase();
+            var errors = [];
+
+            if (depositRules.requireAmountMatch) {
+                var amtRegex = new RegExp('\\b' + amount + '\\b');
+                if (!amtRegex.test(sms)) {
+                    errors.push('SMS amount does not match your deposit amount (ZMW ' + amount + ')');
+                }
             }
+
+            if (depositRules.requireNetworkKeyword) {
+                var netMap = { mtn: 'mtn', airtel: 'airtel', zamtel: 'zamtel' };
+                var keyword = netMap[network] || network;
+                if (!lower.includes(keyword)) {
+                    errors.push('SMS does not contain the network name (' + network.toUpperCase() + ')');
+                }
+            }
+
+            if (depositRules.requireAgentName && agent) {
+                var agentNameLower = agent.name.toLowerCase();
+                if (!lower.includes(agentNameLower)) {
+                    errors.push('SMS does not contain the agent name "' + agent.name + '"');
+                }
+            }
+
+            if (depositRules.requireTxKeyword) {
+                var txWords = /send|sent|received|deposit|paid|transfer|successful|payment|confirm|approved/i;
+                if (!txWords.test(sms)) {
+                    errors.push('SMS does not contain a recognised transaction keyword');
+                }
+            }
+
+            return { valid: errors.length === 0, errors: errors };
+        }
+
+        smsInput.addEventListener('input', function() {
+            smsError.innerText = '';
+            smsPreview.style.display = 'none';
         });
 
-        // ============================================================
-        // ===== VERIFY & COMPLETE =====
-        // ============================================================
-        verifyBtn.addEventListener('click', async () => {
-            if (verifyBtn.disabled || isProcessing) return;
-            isProcessing = true;
-            verifyBtn.disabled = true;
+        step4Next.addEventListener('click', function() {
+            if (this.disabled || isSubmitting) return;
 
-            const sms = smsTextarea.value.trim();
+            var sms = smsInput.value.trim();
             if (!sms) {
-                verifyMessage.innerHTML = '<div class="error-msg">❌ Please paste the SMS.</div>';
-                isProcessing = false;
-                verifyBtn.disabled = false;
+                smsError.innerText = 'Please paste the transaction SMS';
                 return;
             }
 
-            const amount = parseFloat(sessionStorage.getItem('depositAmount'));
-            const network = sessionStorage.getItem('depositNetwork');
-            const phone = sessionStorage.getItem('depositPhone');
-            if (!amount || !network || !phone) {
-                verifyMessage.innerHTML = '<div class="error-msg">Session expired. Please go back and start over.</div>';
-                isProcessing = false;
-                verifyBtn.disabled = false;
-                return;
-            }
-
-            const validation = validateSms(sms, amount, network);
+            var validation = validateSms(sms, selectedAmount, selectedNetwork, currentAgent);
             if (!validation.valid) {
-                verifyMessage.innerHTML = `<div class="error-msg">${validation.error}</div>`;
-                isProcessing = false;
-                verifyBtn.disabled = false;
+                smsError.innerText = '❌ ' + validation.errors[0];
                 return;
             }
 
-            const user = auth.currentUser;
+            smsError.innerText = '';
+            smsPreview.className = 'msg-box success';
+            smsPreview.innerHTML =
+                '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> ✅ SMS verified successfully!';
+            smsPreview.style.display = 'block';
+
+            // Submit deposit
+            submitDeposit(sms);
+        });
+
+        // ================================================================
+        // SUBMIT DEPOSIT
+        // ================================================================
+        function submitDeposit(sms) {
+            isSubmitting = true;
+            step4Next.disabled = true;
+            step4Next.innerHTML = '<span class="spinner"></span> Submitting...';
+
+            var user = auth.currentUser;
             if (!user) {
                 window.location.href = 'login.html';
                 return;
             }
 
-            verifyBtn.innerText = 'Submitting...';
-            verifyMessage.innerHTML = '<div class="success-msg">⏳ Processing...</div>';
+            var depositData = {
+                userId: user.uid,
+                amount: selectedAmount,
+                paymentMethod: selectedNetwork,
+                phone: userPhone,
+                status: 'pending',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                smsText: sms,
+                agentName: currentAgent ? currentAgent.name : '',
+                agentNumber: currentAgent ? currentAgent.number : ''
+            };
 
-            try {
-                const depositData = {
-                    userId: user.uid,
-                    amount: amount,
-                    paymentMethod: network,
-                    phone: phone,
-                    status: 'pending',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    smsText: sms,
-                    agentName: currentAgent ? currentAgent.name : '',
-                    agentNumber: currentAgent ? currentAgent.number : ''
-                };
-                if (currentAgent && currentAgent.agentId) {
-                    depositData.agentId = currentAgent.agentId;
-                }
-                await db.collection('deposits').add(depositData);
+            db.collection('deposits').add(depositData)
+                .then(function() {
+                    // Show confirmation
+                    confirmAmount.textContent = 'ZMW ' + selectedAmount;
+                    confirmNetwork.textContent = selectedNetwork.toUpperCase();
+                    confirmPhone.textContent = userPhone;
+                    confirmAgent.textContent = currentAgent ? currentAgent.name : '—';
 
-                verifyMessage.innerHTML = '<div class="success-msg">✅ Deposit request submitted! Admin will verify and credit your balance. Redirecting...</div>';
-                setTimeout(() => {
-                    window.location.href = 'history.html';
-                }, 2500);
+                    goToStep(5);
+                    showToast('✅ Deposit submitted successfully!', false);
+                    isSubmitting = false;
+                    step4Next.disabled = false;
+                    step4Next.innerHTML =
+                        '<span class="btn-icon">Verify &amp; Submit <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
+                })
+                .catch(function(err) {
+                    console.error('Deposit error:', err);
+                    showToast('❌ Error: ' + err.message, true);
+                    isSubmitting = false;
+                    step4Next.disabled = false;
+                    step4Next.innerHTML =
+                        '<span class="btn-icon">Verify &amp; Submit <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
+                    smsPreview.className = 'msg-box error';
+                    smsPreview.innerHTML =
+                        '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Error: ' +
+                        err.message;
+                    smsPreview.style.display = 'block';
+                });
+        }
 
-            } catch (err) {
-                console.error(err);
-                verifyMessage.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
-                isProcessing = false;
-                verifyBtn.disabled = false;
-                verifyBtn.innerText = '🔍 Verify & Complete';
+        // ================================================================
+        // STEP 5: DONE
+        // ================================================================
+        step5Done.addEventListener('click', function() {
+            window.location.href = 'history.html';
+        });
+
+        // ================================================================
+        // BACK BUTTON
+        // ================================================================
+        backBtn.addEventListener('click', function() {
+            if (currentStep === 1) {
+                window.location.href = 'dashboard.html';
+            } else if (currentStep === 2) {
+                goToStep(1);
+            } else if (currentStep === 3) {
+                goToStep(2);
+            } else if (currentStep === 4) {
+                goToStep(3);
+            } else if (currentStep === 5) {
+                goToStep(4);
             }
         });
 
-        // ============================================================
-        // ===== AUTH STATE =====
-        // ============================================================
-        auth.onAuthStateChanged((user) => {
+        // ================================================================
+        // LOAD DEPOSIT RULES
+        // ================================================================
+        function loadDepositRules() {
+            db.collection('systemSettings').doc('depositRules').get()
+                .then(function(doc) {
+                    if (doc.exists) {
+                        var data = doc.data();
+                        depositRules.requireAmountMatch = data.requireAmountMatch !== false;
+                        depositRules.requireAgentName = data.requireAgentName !== false;
+                        depositRules.requireNetworkKeyword = data.requireNetworkKeyword !== false;
+                        depositRules.requireTxKeyword = data.requireTxKeyword !== false;
+                    }
+                })
+                .catch(function(err) {
+                    console.warn('Could not load deposit rules, using defaults', err);
+                });
+        }
+
+        // ================================================================
+        // AUTH STATE
+        // ================================================================
+        auth.onAuthStateChanged(function(user) {
             if (!user) {
                 window.location.href = 'login.html';
                 return;
             }
-            currentUser = user;
-            userId = user.uid;
             loadDepositRules();
+
+            // Auto-focus first input
+            setTimeout(function() {
+                var firstInput = document.querySelector('.custom-input-wrap input');
+                if (firstInput) firstInput.focus();
+            }, 400);
         });
 
-        console.log('✅ Deposit page loaded successfully!');
-        console.log('📌 MTN & Zamtel agents available. Airtel agents removed.');
+        // ================================================================
+        // KEYBOARD SHORTCUTS
+        // ================================================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                var active = document.activeElement;
+                if (active && active.closest('.step-container')) {
+                    var btn = active.closest('.step-container').querySelector('.btn-primary, .btn-success');
+                    if (btn && !btn.disabled) btn.click();
+                }
+            }
+        });
+
+        console.log('✨ Pureore Capital · Deposit page (unique design)');
+        console.log('📱 Step-by-step flow with smooth transitions');
+        console.log('🔐 Firebase config untouched');
+        console.log('📌 MTN & Zamtel agents available — Airtel removed');
     </script>
+
 </body>
 </html>

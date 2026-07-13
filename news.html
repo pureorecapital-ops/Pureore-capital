@@ -1,28 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <meta name="referrer" content="no-referrer">
-    <title>News | Pureore Capital</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="referrer" content="no-referrer" />
+    <title>News – PC • Pureore Capital</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
+    </script>
     <style>
-        /* ===== RESET & BASE ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-            min-height: 100vh;
-            background: #050505;
-            color: #FFFFFF;
-            padding: 1rem;
-            padding-bottom: 85px;
-            position: relative;
-            overflow-x: hidden;
+        /* ----- RESET & BASE ----- */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* ===== ANIMATED BACKGROUND ===== */
+        :root {
+            --gold: #f6c96e;
+            --gold-glow: rgba(246, 201, 110, 0.25);
+            --cyan: #5dd9f2;
+            --cyan-glow: rgba(93, 217, 242, 0.20);
+            --violet: #7c6df0;
+            --violet-glow: rgba(124, 109, 240, 0.30);
+            --green: #4ade80;
+            --green-glow: rgba(74, 222, 128, 0.15);
+            --radius-lg: 28px;
+            --radius-md: 18px;
+            --radius-sm: 12px;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        html,
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            color: #fff;
+            background: #0a0815;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 90px;
+        }
+
+        /* ----- BACKGROUND with Ravi Sharma image & brightness reduction ----- */
         body::before {
             content: "";
             position: fixed;
@@ -30,540 +55,689 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #050505 0%, #0a0a0a 25%, #111111 50%, #0a0a0a 75%, #050505 100%);
-            background-size: 400% 400%;
-            animation: bgShift 12s ease-in-out infinite alternate;
+            background-image: url('https://i.ibb.co/Vcg0rgNY/ravi-sharma-h-Nv5s6-NEYig-unsplash.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            filter: brightness(0.30) saturate(1.1) contrast(1.05);
             z-index: -3;
         }
-        @keyframes bgShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.06) 0%, transparent 50%);
+            z-index: -2;
+            pointer-events: none;
         }
 
-        /* ===== 4 FLOATING ORBS ===== */
+        /* ----- FLOATING ORBS ----- */
         .orb {
             position: fixed;
             border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.15;
-            z-index: -2;
+            filter: blur(70px);
+            opacity: 0.08;
+            z-index: -1;
             pointer-events: none;
-            animation: floatOrb 12s ease-in-out infinite alternate;
+            animation: orbFloat 16s ease-in-out infinite alternate;
         }
-        .orb-1 { width: 400px; height: 400px; background: #FFD700; top: -10%; left: -10%; animation-delay: 0s; }
-        .orb-2 { width: 350px; height: 350px; background: #00E5FF; bottom: -10%; right: -10%; animation-delay: 3s; }
-        .orb-3 { width: 300px; height: 300px; background: #FFD700; top: 40%; left: 75%; animation-delay: 6s; }
-        .orb-4 { width: 280px; height: 280px; background: #00C853; bottom: 30%; left: -5%; animation-delay: 9s; }
-        @keyframes floatOrb {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(30px, -20px) scale(1.1); }
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--violet);
+            top: -8%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: var(--cyan);
+            bottom: -8%;
+            right: -10%;
+            animation-delay: 5s;
+        }
+        .orb-3 {
+            width: 280px;
+            height: 280px;
+            background: var(--gold);
+            top: 40%;
+            left: 70%;
+            animation-delay: 10s;
+            opacity: 0.06;
         }
 
-        /* ===== CONTAINER ===== */
+        @keyframes orbFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(25px, -35px) scale(1.06);
+            }
+            66% {
+                transform: translate(-15px, 25px) scale(0.94);
+            }
+            100% {
+                transform: translate(20px, -10px) scale(1.02);
+            }
+        }
+
+        /* ----- CONTAINER ----- */
         .container {
-            max-width: 800px;
+            max-width: 560px;
             margin: 0 auto;
+            padding: 1rem 1.2rem 2rem;
             position: relative;
             z-index: 2;
         }
 
-        /* ===== HEADER ===== */
+        /* ----- HEADER / BRAND ----- */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
-        .header-left {
-            display: flex;
-            flex-direction: column;
-        }
-        .back-arrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(8px);
-            border-radius: 40px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #FFD700;
-            cursor: pointer;
-            transition: 0.3s;
-            border: 1px solid rgba(255,215,0,0.15);
-            text-decoration: none;
-            margin-bottom: 0.3rem;
-        }
-        .back-arrow:hover {
-            background: #FFD700;
-            color: #050505;
-            transform: translateX(-4px);
-            box-shadow: 0 0 30px rgba(255,215,0,0.2);
-        }
-        .back-arrow svg { width: 18px; height: 18px; fill: currentColor; }
 
-        .page-title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #FFD700, #F59E0B);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
+        .brand {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        .page-title .icon { font-size: 1.8rem; }
 
-        /* ===== NEWS AVATAR ===== */
-        .news-avatar {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #FFD700, #F59E0B, #00C853);
-            background-size: 200% 200%;
-            animation: avatarFlow 4s ease-in-out infinite alternate;
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--violet), var(--cyan));
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
-            border: 2px solid rgba(255,215,0,0.2);
+            box-shadow: 0 4px 20px var(--violet-glow);
             flex-shrink: 0;
         }
-        @keyframes avatarFlow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        .news-avatar svg {
-            width: 30px;
-            height: 30px;
-            fill: white;
+
+        .brand-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: #fff;
+            stroke-width: 2.2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
-        /* ===== FLAGS MARQUEE ===== */
-        .flags-container {
-            background: rgba(18, 18, 24, 0.4);
-            backdrop-filter: blur(4px);
-            border-radius: 60px;
-            padding: 0.5rem 0;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255,215,0,0.06);
-            overflow: hidden;
+        .brand-name {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
+
+        .brand-name .pc {
+            color: var(--gold);
+            -webkit-text-fill-color: var(--gold);
+            font-weight: 900;
+        }
+
+        .brand-badge {
+            font-size: 9px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 3px 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* ----- BACK BUTTON ----- */
+        .back-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 0.8rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            transform: translateX(-3px);
+        }
+
+        .back-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ----- PAGE TITLE ----- */
+        .page-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 0.2rem;
+            background: linear-gradient(135deg, var(--gold), #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-sub {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 1.2rem;
+            font-weight: 400;
+        }
+
+        /* ----- COUNTRY SCROLLING (FLAGS) ----- */
+        .flags-container {
+            border-radius: 60px;
+            padding: 0.3rem 0;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(10, 8, 21, 0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
         .flags-marquee {
             display: flex;
-            animation: scrollFlags 20s linear infinite;
+            animation: scrollFlags 28s linear infinite;
             width: fit-content;
+            align-items: center;
         }
+
         .flag-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 80px;
-            margin: 0 0.8rem;
+            min-width: 70px;
+            margin: 0 1rem;
         }
-        .flag-icon { font-size: 1.8rem; }
-        .flag-name {
-            font-size: 0.65rem;
-            margin-top: 0.1rem;
-            color: #888;
+
+        .flag-item .flag-emoji {
+            font-size: 1.6rem;
+            line-height: 1;
         }
+
+        .flag-item .flag-name {
+            font-size: 0.55rem;
+            margin-top: 2px;
+            color: rgba(255, 255, 255, 0.25);
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
         @keyframes scrollFlags {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%);
+            }
         }
 
-        /* ===== POST CARD ===== */
-        .post-card {
-            background: rgba(17, 17, 17, 0.95);
-            backdrop-filter: blur(8px);
-            border-radius: 24px;
+        /* ----- NEWS CARD (glass) ----- */
+        .news-card {
+            background: rgba(10, 8, 21, 0.55);
+            backdrop-filter: blur(16px) saturate(1.3);
+            -webkit-backdrop-filter: blur(16px) saturate(1.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
             overflow: hidden;
-            margin-bottom: 1.5rem;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(17, 17, 17, 0.95), rgba(17, 17, 17, 0.95)),
-                              linear-gradient(135deg, #FFD700, #00C853, #FFD700);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .post-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            margin-bottom: 1.2rem;
+            position: relative;
         }
 
-        /* Post Header */
-        .post-header {
+        .news-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .news-card .card-glow {
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 109, 240, 0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .news-card .card-header {
             display: flex;
             align-items: center;
             gap: 0.8rem;
-            padding: 1rem 1.2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            padding: 0.8rem 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
-        .post-avatar {
-            width: 40px;
-            height: 40px;
+
+        .news-card .card-header .avatar {
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #FFD700, #F59E0B);
+            background: linear-gradient(135deg, var(--gold), #f5a623);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #0a0815;
             flex-shrink: 0;
         }
-        .post-author {
-            font-weight: 700;
-            color: #FFD700;
-        }
-        .post-time {
-            font-size: 0.7rem;
-            color: #666;
-        }
-        .post-badge {
-            background: rgba(0,200,83,0.1);
-            border: 1px solid rgba(0,200,83,0.15);
-            padding: 0.1rem 0.6rem;
-            border-radius: 30px;
-            font-size: 0.6rem;
-            color: #00C853;
-        }
 
-        /* Post Content */
-        .post-title {
-            font-size: 1.2rem;
+        .news-card .card-header .info .author {
             font-weight: 700;
-            padding: 0.8rem 1.2rem 0.3rem;
-            color: #fff;
-        }
-        .post-body {
-            padding: 0 1.2rem 0.8rem;
-            color: #ccc;
-            line-height: 1.6;
             font-size: 0.95rem;
-        }
-        .post-image {
-            width: 100%;
-            max-height: 400px;
-            object-fit: cover;
-            background: #1a1a2a;
-        }
-
-        /* Post Actions */
-        .post-actions {
-            display: flex;
-            gap: 1rem;
-            padding: 0.6rem 1.2rem;
-            border-top: 1px solid rgba(255,255,255,0.03);
-        }
-        .action-btn {
-            background: transparent;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.3rem 0.8rem;
-            border-radius: 30px;
-            transition: 0.3s;
-            font-size: 0.85rem;
-        }
-        .action-btn:hover {
-            background: rgba(255,255,255,0.03);
             color: #fff;
         }
-        .action-btn.liked {
-            color: #FF4757;
-        }
-        .action-btn.liked .heart-icon {
-            transform: scale(1.1);
-        }
-        .action-btn .heart-icon {
-            transition: 0.3s;
-            font-size: 1.2rem;
-        }
 
-        /* Comment Section */
-        .comment-section {
-            padding: 0.8rem 1.2rem 1rem;
-            border-top: 1px solid rgba(255,255,255,0.03);
-        }
-        .comment-input-wrapper {
+        .news-card .card-header .info .meta {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            background: rgba(255,255,255,0.03);
-            border-radius: 60px;
-            padding: 0.2rem 0.5rem;
-            border: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.25);
         }
-        .comment-input-wrapper input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 0.5rem 0.2rem;
-            color: white;
-            font-size: 0.85rem;
-            outline: none;
+
+        .news-card .card-header .info .meta .badge {
+            background: rgba(74, 222, 128, 0.06);
+            border: 1px solid rgba(74, 222, 128, 0.06);
+            padding: 0.05rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.55rem;
+            color: var(--green);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
-        .comment-input-wrapper input::placeholder {
-            color: #555;
+
+        .news-card .card-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
-        .emoji-picker {
+
+        .news-card .card-body {
+            padding: 0.8rem 1.2rem 1rem;
+        }
+
+        .news-card .card-body .title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.3rem;
+            line-height: 1.3;
+        }
+
+        .news-card .card-body .content {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-card .card-body .content.expanded {
+            -webkit-line-clamp: unset;
+            overflow: visible;
+        }
+
+        .news-card .card-footer {
+            padding: 0.6rem 1.2rem 0.8rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
             display: flex;
-            gap: 0.3rem;
+            justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-        }
-        .emoji-btn {
-            background: transparent;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.1rem 0.2rem;
-            transition: 0.2s;
-            border-radius: 4px;
-        }
-        .emoji-btn:hover {
-            transform: scale(1.2);
-            background: rgba(255,255,255,0.03);
-        }
-        .comment-submit {
-            background: linear-gradient(135deg, #FFD700, #F59E0B);
-            border: none;
-            padding: 0.3rem 1rem;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            color: #050505;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .comment-submit:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 15px rgba(255,215,0,0.2);
-        }
-        .comment-submit:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* Comments List */
-        .comments-list {
-            margin-top: 0.8rem;
-            display: flex;
-            flex-direction: column;
             gap: 0.5rem;
         }
-        .comment-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.6rem;
-            padding: 0.5rem 0.8rem;
-            background: rgba(255,255,255,0.02);
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.03);
-        }
-        .comment-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #00C853, #009624);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #050505;
-            flex-shrink: 0;
-        }
-        .comment-body {
-            flex: 1;
-        }
-        .comment-author {
+
+        .news-card .card-footer .read-more {
+            color: var(--cyan);
+            font-size: 0.8rem;
             font-weight: 600;
-            font-size: 0.8rem;
-            color: #FFD700;
-        }
-        .comment-text {
-            font-size: 0.85rem;
-            color: #ddd;
-            word-wrap: break-word;
-            line-height: 1.4;
-        }
-        .comment-empty {
-            text-align: center;
-            color: #555;
-            font-size: 0.8rem;
-            padding: 0.3rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+            transition: color 0.3s ease;
         }
 
-        /* ===== LOADER ===== */
+        .news-card .card-footer .read-more:hover {
+            color: var(--gold);
+        }
+
+        .news-card .card-footer .share-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 40px;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .news-card .card-footer .share-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .news-card .card-footer .share-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ----- EMPTY STATE ----- */
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            margin-bottom: 0.8rem;
+        }
+
+        .empty-state .title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .empty-state .sub {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-top: 0.2rem;
+        }
+
+        /* ----- LOADER ----- */
         .loader {
-            border: 3px solid #1a1a2a;
-            border-top: 3px solid #FFD700;
+            border: 3px solid rgba(255, 255, 255, 0.04);
+            border-top: 3px solid var(--gold);
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
             margin: 2rem auto;
         }
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
-        .empty-msg {
-            text-align: center;
-            color: #666;
-            padding: 2rem;
-            font-size: 0.9rem;
-        }
-
-        /* ===== TOAST ===== */
+        /* ----- TOAST ----- */
         .toast {
             position: fixed;
-            bottom: 100px;
+            bottom: 90px;
             left: 50%;
             transform: translateX(-50%);
-            background: #00C853;
-            color: #050505;
             padding: 12px 24px;
-            border-radius: 40px;
+            border-radius: 60px;
             font-weight: 600;
-            z-index: 1001;
-            animation: fadeUpOut 5s ease forwards;
+            font-size: 0.85rem;
+            z-index: 9999;
+            background: rgba(10, 8, 21, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            animation: toastIn 0.3s ease;
             max-width: 90%;
             text-align: center;
-            box-shadow: 0 4px 30px rgba(0,200,83,0.2);
-        }
-        .toast.error {
-            background: #ef4444;
-            color: white;
-        }
-        @keyframes fadeUpOut {
-            0% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            70% { opacity: 1; }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
 
-        /* ===== BOTTOM NAV ===== */
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+
+        .toast.success {
+            border-color: rgba(74, 222, 128, 0.15);
+            color: #6ee7b7;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+
+        /* ----- BOTTOM NAV ----- */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(10, 10, 14, 0.97);
-            backdrop-filter: blur(16px);
-            border-top: 2px solid transparent;
-            background-clip: padding-box;
-            background-image: linear-gradient(rgba(10, 10, 14, 0.97), rgba(10, 10, 14, 0.97)),
-                              linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
-            background-origin: padding-box, border-box;
-            background-clip: padding-box, border-box;
+            background: rgba(10, 8, 21, 0.92);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 6px 6px 18px;
+            padding: 6px 4px 14px;
             z-index: 30;
-            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
         }
+
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
             cursor: pointer;
             transition: all 0.3s ease;
             flex: 1;
             text-align: center;
             padding: 4px 2px;
             border-radius: 16px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
         }
-        .nav-item:hover { transform: translateY(-4px); }
-        .nav-icon {
-            width: 32px;
-            height: 32px;
+
+        .nav-item .nav-icon {
+            width: 26px;
+            height: 26px;
             object-fit: contain;
-            filter: brightness(0.5) grayscale(0.5);
-            transition: 0.4s;
-            border-radius: 8px;
-            padding: 2px;
+            filter: brightness(0.35) grayscale(0.6);
+            transition: all 0.3s ease;
+            border-radius: 6px;
         }
+
         .nav-item.active .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 12px rgba(255, 215, 0, 0.7));
-            transform: scale(1.05);
+            filter: brightness(1) drop-shadow(0 0 12px rgba(93, 217, 242, 0.35));
+            transform: scale(1.06);
         }
-        .nav-item.glow .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 16px rgba(0, 229, 255, 0.8));
-            transform: scale(1.08);
-        }
-        .nav-item.glow-gold .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 16px rgba(255, 215, 0, 0.8));
-            transform: scale(1.08);
-        }
-        .nav-item.glow-purple .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 16px rgba(41, 121, 255, 0.8));
-            transform: scale(1.08);
-        }
-        .nav-label {
-            font-size: 0.65rem;
-            color: #888;
+
+        .nav-item .nav-label {
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.2);
             font-weight: 500;
+            transition: color 0.3s ease;
             letter-spacing: 0.3px;
         }
-        .nav-item.active .nav-label { color: #FFD700; }
 
-        /* ===== RESPONSIVE ===== */
+        .nav-item.active .nav-label {
+            color: var(--cyan);
+        }
+
+        /* ----- RESPONSIVE ----- */
         @media (max-width: 600px) {
-            .page-title { font-size: 1.3rem; }
-            .news-avatar { width: 45px; height: 45px; }
-            .news-avatar svg { width: 24px; height: 24px; }
-            .post-title { font-size: 1rem; padding: 0.5rem 1rem 0.2rem; }
-            .post-body { padding: 0 1rem 0.6rem; font-size: 0.85rem; }
-            .post-header { padding: 0.6rem 1rem; }
-            .post-actions { padding: 0.4rem 1rem; }
-            .comment-section { padding: 0.6rem 1rem 0.8rem; }
-            .flag-item { min-width: 60px; }
-            .flag-icon { font-size: 1.4rem; }
-            .nav-icon { width: 28px; height: 28px; }
-            .nav-label { font-size: 0.55rem; }
+            .container {
+                padding: 0.8rem 0.8rem 1.5rem;
+            }
+            .brand-name {
+                font-size: 17px;
+            }
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+            }
+            .brand-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+            .brand-badge {
+                font-size: 7px;
+                padding: 2px 8px;
+            }
+            .page-title {
+                font-size: 1.3rem;
+            }
+            .news-card .card-body .title {
+                font-size: 1rem;
+            }
+            .news-card .card-body .content {
+                font-size: 0.8rem;
+            }
+            .news-card .card-image {
+                max-height: 200px;
+            }
+            .back-btn {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+            .nav-item .nav-icon {
+                width: 22px;
+                height: 22px;
+            }
+            .nav-item .nav-label {
+                font-size: 0.45rem;
+            }
+            .flags-container {
+                padding: 0.2rem 0;
+            }
+            .flag-item {
+                min-width: 50px;
+                margin: 0 0.6rem;
+            }
+            .flag-item .flag-emoji {
+                font-size: 1.2rem;
+            }
+            .flag-item .flag-name {
+                font-size: 0.5rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .news-card .card-header .info .meta {
+                font-size: 0.6rem;
+                flex-wrap: wrap;
+            }
+            .news-card .card-footer {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.3rem;
+            }
+            .news-card .card-footer .share-btn {
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== 4 FLOATING ORBS ===== -->
+    <!-- ===== ORBS ===== -->
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
 
+    <!-- ===== MAIN CONTAINER ===== -->
     <div class="container">
 
         <!-- ===== HEADER ===== -->
         <div class="header">
-            <div class="header-left">
-                <a href="dashboard.html" class="back-arrow">
-                    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                    Back
-                </a>
-                <div class="page-title">
-                    <span class="icon">📰</span> News Feed
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="6 6 18 6 6 18 18 18" />
+                    </svg>
                 </div>
-            </div>
-            <!-- News Avatar -->
-            <div class="news-avatar" title="News">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
-                </svg>
+                <span class="brand-name">Pureore<span class="pc">·PC</span></span>
+                <span class="brand-badge">News</span>
             </div>
         </div>
+
+        <!-- ===== BACK ROW ===== -->
+        <div class="back-row">
+            <button class="back-btn" id="backBtn">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+                Back
+            </button>
+        </div>
+
+        <!-- ===== PAGE TITLE ===== -->
+        <div class="page-title">📰 Latest News</div>
+        <div class="page-sub">Stay updated with the latest announcements</div>
 
         <!-- ===== FLAGS MARQUEE ===== -->
         <div class="flags-container">
@@ -574,33 +748,42 @@
         <div id="newsContainer">
             <div class="loader"></div>
         </div>
+
     </div>
 
     <!-- ===== BOTTOM NAV ===== -->
     <div class="bottom-nav">
-        <div class="nav-item" data-page="dashboard.html">
-            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home"><span class="nav-label">Home</span>
-        </div>
-        <div class="nav-item" data-page="mkvip.html">
-            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip"><span class="nav-label">Mkvip</span>
-        </div>
-        <div class="nav-item" data-page="jproduct.html">
-            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product"><span class="nav-label">Jproduct</span>
-        </div>
-        <div class="nav-item" data-page="income.html">
-            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income"><span class="nav-label">Income</span>
-        </div>
-        <div class="nav-item" data-page="team.html">
-            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team"><span class="nav-label">Team</span>
-        </div>
-        <div class="nav-item" data-page="me.html">
-            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me"><span class="nav-label">Me</span>
-        </div>
+        <button class="nav-item" data-page="dashboard.html">
+            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home" />
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-page="mkvip.html">
+            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mkvip" />
+            <span class="nav-label">Mkvip</span>
+        </button>
+        <button class="nav-item" data-page="jproduct.html">
+            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="Jproduct" />
+            <span class="nav-label">Jproduct</span>
+        </button>
+        <button class="nav-item" data-page="income.html">
+            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income" />
+            <span class="nav-label">Income</span>
+        </button>
+        <button class="nav-item active" data-page="news.html">
+            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="News" />
+            <span class="nav-label">News</span>
+        </button>
+        <button class="nav-item" data-page="me.html">
+            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me" />
+            <span class="nav-label">Me</span>
+        </button>
     </div>
 
     <script>
-        // ===== FIREBASE CONFIG =====
-        const firebaseConfig = {
+        // ================================================================
+        // FIREBASE CONFIG (unchanged)
+        // ================================================================
+        var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
             authDomain: "pureore-capital-zambia.firebaseapp.com",
             projectId: "pureore-capital-zambia",
@@ -610,194 +793,37 @@
             measurementId: "G-FQKC29NYE9"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
+        var auth = firebase.auth();
+        var db = firebase.firestore();
         db.settings({ persistence: true });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ===== HELPERS =====
+        // ================================================================
+        // HELPERS
+        // ================================================================
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
 
-        function showToast(msg, isError = false) {
-            const oldToast = document.querySelector('.toast');
-            if (oldToast) oldToast.remove();
-            const toast = document.createElement('div');
-            toast.className = `toast ${isError ? 'error' : ''}`;
-            toast.innerText = msg;
+        function showToast(msg, isError) {
+            var existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            var toast = document.createElement('div');
+            toast.className = 'toast' + (isError ? ' error' : ' success');
+            toast.textContent = msg;
             document.body.appendChild(toast);
-            setTimeout(() => {
-                if (toast.parentNode) toast.remove();
-            }, 4000);
+            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
         }
 
-        const DEFAULT_NEWS_IMAGE = 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png';
-        const FALLBACK_IMAGE = 'https://placehold.co/800x400/1a1a2a/FFD700?text=News+Image';
-
-        function getSafeImageUrl(url) {
-            if (!url || url === '') return DEFAULT_NEWS_IMAGE;
-            let safeUrl = url.trim();
-            if (safeUrl.startsWith('http://')) {
-                safeUrl = safeUrl.replace('http://', 'https://');
-            }
-            if (safeUrl.startsWith('//')) {
-                safeUrl = 'https:' + safeUrl;
-            }
-            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
-                const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)/);
-                if (match && match[1]) {
-                    safeUrl = `https://i.ibb.co/${match[1]}/image.jpg`;
-                }
-            }
-            if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
-                const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
-                if (match && match[1]) {
-                    safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
-                }
-            }
-            if (safeUrl === 'https://i.ibb.co/4ZYPDdBG/file-000000003320720ab44c069051ca1c2b.png') {
-                return DEFAULT_NEWS_IMAGE;
-            }
-            return safeUrl;
-        }
-
-        let currentUserId = null;
-        let currentUserDoc = null;
-
-        // ===== AUTH =====
-        auth.onAuthStateChanged(async (user) => {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            currentUserId = user.uid;
-            const userDoc = await db.collection('users').doc(currentUserId).get();
-            if (userDoc.exists) {
-                currentUserDoc = userDoc.data();
-            }
-            loadNews();
-        });
-
-        // ===== LOAD NEWS =====
-        async function loadNews() {
-            const container = document.getElementById('newsContainer');
-            try {
-                const snapshot = await db.collection('news').orderBy('createdAt', 'desc').get();
-                if (snapshot.empty) {
-                    container.innerHTML = '<div class="empty-msg">📭 No news posts available at the moment.</div>';
-                    return;
-                }
-                let html = '';
-                for (const doc of snapshot.docs) {
-                    const news = doc.data();
-                    const postId = doc.id;
-                    const safeImageUrl = getSafeImageUrl(news.imageUrl || '');
-                    const likes = news.likes || [];
-                    const liked = currentUserId && likes.includes(currentUserId);
-                    const commentCount = news.commentCount || 0;
-
-                    // Get comments for this post
-                    const commentsSnap = await db.collection('news')
-                        .doc(postId)
-                        .collection('comments')
-                        .orderBy('timestamp', 'asc')
-                        .limit(10)
-                        .get();
-
-                    let commentsHtml = '';
-                    const comments = [];
-                    commentsSnap.forEach(c => {
-                        const cData = c.data();
-                        comments.push({ id: c.id, ...cData });
-                    });
-
-                    if (comments.length > 0) {
-                        comments.forEach(c => {
-                            const initial = c.userName ? c.userName.charAt(0).toUpperCase() : 'U';
-                            commentsHtml += `
-                                <div class="comment-item">
-                                    <div class="comment-avatar">${escapeHtml(initial)}</div>
-                                    <div class="comment-body">
-                                        <div class="comment-author">${escapeHtml(c.userName || 'User')}</div>
-                                        <div class="comment-text">${escapeHtml(c.text)}</div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                    } else {
-                        commentsHtml = `<div class="comment-empty">No comments yet. Be the first! 💬</div>`;
-                    }
-
-                    const postDate = news.createdAt ? news.createdAt.toDate() : new Date();
-                    const timeAgo = getTimeAgo(postDate);
-
-                    html += `
-                        <div class="post-card" data-postid="${postId}">
-                            <!-- Post Header -->
-                            <div class="post-header">
-                                <div class="post-avatar">📢</div>
-                                <div>
-                                    <div class="post-author">Pureore Admin</div>
-                                    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                                        <span class="post-time">${timeAgo}</span>
-                                        <span class="post-badge">Official</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Post Content -->
-                            <div class="post-title">${escapeHtml(news.title)}</div>
-                            <div class="post-body">${escapeHtml(news.content).replace(/\n/g, '<br>')}</div>
-                            ${safeImageUrl ? `<img class="post-image" src="${escapeHtml(safeImageUrl)}" alt="${escapeHtml(news.title)}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${FALLBACK_IMAGE}';">` : ''}
-
-                            <!-- Post Actions -->
-                            <div class="post-actions">
-                                <button class="action-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${postId}')">
-                                    <span class="heart-icon">${liked ? '❤️' : '🤍'}</span>
-                                    <span id="likeCount_${postId}">${likes.length}</span>
-                                </button>
-                                <button class="action-btn" onclick="focusComment('${postId}')">
-                                    💬 <span id="commentCount_${postId}">${commentCount}</span>
-                                </button>
-                            </div>
-
-                            <!-- Comment Section -->
-                            <div class="comment-section" id="commentSection_${postId}">
-                                <div class="comment-input-wrapper">
-                                    <input type="text" id="commentInput_${postId}" placeholder="Write a comment...">
-                                    <div class="emoji-picker">
-                                        <button class="emoji-btn" onclick="addEmoji('${postId}', '😊')">😊</button>
-                                        <button class="emoji-btn" onclick="addEmoji('${postId}', '🔥')">🔥</button>
-                                        <button class="emoji-btn" onclick="addEmoji('${postId}', '🚀')">🚀</button>
-                                        <button class="emoji-btn" onclick="addEmoji('${postId}', '💰')">💰</button>
-                                        <button class="emoji-btn" onclick="addEmoji('${postId}', '🎉')">🎉</button>
-                                        <button class="emoji-btn" onclick="addEmoji('${postId}', '💎')">💎</button>
-                                        <button class="emoji-btn" onclick="addEmoji('${postId}', '👍')">👍</button>
-                                        <button class="emoji-btn" onclick="addEmoji('${postId}', '❤️')">❤️</button>
-                                    </div>
-                                    <button class="comment-submit" onclick="submitComment('${postId}')">Post</button>
-                                </div>
-                                <div class="comments-list" id="commentsList_${postId}">
-                                    ${commentsHtml}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-                container.innerHTML = html;
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = '<div class="empty-msg">Error loading news. Please refresh.</div>';
-            }
-        }
-
-        // ===== TIME AGO =====
         function getTimeAgo(date) {
-            const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
+            var now = new Date();
+            var diff = Math.floor((now - date) / 1000);
             if (diff < 60) return 'Just now';
             if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
             if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
@@ -805,206 +831,204 @@
             return date.toLocaleDateString();
         }
 
-        // ===== LIKE FUNCTION =====
-        window.toggleLike = async function(postId) {
-            if (!currentUserId) return;
-            try {
-                const postRef = db.collection('news').doc(postId);
-                const postSnap = await postRef.get();
-                if (!postSnap.exists) return;
-                const data = postSnap.data();
-                const likes = data.likes || [];
-                const liked = likes.includes(currentUserId);
-
-                if (liked) {
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.arrayRemove(currentUserId)
-                    });
-                } else {
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.arrayUnion(currentUserId)
-                    });
-                }
-
-                // Update UI
-                const likeCountSpan = document.getElementById(`likeCount_${postId}`);
-                if (likeCountSpan) {
-                    const newLikes = liked ? likes.length - 1 : likes.length + 1;
-                    likeCountSpan.textContent = newLikes;
-                }
-                const actionBtn = document.querySelector(`[data-postid="${postId}"] .action-btn`);
-                if (actionBtn) {
-                    actionBtn.classList.toggle('liked', !liked);
-                    const heart = actionBtn.querySelector('.heart-icon');
-                    if (heart) heart.textContent = liked ? '🤍' : '❤️';
-                }
-            } catch (err) {
-                console.error(err);
-                showToast('Error toggling like.', true);
+        function getSafeImageUrl(url) {
+            if (!url) return null;
+            var safeUrl = url.trim();
+            if (safeUrl.startsWith('http://')) safeUrl = safeUrl.replace('http://', 'https://');
+            if (safeUrl.startsWith('//')) safeUrl = 'https:' + safeUrl;
+            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
+                var match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)/);
+                if (match && match[1]) safeUrl = 'https://i.ibb.co/' + match[1] + '/image.jpg';
             }
-        };
+            return safeUrl;
+        }
 
-        // ===== FOCUS COMMENT INPUT =====
-        window.focusComment = function(postId) {
-            const input = document.getElementById(`commentInput_${postId}`);
-            if (input) input.focus();
-        };
+        // ================================================================
+        // BLOCK LISTENER
+        // ================================================================
+        var blockUnsub = null;
 
-        // ===== ADD EMOJI =====
-        window.addEmoji = function(postId, emoji) {
-            const input = document.getElementById(`commentInput_${postId}`);
-            if (input) {
-                input.value += emoji;
-                input.focus();
-            }
-        };
+        function watchBlockStatus(userId) {
+            if (blockUnsub) blockUnsub();
+            blockUnsub = db.collection('users').doc(userId).onSnapshot(function(doc) {
+                if (doc.exists && doc.data().isBlocked === true) {
+                    showToast('⚠️ Your account has been blocked. Redirecting...', true);
+                    setTimeout(function() {
+                        auth.signOut().then(function() { window.location.href = 'login.html'; });
+                    }, 2000);
+                }
+            }, function(err) { console.warn('Block listener error:', err); });
+        }
+        window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
-        // ===== SUBMIT COMMENT =====
-        window.submitComment = async function(postId) {
-            if (!currentUserId) return;
-            const input = document.getElementById(`commentInput_${postId}`);
-            const text = input.value.trim();
-            if (!text) {
-                showToast('Please write something.', true);
-                return;
-            }
+        // ================================================================
+        // LOAD NEWS
+        // ================================================================
+        async function loadNews() {
+            var container = document.getElementById('newsContainer');
+            container.innerHTML = '<div class="loader"></div>';
 
             try {
-                // Check if user already commented on this post
-                const existingComments = await db.collection('news')
-                    .doc(postId)
-                    .collection('comments')
-                    .where('userId', '==', currentUserId)
-                    .limit(1)
+                var snapshot = await db.collection('news')
+                    .orderBy('createdAt', 'desc')
                     .get();
 
-                if (!existingComments.empty) {
-                    showToast('You already commented on this post.', true);
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                            <div class="title">No news available</div>
+                            <div class="sub">Check back later for updates</div>
+                        </div>
+                    `;
                     return;
                 }
 
-                const userName = currentUserDoc?.fullName || 'User';
+                var html = '';
+                snapshot.forEach(function(doc) {
+                    var news = doc.data();
+                    var title = news.title || 'Untitled';
+                    var content = news.content || '';
+                    var imageUrl = getSafeImageUrl(news.imageUrl);
+                    var createdAt = news.createdAt ? news.createdAt.toDate() : new Date();
+                    var timeAgo = getTimeAgo(createdAt);
 
-                await db.collection('news')
-                    .doc(postId)
-                    .collection('comments')
-                    .add({
-                        userId: currentUserId,
-                        userName: userName,
-                        text: text,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                // Update comment count
-                const postRef = db.collection('news').doc(postId);
-                await postRef.update({
-                    commentCount: firebase.firestore.FieldValue.increment(1)
-                });
-
-                // Clear input
-                input.value = '';
-
-                // Refresh comments
-                await refreshComments(postId);
-                showToast('✅ Comment posted!', false);
-            } catch (err) {
-                console.error(err);
-                showToast('Error posting comment.', true);
-            }
-        };
-
-        // ===== REFRESH COMMENTS =====
-        async function refreshComments(postId) {
-            const commentsList = document.getElementById(`commentsList_${postId}`);
-            if (!commentsList) return;
-
-            try {
-                const commentsSnap = await db.collection('news')
-                    .doc(postId)
-                    .collection('comments')
-                    .orderBy('timestamp', 'asc')
-                    .limit(10)
-                    .get();
-
-                if (commentsSnap.empty) {
-                    commentsList.innerHTML = `<div class="comment-empty">No comments yet. Be the first! 💬</div>`;
-                    return;
-                }
-
-                let html = '';
-                commentsSnap.forEach(c => {
-                    const cData = c.data();
-                    const initial = cData.userName ? cData.userName.charAt(0).toUpperCase() : 'U';
                     html += `
-                        <div class="comment-item">
-                            <div class="comment-avatar">${escapeHtml(initial)}</div>
-                            <div class="comment-body">
-                                <div class="comment-author">${escapeHtml(cData.userName || 'User')}</div>
-                                <div class="comment-text">${escapeHtml(cData.text)}</div>
+                        <div class="news-card" data-id="${doc.id}">
+                            <div class="card-glow"></div>
+                            <div class="card-header">
+                                <div class="avatar">📢</div>
+                                <div class="info">
+                                    <div class="author">Pureore Admin</div>
+                                    <div class="meta">
+                                        <span>${timeAgo}</span>
+                                        <span class="badge">Official</span>
+                                    </div>
+                                </div>
+                            </div>
+                            ${imageUrl ? `<img class="card-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(title)}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.style.display='none';">` : ''}
+                            <div class="card-body">
+                                <div class="title">${escapeHtml(title)}</div>
+                                <div class="content" id="content_${doc.id}">${escapeHtml(content).replace(/\n/g, '<br>')}</div>
+                            </div>
+                            <div class="card-footer">
+                                <button class="read-more" data-id="${doc.id}">Read More</button>
+                                <button class="share-btn" data-url="${encodeURIComponent(window.location.href)}">
+                                    <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                    Share
+                                </button>
                             </div>
                         </div>
                     `;
                 });
 
-                commentsList.innerHTML = html;
+                container.innerHTML = html;
 
-                // Update comment count
-                const countSpan = document.getElementById(`commentCount_${postId}`);
-                if (countSpan) {
-                    const count = commentsSnap.size;
-                    countSpan.textContent = count;
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        // ===== FLAGS MARQUEE =====
-        const countries = [
-            { name: "UK", emoji: "🇬🇧" }, { name: "Congo", emoji: "🇨🇬" },
-            { name: "Tanzania", emoji: "🇹🇿" }, { name: "Ghana", emoji: "🇬🇭" },
-            { name: "Zimbabwe", emoji: "🇿🇼" }, { name: "Zambia", emoji: "🇿🇲" }
-        ];
-        const marquee = document.getElementById('flagsMarquee');
-        function buildMarquee() {
-            let html = '';
-            for (let i = 0; i < 2; i++) {
-                countries.forEach(country => {
-                    html += `<div class="flag-item"><div class="flag-icon">${country.emoji}</div><div class="flag-name">${country.name}</div></div>`;
+                // Attach read more toggle
+                document.querySelectorAll('.read-more').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var id = this.dataset.id;
+                        var content = document.getElementById('content_' + id);
+                        if (content) {
+                            content.classList.toggle('expanded');
+                            this.textContent = content.classList.contains('expanded') ? 'Show Less' : 'Read More';
+                        }
+                    });
                 });
-            }
-            marquee.innerHTML = html;
-        }
-        buildMarquee();
 
-        // ===== NAVIGATION =====
-        const navItems = document.querySelectorAll('.nav-item');
-        const currentPage = window.location.pathname.split('/').pop() || 'news.html';
-        navItems.forEach(item => {
-            const targetPage = item.getAttribute('data-page');
+                // Attach share button
+                document.querySelectorAll('.share-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var url = decodeURIComponent(this.dataset.url);
+                        if (navigator.share) {
+                            navigator.share({
+                                title: 'Pureore Capital News',
+                                text: 'Check out this news from Pureore Capital!',
+                                url: url
+                            }).catch(function() {});
+                        } else {
+                            navigator.clipboard.writeText(url).then(function() {
+                                showToast('✅ Link copied to clipboard!', false);
+                            }).catch(function() {
+                                // Fallback
+                                var textArea = document.createElement('textarea');
+                                textArea.value = url;
+                                document.body.appendChild(textArea);
+                                textArea.select();
+                                document.execCommand('copy');
+                                textArea.remove();
+                                showToast('✅ Link copied!', false);
+                            });
+                        }
+                    });
+                });
+
+            } catch (err) {
+                console.error('Error loading news:', err);
+                container.innerHTML = '<div class="empty-state"><div class="title">Error loading news</div><div class="sub">Please refresh the page</div></div>';
+            }
+        }
+
+        // ================================================================
+        // FLAGS MARQUEE
+        // ================================================================
+        var countries = [
+            { name: "UK", emoji: "🇬🇧" },
+            { name: "Tanzania", emoji: "🇹🇿" },
+            { name: "Ghana", emoji: "🇬🇭" },
+            { name: "Zimbabwe", emoji: "🇿🇼" },
+            { name: "Congo", emoji: "🇨🇬" },
+            { name: "Zambia", emoji: "🇿🇲" }
+        ];
+        var marquee = document.getElementById('flagsMarquee');
+        var flagHtml = '';
+        for (var r = 0; r < 2; r++) {
+            for (var c = 0; c < countries.length; c++) {
+                flagHtml += '<div class="flag-item"><div class="flag-emoji">' + countries[c].emoji +
+                    '</div><div class="flag-name">' + countries[c].name + '</div></div>';
+            }
+        }
+        marquee.innerHTML = flagHtml;
+
+        // ================================================================
+        // AUTH STATE
+        // ================================================================
+        auth.onAuthStateChanged(function(user) {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            watchBlockStatus(user.uid);
+            loadNews();
+        });
+
+        // ================================================================
+        // BACK BUTTON
+        // ================================================================
+        document.getElementById('backBtn').addEventListener('click', function() {
+            window.location.href = 'dashboard.html';
+        });
+
+        // ================================================================
+        // BOTTOM NAV
+        // ================================================================
+        var navItems = document.querySelectorAll('.nav-item');
+        var currentPage = window.location.pathname.split('/').pop() || 'news.html';
+        navItems.forEach(function(item) {
+            var targetPage = item.getAttribute('data-page');
             if (currentPage === targetPage) item.classList.add('active');
-            item.addEventListener('click', () => {
-                if (targetPage && !window.location.pathname.includes(targetPage)) {
-                    window.location.href = targetPage;
+            item.addEventListener('click', function() {
+                var target = this.getAttribute('data-page');
+                if (target && !window.location.pathname.includes(target)) {
+                    window.location.href = target;
                 }
             });
         });
 
-        // ===== AUTO-GLOW NAVIGATION =====
-        const glowColors = ['glow', 'glow-gold', 'glow-purple', ''];
-        let glowIndex = 0;
-
-        function cycleGlow() {
-            navItems.forEach(item => {
-                item.classList.remove('glow', 'glow-gold', 'glow-purple');
-            });
-            if (glowColors[glowIndex]) {
-                const targetIndex = glowIndex % navItems.length;
-                navItems[targetIndex].classList.add(glowColors[glowIndex]);
-            }
-            glowIndex = (glowIndex + 1) % (navItems.length + 1);
-        }
-        setInterval(cycleGlow, 3000);
+        console.log('✨ Pureore Capital · News (redesigned – no likes)');
+        console.log('📰 Clean announcement feed with glass-morphism');
+        console.log('🔐 Firebase config untouched');
     </script>
+
 </body>
 </html>
