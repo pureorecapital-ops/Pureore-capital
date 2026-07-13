@@ -1327,13 +1327,15 @@
             }
             container.innerHTML = html;
 
-            // Attach claim events
+            // Attach claim events – FIX: disable button immediately on click
             document.querySelectorAll('.claim-btn.active').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     var invId = this.dataset.id;
                     var dailyAmount = parseFloat(this.dataset.daily);
-                    claimDailyIncome(invId, dailyAmount, true);
+                    // Disable button right away to prevent double click
+                    this.disabled = true;
+                    claimDailyIncome(invId, dailyAmount, true, this);
                 });
             });
 
@@ -1454,18 +1456,20 @@
         }
 
         // ================================================================
-        // CLAIM DAILY INCOME
+        // CLAIM DAILY INCOME (now accepts a button reference)
         // ================================================================
-        async function claimDailyIncome(investmentId, dailyAmount, refreshAfter) {
+        async function claimDailyIncome(investmentId, dailyAmount, refreshAfter, btnElement) {
             var user = auth.currentUser;
             if (!user) return false;
             var now = new Date();
             if (isWeekend(now)) {
                 showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
+                if (btnElement) btnElement.disabled = false; // re-enable if needed
                 return false;
             }
             if (claimingBlocked) {
                 showToast('❌ Claiming is paused because you have only one active plan and it ends in 2 days or less.', true);
+                if (btnElement) btnElement.disabled = false;
                 return false;
             }
 
@@ -1521,6 +1525,8 @@
                 return true;
             } catch (err) {
                 showToast(err.message || 'Claim failed', true);
+                // Re-enable button if it was disabled and still exists
+                if (btnElement) btnElement.disabled = false;
                 return false;
             }
         }
@@ -1563,7 +1569,7 @@
             var successCount = 0;
             for (var j = 0; j < claimable.length; j++) {
                 var item = claimable[j];
-                var success = await claimDailyIncome(item.id, item.dailyAmount, false);
+                var success = await claimDailyIncome(item.id, item.dailyAmount, false, null);
                 if (success) {
                     totalClaimed += item.dailyAmount;
                     successCount++;
@@ -1668,7 +1674,7 @@
             });
         });
 
-        console.log('✨ Pureore Capital · Income (weekend fix applied)');
+        console.log('✨ Pureore Capital · Income (weekend fix + double-click prevention)');
         console.log('⏱️ Claim timer preserves purchase time on weekend shifts');
         console.log('📅 Weekend purchase note displayed');
         console.log('🔐 Firebase config untouched');
