@@ -634,7 +634,7 @@
             color: rgba(255, 255, 255, 0.1);
         }
 
-        /* ----- PLAN ITEM (coming soon) ----- */
+        /* ----- PLAN STATUS BADGE ----- */
         .plan-status-badge {
             display: inline-block;
             padding: 0.05rem 0.6rem;
@@ -1363,6 +1363,7 @@
             loadDepositsHistory();
             loadPendingWithdrawals();
             loadWithdrawalsHistory();
+            // === FIXED: Robust plan loading ===
             loadPlans('mkvipPlans', 'mkvipPlansList');
             loadPlans('jproductPlans', 'jproductPlansList');
             loadTransactions();
@@ -1795,25 +1796,50 @@
         }
 
         // ================================================================
-        // PLANS (with "Coming Soon" support)
+        // PLANS – FIXED: robust query with fallback
         // ================================================================
         async function loadPlans(collection, elementId) {
-            var snap = await db.collection(collection).orderBy('createdAt', 'desc').get();
+            try {
+                // Try ordered query first
+                var snap = await db.collection(collection).orderBy('createdAt', 'desc').get();
+            } catch (err) {
+                console.warn('Order by createdAt failed for ' + collection + ', falling back to unordered query.', err);
+                // Fallback: get all without order and sort in memory
+                snap = await db.collection(collection).get();
+            }
+
             var html =
                 '<thead><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="6" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No plans</td></tr>'; } else {
-                for (var doc of snap.docs) {
-                    var p = doc.data();
+            if (snap.empty) {
+                html += '<tr><td colspan="6" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No plans</td></tr>';
+            } else {
+                // Convert to array and sort if needed (fallback case)
+                var plans = [];
+                snap.forEach(function(doc) {
+                    plans.push({ id: doc.id, data: doc.data() });
+                });
+                // If we used fallback, sort by createdAt descending (if available)
+                if (plans.length > 0 && plans[0].data.createdAt === undefined) {
+                    // no createdAt, keep as is
+                } else {
+                    plans.sort(function(a, b) {
+                        var timeA = a.data.createdAt?.toMillis?.() || 0;
+                        var timeB = b.data.createdAt?.toMillis?.() || 0;
+                        return timeB - timeA;
+                    });
+                }
+                for (var i = 0; i < plans.length; i++) {
+                    var p = plans[i].data;
+                    var docId = plans[i].id;
                     var status = p.status || 'active';
                     var statusBadge = status === 'coming_soon' ?
                         '<span class="plan-status-badge coming-soon">🚀 Coming Soon</span>' :
                         '<span class="plan-status-badge active">Active</span>';
                     html += '<tr><td>' + escapeHtml(p.name) + '</td><td>' + p.minAmount + ' - ' + p.maxAmount +
                         '</td><td>' + p.days + '</td><td>' + p.dailyReturn + ' ZMW</td><td>' + statusBadge +
-                        '</td><td><button class="btn-small" onclick="openEditPlanModal(\'' + doc.id + '\',\'' +
+                        '</td><td><button class="btn-small" onclick="openEditPlanModal(\'' + docId + '\',\'' +
                         collection + '\')">Edit</button> <button class="btn-small danger" onclick="deletePlan(\'' +
-                        doc.id + '\',\'' + collection + '\')">Delete</button></td></tr>';
+                        docId + '\',\'' + collection + '\')">Delete</button></td></tr>';
                 }
             }
             html += '</tbody>';
@@ -1862,27 +1888,21 @@
             }).catch(function(err) { showToast(err.message, true); });
         }
 
+        // === FIXED: openEditPlanModal with cleanup ===
+        var editPlanModalExists = false;
+
         window.openEditPlanModal = function(id, collection) {
+            // Remove existing edit modal if any
+            var existing = document.getElementById('editPlanModal');
+            if (existing) existing.remove();
+
             db.collection(collection).doc(id).get().then(function(doc) {
                 var p = doc.data();
-                document.getElementById('editPlanId').value = id;
-                document.getElementById('editPlanType').value = collection;
-                document.getElementById('editPlanName').value = p.name;
-                document.getElementById('editPlanMin').value = p.minAmount;
-                document.getElementById('editPlanMax').value = p.maxAmount;
-                document.getElementById('editPlanDays').value = p.days;
-                document.getElementById('editPlanDailyReturn').value = p.dailyReturn;
-                document.getElementById('editPlanImage').value = p.image || '';
-                document.getElementById('editPlanPurchaseLimit').value = p.purchaseLimit || 0;
-                document.getElementById('editPlanLock').value = p.lock || '';
-                document.getElementById('editPlanExpiry').value = p.expiry || '';
-                document.getElementById('editPlanStatus').value = p.status || 'active';
-                // Create edit modal dynamically or use inline
                 var modal = document.createElement('div');
                 modal.className = 'modal-overlay active';
                 modal.id = 'editPlanModal';
                 modal.innerHTML =
-                    '<div class="modal-card"><button class="modal-close" onclick="closeModal(\'editPlanModal\')">✕</button><h3>Edit Plan</h3><div class="form-group"><label>Name</label><input type="text" id="editPlanName" value="' +
+                    '<div class="modal-card"><button class="modal-close" onclick="closeEditPlanModal()">✕</button><h3>Edit Plan</h3><div class="form-group"><label>Name</label><input type="text" id="editPlanName" value="' +
                     escapeHtml(p.name) +
                     '" /></div><div class="form-row"><div class="form-group"><label>Min</label><input type="number" id="editPlanMin" value="' +
                     p.minAmount +
@@ -1904,10 +1924,17 @@
                     (p.status === 'active' ? ' selected' : '') +
                     '>Active</option><option value="coming_soon"' + (p.status === 'coming_soon' ? ' selected' :
                         '') + '>Coming Soon</option></select></div><div class="modal-actions"><button class="btn-small success" onclick="updatePlan(\'' +
-                    id + '\',\'' + collection + '\')">Update</button><button class="btn-small outline" onclick="closeModal(\'editPlanModal\')">Cancel</button></div></div>';
+                    id + '\',\'' + collection + '\')">Update</button><button class="btn-small outline" onclick="closeEditPlanModal()">Cancel</button></div></div>';
                 document.body.appendChild(modal);
+                editPlanModalExists = true;
             });
         };
+
+        function closeEditPlanModal() {
+            var existing = document.getElementById('editPlanModal');
+            if (existing) existing.remove();
+            editPlanModalExists = false;
+        }
 
         window.updatePlan = function(id, collection) {
             var name = document.getElementById('editPlanName').value.trim();
@@ -1923,7 +1950,7 @@
 
             var data = { name, minAmount, maxAmount, days, dailyReturn, image, purchaseLimit, lock, expiry, status };
             db.collection(collection).doc(id).update(data).then(function() {
-                closeModal('editPlanModal');
+                closeEditPlanModal();
                 loadPlans(collection, collection === 'mkvipPlans' ? 'mkvipPlansList' : 'jproductPlansList');
                 showToast('Plan updated', false);
             }).catch(function(err) { showToast(err.message, true); });
@@ -2412,9 +2439,10 @@
                 btn.textContent = 'Fix Now'; }
         }
 
-        console.log('✨ Pureore Capital · Admin Dashboard (unique design)');
+        console.log('✨ Pureore Capital · Admin Dashboard (plans loading fixed)');
         console.log('📈 Plans with "Coming Soon" status');
         console.log('🔐 Firebase config untouched');
+        console.log('🛠️ Robust query with fallback for missing indexes');
     </script>
 </body>
 </html>

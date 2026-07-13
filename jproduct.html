@@ -1330,7 +1330,7 @@
         var allPlans = [];
 
         // ================================================================
-        // LOAD PLANS
+        // LOAD PLANS (FIXED - robust fetching)
         // ================================================================
         async function loadPlans() {
             var loading = document.getElementById('loadingIndicator');
@@ -1342,20 +1342,33 @@
             empty.style.display = 'none';
 
             try {
-                // Get plans ordered by displayOrder (if exists) then by createdAt
-                var snapshot = await db.collection('jproductPlans')
-                    .orderBy('displayOrder', 'asc')
-                    .get()
-                    .catch(function() {
-                        // Fallback if displayOrder doesn't exist
-                        return db.collection('jproductPlans')
+                console.log('Attempting to fetch J Product plans...');
+                // First, try to get plans ordered by displayOrder
+                var snapshot;
+                try {
+                    snapshot = await db.collection('jproductPlans')
+                        .orderBy('displayOrder', 'asc')
+                        .get();
+                    console.log('Fetched plans ordered by displayOrder:', snapshot.size);
+                } catch (orderErr) {
+                    console.warn('Fallback: displayOrder index missing, using createdAt:', orderErr);
+                    // Fallback to createdAt
+                    try {
+                        snapshot = await db.collection('jproductPlans')
                             .orderBy('createdAt', 'desc')
                             .get();
-                    });
+                        console.log('Fetched plans ordered by createdAt:', snapshot.size);
+                    } catch (fallbackErr) {
+                        console.warn('Fallback failed, getting all without ordering:', fallbackErr);
+                        snapshot = await db.collection('jproductPlans').get();
+                        console.log('Fetched all plans (no ordering):', snapshot.size);
+                    }
+                }
 
                 if (snapshot.empty) {
                     loading.style.display = 'none';
                     empty.style.display = 'block';
+                    console.log('No J Product plans found.');
                     return;
                 }
 
@@ -1394,7 +1407,7 @@
                 loading.style.display = 'none';
                 empty.style.display = 'block';
                 empty.querySelector('.title').textContent = 'Error loading plans';
-                empty.querySelector('.sub').textContent = 'Please refresh the page';
+                empty.querySelector('.sub').textContent = 'Please refresh the page: ' + err.message;
             }
         }
 
@@ -1845,10 +1858,9 @@
             });
         });
 
-        console.log('✨ Pureore Capital · J Product (unique design)');
-        console.log('⏳ Coming Soon support with distinct button color');
-        console.log('📊 Plans ordered by displayOrder or createdAt');
+        console.log('✨ Pureore Capital · J Product (plans loading fixed)');
         console.log('🔐 Firebase config untouched');
+        console.log('📊 Plans will now load even if displayOrder index is missing');
     </script>
 </body>
 </html>

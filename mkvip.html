@@ -1251,19 +1251,6 @@
         }
 
         // ================================================================
-        // TOAST
-        // ================================================================
-        function showToast(msg, isError) {
-            var existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (isError ? ' error' : ' success');
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 5000);
-        }
-
-        // ================================================================
         // BLOCK LISTENER
         // ================================================================
         var blockUnsub = null;
@@ -1343,7 +1330,7 @@
         var allPlans = [];
 
         // ================================================================
-        // LOAD PLANS
+        // LOAD PLANS (FIXED - robust fetching)
         // ================================================================
         async function loadPlans() {
             var loading = document.getElementById('loadingIndicator');
@@ -1355,20 +1342,33 @@
             empty.style.display = 'none';
 
             try {
-                // Get plans ordered by displayOrder (if exists) then by createdAt
-                var snapshot = await db.collection('mkvipPlans')
-                    .orderBy('displayOrder', 'asc')
-                    .get()
-                    .catch(function() {
-                        // Fallback if displayOrder doesn't exist
-                        return db.collection('mkvipPlans')
+                console.log('Attempting to fetch MK VIP plans...');
+                // First, try to get plans ordered by displayOrder
+                var snapshot;
+                try {
+                    snapshot = await db.collection('mkvipPlans')
+                        .orderBy('displayOrder', 'asc')
+                        .get();
+                    console.log('Fetched plans ordered by displayOrder:', snapshot.size);
+                } catch (orderErr) {
+                    console.warn('Fallback: displayOrder index missing, using createdAt:', orderErr);
+                    // Fallback to createdAt
+                    try {
+                        snapshot = await db.collection('mkvipPlans')
                             .orderBy('createdAt', 'desc')
                             .get();
-                    });
+                        console.log('Fetched plans ordered by createdAt:', snapshot.size);
+                    } catch (fallbackErr) {
+                        console.warn('Fallback failed, getting all without ordering:', fallbackErr);
+                        snapshot = await db.collection('mkvipPlans').get();
+                        console.log('Fetched all plans (no ordering):', snapshot.size);
+                    }
+                }
 
                 if (snapshot.empty) {
                     loading.style.display = 'none';
                     empty.style.display = 'block';
+                    console.log('No MK VIP plans found.');
                     return;
                 }
 
@@ -1407,7 +1407,7 @@
                 loading.style.display = 'none';
                 empty.style.display = 'block';
                 empty.querySelector('.title').textContent = 'Error loading plans';
-                empty.querySelector('.sub').textContent = 'Please refresh the page';
+                empty.querySelector('.sub').textContent = 'Please refresh the page: ' + err.message;
             }
         }
 
@@ -1858,10 +1858,9 @@
             });
         });
 
-        console.log('✨ Pureore Capital · MK VIP (unique design)');
-        console.log('⏳ Coming Soon support with distinct button color');
-        console.log('📊 Plans ordered by displayOrder or createdAt');
+        console.log('✨ Pureore Capital · MK VIP (plans loading fixed)');
         console.log('🔐 Firebase config untouched');
+        console.log('📊 Plans will now load even if displayOrder index is missing');
     </script>
 </body>
 </html>
