@@ -1363,7 +1363,6 @@
             loadDepositsHistory();
             loadPendingWithdrawals();
             loadWithdrawalsHistory();
-            // === FIXED: Robust plan loading ===
             loadPlans('mkvipPlans', 'mkvipPlansList');
             loadPlans('jproductPlans', 'jproductPlansList');
             loadTransactions();
@@ -1800,11 +1799,9 @@
         // ================================================================
         async function loadPlans(collection, elementId) {
             try {
-                // Try ordered query first
                 var snap = await db.collection(collection).orderBy('createdAt', 'desc').get();
             } catch (err) {
                 console.warn('Order by createdAt failed for ' + collection + ', falling back to unordered query.', err);
-                // Fallback: get all without order and sort in memory
                 snap = await db.collection(collection).get();
             }
 
@@ -1813,15 +1810,11 @@
             if (snap.empty) {
                 html += '<tr><td colspan="6" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No plans</td></tr>';
             } else {
-                // Convert to array and sort if needed (fallback case)
                 var plans = [];
                 snap.forEach(function(doc) {
                     plans.push({ id: doc.id, data: doc.data() });
                 });
-                // If we used fallback, sort by createdAt descending (if available)
-                if (plans.length > 0 && plans[0].data.createdAt === undefined) {
-                    // no createdAt, keep as is
-                } else {
+                if (plans.length > 0 && plans[0].data.createdAt !== undefined) {
                     plans.sort(function(a, b) {
                         var timeA = a.data.createdAt?.toMillis?.() || 0;
                         var timeB = b.data.createdAt?.toMillis?.() || 0;
@@ -1861,9 +1854,11 @@
             openModal('addPlanModal');
         };
 
+        // ================================================================
+        // SAVE PLAN – FIXED: uses planType directly as collection name
+        // ================================================================
         function savePlan() {
-            var type = document.getElementById('planType').value;
-            var collection = type === 'mkvip' ? 'mkvipPlans' : 'jproductPlans';
+            var collection = document.getElementById('planType').value; // ← FIXED: no mapping, use as-is
             var name = document.getElementById('planName').value.trim();
             var minAmount = parseFloat(document.getElementById('planMin').value);
             var maxAmount = parseFloat(document.getElementById('planMax').value);
@@ -1888,11 +1883,10 @@
             }).catch(function(err) { showToast(err.message, true); });
         }
 
-        // === FIXED: openEditPlanModal with cleanup ===
+        // === EDIT PLAN MODAL ===
         var editPlanModalExists = false;
 
         window.openEditPlanModal = function(id, collection) {
-            // Remove existing edit modal if any
             var existing = document.getElementById('editPlanModal');
             if (existing) existing.remove();
 

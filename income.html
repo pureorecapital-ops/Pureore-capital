@@ -489,6 +489,28 @@
             flex-shrink: 0;
         }
 
+        /* Weekend Purchase Note */
+        .plan-card .weekend-purchase-note {
+            font-size: 0.65rem;
+            color: #b388ff;
+            background: rgba(179, 136, 255, 0.06);
+            border: 1px solid rgba(179, 136, 255, 0.08);
+            border-radius: 20px;
+            padding: 0.2rem 0.8rem;
+            display: inline-block;
+            margin: 0.2rem 0 0.4rem 0;
+        }
+
+        .plan-card .weekend-purchase-note svg {
+            width: 12px;
+            height: 12px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
         /* Claim Progress */
         .plan-card .claim-progress {
             margin: 0.6rem 0 0.8rem 0;
@@ -540,6 +562,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-wrap: wrap;
         }
 
         .plan-card .claim-status .countdown {
@@ -926,6 +949,12 @@
             });
         }
 
+        // Format date with time
+        function formatDateWithTime(date) {
+            var options = { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
         // ================================================================
         // STATE
         // ================================================================
@@ -1057,6 +1086,7 @@
             while (index < totalBusinessDays) {
                 var dueDate = index === 0 ? start : addBusinessDays(start, index);
                 var claimStart = new Date(dueDate);
+                // PRESERVE the original start time (hour, minute, second)
                 claimStart.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
                 var windowEnd = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
 
@@ -1154,7 +1184,8 @@
                         status: inv.status,
                         lastClaimed: inv.lastClaimed,
                         blockedStart: inv.blockedStart,
-                        claimsCount: inv.claimsCount || 0
+                        claimsCount: inv.claimsCount || 0,
+                        purchasedOnWeekend: inv.purchasedOnWeekend || false
                     };
                     if (!isExpired) {
                         active.push(investment);
@@ -1229,6 +1260,30 @@
                 var earnedDisplay = status.earnedSoFar || 0;
                 var dailyDisplay = status.dailyAmount || inv.dailyAmount;
 
+                // Format start date with time
+                var startDateFormatted = formatDateWithTime(inv.startDate);
+
+                // Check if this is a weekend purchase (if purchasedOnWeekend flag is true, OR if start date is Monday and claimsCount is 0 and it's the first claim window)
+                var isWeekendPurchase = inv.purchasedOnWeekend === true;
+                // Also detect: if claimsCount === 0 and startDate is a Monday and the plan was created recently (within last 3 days)
+                if (!isWeekendPurchase && inv.claimsCount === 0 && inv.startDate.getDay() === 1) {
+                    var daysSinceStart = Math.floor((now - inv.startDate) / (1000 * 60 * 60 * 24));
+                    if (daysSinceStart <= 3) {
+                        isWeekendPurchase = true;
+                    }
+                }
+
+                var weekendNoteHtml = '';
+                if (isWeekendPurchase && inv.claimsCount === 0) {
+                    var claimTimeStr = inv.startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    weekendNoteHtml = `
+                        <div class="weekend-purchase-note">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            📅 Weekend purchase – first claim available from ${claimTimeStr} on weekdays
+                        </div>
+                    `;
+                }
+
                 html += `
                     <div class="plan-card" data-id="${inv.id}" data-next-claim="${status.nextClaimTime ? status.nextClaimTime.getTime() : ''}" data-daily="${dailyDisplay}">
                         <div class="plan-top">
@@ -1236,13 +1291,15 @@
                             <div class="plan-info">
                                 <div class="plan-name">${escapeHtml(inv.planName)}</div>
                                 <div class="plan-meta">
-                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${inv.startDate.toLocaleDateString()}</span>
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
                                     <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${formatMoney(dailyDisplay)}/day</span>
                                     <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${daysLeft} days left</span>
                                 </div>
                             </div>
                             <div class="plan-amount">${formatMoney(inv.investAmount)}</div>
                         </div>
+
+                        ${weekendNoteHtml}
 
                         <div class="claim-progress">
                             <div class="progress-track">
@@ -1326,8 +1383,6 @@
                 if (diff <= 0) {
                     // Claim window should be open, but we'll let the main logic handle it
                     countdownEl.textContent = '0h 0m';
-                    // Optionally refresh the page to update button states
-                    // We rely on the 60s refresh interval for full state updates
                     return;
                 }
 
@@ -1353,6 +1408,7 @@
                 var inv = investments[i];
                 var statusText = inv.status === 'completed' ? 'Completed' : 'Expired';
                 var iconSvg = getPlanIcon(inv.planName);
+                var startDateFormatted = formatDateWithTime(inv.startDate);
                 html += `
                     <div class="plan-card" style="opacity:0.6;">
                         <div class="plan-top">
@@ -1360,7 +1416,7 @@
                             <div class="plan-info">
                                 <div class="plan-name">${escapeHtml(inv.planName)}</div>
                                 <div class="plan-meta">
-                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${inv.startDate.toLocaleDateString()}</span>
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
                                     <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${formatMoney(inv.dailyReturn)}/day</span>
                                     <span>⏱️ ${statusText}</span>
                                 </div>
@@ -1612,8 +1668,9 @@
             });
         });
 
-        console.log('✨ Pureore Capital · Income (unique design)');
-        console.log('⏱️ Claim timer based on purchase time (e.g., 14:00)');
+        console.log('✨ Pureore Capital · Income (weekend fix applied)');
+        console.log('⏱️ Claim timer preserves purchase time on weekend shifts');
+        console.log('📅 Weekend purchase note displayed');
         console.log('🔐 Firebase config untouched');
     </script>
 
