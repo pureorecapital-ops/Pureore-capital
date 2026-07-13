@@ -620,6 +620,7 @@
             padding: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.04);
             margin: 0.5rem 0 1rem 0;
+            position: relative;
         }
 
         .saved-info .info-row {
@@ -645,6 +646,41 @@
 
         .saved-info .info-value.gold {
             color: var(--gold);
+        }
+
+        /* Delete button for saved info */
+        .saved-info .delete-saved-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 40px;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--red);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .saved-info .delete-saved-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            transform: scale(1.05);
+        }
+
+        .saved-info .delete-saved-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         /* ----- WITHDRAW SUMMARY ----- */
@@ -846,6 +882,10 @@
             .summary-row {
                 font-size: 0.85rem;
             }
+            .saved-info .delete-saved-btn {
+                font-size: 0.6rem;
+                padding: 0.15rem 0.6rem;
+            }
         }
 
         @media (max-width: 400px) {
@@ -855,6 +895,12 @@
             .bank-chip {
                 font-size: 0.65rem;
                 padding: 0.25rem 0.6rem;
+            }
+            .saved-info .delete-saved-btn {
+                position: static;
+                margin-top: 0.5rem;
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -940,6 +986,10 @@
                         <span class="info-label">Name</span>
                         <span class="info-value" id="savedName">—</span>
                     </div>
+                    <button class="delete-saved-btn" id="deleteSavedInfoBtn">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        Delete Info
+                    </button>
                 </div>
 
                 <!-- Form to save info -->
@@ -1196,6 +1246,7 @@
         var savedAccount = document.getElementById('savedAccount');
         var savedName = document.getElementById('savedName');
         var step1Continue = document.getElementById('step1Continue');
+        var deleteSavedInfoBtn = document.getElementById('deleteSavedInfoBtn');
 
         var withdrawAmount = document.getElementById('withdrawAmount');
         var amountError = document.getElementById('amountError');
@@ -1353,6 +1404,59 @@
             // We'll use this when going to step 3 for confirmation
             // Not needed to prefill fields because we'll just show saved info
         }
+
+        // ================================================================
+        // DELETE SAVED INFO
+        // ================================================================
+        function deleteSavedInfo() {
+            if (!confirm('Are you sure you want to delete your saved withdrawal information? You will need to set it up again.')) {
+                return;
+            }
+
+            var user = auth.currentUser;
+            if (!user) {
+                showToast('Please login again.', true);
+                return;
+            }
+
+            deleteSavedInfoBtn.disabled = true;
+            deleteSavedInfoBtn.textContent = 'Deleting...';
+
+            db.collection('users').doc(user.uid).update({
+                withdrawalInfo: firebase.firestore.FieldValue.delete()
+            }).then(function() {
+                savedInfo = null;
+                // Hide saved info display
+                savedInfoDisplay.style.display = 'none';
+                // Show form
+                document.getElementById('infoForm').style.display = 'block';
+                step1Continue.style.display = 'none';
+                document.getElementById('step1Title').textContent = 'Set Up Withdrawal Info';
+                // Reset form fields
+                networkSelect.value = '';
+                phoneInput.value = '';
+                accountNameInput.value = '';
+                cardNumberInput.value = '';
+                bankChips.forEach(function(c) { c.classList.remove('active'); });
+                document.getElementById('phoneGroup').style.display = 'block';
+                document.getElementById('nameGroup').style.display = 'block';
+                document.getElementById('bankGroup').style.display = 'none';
+                selectedNetwork = '';
+                selectedBank = '';
+                showToast('✅ Saved info deleted. You can set up new details.', false);
+                deleteSavedInfoBtn.disabled = false;
+                deleteSavedInfoBtn.innerHTML =
+                    '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete Info';
+            }).catch(function(err) {
+                console.error(err);
+                showToast('Error deleting saved info: ' + err.message, true);
+                deleteSavedInfoBtn.disabled = false;
+                deleteSavedInfoBtn.innerHTML =
+                    '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete Info';
+            });
+        }
+
+        deleteSavedInfoBtn.addEventListener('click', deleteSavedInfo);
 
         // ================================================================
         // SAVE INFO FORM HANDLING
@@ -1719,6 +1823,7 @@
 
         console.log('✨ Pureore Capital · Withdraw page (unique design)');
         console.log('📱 Step-by-step with saved info check');
+        console.log('🗑️ Delete saved info option added');
         console.log('🔐 Firebase config untouched');
     </script>
 
