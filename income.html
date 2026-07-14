@@ -1456,7 +1456,7 @@
         }
 
         // ================================================================
-        // CLAIM DAILY INCOME (now accepts a button reference)
+        // CLAIM DAILY INCOME – FIXED: read from `balance` to preserve existing funds
         // ================================================================
         async function claimDailyIncome(investmentId, dailyAmount, refreshAfter, btnElement) {
             var user = auth.currentUser;
@@ -1464,7 +1464,7 @@
             var now = new Date();
             if (isWeekend(now)) {
                 showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
-                if (btnElement) btnElement.disabled = false; // re-enable if needed
+                if (btnElement) btnElement.disabled = false;
                 return false;
             }
             if (claimingBlocked) {
@@ -1496,11 +1496,13 @@
 
                     var userRef = db.collection('users').doc(user.uid);
                     var userSnap = await transaction.get(userRef);
-                    var currentWallet = userSnap.data().walletBalance || 0;
-                    var newWallet = currentWallet + dailyAmount;
+                    // 🔥 FIX: read from `balance` (the master wallet field)
+                    var currentBalance = userSnap.data().balance || 0;
+                    var newBalance = currentBalance + dailyAmount;
+                    // Update both fields to keep them in sync
                     transaction.update(userRef, {
-                        walletBalance: newWallet,
-                        balance: newWallet
+                        walletBalance: newBalance,
+                        balance: newBalance
                     });
 
                     transaction.update(invRef, { claimsCount: firebase.firestore.FieldValue.increment(1) });
@@ -1519,13 +1521,11 @@
                 showToast('✅ ' + formatMoney(dailyAmount) + ' claimed!', false);
                 if (refreshAfter) {
                     await loadInvestments();
-                    // Show ad popup
                     showAdPopup();
                 }
                 return true;
             } catch (err) {
                 showToast(err.message || 'Claim failed', true);
-                // Re-enable button if it was disabled and still exists
                 if (btnElement) btnElement.disabled = false;
                 return false;
             }
@@ -1674,9 +1674,8 @@
             });
         });
 
-        console.log('✨ Pureore Capital · Income (weekend fix + double-click prevention)');
-        console.log('⏱️ Claim timer preserves purchase time on weekend shifts');
-        console.log('📅 Weekend purchase note displayed');
+        console.log('✨ Pureore Capital · Income (wallet fix applied)');
+        console.log('💰 Claim now preserves existing wallet balance');
         console.log('🔐 Firebase config untouched');
     </script>
 
