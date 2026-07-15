@@ -1407,8 +1407,8 @@
             loadUsers('');
             loadPendingDeposits();
             loadDepositsHistory();
-            loadPendingWithdrawals();  // updated
-            loadWithdrawalsHistory();  // updated
+            loadPendingWithdrawals();
+            loadWithdrawalsHistory();
             loadPlans('mkvipPlans', 'mkvipPlansList');
             loadPlans('jproductPlans', 'jproductPlansList');
             loadTransactions();
@@ -1825,7 +1825,7 @@
         }
 
         // ================================================================
-        // WITHDRAWALS – FIXED: added Phone column
+        // WITHDRAWALS – FIXED: read phone from withdrawal doc first
         // ================================================================
         async function loadPendingWithdrawals() {
             var snap = await db.collection('withdrawals').where('status', '==', 'pending').get();
@@ -1837,7 +1837,13 @@
                 for (var doc of snap.docs) {
                     var w = doc.data();
                     var user = await db.collection('users').doc(w.userId).get();
-                    var userPhone = user.data()?.phone || 'N/A';
+
+                    // FIX: Try withdrawal doc first, then user profile
+                    var userPhone = w.phone || '';
+                    if (!userPhone) {
+                        userPhone = user.data()?.phone || 'N/A';
+                    }
+
                     html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + escapeHtml(
                         userPhone) + '</td><td>' + formatMoney(w.amount) + '</td><td>' + formatMoney(w.netAmount || w
                         .amount) + '</td><td>' + w.network +
@@ -1896,7 +1902,7 @@
         };
 
         // ================================================================
-        // WITHDRAWALS HISTORY – FIXED: added Phone column
+        // WITHDRAWALS HISTORY – FIXED: read phone from withdrawal doc first
         // ================================================================
         async function loadWithdrawalsHistory() {
             var snap = await db.collection('withdrawals').orderBy('createdAt', 'desc').get();
@@ -1908,7 +1914,13 @@
                 for (var doc of snap.docs) {
                     var w = doc.data();
                     var user = await db.collection('users').doc(w.userId).get();
-                    var userPhone = user.data()?.phone || 'N/A';
+
+                    // FIX: Try withdrawal doc first, then user profile
+                    var userPhone = w.phone || '';
+                    if (!userPhone) {
+                        userPhone = user.data()?.phone || 'N/A';
+                    }
+
                     html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + escapeHtml(
                         userPhone) + '</td><td>' + formatMoney(w.amount) + '</td><td>' + w.status +
                         '</td><td>' + (w.createdAt?.toDate().toLocaleString() || 'N/A') + '</td></tr>';
