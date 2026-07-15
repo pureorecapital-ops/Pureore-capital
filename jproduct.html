@@ -11,18 +11,95 @@
     <style>
         /* ----- RESET & BASE ----- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ============================================================
+           THEME CSS VARIABLES – set dynamically by JavaScript
+           ============================================================ */
+        :root {
+            /* These will be overridden by JS theme engine */
+            --theme-bg-start: #0b081a;
+            --theme-bg-end: #151030;
+            --theme-bg-mid: #1a1a3e;
+            --theme-bg-last: #0f0c24;
+            --theme-card-bg: rgba(20, 18, 45, 0.85);
+            --theme-card-border: rgba(0, 229, 255, 0.15);
+            --theme-card-hover-border: #00e5ff;
+            --theme-text-primary: #ffffff;
+            --theme-text-secondary: #a0a0c0;
+            --theme-text-muted: #666688;
+            --theme-cyan: #00e5ff;
+            --theme-cyan-dark: #0098c8;
+            --theme-cyan-glow: rgba(0, 229, 255, 0.3);
+            --theme-blue: #2979ff;
+            --theme-blue-dark: #0d47a1;
+            --theme-teal: #1de9b6;
+            --theme-teal-dark: #00bfa5;
+            --theme-mint: #69f0ae;
+            --theme-mint-dark: #00c853;
+            --theme-green: #69f0ae;
+            --theme-green-dark: #00c853;
+            --theme-green-glow: rgba(105, 240, 174, 0.2);
+            --theme-red: #ef4444;
+            --theme-avatar-bg: linear-gradient(135deg, #00e5ff, #2979ff, #1de9b6);
+            --theme-back-arrow: #00e5ff;
+            --theme-back-arrow-hover: #00e5ff;
+            --theme-btn-invest: linear-gradient(135deg, #1de9b6, #00bfa5);
+            --theme-btn-invest-hover: brightness(1.08);
+            --theme-btn-coming-soon: linear-gradient(135deg, #2979ff, #00e5ff);
+            --theme-modal-border: linear-gradient(135deg, #00e5ff, #1de9b6, #2979ff);
+            --theme-nav-gradient: linear-gradient(135deg, #00e5ff, #1de9b6, #2979ff, #0098c8);
+            --theme-nav-icon-active: rgba(0, 229, 255, 0.7);
+            --theme-toast-bg: #1de9b6;
+            --theme-toast-text: #0b081a;
+            --theme-loader: #00e5ff;
+            --theme-orb-1: #00e5ff;
+            --theme-orb-2: #2979ff;
+            --theme-orb-3: #1de9b6;
+            --theme-orb-4: #69f0ae;
+            --theme-progress-bg: linear-gradient(90deg, #2979ff, #00e5ff);
+            --theme-badge-vip: linear-gradient(135deg, #00e5ff, #2979ff);
+            --theme-badge-coming: linear-gradient(135deg, #2979ff, #00e5ff);
+            --theme-detail-cyan: #00e5ff;
+            --theme-detail-green: #69f0ae;
+            --theme-total-income: linear-gradient(135deg, #00e5ff, #69f0ae);
+            --theme-modal-close-hover: rgba(239, 68, 68, 0.2);
+            --theme-btn-cancel: rgba(255, 255, 255, 0.05);
+            --theme-btn-cancel-hover: rgba(255, 255, 255, 0.08);
+            --theme-btn-confirm: linear-gradient(135deg, #1de9b6, #00bfa5);
+            --theme-btn-confirm-hover: brightness(1.08);
+            --theme-plan-note: rgba(0, 229, 255, 0.02);
+            --theme-plan-note-border: rgba(0, 229, 255, 0.04);
+            --theme-plan-note-strong: #00e5ff;
+            --theme-empty-msg: #666688;
+            --theme-limits: #00e5ff;
+            --theme-limit-reached: #ef4444;
+            --theme-lock: #8888aa;
+            --theme-detail-label: #666688;
+            --theme-detail-value: #ffffff;
+            --theme-total-label: #8888aa;
+            --theme-avatar-flow: #00e5ff, #2979ff, #1de9b6;
+            --theme-nav-label: #666688;
+            --theme-nav-label-active: #00e5ff;
+            --theme-nav-icon-filter: brightness(0.5) grayscale(0.5);
+            --theme-nav-icon-active-filter: brightness(1) drop-shadow(0 0 12px rgba(0, 229, 255, 0.7));
+            --theme-modal-overlay: rgba(11, 8, 26, 0.92);
+            --theme-close-btn: #8888aa;
+            --theme-close-btn-hover: #fff;
+        }
+
+        /* ----- BASE BODY ----- */
         body {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
             min-height: 100vh;
-            background: #0b081a;
-            color: #ffffff;
+            color: var(--theme-text-primary);
             padding: 1rem;
             padding-bottom: 85px;
             position: relative;
             overflow-x: hidden;
+            transition: background 2s ease, color 2s ease;
         }
 
-        /* ----- ANIMATED BACKGROUND (deep purple/navy) ----- */
+        /* ----- ANIMATED BACKGROUND ----- */
         body::before {
             content: "";
             position: fixed;
@@ -30,10 +107,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0b081a 0%, #151030 30%, #1a1a3e 60%, #0f0c24 100%);
+            background: linear-gradient(135deg,
+                    var(--theme-bg-start) 0%,
+                    var(--theme-bg-mid) 30%,
+                    var(--theme-bg-end) 60%,
+                    var(--theme-bg-last) 100%);
             background-size: 400% 400%;
             animation: bgShift 14s ease-in-out infinite alternate;
             z-index: -3;
+            transition: background 2s ease;
         }
         @keyframes bgShift {
             0% { background-position: 0% 50%; }
@@ -41,7 +123,7 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* ----- 4 FLOATING ORBS (cyan/teal accents) ----- */
+        /* ----- 4 FLOATING ORBS ----- */
         .orb {
             position: fixed;
             border-radius: 50%;
@@ -50,20 +132,20 @@
             z-index: -2;
             pointer-events: none;
             animation: floatOrb 14s ease-in-out infinite alternate;
+            transition: background 2s ease;
         }
         .orb-1 {
             width: 450px;
             height: 450px;
-            background: #00e5ff;
+            background: var(--theme-orb-1);
             top: -15%;
             left: -10%;
             animation-delay: 0s;
-            opacity: 0.08;
         }
         .orb-2 {
             width: 400px;
             height: 400px;
-            background: #b388ff;
+            background: var(--theme-orb-2);
             bottom: -10%;
             right: -10%;
             animation-delay: 4s;
@@ -72,7 +154,7 @@
         .orb-3 {
             width: 350px;
             height: 350px;
-            background: #ffd740;
+            background: var(--theme-orb-3);
             top: 40%;
             left: 70%;
             animation-delay: 8s;
@@ -81,7 +163,7 @@
         .orb-4 {
             width: 300px;
             height: 300px;
-            background: #00e676;
+            background: var(--theme-orb-4);
             bottom: 20%;
             left: -5%;
             animation-delay: 12s;
@@ -123,7 +205,7 @@
             padding: 6px 14px;
             font-size: 0.8rem;
             font-weight: 600;
-            color: #00e5ff;
+            color: var(--theme-back-arrow);
             cursor: pointer;
             transition: 0.3s;
             border: 1px solid rgba(0, 229, 255, 0.2);
@@ -131,7 +213,7 @@
             margin-bottom: 0.4rem;
         }
         .back-arrow:hover {
-            background: #00e5ff;
+            background: var(--theme-back-arrow-hover);
             color: #0b081a;
             transform: translateX(-4px);
             box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
@@ -145,13 +227,14 @@
         .page-title {
             font-size: 1.8rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #00e5ff, #2979ff);
+            background: linear-gradient(135deg, var(--theme-cyan), var(--theme-blue));
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: background 2s ease;
         }
         .page-title .icon {
             font-size: 1.8rem;
@@ -161,7 +244,7 @@
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #00e5ff, #2979ff, #b388ff);
+            background: var(--theme-avatar-bg);
             background-size: 200% 200%;
             animation: avatarFlow 5s ease-in-out infinite alternate;
             display: flex;
@@ -170,6 +253,7 @@
             box-shadow: 0 4px 24px rgba(0, 229, 255, 0.35);
             border: 2px solid rgba(0, 229, 255, 0.25);
             flex-shrink: 0;
+            transition: background 2s ease;
         }
         @keyframes avatarFlow {
             0% { background-position: 0% 50%; }
@@ -181,15 +265,32 @@
             fill: white;
         }
 
+        /* Time Indicator */
+        .time-indicator {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 0.2rem;
+            letter-spacing: 0.5px;
+        }
+        .time-indicator .theme-name {
+            color: var(--theme-cyan);
+            font-weight: 600;
+            transition: color 2s ease;
+        }
+
         /* ----- LOADER ----- */
         .loader {
             border: 3px solid rgba(255, 255, 255, 0.05);
-            border-top: 3px solid #00e5ff;
+            border-top: 3px solid var(--theme-loader);
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
             margin: 2rem auto;
+            transition: border-top-color 2s ease;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -205,14 +306,14 @@
             margin: 1rem 0 2rem;
         }
 
-        /* ----- PLAN CARD (cyan accent) ----- */
+        /* ----- PLAN CARD ----- */
         .plan-card {
-            background: rgba(20, 18, 45, 0.85);
+            background: var(--theme-card-bg);
             backdrop-filter: blur(8px);
             border-radius: 28px;
             overflow: hidden;
-            border: 1px solid rgba(0, 229, 255, 0.15);
-            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.3s ease;
+            border: 1px solid var(--theme-card-border);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.3s ease, background 2s ease, border-color 2s ease;
             width: 100%;
             max-width: 380px;
             display: flex;
@@ -222,16 +323,16 @@
         }
         .plan-card:hover {
             transform: translateY(-8px);
-            border-color: #00e5ff;
+            border-color: var(--theme-card-hover-border);
             box-shadow: 0 20px 60px rgba(0, 229, 255, 0.12), 0 0 40px rgba(0, 229, 255, 0.04);
         }
 
-        /* VIP Badge (cyan) */
+        /* VIP Badge */
         .vip-badge {
             position: absolute;
             top: 14px;
             right: 14px;
-            background: linear-gradient(135deg, #00e5ff, #2979ff);
+            background: var(--theme-badge-vip);
             color: #0b081a;
             padding: 4px 14px;
             border-radius: 30px;
@@ -241,12 +342,13 @@
             text-transform: uppercase;
             z-index: 5;
             box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3);
+            transition: background 2s ease;
         }
         .coming-soon-badge {
             position: absolute;
             top: 14px;
             right: 14px;
-            background: linear-gradient(135deg, #7c4dff, #00e5ff);
+            background: var(--theme-badge-coming);
             color: #fff;
             padding: 4px 14px;
             border-radius: 30px;
@@ -255,8 +357,9 @@
             letter-spacing: 0.5px;
             text-transform: uppercase;
             z-index: 5;
-            box-shadow: 0 4px 20px rgba(124, 77, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(41, 121, 255, 0.3);
             animation: pulseComing 2s ease-in-out infinite;
+            transition: background 2s ease;
         }
         @keyframes pulseComing {
             0%, 100% { opacity: 1; transform: scale(1); }
@@ -281,37 +384,41 @@
         .plan-title {
             font-size: 1.3rem;
             font-weight: 700;
-            color: #00e5ff;
+            color: var(--theme-cyan);
             letter-spacing: -0.3px;
             margin-bottom: 0.1rem;
+            transition: color 2s ease;
         }
         .plan-subtitle {
             font-size: 0.7rem;
-            color: #a0a0c0;
+            color: var(--theme-text-secondary);
             margin-bottom: 0.6rem;
             letter-spacing: 0.3px;
+            transition: color 2s ease;
         }
 
         .plan-limit {
             font-size: 0.7rem;
             background: rgba(0, 229, 255, 0.08);
-            color: #00e5ff;
+            color: var(--theme-limits);
             display: inline-block;
             padding: 0.15rem 0.8rem;
             border-radius: 30px;
             margin-bottom: 0.4rem;
             border: 1px solid rgba(0, 229, 255, 0.1);
+            transition: color 2s ease, background 2s ease;
         }
         .plan-limit.reached {
             background: rgba(239, 68, 68, 0.12);
-            color: #ef4444;
+            color: var(--theme-limit-reached);
             border-color: rgba(239, 68, 68, 0.2);
         }
         .plan-lock {
             font-size: 0.7rem;
-            color: #8888aa;
+            color: var(--theme-lock);
             margin-bottom: 0.6rem;
             font-style: italic;
+            transition: color 2s ease;
         }
 
         .plan-details {
@@ -323,6 +430,7 @@
             padding: 0.7rem;
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: background 2s ease;
         }
         .detail-item {
             display: flex;
@@ -337,21 +445,23 @@
         }
         .detail-label {
             font-size: 0.6rem;
-            color: #666688;
+            color: var(--theme-detail-label);
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            transition: color 2s ease;
         }
         .detail-value {
             font-size: 0.95rem;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--theme-detail-value);
             margin-left: auto;
+            transition: color 2s ease;
         }
-        .detail-value.gold {
-            color: #00e5ff;
+        .detail-value.cyan {
+            color: var(--theme-detail-cyan);
         }
         .detail-value.green {
-            color: #69f0ae;
+            color: var(--theme-detail-green);
         }
 
         .total-income {
@@ -361,26 +471,29 @@
             text-align: center;
             margin: 0.6rem 0;
             border: 1px solid rgba(0, 229, 255, 0.08);
+            transition: background 2s ease, border-color 2s ease;
         }
         .total-income .label {
             font-size: 0.6rem;
-            color: #8888aa;
+            color: var(--theme-total-label);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            transition: color 2s ease;
         }
         .total-income .amount {
             font-size: 1.4rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #00e5ff, #69f0ae);
+            background: var(--theme-total-income);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
+            transition: background 2s ease;
         }
 
         /* ----- INVEST BUTTON ----- */
         .invest-btn {
             width: 100%;
-            background: linear-gradient(135deg, #69f0ae, #00c853);
+            background: var(--theme-btn-invest);
             border: none;
             padding: 0.8rem;
             border-radius: 50px;
@@ -388,16 +501,16 @@
             font-size: 1rem;
             color: #0b081a;
             cursor: pointer;
-            transition: 0.3s;
+            transition: background 2s ease, transform 0.3s, filter 0.3s, box-shadow 0.3s;
             height: 48px;
             margin-top: 0.6rem;
-            box-shadow: 0 4px 20px rgba(105, 240, 174, 0.2);
+            box-shadow: 0 4px 20px var(--theme-green-glow);
             letter-spacing: 0.3px;
         }
         .invest-btn:hover {
             transform: scale(1.02);
-            filter: brightness(1.08);
-            box-shadow: 0 8px 30px rgba(105, 240, 174, 0.3);
+            filter: var(--theme-btn-invest-hover);
+            box-shadow: 0 8px 30px var(--theme-green-glow);
         }
         .invest-btn:disabled {
             opacity: 0.5;
@@ -408,39 +521,42 @@
             box-shadow: none;
         }
         .invest-btn.coming-soon {
-            background: linear-gradient(135deg, #7c4dff, #00e5ff);
+            background: var(--theme-btn-coming-soon);
             color: #fff;
-            box-shadow: 0 4px 20px rgba(124, 77, 255, 0.25);
+            box-shadow: 0 4px 20px rgba(41, 121, 255, 0.25);
             cursor: not-allowed;
+            transition: background 2s ease;
         }
         .invest-btn.coming-soon:hover {
             transform: none;
             filter: none;
-            box-shadow: 0 4px 20px rgba(124, 77, 255, 0.25);
+            box-shadow: 0 4px 20px rgba(41, 121, 255, 0.25);
         }
 
         .plan-note {
-            background: rgba(0, 229, 255, 0.02);
+            background: var(--theme-plan-note);
             border-radius: 12px;
             padding: 0.5rem 0.8rem;
             margin-top: 0.6rem;
-            border: 1px solid rgba(0, 229, 255, 0.04);
+            border: 1px solid var(--theme-plan-note-border);
             font-size: 0.65rem;
-            color: #8888aa;
+            color: var(--theme-text-muted);
             line-height: 1.4;
+            transition: background 2s ease, border-color 2s ease, color 2s ease;
         }
         .plan-note strong {
-            color: #00e5ff;
+            color: var(--theme-plan-note-strong);
+            transition: color 2s ease;
         }
 
-        /* ----- CONFIRMATION MODAL (updated colors) ----- */
+        /* ----- CONFIRMATION MODAL ----- */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(11, 8, 26, 0.92);
+            background: var(--theme-modal-overlay);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             display: flex;
@@ -449,6 +565,7 @@
             z-index: 2000;
             padding: 1rem;
             animation: fadeIn 0.4s ease;
+            transition: background 2s ease;
         }
         .modal-overlay.hidden {
             display: none;
@@ -467,11 +584,12 @@
             border: 2px solid transparent;
             background-clip: padding-box;
             background-image: linear-gradient(#1a1838, #1a1838),
-                              linear-gradient(135deg, #00e5ff, #69f0ae, #b388ff);
+                              var(--theme-modal-border);
             background-origin: padding-box, border-box;
             background-clip: padding-box, border-box;
             box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
             animation: slideUp 0.4s ease;
+            transition: background-image 2s ease;
         }
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(30px) scale(0.95); }
@@ -489,13 +607,13 @@
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            color: #8888aa;
+            color: var(--theme-close-btn);
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.3s, color 2s ease;
         }
         .modal-close:hover {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fff;
+            background: var(--theme-modal-close-hover);
+            color: var(--theme-close-btn-hover);
             transform: rotate(90deg);
         }
 
@@ -503,14 +621,16 @@
             text-align: center;
             font-size: 1.4rem;
             font-weight: 800;
-            color: #00e5ff;
+            color: var(--theme-cyan);
             margin-bottom: 0.2rem;
+            transition: color 2s ease;
         }
         .modal-subtitle {
             text-align: center;
-            color: #8888aa;
+            color: var(--theme-text-muted);
             font-size: 0.8rem;
             margin-bottom: 1rem;
+            transition: color 2s ease;
         }
 
         .modal-plan-name {
@@ -542,19 +662,21 @@
         }
         .modal-detail-item .label {
             font-size: 0.6rem;
-            color: #666688;
+            color: var(--theme-detail-label);
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            transition: color 2s ease;
         }
         .modal-detail-item .value {
             font-size: 1rem;
             font-weight: 700;
+            transition: color 2s ease;
         }
-        .modal-detail-item .value.gold {
-            color: #00e5ff;
+        .modal-detail-item .value.cyan {
+            color: var(--theme-detail-cyan);
         }
         .modal-detail-item .value.green {
-            color: #69f0ae;
+            color: var(--theme-detail-green);
         }
 
         .modal-total {
@@ -564,34 +686,39 @@
             text-align: center;
             margin: 0.6rem 0;
             border: 1px solid rgba(0, 229, 255, 0.08);
+            transition: background 2s ease, border-color 2s ease;
         }
         .modal-total .label {
             font-size: 0.6rem;
-            color: #8888aa;
+            color: var(--theme-total-label);
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            transition: color 2s ease;
         }
         .modal-total .amount {
             font-size: 1.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #00e5ff, #69f0ae);
+            background: var(--theme-total-income);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
+            transition: background 2s ease;
         }
 
         .modal-note {
             font-size: 0.65rem;
-            color: #666688;
+            color: var(--theme-text-muted);
             text-align: center;
             margin: 0.6rem 0;
             background: rgba(0, 229, 255, 0.02);
             padding: 0.4rem;
             border-radius: 10px;
             border: 1px solid rgba(0, 229, 255, 0.04);
+            transition: color 2s ease, background 2s ease;
         }
         .modal-note strong {
-            color: #00e5ff;
+            color: var(--theme-plan-note-strong);
+            transition: color 2s ease;
         }
 
         .modal-actions {
@@ -601,7 +728,7 @@
         }
         .modal-btn-cancel {
             flex: 1;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--theme-btn-cancel);
             border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 0.7rem;
             border-radius: 50px;
@@ -609,16 +736,16 @@
             font-size: 0.9rem;
             color: #aaaac0;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.3s, background 2s ease;
         }
         .modal-btn-cancel:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--theme-btn-cancel-hover);
             color: #fff;
         }
 
         .modal-btn-confirm {
             flex: 2;
-            background: linear-gradient(135deg, #69f0ae, #00c853);
+            background: var(--theme-btn-confirm);
             border: none;
             padding: 0.7rem;
             border-radius: 50px;
@@ -626,13 +753,13 @@
             font-size: 0.95rem;
             color: #0b081a;
             cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 20px rgba(105, 240, 174, 0.2);
+            transition: 0.3s, background 2s ease, box-shadow 0.3s;
+            box-shadow: 0 4px 20px var(--theme-green-glow);
         }
         .modal-btn-confirm:hover {
             transform: scale(1.02);
-            filter: brightness(1.08);
-            box-shadow: 0 8px 30px rgba(105, 240, 174, 0.3);
+            filter: var(--theme-btn-confirm-hover);
+            box-shadow: 0 8px 30px var(--theme-green-glow);
         }
         .modal-btn-confirm:disabled {
             opacity: 0.5;
@@ -643,8 +770,9 @@
         /* ----- EMPTY MESSAGE ----- */
         .empty-msg {
             text-align: center;
-            color: #666688;
+            color: var(--theme-empty-msg);
             padding: 2rem;
+            transition: color 2s ease;
         }
 
         /* ----- TOAST ----- */
@@ -653,8 +781,8 @@
             bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background: #69f0ae;
-            color: #0b081a;
+            background: var(--theme-toast-bg);
+            color: var(--theme-toast-text);
             padding: 12px 24px;
             border-radius: 40px;
             font-weight: 600;
@@ -662,10 +790,11 @@
             animation: fadeUpOut 5s ease forwards;
             max-width: 90%;
             text-align: center;
-            box-shadow: 0 4px 30px rgba(105, 240, 174, 0.3);
+            box-shadow: 0 4px 30px rgba(29, 233, 182, 0.3);
+            transition: background 2s ease, color 2s ease;
         }
         .toast.error {
-            background: #ef4444;
+            background: var(--theme-red);
             color: white;
         }
         @keyframes fadeUpOut {
@@ -685,7 +814,7 @@
             z-index: 1000;
         }
 
-        /* ----- BOTTOM NAV (updated border gradient) ----- */
+        /* ----- BOTTOM NAV ----- */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -696,7 +825,7 @@
             border-top: 2px solid transparent;
             background-clip: padding-box;
             background-image: linear-gradient(rgba(11, 8, 26, 0.97), rgba(11, 8, 26, 0.97)),
-                              linear-gradient(135deg, #00e5ff, #b388ff, #ffd740, #2979ff);
+                              var(--theme-nav-gradient);
             background-origin: padding-box, border-box;
             background-clip: padding-box, border-box;
             display: flex;
@@ -705,6 +834,7 @@
             padding: 6px 6px 18px;
             z-index: 30;
             box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
+            transition: background-image 2s ease;
         }
         .nav-item {
             display: flex;
@@ -725,23 +855,24 @@
             width: 32px;
             height: 32px;
             object-fit: contain;
-            filter: brightness(0.5) grayscale(0.5);
-            transition: 0.4s;
+            filter: var(--theme-nav-icon-filter);
+            transition: 0.4s, filter 2s ease;
             border-radius: 8px;
             padding: 2px;
         }
         .nav-item.active .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 12px rgba(0, 229, 255, 0.7));
+            filter: var(--theme-nav-icon-active-filter);
             transform: scale(1.05);
         }
         .nav-label {
             font-size: 0.65rem;
-            color: #666688;
+            color: var(--theme-nav-label);
             font-weight: 500;
             letter-spacing: 0.3px;
+            transition: color 2s ease;
         }
         .nav-item.active .nav-label {
-            color: #00e5ff;
+            color: var(--theme-nav-label-active);
         }
 
         /* ----- RESPONSIVE ----- */
@@ -762,6 +893,7 @@
             .modal-details { grid-template-columns: 1fr 1fr; }
             .modal-actions { flex-direction: column; }
             .modal-btn-cancel, .modal-btn-confirm { width: 100%; }
+            .time-indicator { font-size: 0.5rem; }
         }
 
         @media (min-width: 601px) and (max-width: 900px) {
@@ -791,6 +923,9 @@
                 </a>
                 <div class="page-title">
                     <span class="icon">📦</span> J PRODUCT PLAN
+                </div>
+                <div class="time-indicator">
+                    🕐 <span id="currentTimeDisplay">--:--</span> &nbsp;·&nbsp; <span class="theme-name" id="themeNameDisplay">Loading</span>
                 </div>
             </div>
             <!-- JProduct Avatar -->
@@ -824,7 +959,7 @@
             <div class="modal-details">
                 <div class="modal-detail-item">
                     <span class="label">💰 Investment</span>
-                    <span class="value gold" id="modalInvestAmount">0.00 ZMW</span>
+                    <span class="value cyan" id="modalInvestAmount">0.00 ZMW</span>
                 </div>
                 <div class="modal-detail-item">
                     <span class="label">📈 Daily Income</span>
@@ -879,7 +1014,249 @@
     </div>
 
     <script>
-        // ===== FIREBASE CONFIG =====
+        // ================================================================
+        // THEME ENGINE – changes colors every hour based on time
+        // J Product uses cyan/teal/blue palette
+        // ================================================================
+
+        function getThemeColors(hour) {
+            // Different themes for different times – J Product style (cyan/teal/blue)
+            var themes = {
+                // Midnight (0-2): Deep navy/cyan
+                0: { bgStart: '#040a12', bgMid: '#081520', bgEnd: '#0c1f2a', bgLast: '#061018',
+                    cardBg: 'rgba(8, 21, 32, 0.9)', cardBorder: 'rgba(0, 180, 220, 0.15)',
+                    cyan: '#4fc3f7', cyanDark: '#0288d1', blue: '#42a5f5', blueDark: '#0d47a1',
+                    teal: '#26c6da', tealDark: '#00838f', green: '#66bb6a', greenDark: '#2e7d32',
+                    orb1: '#0288d1', orb2: '#0d47a1', orb3: '#26c6da', orb4: '#66bb6a',
+                    loader: '#4fc3f7', avatar: 'linear-gradient(135deg, #0288d1, #0d47a1, #26c6da)',
+                    cyanGlow: 'rgba(79, 195, 247, 0.3)', greenGlow: 'rgba(102, 187, 106, 0.2)',
+                    modalBorder: 'linear-gradient(135deg, #0288d1, #26c6da, #42a5f5)',
+                    navGradient: 'linear-gradient(135deg, #0288d1, #26c6da, #42a5f5, #0d47a1)',
+                    totalIncome: 'linear-gradient(135deg, #4fc3f7, #66bb6a)',
+                    badgeVip: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
+                    badgeComing: 'linear-gradient(135deg, #0288d1, #26c6da)',
+                    themeName: 'Deep Ocean' },
+
+                // Pre-dawn (3-5): Deep cyan
+                3: { bgStart: '#061018', bgMid: '#0a1a24', bgEnd: '#0e2430', bgLast: '#08141e',
+                    cardBg: 'rgba(10, 26, 36, 0.9)', cardBorder: 'rgba(0, 200, 230, 0.15)',
+                    cyan: '#4dd0e1', cyanDark: '#0097a7', blue: '#4fc3f7', blueDark: '#1565c0',
+                    teal: '#26c6da', tealDark: '#00695c', green: '#66bb6a', greenDark: '#2e7d32',
+                    orb1: '#0097a7', orb2: '#1565c0', orb3: '#26c6da', orb4: '#66bb6a',
+                    loader: '#4dd0e1', avatar: 'linear-gradient(135deg, #0097a7, #1565c0, #26c6da)',
+                    cyanGlow: 'rgba(77, 208, 225, 0.3)', greenGlow: 'rgba(102, 187, 106, 0.2)',
+                    modalBorder: 'linear-gradient(135deg, #0097a7, #26c6da, #4fc3f7)',
+                    navGradient: 'linear-gradient(135deg, #0097a7, #26c6da, #4fc3f7, #1565c0)',
+                    totalIncome: 'linear-gradient(135deg, #4dd0e1, #66bb6a)',
+                    badgeVip: 'linear-gradient(135deg, #4dd0e1, #0097a7)',
+                    badgeComing: 'linear-gradient(135deg, #0097a7, #26c6da)',
+                    themeName: 'Cyan Dawn' },
+
+                // Sunrise (6-8): Warm cyan with golden hints
+                6: { bgStart: '#0e0a08', bgMid: '#1a1410', bgEnd: '#241e16', bgLast: '#140e0a',
+                    cardBg: 'rgba(26, 20, 16, 0.9)', cardBorder: 'rgba(0, 200, 220, 0.2)',
+                    cyan: '#80deea', cyanDark: '#00838f', blue: '#4fc3f7', blueDark: '#1565c0',
+                    teal: '#4db6ac', tealDark: '#00695c', green: '#81c784', greenDark: '#2e7d32',
+                    orb1: '#00838f', orb2: '#1565c0', orb3: '#4db6ac', orb4: '#81c784',
+                    loader: '#80deea', avatar: 'linear-gradient(135deg, #00838f, #1565c0, #4db6ac)',
+                    cyanGlow: 'rgba(128, 222, 234, 0.3)', greenGlow: 'rgba(129, 199, 132, 0.2)',
+                    modalBorder: 'linear-gradient(135deg, #00838f, #4db6ac, #4fc3f7)',
+                    navGradient: 'linear-gradient(135deg, #00838f, #4db6ac, #4fc3f7, #1565c0)',
+                    totalIncome: 'linear-gradient(135deg, #80deea, #81c784)',
+                    badgeVip: 'linear-gradient(135deg, #80deea, #00838f)',
+                    badgeComing: 'linear-gradient(135deg, #00838f, #4db6ac)',
+                    themeName: 'Coral Reef' },
+
+                // Morning (9-11): Fresh teal/green
+                9: { bgStart: '#08140e', bgMid: '#0e2218', bgEnd: '#143020', bgLast: '#0a1c12',
+                    cardBg: 'rgba(14, 34, 24, 0.9)', cardBorder: 'rgba(0, 210, 180, 0.15)',
+                    cyan: '#80deea', cyanDark: '#00838f', blue: '#4fc3f7', blueDark: '#1565c0',
+                    teal: '#4db6ac', tealDark: '#00695c', green: '#81c784', greenDark: '#2e7d32',
+                    orb1: '#00838f', orb2: '#1565c0', orb3: '#4db6ac', orb4: '#81c784',
+                    loader: '#80deea', avatar: 'linear-gradient(135deg, #00838f, #1565c0, #4db6ac)',
+                    cyanGlow: 'rgba(128, 222, 234, 0.25)', greenGlow: 'rgba(129, 199, 132, 0.25)',
+                    modalBorder: 'linear-gradient(135deg, #00838f, #4db6ac, #4fc3f7)',
+                    navGradient: 'linear-gradient(135deg, #00838f, #4db6ac, #4fc3f7, #1565c0)',
+                    totalIncome: 'linear-gradient(135deg, #80deea, #81c784)',
+                    badgeVip: 'linear-gradient(135deg, #80deea, #00838f)',
+                    badgeComing: 'linear-gradient(135deg, #00838f, #4db6ac)',
+                    themeName: 'Lagoon' },
+
+                // Midday (12-14): Bright cyan/blue
+                12: { bgStart: '#0a1218', bgMid: '#10202a', bgEnd: '#18303a', bgLast: '#0c1820',
+                    cardBg: 'rgba(16, 32, 42, 0.9)', cardBorder: 'rgba(0, 229, 255, 0.2)',
+                    cyan: '#00e5ff', cyanDark: '#0098c8', blue: '#2979ff', blueDark: '#0d47a1',
+                    teal: '#1de9b6', tealDark: '#00bfa5', green: '#69f0ae', greenDark: '#00c853',
+                    orb1: '#00e5ff', orb2: '#2979ff', orb3: '#1de9b6', orb4: '#69f0ae',
+                    loader: '#00e5ff', avatar: 'linear-gradient(135deg, #00e5ff, #2979ff, #1de9b6)',
+                    cyanGlow: 'rgba(0, 229, 255, 0.4)', greenGlow: 'rgba(105, 240, 174, 0.2)',
+                    modalBorder: 'linear-gradient(135deg, #00e5ff, #1de9b6, #2979ff)',
+                    navGradient: 'linear-gradient(135deg, #00e5ff, #1de9b6, #2979ff, #0098c8)',
+                    totalIncome: 'linear-gradient(135deg, #00e5ff, #69f0ae)',
+                    badgeVip: 'linear-gradient(135deg, #00e5ff, #2979ff)',
+                    badgeComing: 'linear-gradient(135deg, #2979ff, #00e5ff)',
+                    themeName: 'Tropical' },
+
+                // Afternoon (15-17): Blue/purple
+                15: { bgStart: '#0a0818', bgMid: '#141028', bgEnd: '#1c1838', bgLast: '#0e0c20',
+                    cardBg: 'rgba(20, 16, 40, 0.9)', cardBorder: 'rgba(90, 150, 255, 0.15)',
+                    cyan: '#64b5f6', cyanDark: '#1a8bcc', blue: '#42a5f5', blueDark: '#0d47a1',
+                    teal: '#4db6ac', tealDark: '#00695c', green: '#66bb6a', greenDark: '#2e7d32',
+                    orb1: '#1a8bcc', orb2: '#0d47a1', orb3: '#4db6ac', orb4: '#66bb6a',
+                    loader: '#64b5f6', avatar: 'linear-gradient(135deg, #1a8bcc, #0d47a1, #4db6ac)',
+                    cyanGlow: 'rgba(100, 181, 246, 0.3)', greenGlow: 'rgba(102, 187, 106, 0.2)',
+                    modalBorder: 'linear-gradient(135deg, #1a8bcc, #4db6ac, #42a5f5)',
+                    navGradient: 'linear-gradient(135deg, #1a8bcc, #4db6ac, #42a5f5, #0d47a1)',
+                    totalIncome: 'linear-gradient(135deg, #64b5f6, #66bb6a)',
+                    badgeVip: 'linear-gradient(135deg, #64b5f6, #1a8bcc)',
+                    badgeComing: 'linear-gradient(135deg, #1a8bcc, #4db6ac)',
+                    themeName: 'Deep Blue' },
+
+                // Golden Hour (17-19): Sunset cyan/teal
+                17: { bgStart: '#140a08', bgMid: '#201410', bgEnd: '#2a1c16', bgLast: '#180e0a',
+                    cardBg: 'rgba(32, 20, 16, 0.9)', cardBorder: 'rgba(0, 200, 220, 0.2)',
+                    cyan: '#80deea', cyanDark: '#00838f', blue: '#4fc3f7', blueDark: '#1565c0',
+                    teal: '#4db6ac', tealDark: '#00695c', green: '#81c784', greenDark: '#2e7d32',
+                    orb1: '#00838f', orb2: '#1565c0', orb3: '#4db6ac', orb4: '#81c784',
+                    loader: '#80deea', avatar: 'linear-gradient(135deg, #00838f, #1565c0, #4db6ac)',
+                    cyanGlow: 'rgba(128, 222, 234, 0.3)', greenGlow: 'rgba(129, 199, 132, 0.2)',
+                    modalBorder: 'linear-gradient(135deg, #00838f, #4db6ac, #4fc3f7)',
+                    navGradient: 'linear-gradient(135deg, #00838f, #4db6ac, #4fc3f7, #1565c0)',
+                    totalIncome: 'linear-gradient(135deg, #80deea, #81c784)',
+                    badgeVip: 'linear-gradient(135deg, #80deea, #00838f)',
+                    badgeComing: 'linear-gradient(135deg, #00838f, #4db6ac)',
+                    themeName: 'Coastal Sunset' },
+
+                // Sunset (19-21): Warm cyan/blue
+                19: { bgStart: '#140808', bgMid: '#201010', bgEnd: '#2a1818', bgLast: '#180c0c',
+                    cardBg: 'rgba(32, 16, 16, 0.9)', cardBorder: 'rgba(0, 180, 200, 0.2)',
+                    cyan: '#4dd0e1', cyanDark: '#00838f', blue: '#4fc3f7', blueDark: '#1565c0',
+                    teal: '#4db6ac', tealDark: '#00695c', green: '#66bb6a', greenDark: '#2e7d32',
+                    orb1: '#00838f', orb2: '#1565c0', orb3: '#4db6ac', orb4: '#66bb6a',
+                    loader: '#4dd0e1', avatar: 'linear-gradient(135deg, #00838f, #1565c0, #4db6ac)',
+                    cyanGlow: 'rgba(77, 208, 225, 0.3)', greenGlow: 'rgba(102, 187, 106, 0.2)',
+                    modalBorder: 'linear-gradient(135deg, #00838f, #4db6ac, #4fc3f7)',
+                    navGradient: 'linear-gradient(135deg, #00838f, #4db6ac, #4fc3f7, #1565c0)',
+                    totalIncome: 'linear-gradient(135deg, #4dd0e1, #66bb6a)',
+                    badgeVip: 'linear-gradient(135deg, #4dd0e1, #00838f)',
+                    badgeComing: 'linear-gradient(135deg, #00838f, #4db6ac)',
+                    themeName: 'Evening Tide' },
+
+                // Evening (21-23): Deep navy/cyan
+                21: { bgStart: '#040810', bgMid: '#081420', bgEnd: '#0c1a28', bgLast: '#060c18',
+                    cardBg: 'rgba(8, 20, 32, 0.9)', cardBorder: 'rgba(0, 160, 200, 0.15)',
+                    cyan: '#4fc3f7', cyanDark: '#0288d1', blue: '#42a5f5', blueDark: '#0d47a1',
+                    teal: '#26c6da', tealDark: '#00838f', green: '#66bb6a', greenDark: '#2e7d32',
+                    orb1: '#0288d1', orb2: '#0d47a1', orb3: '#26c6da', orb4: '#66bb6a',
+                    loader: '#4fc3f7', avatar: 'linear-gradient(135deg, #0288d1, #0d47a1, #26c6da)',
+                    cyanGlow: 'rgba(79, 195, 247, 0.3)', greenGlow: 'rgba(102, 187, 106, 0.2)',
+                    modalBorder: 'linear-gradient(135deg, #0288d1, #26c6da, #42a5f5)',
+                    navGradient: 'linear-gradient(135deg, #0288d1, #26c6da, #42a5f5, #0d47a1)',
+                    totalIncome: 'linear-gradient(135deg, #4fc3f7, #66bb6a)',
+                    badgeVip: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
+                    badgeComing: 'linear-gradient(135deg, #0288d1, #26c6da)',
+                    themeName: 'Midnight Tide' }
+            };
+
+            // Find the closest theme based on hour
+            var themeKeys = Object.keys(themes).map(Number);
+            var selectedKey = themeKeys[0];
+            for (var i = themeKeys.length - 1; i >= 0; i--) {
+                if (hour >= themeKeys[i]) {
+                    selectedKey = themeKeys[i];
+                    break;
+                }
+            }
+            var lastKey = themeKeys[themeKeys.length - 1];
+            if (hour > lastKey) selectedKey = lastKey;
+            if (hour < themeKeys[0]) selectedKey = themeKeys[0];
+
+            return themes[selectedKey] || themes[0];
+        }
+
+        function applyTheme(hour) {
+            var theme = getThemeColors(hour);
+            var root = document.documentElement;
+
+            root.style.setProperty('--theme-bg-start', theme.bgStart);
+            root.style.setProperty('--theme-bg-end', theme.bgEnd);
+            root.style.setProperty('--theme-bg-mid', theme.bgMid);
+            root.style.setProperty('--theme-bg-last', theme.bgLast);
+            root.style.setProperty('--theme-card-bg', theme.cardBg);
+            root.style.setProperty('--theme-card-border', theme.cardBorder);
+            root.style.setProperty('--theme-card-hover-border', theme.cyan);
+            root.style.setProperty('--theme-cyan', theme.cyan);
+            root.style.setProperty('--theme-cyan-dark', theme.cyanDark);
+            root.style.setProperty('--theme-cyan-glow', theme.cyanGlow);
+            root.style.setProperty('--theme-blue', theme.blue);
+            root.style.setProperty('--theme-blue-dark', theme.blueDark);
+            root.style.setProperty('--theme-teal', theme.teal);
+            root.style.setProperty('--theme-teal-dark', theme.tealDark);
+            root.style.setProperty('--theme-green', theme.green);
+            root.style.setProperty('--theme-green-dark', theme.greenDark);
+            root.style.setProperty('--theme-green-glow', theme.greenGlow);
+            root.style.setProperty('--theme-orb-1', theme.orb1);
+            root.style.setProperty('--theme-orb-2', theme.orb2);
+            root.style.setProperty('--theme-orb-3', theme.orb3);
+            root.style.setProperty('--theme-orb-4', theme.orb4);
+            root.style.setProperty('--theme-loader', theme.loader);
+            root.style.setProperty('--theme-avatar-bg', theme.avatar);
+            root.style.setProperty('--theme-modal-border', theme.modalBorder);
+            root.style.setProperty('--theme-nav-gradient', theme.navGradient);
+            root.style.setProperty('--theme-total-income', theme.totalIncome);
+            root.style.setProperty('--theme-badge-vip', theme.badgeVip);
+            root.style.setProperty('--theme-badge-coming', theme.badgeComing);
+            root.style.setProperty('--theme-detail-cyan', theme.cyan);
+            root.style.setProperty('--theme-detail-green', theme.green);
+            root.style.setProperty('--theme-limits', theme.cyan);
+            root.style.setProperty('--theme-plan-note-strong', theme.cyan);
+            root.style.setProperty('--theme-back-arrow', theme.cyan);
+            root.style.setProperty('--theme-back-arrow-hover', theme.cyan);
+            root.style.setProperty('--theme-close-btn', theme.cyan);
+            root.style.setProperty('--theme-nav-label-active', theme.cyan);
+            root.style.setProperty('--theme-nav-icon-active-filter', 'brightness(1) drop-shadow(0 0 12px ' + theme.cyan + '7f)');
+            root.style.setProperty('--theme-btn-invest', 'linear-gradient(135deg, ' + theme.teal + ', ' + theme.tealDark + ')');
+            root.style.setProperty('--theme-btn-coming-soon', 'linear-gradient(135deg, ' + theme.blue + ', ' + theme.cyan + ')');
+            root.style.setProperty('--theme-btn-confirm', 'linear-gradient(135deg, ' + theme.teal + ', ' + theme.tealDark + ')');
+            root.style.setProperty('--theme-toast-bg', theme.teal);
+
+            // Update time display
+            var now = new Date();
+            var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentTimeDisplay').textContent = timeStr;
+            document.getElementById('themeNameDisplay').textContent = theme.themeName;
+
+            document.body.style.transition = 'background 2s ease, color 2s ease';
+
+            console.log('🎨 J Product Theme applied: ' + theme.themeName + ' at ' + timeStr);
+        }
+
+        function initThemeEngine() {
+            var now = new Date();
+            var hour = now.getHours();
+            applyTheme(hour);
+
+            var nextHour = new Date(now);
+            nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+            var msUntilNextHour = nextHour - now;
+
+            setTimeout(function() {
+                applyTheme(new Date().getHours());
+                setInterval(function() {
+                    applyTheme(new Date().getHours());
+                }, 3600000);
+            }, msUntilNextHour);
+
+            setInterval(function() {
+                var now2 = new Date();
+                var timeStr2 = now2.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('currentTimeDisplay').textContent = timeStr2;
+            }, 30000);
+        }
+
+        // ================================================================
+        // FIREBASE CONFIG
+        // ================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
             authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -895,7 +1272,9 @@
         db.settings({ persistence: false });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ===== HELPERS =====
+        // ================================================================
+        // HELPERS
+        // ================================================================
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
@@ -1064,7 +1443,7 @@
             }
         }
 
-        // ===== RENDER PLANS (all amounts in ZMW) =====
+        // ===== RENDER PLANS =====
         function renderPlans(plans) {
             const grid = document.getElementById('plansGrid');
             grid.innerHTML = '';
@@ -1096,7 +1475,6 @@
                 const imageUrl = plan.image || '';
                 const safeImageUrl = getSafeImageUrl(imageUrl);
 
-                // Button state
                 const btnDisabled = limitReached || isComingSoon;
                 let btnClass = 'invest-btn';
                 let btnText = '💎 INVEST NOW';
@@ -1136,22 +1514,22 @@
 
                         <div class="plan-details">
                             <div class="detail-item">
-                                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="var(--theme-detail-cyan)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                                 <span class="detail-label">Invest</span>
-                                <span class="detail-value gold">${minAmount.toFixed(2)} ZMW</span>
+                                <span class="detail-value cyan">${minAmount.toFixed(2)} ZMW</span>
                             </div>
                             <div class="detail-item">
-                                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="#69f0ae" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+                                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="var(--theme-detail-green)" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
                                 <span class="detail-label">Daily</span>
                                 <span class="detail-value green">${dailyAmount.toFixed(2)} ZMW</span>
                             </div>
                             <div class="detail-item">
-                                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="#aaaac0" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="var(--theme-text-muted)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                                 <span class="detail-label">Days</span>
                                 <span class="detail-value">${days}</span>
                             </div>
                             <div class="detail-item">
-                                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="#aaaac0" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="var(--theme-text-muted)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                 <span class="detail-label">Expiry</span>
                                 <span class="detail-value">${escapeHtml(plan.expiry || 'Auto')}</span>
                             </div>
@@ -1242,7 +1620,7 @@
         });
 
         // ============================================================
-        // ===== INVEST IN PLAN (FIXED: preserves time on weekends) =====
+        // ===== INVEST IN PLAN =====
         // ============================================================
         async function investInPlan(plan) {
             console.log("investInPlan called with plan:", plan);
@@ -1270,7 +1648,6 @@
                 return;
             }
 
-            // Check purchase limit
             if (purchaseLimit && purchaseLimit > 0) {
                 try {
                     const existingCountQuery = await db.collection('investments')
@@ -1308,7 +1685,6 @@
                 }
             }
 
-            // Fetch deposit balance
             let userDoc, depositBalance;
             try {
                 userDoc = await db.collection('users').doc(userId).get();
@@ -1338,7 +1714,6 @@
                 return;
             }
 
-            // Check first investment and referral bonus
             let existingInvestments, isFirstInvestment;
             try {
                 existingInvestments = await db.collection('investments')
@@ -1391,16 +1766,13 @@
                 });
                 console.log("Deposit balance updated to", newDepositBalance);
 
-                // ----- FIX: preserve time on weekend purchases -----
                 let startDate = new Date();
                 let purchasedOnWeekend = false;
                 if (isWeekend(startDate)) {
                     purchasedOnWeekend = true;
-                    // Shift to next Monday but KEEP the original time
                     const dayOffset = (8 - startDate.getDay()) % 7;
                     const addDays = (dayOffset === 0) ? 7 : dayOffset;
                     startDate.setDate(startDate.getDate() + addDays);
-                    // DO NOT reset hours – preserve purchase time
                 }
                 const businessDays = days;
                 const businessEndDate = addWeekdays(startDate, businessDays);
@@ -1419,7 +1791,7 @@
                     status: 'active',
                     totalReturn: 0,
                     claimsCount: 0,
-                    purchasedOnWeekend: purchasedOnWeekend  // added flag
+                    purchasedOnWeekend: purchasedOnWeekend
                 });
                 console.log("Investment created:", investmentRef.id);
 
@@ -1463,13 +1835,12 @@
                     }
                 }
 
-                // Close modal BEFORE showing fireworks/toast
                 closeConfirmationModal();
 
                 showFireworks();
-                const bonusMsg = bonusSuccess
-                    ? ` Your referrer earned ${(investAmount * 0.05).toFixed(2)} ZMW bonus!`
-                    : '';
+                const bonusMsg = bonusSuccess ?
+                    ` Your referrer earned ${(investAmount * 0.05).toFixed(2)} ZMW bonus!` :
+                    '';
                 showToast(
                     `✅ Success! Invested ${investAmount.toFixed(2)} ZMW from your deposit balance.${bonusMsg}`,
                     false
@@ -1529,6 +1900,14 @@
                 }
             });
         });
+
+        // ============================================================
+        // START THEME ENGINE
+        // ============================================================
+        initThemeEngine();
+
+        console.log('🌊 J Product Theme engine started – ocean/cyan colors');
+        console.log('🕐 Current theme applied based on local time');
     </script>
 </body>
 </html>

@@ -589,6 +589,28 @@
             }
         }
 
+        /* ----- COUNTRY CHECKBOXES ----- */
+        .country-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+            padding: 0.4rem 0;
+        }
+        .country-group label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+        }
+        .country-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--gold);
+            cursor: pointer;
+        }
+
         /* ----- AGENT NUMBERS ROW ----- */
         .agent-numbers {
             display: grid;
@@ -1220,12 +1242,36 @@
             <input type="hidden" id="planType" />
             <div class="form-group"><label>Plan Name *</label><input type="text" id="planName" placeholder="e.g. Starter" /></div>
             <div class="form-row">
-                <div class="form-group"><label>Min Amount (ZMW)</label><input type="number" id="planMin" /></div>
-                <div class="form-group"><label>Max Amount (ZMW)</label><input type="number" id="planMax" /></div>
+                <div class="form-group"><label>Min Amount</label><input type="number" id="planMin" placeholder="0.00" /></div>
+                <div class="form-group"><label>Max Amount</label><input type="number" id="planMax" placeholder="0.00" /></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>Days</label><input type="number" id="planDays" /></div>
-                <div class="form-group"><label>Daily Return (ZMW)</label><input type="number" id="planDailyReturn" step="0.01" /></div>
+                <div class="form-group"><label>Days</label><input type="number" id="planDays" placeholder="5" /></div>
+                <div class="form-group"><label>Daily Return</label><input type="number" id="planDailyReturn" step="0.01" placeholder="0.00" /></div>
+            </div>
+            <!-- Currency Dropdown -->
+            <div class="form-group">
+                <label>Currency</label>
+                <select id="planCurrency">
+                    <option value="ZMW">🇿🇲 ZMW (Zambian Kwacha)</option>
+                    <option value="TZS">🇹🇿 TZS (Tanzanian Shilling)</option>
+                    <option value="GHS">🇬🇭 GHS (Ghanaian Cedi)</option>
+                    <option value="ZWL">🇿🇼 ZWL (Zimbabwean Dollar)</option>
+                    <option value="CDF">🇨🇩 CDF (Congolese Franc)</option>
+                    <option value="GBP">🇬🇧 GBP (British Pound)</option>
+                </select>
+            </div>
+            <!-- Country Checkboxes -->
+            <div class="form-group">
+                <label>Available Countries</label>
+                <div class="country-group" id="planCountries">
+                    <label><input type="checkbox" value="Zambia" checked /> 🇿🇲 Zambia</label>
+                    <label><input type="checkbox" value="Tanzania" /> 🇹🇿 Tanzania</label>
+                    <label><input type="checkbox" value="Ghana" /> 🇬🇭 Ghana</label>
+                    <label><input type="checkbox" value="Zimbabwe" /> 🇿🇼 Zimbabwe</label>
+                    <label><input type="checkbox" value="Congo" /> 🇨🇩 Congo</label>
+                    <label><input type="checkbox" value="UK" /> 🇬🇧 UK</label>
+                </div>
             </div>
             <div class="form-group"><label>Image URL</label><input type="text" id="planImage" placeholder="https://..." /></div>
             <div class="form-group"><label>Purchase Limit (0 = unlimited)</label><input type="number" id="planPurchaseLimit" value="0" /></div>
@@ -1865,7 +1911,7 @@
         }
 
         // ================================================================
-        // PLANS (unchanged)
+        // PLANS – UPDATED with Currency & Countries
         // ================================================================
         async function loadPlans(collection, elementId) {
             try {
@@ -1876,9 +1922,9 @@
             }
 
             var html =
-                '<thead><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+                '<thead><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily</th><th>Currency</th><th>Countries</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
             if (snap.empty) {
-                html += '<tr><td colspan="6" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No plans</td></tr>';
+                html += '<tr><td colspan="8" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No plans</td></tr>';
             } else {
                 var plans = [];
                 snap.forEach(function(doc) {
@@ -1898,8 +1944,13 @@
                     var statusBadge = status === 'coming_soon' ?
                         '<span class="plan-status-badge coming-soon">🚀 Coming Soon</span>' :
                         '<span class="plan-status-badge active">Active</span>';
+                    var countries = p.countries || [];
+                    var countriesDisplay = countries.length > 0 ? countries.join(', ') : '🌍 All countries';
+                    var currency = p.currency || 'ZMW';
                     html += '<tr><td>' + escapeHtml(p.name) + '</td><td>' + p.minAmount + ' - ' + p.maxAmount +
-                        '</td><td>' + p.days + '</td><td>' + p.dailyReturn + ' ZMW</td><td>' + statusBadge +
+                        '</td><td>' + p.days + '</td><td>' + p.dailyReturn + ' ' + currency + '</td><td><strong>' +
+                        currency + '</strong></td><td style="font-size:0.65rem;">' + escapeHtml(countriesDisplay) +
+                        '</td><td>' + statusBadge +
                         '</td><td><button class="btn-small" onclick="openEditPlanModal(\'' + docId + '\',\'' +
                         collection + '\')">Edit</button> <button class="btn-small danger" onclick="deletePlan(\'' +
                         docId + '\',\'' + collection + '\')">Delete</button></td></tr>';
@@ -1921,9 +1972,18 @@
             document.getElementById('planLock').value = '';
             document.getElementById('planExpiry').value = '';
             document.getElementById('planStatus').value = 'active';
+            document.getElementById('planCurrency').value = 'ZMW';
+            // Reset country checkboxes – default only Zambia checked
+            var countryChecks = document.querySelectorAll('#planCountries input[type="checkbox"]');
+            countryChecks.forEach(function(cb) {
+                cb.checked = (cb.value === 'Zambia');
+            });
             openModal('addPlanModal');
         };
 
+        // ================================================================
+        // SAVE PLAN – updated with Currency & Countries
+        // ================================================================
         function savePlan() {
             var collection = document.getElementById('planType').value;
             var name = document.getElementById('planName').value.trim();
@@ -1936,13 +1996,37 @@
             var lock = document.getElementById('planLock').value;
             var expiry = document.getElementById('planExpiry').value;
             var status = document.getElementById('planStatus').value;
+            var currency = document.getElementById('planCurrency').value;
+
+            // Get selected countries
+            var countryChecks = document.querySelectorAll('#planCountries input[type="checkbox"]:checked');
+            var countries = [];
+            countryChecks.forEach(function(cb) { countries.push(cb.value); });
 
             if (!name || isNaN(minAmount) || isNaN(days) || isNaN(dailyReturn)) {
                 showToast('Please fill all required fields', true);
                 return;
             }
-            var data = { name, minAmount, maxAmount, days, dailyReturn, image, purchaseLimit, lock, expiry, status,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+            if (countries.length === 0) {
+                showToast('Please select at least one country', true);
+                return;
+            }
+
+            var data = {
+                name: name,
+                minAmount: minAmount,
+                maxAmount: maxAmount,
+                days: days,
+                dailyReturn: dailyReturn,
+                image: image,
+                purchaseLimit: purchaseLimit,
+                lock: lock,
+                expiry: expiry,
+                status: status,
+                currency: currency,
+                countries: countries,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
             db.collection(collection).add(data).then(function() {
                 closeModal('addPlanModal');
                 loadPlans(collection, collection === 'mkvipPlans' ? 'mkvipPlansList' : 'jproductPlansList');
@@ -1950,6 +2034,7 @@
             }).catch(function(err) { showToast(err.message, true); });
         }
 
+        // === EDIT PLAN MODAL – updated with Currency & Countries ===
         var editPlanModalExists = false;
 
         window.openEditPlanModal = function(id, collection) {
@@ -1961,30 +2046,54 @@
                 var modal = document.createElement('div');
                 modal.className = 'modal-overlay active';
                 modal.id = 'editPlanModal';
+                var countries = p.countries || [];
+                var currencyOptions = ['ZMW', 'TZS', 'GHS', 'ZWL', 'CDF', 'GBP'];
+                var currencyOptionsHtml = currencyOptions.map(function(c) {
+                    var label = { ZMW: '🇿🇲 ZMW (Zambian Kwacha)', TZS: '🇹🇿 TZS (Tanzanian Shilling)',
+                        GHS: '🇬🇭 GHS (Ghanaian Cedi)', ZWL: '🇿🇼 ZWL (Zimbabwean Dollar)',
+                        CDF: '🇨🇩 CDF (Congolese Franc)', GBP: '🇬🇧 GBP (British Pound)' };
+                    return '<option value="' + c + '" ' + (p.currency === c ? 'selected' : '') + '>' + label[
+                        c] + '</option>';
+                }).join('');
+
+                var countryList = ['Zambia', 'Tanzania', 'Ghana', 'Zimbabwe', 'Congo', 'UK'];
+                var countryCheckboxes = countryList.map(function(c) {
+                    var checked = countries.indexOf(c) !== -1 ? 'checked' : '';
+                    var emoji = { Zambia: '🇿🇲', Tanzania: '🇹🇿', Ghana: '🇬🇭', Zimbabwe: '🇿🇼', Congo: '🇨🇩',
+                        UK: '🇬🇧' };
+                    return '<label><input type="checkbox" value="' + c + '" ' + checked + ' /> ' + emoji[c] +
+                        ' ' + c + '</label>';
+                }).join('');
+
                 modal.innerHTML =
-                    '<div class="modal-card"><button class="modal-close" onclick="closeEditPlanModal()">✕</button><h3>Edit Plan</h3><div class="form-group"><label>Name</label><input type="text" id="editPlanName" value="' +
-                    escapeHtml(p.name) +
-                    '" /></div><div class="form-row"><div class="form-group"><label>Min</label><input type="number" id="editPlanMin" value="' +
-                    p.minAmount +
-                    '" /></div><div class="form-group"><label>Max</label><input type="number" id="editPlanMax" value="' +
-                    p.maxAmount +
-                    '" /></div></div><div class="form-row"><div class="form-group"><label>Days</label><input type="number" id="editPlanDays" value="' +
-                    p.days +
-                    '" /></div><div class="form-group"><label>Daily Return</label><input type="number" id="editPlanDailyReturn" value="' +
-                    p.dailyReturn +
-                    '" step="0.01" /></div></div><div class="form-group"><label>Image URL</label><input type="text" id="editPlanImage" value="' +
-                    escapeHtml(p.image || '') +
-                    '" /></div><div class="form-group"><label>Purchase Limit</label><input type="number" id="editPlanPurchaseLimit" value="' +
-                    (p.purchaseLimit || 0) +
-                    '" /></div><div class="form-group"><label>Lock Text</label><input type="text" id="editPlanLock" value="' +
-                    escapeHtml(p.lock || '') +
-                    '" /></div><div class="form-group"><label>Expiry</label><input type="text" id="editPlanExpiry" value="' +
-                    escapeHtml(p.expiry || '') +
-                    '" /></div><div class="form-group"><label>Status</label><select id="editPlanStatus"><option value="active"' +
-                    (p.status === 'active' ? ' selected' : '') +
-                    '>Active</option><option value="coming_soon"' + (p.status === 'coming_soon' ? ' selected' :
-                        '') + '>Coming Soon</option></select></div><div class="modal-actions"><button class="btn-small success" onclick="updatePlan(\'' +
-                    id + '\',\'' + collection + '\')">Update</button><button class="btn-small outline" onclick="closeEditPlanModal()">Cancel</button></div></div>';
+                    '<div class="modal-card"><button class="modal-close" onclick="closeEditPlanModal()">✕</button><h3>Edit Plan</h3>' +
+                    '<div class="form-group"><label>Name</label><input type="text" id="editPlanName" value="' +
+                    escapeHtml(p.name) + '" /></div>' +
+                    '<div class="form-row"><div class="form-group"><label>Min</label><input type="number" id="editPlanMin" value="' +
+                    p.minAmount + '" /></div>' +
+                    '<div class="form-group"><label>Max</label><input type="number" id="editPlanMax" value="' + p
+                    .maxAmount + '" /></div></div>' +
+                    '<div class="form-row"><div class="form-group"><label>Days</label><input type="number" id="editPlanDays" value="' +
+                    p.days + '" /></div>' +
+                    '<div class="form-group"><label>Daily Return</label><input type="number" id="editPlanDailyReturn" value="' +
+                    p.dailyReturn + '" step="0.01" /></div></div>' +
+                    '<div class="form-group"><label>Currency</label><select id="editPlanCurrency">' +
+                    currencyOptionsHtml + '</select></div>' +
+                    '<div class="form-group"><label>Available Countries</label><div class="country-group" id="editPlanCountries">' +
+                    countryCheckboxes + '</div></div>' +
+                    '<div class="form-group"><label>Image URL</label><input type="text" id="editPlanImage" value="' +
+                    escapeHtml(p.image || '') + '" /></div>' +
+                    '<div class="form-group"><label>Purchase Limit</label><input type="number" id="editPlanPurchaseLimit" value="' +
+                    (p.purchaseLimit || 0) + '" /></div>' +
+                    '<div class="form-group"><label>Lock Text</label><input type="text" id="editPlanLock" value="' +
+                    escapeHtml(p.lock || '') + '" /></div>' +
+                    '<div class="form-group"><label>Expiry</label><input type="text" id="editPlanExpiry" value="' +
+                    escapeHtml(p.expiry || '') + '" /></div>' +
+                    '<div class="form-group"><label>Status</label><select id="editPlanStatus"><option value="active"' +
+                    (p.status === 'active' ? ' selected' : '') + '>Active</option><option value="coming_soon"' +
+                    (p.status === 'coming_soon' ? ' selected' : '') + '>Coming Soon</option></select></div>' +
+                    '<div class="modal-actions"><button class="btn-small success" onclick="updatePlan(\'' + id +
+                    '\',\'' + collection + '\')">Update</button><button class="btn-small outline" onclick="closeEditPlanModal()">Cancel</button></div></div>';
                 document.body.appendChild(modal);
                 editPlanModalExists = true;
             });
@@ -2007,8 +2116,36 @@
             var lock = document.getElementById('editPlanLock').value;
             var expiry = document.getElementById('editPlanExpiry').value;
             var status = document.getElementById('editPlanStatus').value;
+            var currency = document.getElementById('editPlanCurrency').value;
 
-            var data = { name, minAmount, maxAmount, days, dailyReturn, image, purchaseLimit, lock, expiry, status };
+            // Get selected countries
+            var countryChecks = document.querySelectorAll('#editPlanCountries input[type="checkbox"]:checked');
+            var countries = [];
+            countryChecks.forEach(function(cb) { countries.push(cb.value); });
+
+            if (!name || isNaN(minAmount) || isNaN(days) || isNaN(dailyReturn)) {
+                showToast('Please fill all required fields', true);
+                return;
+            }
+            if (countries.length === 0) {
+                showToast('Please select at least one country', true);
+                return;
+            }
+
+            var data = {
+                name: name,
+                minAmount: minAmount,
+                maxAmount: maxAmount,
+                days: days,
+                dailyReturn: dailyReturn,
+                image: image,
+                purchaseLimit: purchaseLimit,
+                lock: lock,
+                expiry: expiry,
+                status: status,
+                currency: currency,
+                countries: countries
+            };
             db.collection(collection).doc(id).update(data).then(function() {
                 closeEditPlanModal();
                 loadPlans(collection, collection === 'mkvipPlans' ? 'mkvipPlansList' : 'jproductPlansList');
@@ -2499,11 +2636,9 @@
                 btn.textContent = 'Fix Now'; }
         }
 
-        console.log('✨ Pureore Capital · Admin Dashboard (plans loading fixed)');
-        console.log('📈 Plans with "Coming Soon" status');
+        console.log('✨ Pureore Capital · Admin Dashboard with Currency & Country support');
+        console.log('📈 Plans now include currency and country availability');
         console.log('🔐 Firebase config untouched');
-        console.log('🛠️ Robust query with fallback for missing indexes');
-        console.log('🗑️ Admin can now delete individual user plans');
     </script>
 </body>
 </html>
