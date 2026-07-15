@@ -1407,8 +1407,8 @@
             loadUsers('');
             loadPendingDeposits();
             loadDepositsHistory();
-            loadPendingWithdrawals();
-            loadWithdrawalsHistory();
+            loadPendingWithdrawals();  // updated
+            loadWithdrawalsHistory();  // updated
             loadPlans('mkvipPlans', 'mkvipPlansList');
             loadPlans('jproductPlans', 'jproductPlansList');
             loadTransactions();
@@ -1825,19 +1825,22 @@
         }
 
         // ================================================================
-        // WITHDRAWALS (unchanged)
+        // WITHDRAWALS – FIXED: added Phone column
         // ================================================================
         async function loadPendingWithdrawals() {
             var snap = await db.collection('withdrawals').where('status', '==', 'pending').get();
             var html =
-                '<thead><tr><th>User</th><th>Amount</th><th>Net</th><th>Network</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="5" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No pending withdrawals</td></tr>'; } else {
+                '<thead><tr><th>User</th><th>Phone</th><th>Amount</th><th>Net</th><th>Network</th><th>Actions</th></tr></thead><tbody>';
+            if (snap.empty) {
+                html += '<tr><td colspan="6" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No pending withdrawals</td></tr>';
+            } else {
                 for (var doc of snap.docs) {
                     var w = doc.data();
                     var user = await db.collection('users').doc(w.userId).get();
-                    html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + formatMoney(w
-                        .amount) + '</td><td>' + formatMoney(w.netAmount || w.amount) + '</td><td>' + w.network +
+                    var userPhone = user.data()?.phone || 'N/A';
+                    html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + escapeHtml(
+                        userPhone) + '</td><td>' + formatMoney(w.amount) + '</td><td>' + formatMoney(w.netAmount || w
+                        .amount) + '</td><td>' + w.network +
                         '</td><td><button class="btn-small success" onclick="approveWithdrawal(\'' + doc.id +
                         '\',\'' + w.userId + '\',' + w.amount +
                         ')">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal(\'' + doc.id +
@@ -1892,18 +1895,23 @@
             }).catch(function(err) { showToast(err.message, true); });
         };
 
+        // ================================================================
+        // WITHDRAWALS HISTORY – FIXED: added Phone column
+        // ================================================================
         async function loadWithdrawalsHistory() {
             var snap = await db.collection('withdrawals').orderBy('createdAt', 'desc').get();
             var html =
-                '<thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="4" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No withdrawals</td></tr>'; } else {
+                '<thead><tr><th>User</th><th>Phone</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+            if (snap.empty) {
+                html += '<tr><td colspan="5" style="text-align:center;padding:1rem;color:rgba(255,255,255,0.15);">No withdrawals</td></tr>';
+            } else {
                 for (var doc of snap.docs) {
                     var w = doc.data();
                     var user = await db.collection('users').doc(w.userId).get();
-                    html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + formatMoney(w
-                        .amount) + '</td><td>' + w.status + '</td><td>' + (w.createdAt?.toDate().toLocaleString() ||
-                        'N/A') + '</td></tr>';
+                    var userPhone = user.data()?.phone || 'N/A';
+                    html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + escapeHtml(
+                        userPhone) + '</td><td>' + formatMoney(w.amount) + '</td><td>' + w.status +
+                        '</td><td>' + (w.createdAt?.toDate().toLocaleString() || 'N/A') + '</td></tr>';
                 }
             }
             html += '</tbody>';
@@ -2638,6 +2646,7 @@
 
         console.log('✨ Pureore Capital · Admin Dashboard with Currency & Country support');
         console.log('📈 Plans now include currency and country availability');
+        console.log('📞 Withdrawal tables now show user phone numbers');
         console.log('🔐 Firebase config untouched');
     </script>
 </body>
