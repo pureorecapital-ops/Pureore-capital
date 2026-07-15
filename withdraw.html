@@ -1145,6 +1145,11 @@
                         <span class="summary-label">Net Receive</span>
                         <span class="summary-value green" id="confirmNet">0.00 ZMW</span>
                     </div>
+                    <!-- NEW: Estimated Processing Time -->
+                    <div class="summary-row">
+                        <span class="summary-label">⏳ Estimated Processing</span>
+                        <span class="summary-value" id="confirmEta" style="color:var(--cyan);">—</span>
+                    </div>
                 </div>
 
                 <div class="msg-box" id="confirmMessage"></div>
@@ -1186,6 +1191,10 @@
                     <div class="summary-row">
                         <span class="summary-label">Network</span>
                         <span class="summary-value" id="finalNetwork">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Estimated Processing</span>
+                        <span class="summary-value" id="finalEta" style="color:var(--cyan);">—</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label">Status</span>
@@ -1274,11 +1283,13 @@
         var confirmAmount = document.getElementById('confirmAmount');
         var confirmFee = document.getElementById('confirmFee');
         var confirmNet = document.getElementById('confirmNet');
+        var confirmEta = document.getElementById('confirmEta'); // NEW
         var confirmMessage = document.getElementById('confirmMessage');
         var confirmSubmit = document.getElementById('confirmSubmit');
 
         var finalAmount = document.getElementById('finalAmount');
         var finalNetwork = document.getElementById('finalNetwork');
+        var finalEta = document.getElementById('finalEta'); // NEW
         var step4Done = document.getElementById('step4Done');
 
         var backBtn = document.getElementById('backBtn');
@@ -1698,6 +1709,37 @@
             });
         }
 
+        // ================================================================
+        // ESTIMATED PROCESSING TIME
+        // ================================================================
+        function getEstimatedProcessingTime() {
+            var now = new Date();
+            var hours = now.getHours();
+            var mins = now.getMinutes();
+
+            // Business hours: 09:00 – 17:00
+            if (hours >= 9 && hours < 17) {
+                // Within business hours: process within 2 hours (cap at 17:00)
+                var eta = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+                if (eta.getHours() >= 17 || (eta.getHours() === 17 && eta.getMinutes() > 0)) {
+                    eta.setHours(17, 0, 0, 0);
+                }
+                return "by " + eta.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } else {
+                // Outside business hours: next business day at 09:00
+                var nextDay = new Date(now);
+                nextDay.setDate(nextDay.getDate() + 1);
+                nextDay.setHours(9, 0, 0, 0);
+                // If Saturday, move to Monday
+                if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2);
+                if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1);
+                return "on " + nextDay.toLocaleDateString([], { day: 'numeric', month: 'short' }) + " at 09:00";
+            }
+        }
+
+        // ================================================================
+        // POPULATE CONFIRM WITH ETA
+        // ================================================================
         function populateConfirm() {
             var info = savedInfo;
             confirmNetwork.textContent = info.network.toUpperCase();
@@ -1711,6 +1753,10 @@
             confirmAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
             confirmFee.textContent = (selectedAmount * 0.2).toFixed(2) + ' ZMW';
             confirmNet.textContent = netAfterFee.toFixed(2) + ' ZMW';
+
+            // Set estimated processing time
+            var eta = getEstimatedProcessingTime();
+            confirmEta.textContent = eta;
         }
 
         // ================================================================
@@ -1734,7 +1780,7 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 network: savedInfo.network,
                 accountName: savedInfo.accountName,
-                phone: savedInfo.phone || userPhone || ''  // <-- ALWAYS STORE PHONE
+                phone: savedInfo.phone || userPhone || ''
             };
             if (savedInfo.network === 'bank') {
                 withdrawData.bankName = savedInfo.bank;
@@ -1761,6 +1807,8 @@
                 // Success
                 finalAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
                 finalNetwork.textContent = savedInfo.network.toUpperCase();
+                var eta = getEstimatedProcessingTime();
+                finalEta.textContent = eta;
                 goToStep(4);
                 showToast('✅ Withdrawal submitted successfully!', false);
                 isSubmitting = false;
@@ -1834,7 +1882,8 @@
         }
         window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
-        console.log('✨ Pureore Capital · Withdraw page (phone saved)');
+        console.log('✨ Pureore Capital · Withdraw page (phone saved + ETA)');
+        console.log('⏱️ Estimated processing time based on business hours (09:00-17:00)');
         console.log('📱 Phone number will be stored in withdrawal document');
         console.log('🔐 Firebase config untouched');
     </script>
