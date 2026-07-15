@@ -986,6 +986,10 @@
                         <span class="info-label">Name</span>
                         <span class="info-value" id="savedName">—</span>
                     </div>
+                    <div class="info-row">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value" id="savedPhone">—</span>
+                    </div>
                     <button class="delete-saved-btn" id="deleteSavedInfoBtn">
                         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         Delete Info
@@ -1126,6 +1130,10 @@
                         <span class="summary-value" id="confirmName">—</span>
                     </div>
                     <div class="summary-row">
+                        <span class="summary-label">Phone</span>
+                        <span class="summary-value" id="confirmPhone">—</span>
+                    </div>
+                    <div class="summary-row">
                         <span class="summary-label">Amount</span>
                         <span class="summary-value gold" id="confirmAmount">0.00 ZMW</span>
                     </div>
@@ -1225,6 +1233,7 @@
         var currentBalance = 0;
         var isSubmitting = false;
         var withdrawRules = { requireDeposit: true, requireInvestment: true };
+        var userPhone = ''; // from user document
 
         // ================================================================
         // DOM REFS
@@ -1245,6 +1254,7 @@
         var savedNetwork = document.getElementById('savedNetwork');
         var savedAccount = document.getElementById('savedAccount');
         var savedName = document.getElementById('savedName');
+        var savedPhone = document.getElementById('savedPhone');
         var step1Continue = document.getElementById('step1Continue');
         var deleteSavedInfoBtn = document.getElementById('deleteSavedInfoBtn');
 
@@ -1260,6 +1270,7 @@
         var confirmNetwork = document.getElementById('confirmNetwork');
         var confirmAccount = document.getElementById('confirmAccount');
         var confirmName = document.getElementById('confirmName');
+        var confirmPhone = document.getElementById('confirmPhone');
         var confirmAmount = document.getElementById('confirmAmount');
         var confirmFee = document.getElementById('confirmFee');
         var confirmNet = document.getElementById('confirmNet');
@@ -1358,29 +1369,31 @@
         function loadSavedInfo() {
             var user = auth.currentUser;
             if (!user) return;
+            // First load user data to get phone and balance
             db.collection('users').doc(user.uid).get()
                 .then(function(doc) {
                     if (doc.exists) {
                         var data = doc.data();
+                        userPhone = data.phone || '';
+                        currentBalance = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
+                        // Auto-fill phone input if user has phone
+                        if (userPhone && userPhone.startsWith('+260')) {
+                            phoneInput.value = userPhone.replace('+260', '');
+                        }
                         if (data.withdrawalInfo) {
                             savedInfo = data.withdrawalInfo;
                             displaySavedInfo(savedInfo);
-                            // Show saved info, hide form, show continue button
                             document.getElementById('infoForm').style.display = 'none';
                             savedInfoDisplay.style.display = 'block';
                             step1Continue.style.display = 'block';
                             document.getElementById('step1Title').textContent = 'Your Saved Information';
-                            // Pre-fill network and such for later steps
                             prefillFromSavedInfo(savedInfo);
                         } else {
-                            // No saved info: show form
                             document.getElementById('infoForm').style.display = 'block';
                             savedInfoDisplay.style.display = 'none';
                             step1Continue.style.display = 'none';
                             document.getElementById('step1Title').textContent = 'Set Up Withdrawal Info';
                         }
-                        // Also load balance from walletBalance
-                        currentBalance = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
                     }
                 })
                 .catch(function(err) { console.warn('Error loading saved info', err); });
@@ -1398,11 +1411,11 @@
             }
             savedAccount.textContent = account;
             savedName.textContent = info.accountName || '—';
+            savedPhone.textContent = info.phone || userPhone || '—';
         }
 
         function prefillFromSavedInfo(info) {
-            // We'll use this when going to step 3 for confirmation
-            // Not needed to prefill fields because we'll just show saved info
+            // Not needed
         }
 
         // ================================================================
@@ -1426,15 +1439,12 @@
                 withdrawalInfo: firebase.firestore.FieldValue.delete()
             }).then(function() {
                 savedInfo = null;
-                // Hide saved info display
                 savedInfoDisplay.style.display = 'none';
-                // Show form
                 document.getElementById('infoForm').style.display = 'block';
                 step1Continue.style.display = 'none';
                 document.getElementById('step1Title').textContent = 'Set Up Withdrawal Info';
-                // Reset form fields
                 networkSelect.value = '';
-                phoneInput.value = '';
+                phoneInput.value = userPhone || '';
                 accountNameInput.value = '';
                 cardNumberInput.value = '';
                 bankChips.forEach(function(c) { c.classList.remove('active'); });
@@ -1552,8 +1562,11 @@
             if (selectedNetwork === 'bank') {
                 info.bank = selectedBank;
                 info.cardNumber = cardNumberInput.value.trim();
+                // For bank, also store phone if available (from user or input)
+                info.phone = userPhone || '';
             } else {
-                info.phone = '+260' + phoneInput.value.trim();
+                var phone = '+260' + phoneInput.value.trim();
+                info.phone = phone;
             }
 
             // Save to Firestore
@@ -1694,6 +1707,7 @@
                 confirmAccount.textContent = info.phone;
             }
             confirmName.textContent = info.accountName;
+            confirmPhone.textContent = info.phone || userPhone || '—';
             confirmAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
             confirmFee.textContent = (selectedAmount * 0.2).toFixed(2) + ' ZMW';
             confirmNet.textContent = netAfterFee.toFixed(2) + ' ZMW';
@@ -1719,13 +1733,12 @@
                 status: 'pending',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 network: savedInfo.network,
-                accountName: savedInfo.accountName
+                accountName: savedInfo.accountName,
+                phone: savedInfo.phone || userPhone || ''  // <-- ALWAYS STORE PHONE
             };
             if (savedInfo.network === 'bank') {
                 withdrawData.bankName = savedInfo.bank;
                 withdrawData.cardNumber = savedInfo.cardNumber;
-            } else {
-                withdrawData.phone = savedInfo.phone;
             }
 
             // Run transaction to deduct balance
@@ -1821,9 +1834,8 @@
         }
         window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
-        console.log('✨ Pureore Capital · Withdraw page (unique design)');
-        console.log('📱 Step-by-step with saved info check');
-        console.log('🗑️ Delete saved info option added');
+        console.log('✨ Pureore Capital · Withdraw page (phone saved)');
+        console.log('📱 Phone number will be stored in withdrawal document');
         console.log('🔐 Firebase config untouched');
     </script>
 
