@@ -1705,6 +1705,56 @@
         });
 
         // ================================================================
+        // IMAGE URL CONVERTER – same as admin
+        // ================================================================
+        function getSafeImageUrl(url) {
+            if (!url || typeof url !== 'string' || url.trim() === '') {
+                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; // fallback
+            }
+            let safeUrl = url.trim();
+
+            // Convert ibb.co short links to direct i.ibb.co image URLs
+            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
+                const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
+                if (match && match[1]) {
+                    let code = match[1];
+                    let filename = match[2] || '';
+                    let ext = 'jpg';
+                    if (filename) {
+                        const extMatch = filename.match(/\.([a-zA-Z0-9]+)$/);
+                        if (extMatch && extMatch[1]) ext = extMatch[1];
+                    }
+                    safeUrl = `https://i.ibb.co/${code}/image.${ext}`;
+                    if (filename) {
+                        safeUrl = `https://i.ibb.co/${code}${filename}`;
+                    }
+                }
+            }
+
+            // Convert imgur short links
+            if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
+                const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
+                if (match && match[1]) {
+                    safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
+                }
+            }
+
+            // Ensure HTTPS
+            if (safeUrl.startsWith('http://')) {
+                safeUrl = safeUrl.replace('http://', 'https://');
+            }
+            if (safeUrl.startsWith('//')) {
+                safeUrl = 'https:' + safeUrl;
+            }
+
+            // Final validation
+            if (!safeUrl.startsWith('https://')) {
+                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
+            }
+            return safeUrl;
+        }
+
+        // ================================================================
         // DYNAMIC AD SYSTEM – fetches from Firestore and displays
         // ================================================================
         var adOverlay = document.getElementById('adOverlay');
@@ -1755,10 +1805,14 @@
             // Description
             adDesc.textContent = data.description || 'Secure investments, daily returns, and a community that cares about your financial freedom.';
 
-            // Image
-            var imageUrl = data.imageUrl || '';
-            if (imageUrl && imageUrl.trim() !== '') {
-                adImage.src = imageUrl;
+            // Image – convert URL using getSafeImageUrl
+            var rawImageUrl = data.imageUrl || '';
+            var safeImageUrl = getSafeImageUrl(rawImageUrl);
+            console.log('🖼️ Ad image URL (raw):', rawImageUrl);
+            console.log('   → (safe):', safeImageUrl);
+
+            if (safeImageUrl && safeImageUrl.trim() !== '') {
+                adImage.src = safeImageUrl;
                 adImage.style.display = 'block';
                 adImage.onerror = function() {
                     // If image fails, show placeholder text
@@ -1835,11 +1889,6 @@
 
         // Close button handler
         adCloseBtn.addEventListener('click', closeAd);
-
-        // Click outside to close (optional – you can enable by uncommenting)
-        // adOverlay.addEventListener('click', function(e) {
-        //     if (e.target === adOverlay) closeAd();
-        // });
 
         // ================================================================
         // BUTTONS
@@ -1965,7 +2014,7 @@
             gi = (gi + 1) % (navItems.length + 1);
         }, 3000);
 
-        console.log('✨ Pureore Capital · Dashboard with dynamic ads');
+        console.log('✨ Pureore Capital · Dashboard with dynamic ads (image converter applied)');
         console.log('📢 Ads loaded from Firestore collection "ads"');
         console.log('🔐 Firebase config untouched');
     </script>

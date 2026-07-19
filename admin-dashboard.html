@@ -2012,6 +2012,56 @@
         updateTimeOnly();
 
         // ================================================================
+        // IMAGE URL CONVERTER – same as user dashboard
+        // ================================================================
+        function getSafeImageUrl(url) {
+            if (!url || typeof url !== 'string' || url.trim() === '') {
+                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; // fallback
+            }
+            let safeUrl = url.trim();
+
+            // Convert ibb.co short links to direct i.ibb.co image URLs
+            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
+                const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
+                if (match && match[1]) {
+                    let code = match[1];
+                    let filename = match[2] || '';
+                    let ext = 'jpg';
+                    if (filename) {
+                        const extMatch = filename.match(/\.([a-zA-Z0-9]+)$/);
+                        if (extMatch && extMatch[1]) ext = extMatch[1];
+                    }
+                    safeUrl = `https://i.ibb.co/${code}/image.${ext}`;
+                    if (filename) {
+                        safeUrl = `https://i.ibb.co/${code}${filename}`;
+                    }
+                }
+            }
+
+            // Convert imgur short links
+            if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
+                const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
+                if (match && match[1]) {
+                    safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
+                }
+            }
+
+            // Ensure HTTPS
+            if (safeUrl.startsWith('http://')) {
+                safeUrl = safeUrl.replace('http://', 'https://');
+            }
+            if (safeUrl.startsWith('//')) {
+                safeUrl = 'https:' + safeUrl;
+            }
+
+            // Final validation
+            if (!safeUrl.startsWith('https://')) {
+                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
+            }
+            return safeUrl;
+        }
+
+        // ================================================================
         // AUTH STATE + MAIN INIT
         // ================================================================
         auth.onAuthStateChanged(async function(user) {
@@ -3241,7 +3291,7 @@
         }
 
         // ================================================================
-        // ADS MANAGEMENT (NEW)
+        // ADS MANAGEMENT (NEW) – with image URL conversion
         // ================================================================
         async function loadAds() {
             var snap = await db.collection('ads').orderBy('createdAt', 'desc').get();
@@ -3254,8 +3304,10 @@
                     var ad = doc.data();
                     var activeStatus = ad.active ? 'Active' : 'Inactive';
                     var statusClass = ad.active ? 'ad-status-badge active' : 'ad-status-badge inactive';
-                    var imagePreview = ad.imageUrl ?
-                        `<img src="${ad.imageUrl}" class="ad-preview-img" onerror="this.style.display='none'" />` :
+                    // Use getSafeImageUrl for the preview
+                    var safeImageUrl = getSafeImageUrl(ad.imageUrl);
+                    var imagePreview = safeImageUrl ?
+                        `<img src="${safeImageUrl}" class="ad-preview-img" onerror="this.style.display='none'" />` :
                         '—';
                     html += `<tr>
                         <td>${escapeHtml(ad.badge || '')}</td>
@@ -3408,6 +3460,7 @@
         console.log('🎨 Colors change every 30 seconds across all UI elements');
         console.log('📢 Added Ads management tab – create, edit, delete promotional ads');
         console.log('👥 Agent management also available in Settings tab for convenience');
+        console.log('✅ Ads preview now uses getSafeImageUrl() to show images from short links');
         console.log('🔐 Firebase config untouched');
     </script>
 
