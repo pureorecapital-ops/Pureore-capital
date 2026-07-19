@@ -85,7 +85,6 @@
             --theme-avatar-bg: linear-gradient(135deg, #f6c96e, #f5a623);
             --theme-header-border: linear-gradient(90deg, #f6c96e, #5dd9f2, #7c6df0, #f6c96e);
             --theme-badge-dot: #f6c96e;
-            --theme-ad-border: linear-gradient(135deg, #f6c96e, #5dd9f2, #7c6df0);
         }
 
         /* ---- Apply transitions for smooth theme changes ---- */
@@ -94,8 +93,6 @@
         .stat-card,
         .tab-btn,
         .btn-small,
-        .balance-card,
-        .quick-item,
         .admin-header,
         .admin-title,
         .badge,
@@ -103,55 +100,8 @@
         .table-wrap th,
         .plan-status-badge,
         .modal-card,
-        .support-modal,
         .toast,
-        .ad-modal,
         .orb,
-        .nav-item,
-        .floating-btn,
-        .hero-slideshow .slide,
-        .flags-container,
-        .plan-card,
-        .plan-image,
-        .plan-content,
-        .plan-title,
-        .plan-details,
-        .total-income,
-        .invest-btn,
-        .plan-note,
-        .plan-countries,
-        .plan-limit,
-        .plan-lock,
-        .plan-subtitle,
-        .detail-item,
-        .detail-label,
-        .detail-value,
-        .quick-item .qi-icon,
-        .quick-item .qi-label,
-        .balance-label,
-        .balance-amount,
-        .balance-sub,
-        .greeting-text,
-        .greeting-sub,
-        .brand-name,
-        .brand-badge,
-        .header-actions .avatar-btn,
-        .bottom-nav,
-        .nav-item .nav-label,
-        .nav-item .nav-icon,
-        .floating-btn,
-        .support-line,
-        .support-footer,
-        .modal-title,
-        .modal-subtitle,
-        .modal-plan-name,
-        .modal-detail-item .label,
-        .modal-detail-item .value,
-        .modal-total .label,
-        .modal-total .amount,
-        .modal-note,
-        .modal-btn-cancel,
-        .modal-btn-confirm,
         .admin-tabs,
         .search-bar input,
         .form-group input,
@@ -160,21 +110,6 @@
         .country-group label,
         .agent-numbers input,
         .table-wrap,
-        .plan-card .vip-badge,
-        .plan-card .coming-soon-badge,
-        .plan-image,
-        .total-income .label,
-        .total-income .amount,
-        .hero-slideshow .slide-content h2,
-        .hero-slideshow .slide-content p,
-        .hero-slideshow .slide-tag,
-        .hero-slideshow .indicators .dot,
-        .flags-marquee .flag-item .flag-name,
-        .flags-marquee .flag-item .flag-emoji,
-        .time-indicator .theme-name,
-        .time-indicator,
-        .admin-title svg,
-        .card-title svg,
         .card-title,
         .stat-number,
         .stat-label,
@@ -202,7 +137,7 @@
             padding-bottom: 30px;
         }
 
-        /* ----- BACKGROUND with Ravi Sharma image & brightness reduction ----- */
+        /* ----- No background image for admin page – just gradient overlay ----- */
         body::before {
             content: "";
             position: fixed;
@@ -210,12 +145,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://i.ibb.co/Vcg0rgNY/ravi-sharma-h-Nv5s6-NEYig-unsplash.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            filter: brightness(0.25) saturate(1.1) contrast(1.05);
+            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.07) 0%, transparent 50%);
             z-index: -3;
+            pointer-events: none;
         }
         body::after {
             content: "";
@@ -224,8 +157,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.08) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.05) 0%, transparent 50%);
+            background: rgba(10, 8, 21, 0.94);
             z-index: -2;
             pointer-events: none;
         }
@@ -830,6 +762,29 @@
             animation: pulse 2s ease-in-out infinite;
         }
 
+        /* ----- AD STATUS BADGE ----- */
+        .ad-status-badge {
+            display: inline-block;
+            padding: 0.05rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .ad-status-badge.active {
+            background: rgba(74, 222, 128, 0.06);
+            color: var(--theme-success);
+            border: 1px solid rgba(74, 222, 128, 0.06);
+        }
+
+        .ad-status-badge.inactive {
+            background: rgba(239, 68, 68, 0.06);
+            color: var(--theme-danger);
+            border: 1px solid rgba(239, 68, 68, 0.06);
+        }
+
         /* ----- MODAL ----- */
         .modal-overlay {
             position: fixed;
@@ -1140,6 +1095,17 @@
         .role-select option {
             background: var(--theme-select-option);
         }
+
+        /* ================================================================
+           ADS TAB SPECIFIC
+           ================================================================ */
+        .ad-preview-img {
+            max-width: 80px;
+            max-height: 50px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--theme-card-border);
+        }
     </style>
 </head>
 <body>
@@ -1199,6 +1165,8 @@
             <button class="tab-btn" data-tab="vouchers">🎫 Vouchers</button>
             <button class="tab-btn" data-tab="agents">👤 Agents</button>
             <button class="tab-btn" data-tab="admins">🔐 Admins</button>
+            <!-- NEW: Ads tab -->
+            <button class="tab-btn" data-tab="ads">📢 Ads</button>
             <button class="tab-btn" data-tab="settings">⚙ Settings</button>
         </div>
 
@@ -1430,6 +1398,20 @@
             </div>
         </div>
 
+        <!-- ===== ADS TAB ===== -->
+        <div id="adsTab" class="tab-content">
+            <div class="glass-card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    Promotional Ads
+                </div>
+                <div class="card-actions">
+                    <button class="btn-small success" onclick="openAddAdModal()">+ Create Ad</button>
+                </div>
+                <div class="table-wrap"><div id="adsList">Loading...</div></div>
+            </div>
+        </div>
+
         <!-- ===== SETTINGS ===== -->
         <div id="settingsTab" class="tab-content">
             <div class="glass-card">
@@ -1471,6 +1453,35 @@
                 <button class="btn-small success" id="saveDepositRulesBtn">Save Rules</button>
                 <div id="depositRulesMsg" style="margin-top:0.5rem;"></div>
             </div>
+
+            <!-- Moved Agent Management to Settings (for proper organization) -->
+            <div class="glass-card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Agent Management (Settings)
+                </div>
+                <p style="font-size:0.8rem; color:var(--theme-text-muted); margin-bottom:0.8rem;">Manage agents – they are also available under the Agents tab.</p>
+                <div class="form-group"><label>Agent Name *</label><input type="text" id="settingsAgentName" /></div>
+                <div class="form-group"><label>Phone (260XXXXXXXXX) *</label><input type="text" id="settingsAgentPhone" maxlength="12" /></div>
+                <div class="form-group"><label>Email (auto)</label><input type="text" id="settingsAgentEmail" readonly /></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Commission Rate (%)</label><input type="number" id="settingsAgentCommission" value="10" step="0.5" /></div>
+                    <div class="form-group"><label>Status</label><select id="settingsAgentStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                </div>
+                <div class="form-group"><label>Password (6 digits for new)</label><input type="text" id="settingsAgentPassword" maxlength="6" /></div>
+                <div class="form-group"><label>Additional Numbers</label></div>
+                <div class="agent-numbers">
+                    <div class="form-group"><label>MTN</label><input type="text" id="settingsAgentMtn" placeholder="260XXXXXXXXX" maxlength="12" /></div>
+                    <div class="form-group"><label>Airtel</label><input type="text" id="settingsAgentAirtel" placeholder="260XXXXXXXXX" maxlength="12" /></div>
+                    <div class="form-group"><label>Zamtel</label><input type="text" id="settingsAgentZamtel" placeholder="260XXXXXXXXX" maxlength="12" /></div>
+                </div>
+                <input type="hidden" id="settingsEditingAgentId" />
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button class="btn-small success" id="settingsSaveAgentBtn">Save Agent</button>
+                    <button class="btn-small outline" id="settingsCancelAgentBtn" style="display:none;">Cancel</button>
+                </div>
+                <div id="settingsAgentMessage" style="margin-top:0.5rem;"></div>
+            </div>
         </div>
 
     </div>
@@ -1479,7 +1490,7 @@
     MODALS
     ============================================================ -->
 
-    <!-- Add Plan Modal -->
+    <!-- Add Plan Modal (unchanged) -->
     <div class="modal-overlay" id="addPlanModal">
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal('addPlanModal')">✕</button>
@@ -1494,7 +1505,6 @@
                 <div class="form-group"><label>Days</label><input type="number" id="planDays" placeholder="5" /></div>
                 <div class="form-group"><label>Daily Return</label><input type="number" id="planDailyReturn" step="0.01" placeholder="0.00" /></div>
             </div>
-            <!-- Currency Dropdown -->
             <div class="form-group">
                 <label>Currency</label>
                 <select id="planCurrency">
@@ -1506,7 +1516,6 @@
                     <option value="GBP">🇬🇧 GBP (British Pound)</option>
                 </select>
             </div>
-            <!-- Country Checkboxes -->
             <div class="form-group">
                 <label>Available Countries</label>
                 <div class="country-group" id="planCountries">
@@ -1530,7 +1539,7 @@
         </div>
     </div>
 
-    <!-- Add News Modal -->
+    <!-- Add News Modal (unchanged) -->
     <div class="modal-overlay" id="addNewsModal">
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal('addNewsModal')">✕</button>
@@ -1545,7 +1554,7 @@
         </div>
     </div>
 
-    <!-- Add Treasure Modal -->
+    <!-- Add Treasure Modal (unchanged) -->
     <div class="modal-overlay" id="addTreasureModal">
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal('addTreasureModal')">✕</button>
@@ -1559,7 +1568,7 @@
         </div>
     </div>
 
-    <!-- Add Admin Modal -->
+    <!-- Add Admin Modal (unchanged) -->
     <div class="modal-overlay" id="addAdminModal">
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal('addAdminModal')">✕</button>
@@ -1573,12 +1582,33 @@
         </div>
     </div>
 
+    <!-- ===== ADD/EDIT AD MODAL ===== -->
+    <div class="modal-overlay" id="addAdModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeModal('addAdModal')">✕</button>
+            <h3><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> <span id="adModalTitle">Create Ad</span></h3>
+            <input type="hidden" id="editingAdId" />
+            <div class="form-group"><label>Active</label><select id="adActive"><option value="true">Active</option><option value="false">Inactive</option></select></div>
+            <div class="form-group"><label>Title *</label><input type="text" id="adTitle" placeholder="e.g. Grow Your Wealth with <span>PureOreCapital</span>" /></div>
+            <div class="form-group"><label>Description *</label><textarea id="adDesc" rows="2" placeholder="Supporting text..."></textarea></div>
+            <div class="form-group"><label>Badge</label><input type="text" id="adBadge" placeholder="e.g. 🚀 Limited Offer" /></div>
+            <div class="form-group"><label>Image URL</label><input type="text" id="adImageUrl" placeholder="https://..." /></div>
+            <div class="form-group"><label>CTA Button Text</label><input type="text" id="adCtaText" placeholder="e.g. Start Investing Today" /></div>
+            <div class="form-group"><label>CTA Link</label><input type="text" id="adCtaLink" placeholder="e.g. mkvip.html" /></div>
+            <div class="form-group"><label>Timeout (seconds)</label><input type="number" id="adTimeout" value="5" min="1" max="60" /></div>
+            <div class="modal-actions">
+                <button class="btn-small success" id="saveAdBtn">Save Ad</button>
+                <button class="btn-small outline" onclick="closeModal('addAdModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ============================================================
-    JAVASCRIPT – Theme Engine + Firebase
+    JAVASCRIPT – Theme Engine + Firebase + All Functions
     ============================================================ -->
     <script>
         // ================================================================
-        // THEME ENGINE – cycles every 30 seconds
+        // THEME ENGINE – cycles every 30 seconds (unchanged)
         // ================================================================
 
         var themeIndex = 0;
@@ -1894,7 +1924,7 @@
             root.style.setProperty('--theme-header-border', t.headerBorder);
             root.style.setProperty('--theme-avatar-bg', t.avatarBg);
 
-            // Update orb colors directly (they use var)
+            // Update orb colors directly
             document.querySelectorAll('.orb-1').forEach(function(el) { el.style.background = t.orb1; });
             document.querySelectorAll('.orb-2').forEach(function(el) { el.style.background = t.orb2; });
             document.querySelectorAll('.orb-3').forEach(function(el) { el.style.background = t.orb3; });
@@ -1911,11 +1941,8 @@
         }
 
         function startThemeEngine() {
-            // Apply first theme immediately
             applyTheme(0);
             themeIndex = 1;
-
-            // Rotate every 30 seconds
             if (themeInterval) clearInterval(themeInterval);
             themeInterval = setInterval(function() {
                 applyTheme(themeIndex % themes.length);
@@ -1969,9 +1996,6 @@
         // ================================================================
         startThemeEngine();
 
-        // ================================================================
-        // TIME INDICATOR (already updated by theme engine)
-        // ================================================================
         function updateTimeOnly() {
             var now = new Date();
             var timeEl = document.getElementById('timeIndicator');
@@ -1985,7 +2009,7 @@
         updateTimeOnly();
 
         // ================================================================
-        // AUTH STATE (unchanged functionality)
+        // AUTH STATE + MAIN INIT
         // ================================================================
         auth.onAuthStateChanged(async function(user) {
             if (!user) { window.location.href = 'admin-login.html'; return; }
@@ -2002,6 +2026,7 @@
                 return;
             }
 
+            // Load all data
             loadStats();
             loadRecentActivities();
             loadUsers('');
@@ -2017,15 +2042,29 @@
             loadVouchers();
             loadAgents();
             loadAdmins();
+            loadAds(); // NEW
             loadSettings();
             loadWithdrawalRules();
             loadDepositRules();
             setupPendingListeners();
             setupVoucherManualCreation();
 
+            // Original agent form (Agents tab)
             document.getElementById('agentPhone').addEventListener('input', generateAgentEmail);
             document.getElementById('saveAgentBtn').addEventListener('click', saveAgent);
             document.getElementById('cancelAgentEditBtn').addEventListener('click', clearAgentForm);
+
+            // Settings agent form (duplicate functionality)
+            document.getElementById('settingsAgentPhone').addEventListener('input', function() {
+                var phone = this.value.trim();
+                if (phone.startsWith('260') && phone.length === 12 && /^\d+$/.test(phone)) {
+                    document.getElementById('settingsAgentEmail').value = 'agent_' + phone + '@agent.pureore.com';
+                } else {
+                    document.getElementById('settingsAgentEmail').value = '';
+                }
+            });
+            document.getElementById('settingsSaveAgentBtn').addEventListener('click', saveSettingsAgent);
+            document.getElementById('settingsCancelAgentBtn').addEventListener('click', clearSettingsAgentForm);
 
             // User search
             var searchInput = document.getElementById('userSearchInput');
@@ -2074,6 +2113,9 @@
             document.getElementById('saveWithdrawRulesBtn').addEventListener('click', saveWithdrawRules);
             document.getElementById('saveDepositRulesBtn').addEventListener('click', saveDepositRules);
 
+            // Ads
+            document.getElementById('saveAdBtn').onclick = function() { saveAd(); };
+
             // Logout
             document.getElementById('adminLogoutBtn').addEventListener('click', function() { auth.signOut().then(
                 function() { window.location.href = 'admin-login.html'; }); });
@@ -2094,9 +2136,10 @@
         });
 
         // ================================================================
-        // ALL ORIGINAL FUNCTIONS (unchanged below)
+        // ALL ORIGINAL FUNCTIONS (unchanged) – only keep the ones we need
         // ================================================================
 
+        // ---- Helper: setup pending listeners ----
         function setupPendingListeners() {
             db.collection('deposits').where('status', '==', 'pending').onSnapshot(function(snap) {
                 var count = snap.size;
@@ -2128,6 +2171,7 @@
             });
         }
 
+        // ---- Stats ----
         async function loadStats() {
             var usersSnap = await db.collection('users').get();
             document.getElementById('totalUsers').textContent = usersSnap.size;
@@ -2141,6 +2185,7 @@
             document.getElementById('totalWithdrawals').textContent = totalWith.toFixed(2);
         }
 
+        // ---- Recent Activities ----
         async function loadRecentActivities() {
             var activities = [];
             var deposits = await db.collection('deposits').orderBy('createdAt', 'desc').limit(5).get();
@@ -2159,6 +2204,7 @@
             }
         }
 
+        // ---- Users (with search, block, etc.) ----
         async function loadUsers(filter) {
             var usersSnap = await db.collection('users').get();
             var users = [];
@@ -2323,7 +2369,7 @@
             loadUsers(getSearchQuery());
         }
 
-        // ===== DEPOSITS =====
+        // ---- Deposits (pending & history) ----
         async function loadPendingDeposits() {
             var snap = await db.collection('deposits').where('status', '==', 'pending').get();
             var html =
@@ -2394,7 +2440,7 @@
             document.getElementById('depositsHistory').innerHTML = html;
         }
 
-        // ===== WITHDRAWALS =====
+        // ---- Withdrawals (pending & history) ----
         async function loadPendingWithdrawals() {
             var snap = await db.collection('withdrawals').where('status', '==', 'pending').get();
             var html =
@@ -2489,7 +2535,7 @@
             document.getElementById('withdrawalsHistory').innerHTML = html;
         }
 
-        // ===== PLANS =====
+        // ---- Plans (MKVIP & JProduct) ----
         async function loadPlans(collection, elementId) {
             try {
                 var snap = await db.collection(collection).orderBy('createdAt', 'desc').get();
@@ -2624,7 +2670,7 @@
                 var countryList = ['Zambia', 'Tanzania', 'Ghana', 'Zimbabwe', 'Congo', 'UK'];
                 var countryCheckboxes = countryList.map(function(c) {
                     var checked = countries.indexOf(c) !== -1 ? 'checked' : '';
-                    var emoji = { Zambia: '🇿🇲', Tanzania: '🇹🇿', Ghana: '🇬🇭', Zimbabwe: '🇿🇼', Congo: '🇨??',
+                    var emoji = { Zambia: '🇿🇲', Tanzania: '🇹🇿', Ghana: '🇬🇭', Zimbabwe: '🇿🇼', Congo: '🇨🇩',
                         UK: '🇬🇧' };
                     return '<label><input type="checkbox" value="' + c + '" ' + checked + ' /> ' + emoji[c] +
                         ' ' + c + '</label>';
@@ -2721,7 +2767,7 @@
             }).catch(function(err) { showToast(err.message, true); });
         };
 
-        // ===== TRANSACTIONS =====
+        // ---- Transactions ----
         async function loadTransactions() {
             var snap = await db.collection('transactions').orderBy('createdAt', 'desc').get();
             var html =
@@ -2746,7 +2792,7 @@
             });
         }
 
-        // ===== NEWS =====
+        // ---- News ----
         async function loadNews() {
             var snap = await db.collection('news').orderBy('createdAt', 'desc').get();
             var html =
@@ -2786,7 +2832,7 @@
                 showToast('Deleted', false); }).catch(function(err) { showToast(err.message, true); });
         };
 
-        // ===== TREASURE =====
+        // ---- Treasure ----
         async function loadTreasureCodes() {
             var snap = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
             var html =
@@ -2826,7 +2872,7 @@
                 showToast('Deleted', false); }).catch(function(err) { showToast(err.message, true); });
         };
 
-        // ===== VOUCHERS =====
+        // ---- Vouchers ----
         async function loadVouchers() {
             var snap = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
             var html =
@@ -2898,7 +2944,7 @@
             });
         }
 
-        // ===== AGENTS =====
+        // ---- Agents (Original tab) ----
         function generateAgentEmail() {
             var phone = document.getElementById('agentPhone').value.trim();
             if (phone.startsWith('260') && phone.length === 12 && /^\d+$/.test(phone)) {
@@ -3015,7 +3061,71 @@
                 showToast('Agent deleted', false); }).catch(function(err) { showToast(err.message, true); });
         };
 
-        // ===== ADMINS =====
+        // ---- Agents (Settings duplicate) ----
+        function clearSettingsAgentForm() {
+            document.getElementById('settingsEditingAgentId').value = '';
+            document.getElementById('settingsAgentName').value = '';
+            document.getElementById('settingsAgentPhone').value = '';
+            document.getElementById('settingsAgentEmail').value = '';
+            document.getElementById('settingsAgentCommission').value = '10';
+            document.getElementById('settingsAgentStatus').value = 'active';
+            document.getElementById('settingsAgentMtn').value = '';
+            document.getElementById('settingsAgentAirtel').value = '';
+            document.getElementById('settingsAgentZamtel').value = '';
+            document.getElementById('settingsAgentPassword').value = '';
+            document.getElementById('settingsCancelAgentBtn').style.display = 'none';
+        }
+
+        async function saveSettingsAgent() {
+            var name = document.getElementById('settingsAgentName').value.trim();
+            var phone = document.getElementById('settingsAgentPhone').value.trim();
+            var email = document.getElementById('settingsAgentEmail').value.trim();
+            var commissionRate = parseFloat(document.getElementById('settingsAgentCommission').value);
+            var status = document.getElementById('settingsAgentStatus').value;
+            var mtn = document.getElementById('settingsAgentMtn').value.trim();
+            var airtel = document.getElementById('settingsAgentAirtel').value.trim();
+            var zamtel = document.getElementById('settingsAgentZamtel').value.trim();
+            var password = document.getElementById('settingsAgentPassword').value.trim();
+            var editingId = document.getElementById('settingsEditingAgentId').value;
+            if (!name || !phone || !email || isNaN(commissionRate)) {
+                showToast('Please fill Name, Phone, Email, Commission', true);
+                return;
+            }
+            if (!/^260\d{9}$/.test(phone)) { showToast('Phone must be 260XXXXXXXXX', true); return; }
+            if (!mtn && !airtel && !zamtel) { showToast('At least one of MTN/Airtel/Zamtel required', true); return; }
+            if (!editingId && (!password || !/^\d{6}$/.test(password))) {
+                showToast('Password must be exactly 6 digits for new agent', true);
+                return;
+            }
+            var data = { name, phone, email, commissionRate, status, mtnNumber: mtn || null, airtelNumber: airtel ||
+                    null, zamtelNumber: zamtel || null, totalEarnings: 0,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            try {
+                if (editingId) {
+                    await db.collection('agents').doc(editingId).update(data);
+                    showToast('Agent updated (Settings)', false);
+                } else {
+                    var userCred = await auth.createUserWithEmailAndPassword(email, password);
+                    var uid = userCred.user.uid;
+                    await db.collection('users').doc(uid).set({
+                        fullName: name,
+                        email: email,
+                        phone: phone,
+                        role: 'agent',
+                        balance: 0,
+                        isBlocked: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('agents').doc(uid).set(data);
+                    showToast('Agent created successfully (Settings)', false);
+                }
+                clearSettingsAgentForm();
+                loadAgents(); // refresh both tabs
+            } catch (err) { showToast(err.message, true); }
+        }
+
+        // ---- Admins ----
         async function loadAdmins() {
             var snap = await db.collection('users').where('role', '==', 'admin').get();
             var html =
@@ -3056,7 +3166,7 @@
                 showToast('Admin removed', false); }).catch(function(err) { showToast(err.message, true); });
         };
 
-        // ===== SETTINGS =====
+        // ---- Settings ----
         async function loadSettings() {
             var doc = await db.collection('systemSettings').doc('general').get();
             if (doc.exists) {
@@ -3127,7 +3237,127 @@
             }).catch(function(err) { showToast(err.message, true); });
         }
 
-        // ===== FIX MISSING DOCS =====
+        // ================================================================
+        // ADS MANAGEMENT (NEW)
+        // ================================================================
+        async function loadAds() {
+            var snap = await db.collection('ads').orderBy('createdAt', 'desc').get();
+            var html =
+                '<thead><tr><th>Badge</th><th>Title</th><th>Image</th><th>Active</th><th>Timeout</th><th>Actions</th></tr></thead><tbody>';
+            if (snap.empty) {
+                html += '<tr><td colspan="6" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No ads created yet.</td></tr>';
+            } else {
+                for (var doc of snap.docs) {
+                    var ad = doc.data();
+                    var activeStatus = ad.active ? 'Active' : 'Inactive';
+                    var statusClass = ad.active ? 'ad-status-badge active' : 'ad-status-badge inactive';
+                    var imagePreview = ad.imageUrl ?
+                        `<img src="${ad.imageUrl}" class="ad-preview-img" onerror="this.style.display='none'" />` :
+                        '—';
+                    html += `<tr>
+                        <td>${escapeHtml(ad.badge || '')}</td>
+                        <td>${escapeHtml(ad.title || '')}</td>
+                        <td>${imagePreview}</td>
+                        <td><span class="${statusClass}">${activeStatus}</span></td>
+                        <td>${ad.timeout || 5}s</td>
+                        <td>
+                            <button class="btn-small" onclick="editAd('${doc.id}')">Edit</button>
+                            <button class="btn-small danger" onclick="deleteAd('${doc.id}')">Delete</button>
+                        </td>
+                    </tr>`;
+                }
+            }
+            html += '</tbody>';
+            document.getElementById('adsList').innerHTML = html;
+        }
+
+        window.openAddAdModal = function() {
+            document.getElementById('editingAdId').value = '';
+            document.getElementById('adModalTitle').textContent = 'Create Ad';
+            document.getElementById('adActive').value = 'true';
+            document.getElementById('adTitle').value = '';
+            document.getElementById('adDesc').value = '';
+            document.getElementById('adBadge').value = '';
+            document.getElementById('adImageUrl').value = '';
+            document.getElementById('adCtaText').value = '';
+            document.getElementById('adCtaLink').value = '';
+            document.getElementById('adTimeout').value = '5';
+            openModal('addAdModal');
+        };
+
+        window.editAd = function(id) {
+            db.collection('ads').doc(id).get().then(function(doc) {
+                if (!doc.exists) { showToast('Ad not found', true); return; }
+                var ad = doc.data();
+                document.getElementById('editingAdId').value = id;
+                document.getElementById('adModalTitle').textContent = 'Edit Ad';
+                document.getElementById('adActive').value = ad.active ? 'true' : 'false';
+                document.getElementById('adTitle').value = ad.title || '';
+                document.getElementById('adDesc').value = ad.description || '';
+                document.getElementById('adBadge').value = ad.badge || '';
+                document.getElementById('adImageUrl').value = ad.imageUrl || '';
+                document.getElementById('adCtaText').value = ad.ctaText || '';
+                document.getElementById('adCtaLink').value = ad.ctaLink || '';
+                document.getElementById('adTimeout').value = ad.timeout || 5;
+                openModal('addAdModal');
+            });
+        };
+
+        function saveAd() {
+            var id = document.getElementById('editingAdId').value;
+            var active = document.getElementById('adActive').value === 'true';
+            var title = document.getElementById('adTitle').value.trim();
+            var description = document.getElementById('adDesc').value.trim();
+            var badge = document.getElementById('adBadge').value.trim();
+            var imageUrl = document.getElementById('adImageUrl').value.trim();
+            var ctaText = document.getElementById('adCtaText').value.trim();
+            var ctaLink = document.getElementById('adCtaLink').value.trim();
+            var timeout = parseInt(document.getElementById('adTimeout').value) || 5;
+
+            if (!title) { showToast('Title is required', true); return; }
+            if (!description) { showToast('Description is required', true); return; }
+
+            var data = {
+                active: active,
+                title: title,
+                description: description,
+                badge: badge || '',
+                imageUrl: imageUrl || '',
+                ctaText: ctaText || '',
+                ctaLink: ctaLink || '',
+                timeout: timeout,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (id) {
+                // Update existing
+                db.collection('ads').doc(id).update(data).then(function() {
+                    closeModal('addAdModal');
+                    loadAds();
+                    showToast('Ad updated successfully', false);
+                }).catch(function(err) { showToast(err.message, true); });
+            } else {
+                // Create new
+                data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                db.collection('ads').add(data).then(function() {
+                    closeModal('addAdModal');
+                    loadAds();
+                    showToast('Ad created successfully', false);
+                }).catch(function(err) { showToast(err.message, true); });
+            }
+        }
+
+        window.deleteAd = function(id) {
+            if (!confirm('Delete this ad?')) return;
+            db.collection('ads').doc(id).delete().then(function() {
+                loadAds();
+                showToast('Ad deleted', false);
+            }).catch(function(err) { showToast(err.message, true); });
+        };
+
+        // ================================================================
+        // FIX MISSING DOCS (unchanged)
+        // ================================================================
         async function fixMissingDocs() {
             var btn = document.getElementById('fixMissingDocsBtn');
             var msg = document.getElementById('fixDocsMsg');
@@ -3173,9 +3403,8 @@
 
         console.log('✨ Pureore Capital · Admin Dashboard with Dynamic Theme Engine');
         console.log('🎨 Colors change every 30 seconds across all UI elements');
-        console.log('🌈 8 unique themes: Gold, Cyan, Violet, Mint, Coral, Blue, Orange, Pink');
-        console.log('📈 Plans include currency and country availability');
-        console.log('📞 Withdrawal tables show user phone numbers');
+        console.log('📢 Added Ads management tab – create, edit, delete promotional ads');
+        console.log('👥 Agent management also available in Settings tab for convenience');
         console.log('🔐 Firebase config untouched');
     </script>
 
