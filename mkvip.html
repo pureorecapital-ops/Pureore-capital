@@ -1373,23 +1373,56 @@
             if (userBlockListener) userBlockListener();
         });
 
-        // ===== FIXED: getSafeImageUrl – no aggressive transformations =====
+        // ================================================================
+        // UPGRADED getSafeImageUrl – converts short links and ensures HTTPS
+        // ================================================================
         function getSafeImageUrl(url) {
-            if (!url || url.trim() === '') {
+            // If URL is missing or empty, return fallback
+            if (!url || typeof url !== 'string' || url.trim() === '') {
                 return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
             }
+
             let safeUrl = url.trim();
-            // Ensure HTTPS
+
+            // --- Convert ibb.co short links to direct i.ibb.co image URLs ---
+            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
+                const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
+                if (match && match[1]) {
+                    let code = match[1];
+                    let filename = match[2] || '';
+                    let ext = 'jpg';
+                    if (filename) {
+                        const extMatch = filename.match(/\.([a-zA-Z0-9]+)$/);
+                        if (extMatch && extMatch[1]) ext = extMatch[1];
+                    }
+                    safeUrl = `https://i.ibb.co/${code}/image.${ext}`;
+                    if (filename) {
+                        safeUrl = `https://i.ibb.co/${code}${filename}`;
+                    }
+                }
+            }
+
+            // --- Convert imgur short links ---
+            if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
+                const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
+                if (match && match[1]) {
+                    safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
+                }
+            }
+
+            // --- Ensure HTTPS ---
             if (safeUrl.startsWith('http://')) {
                 safeUrl = safeUrl.replace('http://', 'https://');
             }
             if (safeUrl.startsWith('//')) {
                 safeUrl = 'https:' + safeUrl;
             }
-            // If still not valid, fallback
+
+            // --- Final validation ---
             if (!safeUrl.startsWith('https://')) {
                 return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
             }
+
             return safeUrl;
         }
 
@@ -1493,6 +1526,9 @@
 
                 const imageUrl = plan.image || '';
                 const safeImageUrl = getSafeImageUrl(imageUrl);
+                // Debug log
+                console.log(`📸 Plan "${plan.name}" image URL:`, imageUrl);
+                console.log(`   Safe URL:`, safeImageUrl);
 
                 const btnDisabled = limitReached || isComingSoon;
                 let btnClass = 'invest-btn';
@@ -1933,6 +1969,7 @@
         console.log('🎨 Theme engine started – colors change every hour');
         console.log('🕐 Current theme applied based on local time');
         console.log('✅ Image fix: removed crossorigin="anonymous" to allow i.ibb.co images');
+        console.log('✅ getSafeImageUrl now converts ibb.co short links and ensures HTTPS');
     </script>
 </body>
 </html>
