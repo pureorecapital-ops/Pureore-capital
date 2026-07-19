@@ -1142,7 +1142,7 @@
         }
 
         /* ================================================================
-               PROMOTIONAL AD OVERLAY – auto closes in 5s
+               PROMOTIONAL AD OVERLAY – dynamically populated from Firestore
                ================================================================ */
         .ad-overlay {
             position: fixed;
@@ -1206,6 +1206,28 @@
             }
         }
 
+        .ad-modal .ad-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            line-height: 1;
+            z-index: 2;
+            padding: 4px 8px;
+            border-radius: 50%;
+        }
+
+        .ad-modal .ad-close:hover {
+            color: #fff;
+            transform: rotate(90deg);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
         .ad-modal .ad-badge {
             display: inline-block;
             background: rgba(239, 68, 68, 0.08);
@@ -1248,12 +1270,26 @@
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.04);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            background: #1a1838;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .ad-modal .ad-image img {
             width: 100%;
             height: auto;
             display: block;
+            max-height: 280px;
+            object-fit: cover;
+        }
+
+        .ad-modal .ad-image .placeholder-text {
+            color: rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+            padding: 2rem;
+            text-align: center;
         }
 
         .ad-modal .ad-cta {
@@ -1307,25 +1343,27 @@
                 font-size: 0.9rem;
                 padding: 0.75rem;
             }
+            .ad-modal .ad-image img {
+                max-height: 180px;
+            }
         }
     </style>
 </head>
 <body>
 
     <!-- ================================================================
-    PROMOTIONAL AD OVERLAY – Auto closes in 5 seconds
+    PROMOTIONAL AD OVERLAY – dynamically populated from Firestore
     ================================================================ -->
     <div id="adOverlay" class="ad-overlay">
         <div class="ad-modal">
-            <div class="ad-badge">🚀 Limited Offer</div>
-            <h2>Grow Your Wealth with <span>PureOreCapital</span></h2>
-            <p class="ad-desc">
-                Secure investments, daily returns, and a community that cares about your financial freedom.
-            </p>
-            <div class="ad-image">
-                <img src="https://i.ibb.co/nNF1c4qL/file-00000000094c71f88a477b719e193bfb.png" alt="PureOreCapital Dashboard" />
+            <button class="ad-close" id="adCloseBtn">✕</button>
+            <div class="ad-badge" id="adBadge">🚀 Limited Offer</div>
+            <h2 id="adTitle">Grow Your Wealth with <span>PureOreCapital</span></h2>
+            <p class="ad-desc" id="adDesc">Secure investments, daily returns, and a community that cares about your financial freedom.</p>
+            <div class="ad-image" id="adImageContainer">
+                <img id="adImage" src="https://i.ibb.co/nNF1c4qL/file-00000000094c71f88a477b719e193bfb.png" alt="Ad" />
             </div>
-            <a href="mkvip.html" class="ad-cta">Start Investing Today</a>
+            <a href="mkvip.html" class="ad-cta" id="adCta">Start Investing Today</a>
             <p class="ad-timer">This ad will close in <span id="adTimer">5</span>s</p>
         </div>
     </div>
@@ -1566,42 +1604,7 @@
 
     <script>
         // ================================================================
-        // PROMOTIONAL AD – Auto close after 5 seconds
-        // ================================================================
-        (function() {
-            var adOverlay = document.getElementById('adOverlay');
-            var adTimer = document.getElementById('adTimer');
-
-            if (!adOverlay) return;
-
-            // Show the ad
-            adOverlay.classList.add('active');
-
-            // Countdown logic
-            var seconds = 5;
-            if (adTimer) {
-                adTimer.textContent = seconds;
-            }
-
-            var interval = setInterval(function() {
-                seconds--;
-                if (adTimer) {
-                    adTimer.textContent = seconds;
-                }
-                if (seconds <= 0) {
-                    clearInterval(interval);
-                    // Hide the ad
-                    adOverlay.classList.remove('active');
-                    // Optionally remove it from the DOM after the transition
-                    setTimeout(function() {
-                        adOverlay.style.display = 'none';
-                    }, 400);
-                }
-            }, 1000);
-        })();
-
-        // ================================================================
-        // FIREBASE CONFIG (unchanged)
+        // FIREBASE CONFIG
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -1694,7 +1697,149 @@
                     document.getElementById('walletBalanceSpan').textContent = wallet.toFixed(2);
                 }
             }, function(err) { console.error('Balance listener error:', err); });
+
+            // ================================================================
+            // LOAD DYNAMIC AD FROM FIRESTORE
+            // ================================================================
+            loadActiveAd();
         });
+
+        // ================================================================
+        // DYNAMIC AD SYSTEM – fetches from Firestore and displays
+        // ================================================================
+        var adOverlay = document.getElementById('adOverlay');
+        var adTimerEl = document.getElementById('adTimer');
+        var adCloseBtn = document.getElementById('adCloseBtn');
+        var adBadge = document.getElementById('adBadge');
+        var adTitle = document.getElementById('adTitle');
+        var adDesc = document.getElementById('adDesc');
+        var adImage = document.getElementById('adImage');
+        var adImageContainer = document.getElementById('adImageContainer');
+        var adCta = document.getElementById('adCta');
+        var adInterval = null;
+        var adCountdown = null;
+        var adTimeoutSeconds = 5;
+
+        function loadActiveAd() {
+            // Query for the most recent active ad
+            db.collection('ads')
+                .where('active', '==', true)
+                .orderBy('createdAt', 'desc')
+                .limit(1)
+                .get()
+                .then(function(snapshot) {
+                    if (!snapshot.empty) {
+                        var doc = snapshot.docs[0];
+                        var data = doc.data();
+                        console.log('📢 Active ad found:', data.title || 'Untitled');
+                        displayAd(data);
+                    } else {
+                        console.log('📢 No active ad found – ad hidden.');
+                        adOverlay.classList.remove('active');
+                        adOverlay.style.display = 'none';
+                    }
+                })
+                .catch(function(err) {
+                    console.warn('Error loading ad:', err);
+                    // On error, hide the ad
+                    adOverlay.classList.remove('active');
+                    adOverlay.style.display = 'none';
+                });
+        }
+
+        function displayAd(data) {
+            // Populate the ad content
+            adBadge.textContent = data.badge || '🚀 Limited Offer';
+            adTitle.innerHTML = (data.title || 'Grow Your Wealth with <span>PureOreCapital</span>');
+
+            // Description
+            adDesc.textContent = data.description || 'Secure investments, daily returns, and a community that cares about your financial freedom.';
+
+            // Image
+            var imageUrl = data.imageUrl || '';
+            if (imageUrl && imageUrl.trim() !== '') {
+                adImage.src = imageUrl;
+                adImage.style.display = 'block';
+                adImage.onerror = function() {
+                    // If image fails, show placeholder text
+                    this.style.display = 'none';
+                    var placeholder = document.createElement('div');
+                    placeholder.className = 'placeholder-text';
+                    placeholder.textContent = '📸 Ad Image';
+                    adImageContainer.appendChild(placeholder);
+                };
+            } else {
+                adImage.style.display = 'none';
+                var placeholder = document.createElement('div');
+                placeholder.className = 'placeholder-text';
+                placeholder.textContent = '📸 No image provided';
+                adImageContainer.appendChild(placeholder);
+            }
+
+            // CTA
+            adCta.textContent = data.ctaText || 'Start Investing Today';
+            adCta.href = data.ctaLink || 'mkvip.html';
+
+            // Timeout
+            adTimeoutSeconds = data.timeout || 5;
+            if (adTimeoutSeconds < 1) adTimeoutSeconds = 1;
+            if (adTimeoutSeconds > 60) adTimeoutSeconds = 60;
+
+            // Show the ad
+            adOverlay.style.display = 'flex';
+            adOverlay.classList.add('active');
+
+            // Start the countdown timer
+            startAdTimer(adTimeoutSeconds);
+        }
+
+        function startAdTimer(seconds) {
+            var remaining = seconds;
+            if (adTimerEl) adTimerEl.textContent = remaining;
+
+            // Clear any existing interval
+            if (adCountdown) clearInterval(adCountdown);
+
+            adCountdown = setInterval(function() {
+                remaining--;
+                if (adTimerEl) adTimerEl.textContent = remaining;
+                if (remaining <= 0) {
+                    clearInterval(adCountdown);
+                    adCountdown = null;
+                    closeAd();
+                }
+            }, 1000);
+
+            // Also set a timeout as a safety net
+            if (adInterval) clearTimeout(adInterval);
+            adInterval = setTimeout(function() {
+                closeAd();
+            }, seconds * 1000 + 500);
+        }
+
+        function closeAd() {
+            if (adCountdown) {
+                clearInterval(adCountdown);
+                adCountdown = null;
+            }
+            if (adInterval) {
+                clearTimeout(adInterval);
+                adInterval = null;
+            }
+            adOverlay.classList.remove('active');
+            // After transition, hide it
+            setTimeout(function() {
+                adOverlay.style.display = 'none';
+            }, 500);
+        }
+
+        // Close button handler
+        adCloseBtn.addEventListener('click', closeAd);
+
+        // Click outside to close (optional – you can enable by uncommenting)
+        // adOverlay.addEventListener('click', function(e) {
+        //     if (e.target === adOverlay) closeAd();
+        // });
 
         // ================================================================
         // BUTTONS
@@ -1730,11 +1875,8 @@
         var slideInterval;
 
         function goToSlide(index) {
-            // Remove active from all slides & dots
             slides.forEach(function(s) { s.classList.remove('active'); });
             dots.forEach(function(d) { d.classList.remove('active'); });
-
-            // Activate target
             slides[index].classList.add('active');
             dots[index].classList.add('active');
             currentSlide = index;
@@ -1746,18 +1888,15 @@
         }
 
         function startSlideshow() {
-            // Start with first slide active
             goToSlide(0);
             if (slideInterval) clearInterval(slideInterval);
             slideInterval = setInterval(nextSlide, 4000);
         }
 
-        // Dot click handlers
         dots.forEach(function(dot) {
             dot.addEventListener('click', function() {
                 var index = parseInt(this.getAttribute('data-index'));
                 goToSlide(index);
-                // Reset timer on manual interaction
                 if (slideInterval) {
                     clearInterval(slideInterval);
                     slideInterval = setInterval(nextSlide, 4000);
@@ -1765,7 +1904,6 @@
             });
         });
 
-        // Pause on hover
         var hero = document.getElementById('heroSlideshow');
         hero.addEventListener('mouseenter', function() {
             if (slideInterval) clearInterval(slideInterval);
@@ -1775,7 +1913,6 @@
             slideInterval = setInterval(nextSlide, 4000);
         });
 
-        // Start the show
         startSlideshow();
 
         // ================================================================
@@ -1828,8 +1965,8 @@
             gi = (gi + 1) % (navItems.length + 1);
         }, 3000);
 
-        console.log('✨ Pureore Capital · Dashboard with hero slideshow & flags');
-        console.log('📸 4 images auto‑scrolling every 4s');
+        console.log('✨ Pureore Capital · Dashboard with dynamic ads');
+        console.log('📢 Ads loaded from Firestore collection "ads"');
         console.log('🔐 Firebase config untouched');
     </script>
 

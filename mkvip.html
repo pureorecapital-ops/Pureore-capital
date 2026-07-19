@@ -373,6 +373,7 @@
             object-fit: cover;
             background: #1a1a3e;
             border-bottom: 1px solid rgba(179, 136, 255, 0.08);
+            display: block;
         }
 
         .plan-content {
@@ -1372,26 +1373,22 @@
             if (userBlockListener) userBlockListener();
         });
 
+        // ===== FIXED: getSafeImageUrl – no aggressive transformations =====
         function getSafeImageUrl(url) {
-            if (!url || url === '') return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
+            if (!url || url.trim() === '') {
+                return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
+            }
             let safeUrl = url.trim();
+            // Ensure HTTPS
             if (safeUrl.startsWith('http://')) {
                 safeUrl = safeUrl.replace('http://', 'https://');
             }
             if (safeUrl.startsWith('//')) {
                 safeUrl = 'https:' + safeUrl;
             }
-            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
-                const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)/);
-                if (match && match[1]) {
-                    safeUrl = `https://i.ibb.co/${match[1]}/image.jpg`;
-                }
-            }
-            if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
-                const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
-                if (match && match[1]) {
-                    safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
-                }
+            // If still not valid, fallback
+            if (!safeUrl.startsWith('https://')) {
+                return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
             }
             return safeUrl;
         }
@@ -1435,7 +1432,7 @@
             }
         }
 
-        // ===== RENDER PLANS – NOW WITH CURRENCY SYMBOL AND COUNTRIES =====
+        // ===== RENDER PLANS – with fixed image (no crossorigin) =====
         function renderPlans(plans) {
             const grid = document.getElementById('plansGrid');
             grid.innerHTML = '';
@@ -1450,7 +1447,7 @@
                 const limitReached = (purchaseLimit && purchaseLimit > 0 && userPurchased >= purchaseLimit);
                 const isComingSoon = plan.status === 'coming_soon';
 
-                // ----- Currency symbol mapping -----
+                // Currency symbol
                 const currency = plan.currency || 'ZMW';
                 const symbolMap = {
                     'ZMW': 'K',
@@ -1462,11 +1459,10 @@
                 };
                 const currencySymbol = symbolMap[currency] || currency;
 
-                // ----- Country availability -----
+                // Countries
                 const countries = plan.countries || [];
                 let countriesDisplay = '';
                 if (countries.length > 0) {
-                    // Add emoji mapping
                     const countryEmoji = {
                         'Zambia': '🇿🇲',
                         'Tanzania': '🇹🇿',
@@ -1498,7 +1494,6 @@
                 const imageUrl = plan.image || '';
                 const safeImageUrl = getSafeImageUrl(imageUrl);
 
-                // Button state
                 const btnDisabled = limitReached || isComingSoon;
                 let btnClass = 'invest-btn';
                 let btnText = '💎 INVEST NOW';
@@ -1527,9 +1522,10 @@
                     '<div class="coming-soon-badge">🚀 Coming Soon</div>' :
                     '<div class="vip-badge">⭐ VIP</div>';
 
+                // FIXED: removed crossorigin="anonymous"
                 card.innerHTML = `
                     ${badgeHtml}
-                    <img class="plan-image" src="${safeImageUrl}" alt="${escapeHtml(plan.name)}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg'">
+                    <img class="plan-image" src="${safeImageUrl}" alt="${escapeHtml(plan.name)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg'">
                     <div class="plan-content">
                         <div class="plan-title">${escapeHtml(plan.name)}</div>
                         <div class="plan-subtitle">${isComingSoon ? '🔥 Coming Soon • Stay Tuned' : 'Premium Investment Plan • Exclusive Access'}</div>
@@ -1580,7 +1576,7 @@
         }
 
         // ============================================================
-        // ===== CONFIRMATION MODAL =====
+        // CONFIRMATION MODAL
         // ============================================================
         const modalOverlay = document.getElementById('confirmModal');
         const modalCloseBtn = document.getElementById('modalCloseBtn');
@@ -1646,7 +1642,7 @@
         });
 
         // ============================================================
-        // ===== INVEST IN PLAN =====
+        // INVEST IN PLAN
         // ============================================================
         async function investInPlan(plan) {
             console.log("investInPlan called with plan:", plan);
@@ -1687,18 +1683,20 @@
                         modalConfirmBtn.textContent = '✅ Confirm';
                         const btns = document.querySelectorAll('.invest-btn');
                         btns.forEach(btn => {
-                            const btnPlan = JSON.parse(btn.dataset.plan);
-                            if (btnPlan.name === plan.name) {
-                                btn.disabled = true;
-                                const parentCard = btn.closest('.plan-card');
-                                if (parentCard) {
-                                    const limitDiv = parentCard.querySelector('.plan-limit');
-                                    if (limitDiv) {
-                                        limitDiv.innerHTML = '❌ Limit reached';
-                                        limitDiv.className = 'plan-limit reached';
+                            try {
+                                const btnPlan = JSON.parse(btn.dataset.plan);
+                                if (btnPlan && btnPlan.name === plan.name) {
+                                    btn.disabled = true;
+                                    const parentCard = btn.closest('.plan-card');
+                                    if (parentCard) {
+                                        const limitDiv = parentCard.querySelector('.plan-limit');
+                                        if (limitDiv) {
+                                            limitDiv.innerHTML = '❌ Limit reached';
+                                            limitDiv.className = 'plan-limit reached';
+                                        }
                                     }
                                 }
-                            }
+                            } catch (e) { }
                         });
                         return;
                     }
@@ -1934,6 +1932,7 @@
 
         console.log('🎨 Theme engine started – colors change every hour');
         console.log('🕐 Current theme applied based on local time');
+        console.log('✅ Image fix: removed crossorigin="anonymous" to allow i.ibb.co images');
     </script>
 </body>
 </html>
