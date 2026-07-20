@@ -1771,7 +1771,8 @@
         var adTimeoutSeconds = 5;
 
         function loadActiveAd() {
-            // Query for the most recent active ad
+            console.log('🔄 Loading active ad...');
+            // First try: with orderBy (requires createdAt)
             db.collection('ads')
                 .where('active', '==', true)
                 .orderBy('createdAt', 'desc')
@@ -1781,20 +1782,69 @@
                     if (!snapshot.empty) {
                         var doc = snapshot.docs[0];
                         var data = doc.data();
-                        console.log('📢 Active ad found:', data.title || 'Untitled');
+                        console.log('✅ Active ad found (with orderBy):', data.title || 'Untitled');
                         displayAd(data);
                     } else {
-                        console.log('📢 No active ad found – ad hidden.');
-                        adOverlay.classList.remove('active');
-                        adOverlay.style.display = 'none';
+                        console.log('ℹ️ No active ad found with orderBy – trying fallback.');
+                        // Fallback: try without orderBy (in case createdAt is missing)
+                        db.collection('ads')
+                            .where('active', '==', true)
+                            .limit(1)
+                            .get()
+                            .then(function(snap2) {
+                                if (!snap2.empty) {
+                                    var doc2 = snap2.docs[0];
+                                    var data2 = doc2.data();
+                                    console.log('✅ Ad found (fallback):', data2.title || 'Untitled');
+                                    displayAd(data2);
+                                } else {
+                                    console.log('❌ No active ad found at all.');
+                                    hideAd();
+                                }
+                            })
+                            .catch(function(err2) {
+                                console.warn('⚠️ Fallback query error:', err2);
+                                hideAd();
+                            });
                     }
                 })
                 .catch(function(err) {
-                    console.warn('Error loading ad:', err);
-                    // On error, hide the ad
-                    adOverlay.classList.remove('active');
-                    adOverlay.style.display = 'none';
+                    console.warn('⚠️ First query error (with orderBy):', err);
+                    // If error mentions createdAt, try without orderBy.
+                    if (err.message && (err.message.includes('createdAt') || err.message.includes('index'))) {
+                        console.log('🔄 Retrying without orderBy (missing createdAt/index)...');
+                        db.collection('ads')
+                            .where('active', '==', true)
+                            .limit(1)
+                            .get()
+                            .then(function(snap2) {
+                                if (!snap2.empty) {
+                                    var doc2 = snap2.docs[0];
+                                    var data2 = doc2.data();
+                                    console.log('✅ Ad found (fallback):', data2.title || 'Untitled');
+                                    displayAd(data2);
+                                } else {
+                                    console.log('❌ No active ad found (fallback).');
+                                    hideAd();
+                                }
+                            })
+                            .catch(function(err2) {
+                                console.warn('⚠️ Fallback query error:', err2);
+                                hideAd();
+                            });
+                    } else {
+                        hideAd();
+                    }
                 });
+        }
+
+        function hideAd() {
+            adOverlay.classList.remove('active');
+            adOverlay.style.display = 'none';
+            if (adCountdown) { clearInterval(adCountdown);
+                adCountdown = null; }
+            if (adInterval) { clearTimeout(adInterval);
+                adInterval = null; }
         }
 
         function displayAd(data) {
@@ -1802,10 +1852,9 @@
             adBadge.textContent = data.badge || '🚀 Limited Offer';
             adTitle.innerHTML = (data.title || 'Grow Your Wealth with <span>PureOreCapital</span>');
 
-            // Description
             adDesc.textContent = data.description || 'Secure investments, daily returns, and a community that cares about your financial freedom.';
 
-            // Image – convert URL using getSafeImageUrl
+            // Image
             var rawImageUrl = data.imageUrl || '';
             var safeImageUrl = getSafeImageUrl(rawImageUrl);
             console.log('🖼️ Ad image URL (raw):', rawImageUrl);
@@ -1814,20 +1863,22 @@
             if (safeImageUrl && safeImageUrl.trim() !== '') {
                 adImage.src = safeImageUrl;
                 adImage.style.display = 'block';
+                // Remove any existing placeholder
+                var placeholder = adImageContainer.querySelector('.placeholder-text');
+                if (placeholder) placeholder.remove();
                 adImage.onerror = function() {
-                    // If image fails, show placeholder text
                     this.style.display = 'none';
-                    var placeholder = document.createElement('div');
-                    placeholder.className = 'placeholder-text';
-                    placeholder.textContent = '📸 Ad Image';
-                    adImageContainer.appendChild(placeholder);
+                    var p = document.createElement('div');
+                    p.className = 'placeholder-text';
+                    p.textContent = '📸 Ad Image';
+                    adImageContainer.appendChild(p);
                 };
             } else {
                 adImage.style.display = 'none';
-                var placeholder = document.createElement('div');
-                placeholder.className = 'placeholder-text';
-                placeholder.textContent = '📸 No image provided';
-                adImageContainer.appendChild(placeholder);
+                var p = document.createElement('div');
+                p.className = 'placeholder-text';
+                p.textContent = '📸 No image provided';
+                adImageContainer.appendChild(p);
             }
 
             // CTA
@@ -1851,9 +1902,7 @@
             var remaining = seconds;
             if (adTimerEl) adTimerEl.textContent = remaining;
 
-            // Clear any existing interval
             if (adCountdown) clearInterval(adCountdown);
-
             adCountdown = setInterval(function() {
                 remaining--;
                 if (adTimerEl) adTimerEl.textContent = remaining;
@@ -1864,7 +1913,6 @@
                 }
             }, 1000);
 
-            // Also set a timeout as a safety net
             if (adInterval) clearTimeout(adInterval);
             adInterval = setTimeout(function() {
                 closeAd();
@@ -1872,16 +1920,11 @@
         }
 
         function closeAd() {
-            if (adCountdown) {
-                clearInterval(adCountdown);
-                adCountdown = null;
-            }
-            if (adInterval) {
-                clearTimeout(adInterval);
-                adInterval = null;
-            }
+            if (adCountdown) { clearInterval(adCountdown);
+                adCountdown = null; }
+            if (adInterval) { clearTimeout(adInterval);
+                adInterval = null; }
             adOverlay.classList.remove('active');
-            // After transition, hide it
             setTimeout(function() {
                 adOverlay.style.display = 'none';
             }, 500);
@@ -1898,10 +1941,6 @@
             'withdraw.html'; });
         document.getElementById('historyFloatBtn').addEventListener('click', function() { window.location.href =
             'history.html'; });
-
-        // ================================================================
-        // AVATAR
-        // ================================================================
         document.getElementById('avatarBtn').addEventListener('click', function() { window.location.href = 'me.html'; });
 
         // ================================================================
@@ -1915,7 +1954,7 @@
         modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
 
         // ================================================================
-        // HERO SLIDESHOW – auto‑scroll every 4 seconds
+        // HERO SLIDESHOW, FLAGS, NAV, GLOW CYCLE (keep unchanged)
         // ================================================================
         var slides = document.querySelectorAll('.slide');
         var dots = document.querySelectorAll('.dot');
@@ -1964,9 +2003,7 @@
 
         startSlideshow();
 
-        // ================================================================
-        // FLAGS MARQUEE
-        // ================================================================
+        // ===== FLAGS MARQUEE =====
         var countries = [
             { name: "UK", emoji: "🇬🇧" },
             { name: "Tanzania", emoji: "🇹🇿" },
@@ -1985,9 +2022,7 @@
         }
         marquee.innerHTML = flagHtml;
 
-        // ================================================================
-        // NAVIGATION
-        // ================================================================
+        // ===== NAVIGATION =====
         var navItems = document.querySelectorAll('.nav-item');
         var current = window.location.pathname.split('/').pop() || 'dashboard.html';
         navItems.forEach(function(item) {
@@ -2000,9 +2035,7 @@
             });
         });
 
-        // ================================================================
-        // NAV GLOW CYCLE
-        // ================================================================
+        // ===== NAV GLOW CYCLE =====
         var glowClasses = ['glow', 'glow-gold', 'glow-cyan', ''];
         var gi = 0;
         setInterval(function() {
@@ -2014,10 +2047,9 @@
             gi = (gi + 1) % (navItems.length + 1);
         }, 3000);
 
-        console.log('✨ Pureore Capital · Dashboard with dynamic ads (image converter applied)');
+        console.log('✨ Pureore Capital · Dashboard with dynamic ads (image converter + fallback)');
         console.log('📢 Ads loaded from Firestore collection "ads"');
         console.log('🔐 Firebase config untouched');
     </script>
-
 </body>
 </html>
