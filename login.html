@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Login – PC • Pureore Capital</title>
     <link rel="preconnect" href="https://www.gstatic.com" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
@@ -22,6 +22,7 @@
         }
 
         :root {
+            /* Static Gold Theme – no auto-rotation */
             --gold: #f6c96e;
             --gold-glow: rgba(246, 201, 110, 0.25);
             --cyan: #5dd9f2;
@@ -35,22 +36,50 @@
             --radius-sm: 12px;
             --radius-xs: 8px;
             --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+            /* Theme variables (gold) */
+            --theme-primary: #f6c96e;
+            --theme-primary-dark: #f5a623;
+            --theme-primary-glow: rgba(246, 201, 110, 0.25);
+            --theme-secondary: #5dd9f2;
+            --theme-secondary-glow: rgba(93, 217, 242, 0.20);
+            --theme-accent: #7c6df0;
+            --theme-accent-glow: rgba(124, 109, 240, 0.30);
+            --theme-orb-1: #7c6df0;
+            --theme-orb-2: #5dd9f2;
+            --theme-orb-3: #f6c96e;
+            --theme-bg-overlay: rgba(10, 8, 21, 0.82);
+            --theme-bg-gradient-1: 0.15;
+            --theme-bg-orb-opacity: 0.12;
         }
 
+        /* ----- FIXED BODY – prevents layout shift on keyboard open ----- */
         html,
         body {
+            height: 100%;
+            overflow: hidden;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
+            background: #0a0815;
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ----- SCROLLABLE WRAPPER (handles all scrolling) ----- */
+        .app-wrapper {
+            position: relative;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #0a0815;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
+            padding: 1.5rem 0;
+            transition: background 0.8s ease;
         }
 
-        /* ----- BACKGROUND with brightness reduction ----- */
-        body::before {
+        /* ----- BACKGROUND with static theme gradients ----- */
+        .app-wrapper::before {
             content: "";
             position: fixed;
             top: 0;
@@ -60,127 +89,116 @@
             background-image: url('https://i.ibb.co/nNW3TyNv/andre-kaim-m777i-BIFI3-M-unsplash.jpg');
             background-size: cover;
             background-position: center;
-            filter: brightness(0.45) saturate(1.1) contrast(1.05);
-            z-index: -2;
+            filter: brightness(0.40) saturate(1.1) contrast(1.05);
+            z-index: -3;
         }
-        body::after {
+
+        .app-wrapper::after {
             content: "";
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.10) 0%, transparent 50%);
-            z-index: -1;
+            background:
+                radial-gradient(ellipse at 25% 20%, var(--theme-orb-1) 0%, transparent 55%),
+                radial-gradient(ellipse at 75% 80%, var(--theme-orb-2) 0%, transparent 50%);
+            opacity: var(--theme-bg-gradient-1);
+            z-index: -2;
+            pointer-events: none;
         }
 
-        /* ----- DECORATIVE ORBS (floating) ----- */
+        /* ----- DECORATIVE ORBS (static colors) ----- */
         .orb {
             position: fixed;
             border-radius: 50%;
-            filter: blur(70px);
-            opacity: 0.15;
+            filter: blur(80px);
+            opacity: var(--theme-bg-orb-opacity);
             z-index: -1;
             pointer-events: none;
-            animation: orbFloat 12s ease-in-out infinite alternate;
+            animation: orbFloat 18s ease-in-out infinite alternate;
+            will-change: transform;
         }
         .orb-1 {
-            width: 350px;
-            height: 350px;
-            background: var(--violet);
-            top: -5%;
-            left: -8%;
+            width: 320px;
+            height: 320px;
+            background: var(--theme-orb-1);
+            top: -10%;
+            left: -12%;
             animation-delay: 0s;
         }
         .orb-2 {
             width: 280px;
             height: 280px;
-            background: var(--cyan);
-            bottom: -5%;
-            right: -8%;
-            animation-delay: 4s;
+            background: var(--theme-orb-2);
+            bottom: -10%;
+            right: -12%;
+            animation-delay: 5s;
         }
         .orb-3 {
-            width: 220px;
-            height: 220px;
-            background: var(--gold);
-            top: 45%;
-            right: 10%;
-            animation-delay: 8s;
-            opacity: 0.10;
+            width: 200px;
+            height: 200px;
+            background: var(--theme-orb-3);
+            top: 55%;
+            right: 2%;
+            animation-delay: 10s;
+            opacity: calc(var(--theme-bg-orb-opacity) * 0.5);
         }
 
         @keyframes orbFloat {
             0% {
                 transform: translate(0, 0) scale(1);
             }
-            33% {
-                transform: translate(20px, -30px) scale(1.05);
-            }
-            66% {
-                transform: translate(-10px, 20px) scale(0.95);
+            50% {
+                transform: translate(30px, -40px) scale(1.1);
             }
             100% {
-                transform: translate(15px, -10px) scale(1.02);
+                transform: translate(-20px, 30px) scale(0.9);
             }
         }
 
-        /* ----- MAIN CONTAINER ----- */
+        /* ----- MAIN CONTAINER (stable block layout) ----- */
         .auth-container {
             width: 100%;
             max-width: 460px;
-            margin: 1.2rem;
-            animation: containerIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            margin: 0 auto;
+            padding: 0 0.8rem;
             position: relative;
             z-index: 10;
-            opacity: 0;
-            transform: translateY(24px) scale(0.98);
         }
 
-        @keyframes containerIn {
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        /* ----- GLASS CARD with unique gradient border ----- */
+        /* ----- GLASS CARD with static gradient border ----- */
         .auth-card {
             position: relative;
-            background: rgba(10, 8, 21, 0.78);
+            background: var(--theme-bg-overlay);
             backdrop-filter: blur(24px) saturate(1.4);
             -webkit-backdrop-filter: blur(24px) saturate(1.4);
             border-radius: var(--radius-lg);
             padding: 2rem 1.8rem 2rem;
             border: 1px solid rgba(255, 255, 255, 0.06);
             box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-            overflow: hidden;
+            overflow: visible;
         }
 
-        /* Animated gradient border ring */
         .auth-card::before {
             content: '';
             position: absolute;
-            inset: -2px;
+            inset: -1.5px;
             border-radius: var(--radius-lg);
-            padding: 2px;
             background: conic-gradient(from 0deg,
-                    var(--violet),
-                    var(--cyan),
-                    var(--gold),
-                    var(--violet),
-                    var(--cyan),
-                    var(--gold),
-                    var(--violet));
+                    var(--theme-orb-1),
+                    var(--theme-orb-2),
+                    var(--theme-orb-3),
+                    var(--theme-orb-1));
             background-size: 300% 300%;
-            animation: borderSpin 8s linear infinite;
+            animation: borderSpin 12s linear infinite;
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
-            opacity: 0.5;
+            opacity: 0.45;
+            z-index: 0;
         }
 
         @keyframes borderSpin {
@@ -193,6 +211,11 @@
             100% {
                 background-position: 0% 50%;
             }
+        }
+
+        .auth-card>* {
+            position: relative;
+            z-index: 1;
         }
 
         /* ----- BRAND HEADER ----- */
@@ -213,11 +236,11 @@
             width: 42px;
             height: 42px;
             border-radius: var(--radius-sm);
-            background: linear-gradient(135deg, var(--violet), var(--cyan));
+            background: linear-gradient(135deg, var(--theme-accent), var(--theme-secondary));
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 20px var(--violet-glow);
+            box-shadow: 0 4px 20px var(--theme-accent-glow);
             flex-shrink: 0;
         }
 
@@ -242,8 +265,8 @@
         }
 
         .brand-name .pc {
-            color: var(--gold);
-            -webkit-text-fill-color: var(--gold);
+            color: var(--theme-primary);
+            -webkit-text-fill-color: var(--theme-primary);
             font-weight: 900;
         }
 
@@ -257,6 +280,52 @@
             padding: 2px 12px;
             border-radius: 40px;
             border: 1px solid rgba(255, 255, 255, 0.04);
+            flex-shrink: 0;
+        }
+
+        /* ----- AVATAR + SPEECH ----- */
+        #avatar-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+            padding: 5px 5px 5px 0;
+        }
+        .avatar-container {
+            width: 60px;
+            height: 60px;
+            flex-shrink: 0;
+        }
+        .avatar-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: drop-shadow(0 4px 15px var(--theme-primary-glow));
+        }
+        .speech-bubble {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px 16px 16px 4px;
+            padding: 10px 18px;
+            flex: 1;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-right: 10px solid rgba(255, 255, 255, 0.04);
+        }
+        #greeting-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: 0.3px;
         }
 
         /* ----- WELCOME TEXT ----- */
@@ -273,7 +342,7 @@
         }
 
         .welcome-text h1 span {
-            background: linear-gradient(135deg, var(--gold), #f5a623);
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -293,8 +362,11 @@
             gap: 12px;
         }
 
+        /* ----- INPUT GROUP with password toggle ----- */
         .input-group {
             position: relative;
+            display: flex;
+            align-items: center;
         }
 
         .input-group .input-icon {
@@ -311,13 +383,14 @@
             stroke-linejoin: round;
             pointer-events: none;
             transition: stroke 0.3s ease;
+            z-index: 2;
         }
 
         .input-group:focus-within .input-icon {
-            stroke: var(--cyan);
+            stroke: var(--theme-secondary);
         }
 
-        .input-group input {
+        .input-group input:not([type="checkbox"]) {
             width: 100%;
             padding: 0.85rem 1rem 0.85rem 46px;
             border-radius: var(--radius-sm);
@@ -328,21 +401,77 @@
             font-family: inherit;
             transition: all 0.3s ease;
             outline: none;
+            position: relative;
+            z-index: 1;
         }
 
-        .input-group input::placeholder {
+        .input-group input[type="password"],
+        .input-group input[type="text"] {
+            padding-right: 48px !important;
+        }
+
+        .input-group input:not([type="checkbox"])::placeholder {
             color: rgba(255, 255, 255, 0.25);
             font-weight: 400;
         }
 
-        .input-group input:focus {
-            border-color: rgba(93, 217, 242, 0.3);
+        .input-group input:not([type="checkbox"]):focus {
+            border-color: var(--theme-secondary-glow);
             background: rgba(255, 255, 255, 0.06);
-            box-shadow: 0 0 30px rgba(93, 217, 242, 0.04);
+            box-shadow: 0 0 30px var(--theme-secondary-glow);
         }
 
-        .input-group input:hover {
+        .input-group input:not([type="checkbox"]):hover {
             background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* ----- PASSWORD TOGGLE BUTTON ----- */
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.25);
+            transition: color 0.3s ease, transform 0.2s ease;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+        }
+
+        .password-toggle:hover {
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .password-toggle:active {
+            transform: translateY(-50%) scale(0.92);
+        }
+
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: block;
+            transition: stroke 0.3s ease;
+        }
+
+        .password-toggle.active {
+            color: var(--theme-secondary);
+        }
+        .password-toggle.active:hover {
+            color: var(--theme-secondary);
         }
 
         /* ----- FORGOT PASSWORD LINK ----- */
@@ -360,7 +489,7 @@
         }
 
         .forgot-link a:hover {
-            color: var(--cyan);
+            color: var(--theme-secondary);
             text-decoration: underline;
         }
 
@@ -374,14 +503,15 @@
             font-weight: 700;
             font-size: 1rem;
             color: #0a0815;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
             cursor: pointer;
             transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 30px var(--gold-glow);
+            box-shadow: 0 4px 30px var(--theme-primary-glow);
             position: relative;
             overflow: hidden;
             margin-top: 4px;
             letter-spacing: 0.3px;
+            will-change: transform, box-shadow;
         }
 
         .btn-submit::after {
@@ -403,7 +533,7 @@
 
         .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 40px var(--gold-glow);
+            box-shadow: 0 8px 40px var(--theme-primary-glow);
         }
 
         .btn-submit:active {
@@ -523,14 +653,14 @@
         }
 
         .footer-link a {
-            color: var(--cyan);
+            color: var(--theme-secondary);
             text-decoration: none;
             font-weight: 600;
             transition: color 0.3s ease;
         }
 
         .footer-link a:hover {
-            color: var(--gold);
+            color: var(--theme-primary);
             text-decoration: underline;
         }
 
@@ -570,73 +700,21 @@
         }
 
         .admin-toggle:hover {
-            color: var(--gold);
-            border-color: rgba(246, 201, 110, 0.15);
+            color: var(--theme-primary);
+            border-color: var(--theme-primary-glow);
             background: rgba(246, 201, 110, 0.04);
         }
 
         .admin-toggle:hover svg {
-            stroke: var(--gold);
-        }
-
-        /* ===== AVATAR (speech bubble) ===== */
-        #avatar-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 12px;
-            padding: 5px 5px 5px 0;
-            animation: fadeSlideIn 0.6s ease-out;
-        }
-        @keyframes fadeSlideIn {
-            0% {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .avatar-container {
-            width: 60px;
-            height: 60px;
-            flex-shrink: 0;
-        }
-        .avatar-svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-            filter: drop-shadow(0 4px 15px rgba(0, 229, 255, 0.3));
-        }
-        .speech-bubble {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 16px 16px 16px 4px;
-            padding: 10px 18px;
-            flex: 1;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            position: relative;
-        }
-        .speech-bubble::before {
-            content: '';
-            position: absolute;
-            left: -10px;
-            top: 50%;
-            transform: translateY(-50%);
-            border-top: 10px solid transparent;
-            border-bottom: 10px solid transparent;
-            border-right: 10px solid rgba(255, 255, 255, 0.04);
-        }
-        #greeting-text {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #ffffff;
-            letter-spacing: 0.3px;
+            stroke: var(--theme-primary);
         }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 480px) {
+            .app-wrapper {
+                padding: 0.8rem 0;
+                align-items: flex-start;
+            }
             .auth-card {
                 padding: 1.5rem 1.2rem 1.5rem;
             }
@@ -658,12 +736,25 @@
                 font-size: 8px;
                 padding: 1px 8px;
             }
-            .input-group input {
+            .input-group input:not([type="checkbox"]) {
                 padding: 0.75rem 1rem 0.75rem 40px;
                 font-size: 0.88rem;
             }
+            .input-group input[type="password"],
+            .input-group input[type="text"] {
+                padding-right: 44px !important;
+            }
             .input-group .input-icon {
                 left: 13px;
+                width: 16px;
+                height: 16px;
+            }
+            .password-toggle {
+                right: 10px;
+                width: 24px;
+                height: 24px;
+            }
+            .password-toggle svg {
                 width: 16px;
                 height: 16px;
             }
@@ -685,6 +776,24 @@
                 width: 50px;
                 height: 50px;
             }
+            .orb-1 {
+                width: 200px;
+                height: 200px;
+                top: -10%;
+                left: -15%;
+            }
+            .orb-2 {
+                width: 180px;
+                height: 180px;
+                bottom: -10%;
+                right: -15%;
+            }
+            .orb-3 {
+                width: 140px;
+                height: 140px;
+                top: 55%;
+                right: 0%;
+            }
         }
 
         @media (max-width: 380px) {
@@ -694,133 +803,160 @@
             .welcome-text h1 {
                 font-size: 19px;
             }
+            .input-group input:not([type="checkbox"]) {
+                font-size: 0.82rem;
+                padding: 0.65rem 1rem 0.65rem 36px;
+            }
+            .input-group input[type="password"],
+            .input-group input[type="text"] {
+                padding-right: 38px !important;
+            }
+            .password-toggle {
+                right: 8px;
+                width: 20px;
+                height: 20px;
+            }
+            .password-toggle svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+
+        /* Prevent horizontal scroll */
+        body {
+            overflow-x: hidden;
+        }
+        html {
+            overflow-x: hidden;
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== DECORATIVE ORBS ===== -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <!-- ===== SCROLLABLE WRAPPER ===== -->
+    <div class="app-wrapper">
 
-    <div class="auth-container">
-        <div class="auth-card">
+        <!-- ===== DECORATIVE ORBS ===== -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
 
-            <!-- ===== BRAND HEADER ===== -->
-            <div class="brand-header">
-                <div class="brand-logo">
-                    <div class="brand-icon">
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="6 6 18 6 6 18 18 18" />
+        <div class="auth-container">
+            <div class="auth-card">
+
+                <!-- ===== BRAND HEADER ===== -->
+                <div class="brand-header">
+                    <div class="brand-logo">
+                        <div class="brand-icon">
+                            <svg viewBox="0 0 24 24">
+                                <polyline points="6 6 18 6 6 18 18 18" />
+                            </svg>
+                        </div>
+                        <span class="brand-name">Pureore<span class="pc">·PC</span></span>
+                    </div>
+                    <span class="brand-tag">v3.0</span>
+                </div>
+
+                <!-- ===== AVATAR + SPEECH ===== -->
+                <div id="avatar-wrapper">
+                    <div class="avatar-container">
+                        <svg class="avatar-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="45" fill="var(--theme-accent)" stroke="var(--theme-secondary)" stroke-width="2"/>
+                            <polyline points="25,65 40,45 55,55 75,35" stroke="var(--theme-primary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <circle cx="35" cy="40" r="4.5" fill="var(--theme-primary)"/>
+                            <circle cx="65" cy="40" r="4.5" fill="var(--theme-primary)"/>
+                            <path d="M40 55 Q50 66 60 55" stroke="var(--theme-primary)" stroke-width="3" stroke-linecap="round" fill="none"/>
                         </svg>
                     </div>
-                    <span class="brand-name">Pureore<span class="pc">·PC</span></span>
+                    <div class="speech-bubble">
+                        <span id="greeting-text">Welcome back, investor!</span>
+                    </div>
                 </div>
-                <span class="brand-tag">v3.0</span>
+
+                <!-- ===== WELCOME ===== -->
+                <div class="welcome-text">
+                    <h1>Sign in to <span>your account</span></h1>
+                    <p>Access your portfolio and start growing</p>
+                </div>
+
+                <!-- ===== LOGIN FORM ===== -->
+                <form id="loginForm">
+                    <!-- Email / Phone -->
+                    <div class="input-group">
+                        <svg class="input-icon" viewBox="0 0 24 24">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
+                        <input type="text" id="loginEmail" placeholder="Email or phone" required autocomplete="username" />
+                    </div>
+
+                    <!-- Password with toggle -->
+                    <div class="input-group">
+                        <svg class="input-icon" viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password" />
+                        <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Forgot password -->
+                    <div class="forgot-link">
+                        <a href="#" id="forgotPassword">Forgot password?</a>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn-submit" id="loginBtn">Sign in</button>
+
+                    <!-- Divider -->
+                    <div class="divider">
+                        <span class="divider-line"></span>
+                        <span class="divider-text">or continue with</span>
+                        <span class="divider-line"></span>
+                    </div>
+
+                    <!-- Google Sign-in -->
+                    <button type="button" class="btn-google" id="googleBtn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 22h8a2 2 0 0 0 2-2v-8" />
+                            <path d="M14 10l7-7" />
+                            <path d="M3.5 12.5a8 8 0 1 0 8-8" />
+                            <path d="M12 2v10" />
+                        </svg>
+                        Sign in with Google
+                    </button>
+                </form>
+
+                <!-- ===== MESSAGE ===== -->
+                <div id="message" class="message-box"></div>
+
+                <!-- ===== FOOTER ===== -->
+                <div class="footer-link">
+                    Don't have an account? <a href="register.html">Create one</a>
+                </div>
+
+                <!-- ===== ADMIN TOGGLE ===== -->
+                <div class="admin-toggle-wrap">
+                    <div class="admin-toggle" id="adminToggle">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                        </svg>
+                        <span>Admin access</span>
+                    </div>
+                </div>
+
             </div>
-
-            <!-- ===== AVATAR + SPEECH ===== -->
-            <div id="avatar-wrapper">
-                <div class="avatar-container">
-                    <svg class="avatar-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="50" cy="50" r="45" fill="url(#avatarGrad)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
-                        <polyline points="25,65 40,45 55,55 75,35" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                        <circle cx="35" cy="40" r="4.5" fill="#ffffff"/>
-                        <circle cx="65" cy="40" r="4.5" fill="#ffffff"/>
-                        <path d="M40 55 Q50 66 60 55" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
-                        <defs>
-                            <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#7c6df0"/>
-                                <stop offset="33%" stop-color="#5dd9f2"/>
-                                <stop offset="66%" stop-color="#f6c96e"/>
-                                <stop offset="100%" stop-color="#7c6df0"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <div class="speech-bubble">
-                    <span id="greeting-text">Welcome back, investor!</span>
-                </div>
-            </div>
-
-            <!-- ===== WELCOME ===== -->
-            <div class="welcome-text">
-                <h1>Sign in to <span>your account</span></h1>
-                <p>Access your portfolio and start growing</p>
-            </div>
-
-            <!-- ===== LOGIN FORM ===== -->
-            <form id="loginForm">
-                <!-- Email / Phone -->
-                <div class="input-group">
-                    <svg class="input-icon" viewBox="0 0 24 24">
-                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                        <path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                    </svg>
-                    <input type="text" id="loginEmail" placeholder="Email or phone" required autocomplete="username" />
-                </div>
-
-                <!-- Password -->
-                <div class="input-group">
-                    <svg class="input-icon" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password" />
-                </div>
-
-                <!-- Forgot password -->
-                <div class="forgot-link">
-                    <a href="#" id="forgotPassword">Forgot password?</a>
-                </div>
-
-                <!-- Submit -->
-                <button type="submit" class="btn-submit" id="loginBtn">Sign in</button>
-
-                <!-- Divider -->
-                <div class="divider">
-                    <span class="divider-line"></span>
-                    <span class="divider-text">or continue with</span>
-                    <span class="divider-line"></span>
-                </div>
-
-                <!-- Google Sign-in -->
-                <button type="button" class="btn-google" id="googleBtn">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 22h8a2 2 0 0 0 2-2v-8" />
-                        <path d="M14 10l7-7" />
-                        <path d="M3.5 12.5a8 8 0 1 0 8-8" />
-                        <path d="M12 2v10" />
-                    </svg>
-                    Sign in with Google
-                </button>
-            </form>
-
-            <!-- ===== MESSAGE ===== -->
-            <div id="message" class="message-box"></div>
-
-            <!-- ===== FOOTER ===== -->
-            <div class="footer-link">
-                Don't have an account? <a href="register.html">Create one</a>
-            </div>
-
-            <!-- ===== ADMIN TOGGLE (key icon, no emoji) ===== -->
-            <div class="admin-toggle-wrap">
-                <div class="admin-toggle" id="adminToggle">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-                    </svg>
-                    <span>Admin access</span>
-                </div>
-            </div>
-
         </div>
     </div>
 
     <script>
         // ============================================================
-        // FIREBASE CONFIG – untouched
+        // FIREBASE CONFIG
         // ============================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -835,8 +971,62 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         var auth = firebase.auth();
         var db = firebase.firestore();
-        db.settings({ persistence: false });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ----- UPDATED: Enable Firestore offline persistence -----
+        db.settings({ persistence: true });
+
+        // ----- UPDATED: Auth persistence with logging -----
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(function() {
+                console.log(" Auth persistence set to LOCAL");
+            })
+            .catch(function(error) {
+                console.warn(" Persistence error:", error);
+            });
+
+        // ----- UPDATED: Auth state observer with session logging -----
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                console.log(" User already logged in:", user.email);
+            } else {
+                console.log(" No saved user session");
+            }
+        });
+
+        // ============================================================
+        // AUTO LOGIN – redirect alreadyauthenticated users
+        // ============================================================
+        auth.onAuthStateChanged(function(user) {
+            if (!user) return;
+
+            db.collection("users").doc(user.uid).get()
+                .then(function(doc) {
+                    if (!doc.exists) {
+                        auth.signOut();
+                        return;
+                    }
+
+                    var data = doc.data();
+
+                    if (data.isBlocked === true) {
+                        auth.signOut();
+                        return;
+                    }
+
+                    var role = data.role || "user";
+
+                    if (role === "admin") {
+                        window.location.replace("admin-dashboard.html");
+                    } else if (role === "agent") {
+                        window.location.replace("agent-dashboard.html");
+                    } else {
+                        window.location.replace("dashboard.html");
+                    }
+                })
+                .catch(function(err) {
+                    console.warn("Auto-login check error:", err);
+                });
+        });
 
         // ============================================================
         // DOM REFS
@@ -849,6 +1039,26 @@
         var googleBtn = document.getElementById('googleBtn');
         var adminToggle = document.getElementById('adminToggle');
         var forgotLink = document.getElementById('forgotPassword');
+
+        // ============================================================
+        // PASSWORD TOGGLE
+        // ============================================================
+        var toggleBtn = document.getElementById('togglePassword');
+        toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            this.classList.toggle('active', !isPassword);
+            var svg = this.querySelector('svg');
+            if (!isPassword) {
+                svg.innerHTML =
+                    '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" />';
+            } else {
+                svg.innerHTML =
+                    '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />';
+            }
+        });
 
         // ============================================================
         // HELPERS
@@ -867,7 +1077,6 @@
             msgBox.className = 'message-box';
         }
 
-        // Phone  agent email
         function phoneToAgentEmail(phone) {
             var cleaned = phone.replace(/\D/g, '');
             return 'agent_' + cleaned + '@agent.pureore.com';
@@ -888,7 +1097,6 @@
                 showMessage('error', 'Please enter your email address to reset your password.');
                 return;
             }
-            // If it looks like a phone, we can't reset via email – prompt user
             if (isPhoneNumber(email)) {
                 showMessage('error', 'Please use the email associated with your account to reset your password.');
                 return;
@@ -937,7 +1145,6 @@
                     return db.collection('users').doc(user.uid).get()
                         .then(function(doc) {
                             if (!doc.exists) {
-                                // Something wrong – sign out and show error
                                 auth.signOut();
                                 showMessage('error', 'Account data missing. Please contact support.');
                                 loginBtn.disabled = false;
@@ -956,7 +1163,6 @@
                             var redirect = 'dashboard.html';
                             if (role === 'admin') redirect = 'admin-dashboard.html';
                             else if (role === 'agent') redirect = 'agent-dashboard.html';
-                            // Redirect
                             window.location.href = redirect;
                         });
                 })
@@ -988,7 +1194,7 @@
         });
 
         // ============================================================
-        // GOOGLE SIGN-IN (login)
+        // GOOGLE SIGN-IN
         // ============================================================
         googleBtn.addEventListener('click', function() {
             hideMessage();
@@ -1000,11 +1206,9 @@
                 .then(function(result) {
                     var user = result.user;
                     var uid = user.uid;
-                    // Check user doc exists
                     db.collection('users').doc(uid).get()
                         .then(function(doc) {
                             if (!doc.exists) {
-                                // No account – maybe they haven't registered? We'll create one with default data
                                 var name = user.displayName || 'User';
                                 var mail = user.email;
                                 var generatedRef = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -1034,7 +1238,6 @@
                             return Promise.resolve();
                         })
                         .then(function() {
-                            // Redirect to dashboard
                             window.location.href = 'dashboard.html';
                         })
                         .catch(function(err) {
@@ -1059,7 +1262,7 @@
         });
 
         // ============================================================
-        // ADMIN TOGGLE (key icon  prompt for password)
+        // ADMIN TOGGLE
         // ============================================================
         adminToggle.addEventListener('click', function() {
             var pw = prompt('Enter admin password (access only):');
@@ -1071,7 +1274,7 @@
         });
 
         // ============================================================
-        // AVATAR GREETING ROTATION (live)
+        // AVATAR GREETING ROTATION
         // ============================================================
         (function() {
             var greetEl = document.getElementById('greeting-text');
@@ -1099,7 +1302,7 @@
             inputs.forEach(function(input) {
                 input.addEventListener('focus', function() {
                     if (this.type === 'password') {
-                        greetEl.textContent = 'Secure your account ';
+                        greetEl.textContent = 'Secure your account';
                     } else {
                         greetEl.textContent = 'Enter your credentials';
                     }
@@ -1125,9 +1328,11 @@
             }, 300);
         })();
 
-        console.log(' Pureore Capital · Login (unique design)');
-        console.log(' No emojis — pure SVG icons');
-        console.log(' Firebase config untouched');
+        console.log(' Pureore Capital · Login (auto-login + static gold theme)');
+        console.log(' Password toggle active');
+        console.log(' No bounce, no snap — smooth scrolling guaranteed');
+        console.log(' Auto-redirects to correct dashboard if already signed in');
+        console.log(' Firestore persistence enabled (offline cache)');
     </script>
 
 </body>

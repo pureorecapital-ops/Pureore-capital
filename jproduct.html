@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <meta name="referrer" content="no-referrer">
     <title>J Product | Pureore Capital</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
@@ -93,20 +93,31 @@
             --theme-close-btn-hover: #fff;
         }
 
-        /* ----- BASE BODY ----- */
+        /* ----- FIXED BODY – prevents layout shift on keyboard open ----- */
+        html,
         body {
+            height: 100%;
+            overflow: hidden;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-            min-height: 100vh;
-            color: var(--theme-text-primary);
-            padding: 1rem;
-            padding-bottom: 85px;
-            position: relative;
-            overflow-x: hidden;
-            transition: background 2s ease, color 2s ease;
+            background: var(--theme-bg-start);
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* ----- ANIMATED BACKGROUND ----- */
-        body::before {
+        /* ----- SCROLLABLE WRAPPER (handles all scrolling) ----- */
+        .app-wrapper {
+            position: relative;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding: 1rem 0 100px 0;
+            /* room for bottom nav */
+            transition: background 2s ease;
+        }
+
+        /* ----- ANIMATED BACKGROUND (moved to wrapper) ----- */
+        .app-wrapper::before {
             content: "";
             position: fixed;
             top: 0;
@@ -194,6 +205,7 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 1.2rem 1.5rem;
             position: relative;
             z-index: 2;
         }
@@ -227,6 +239,7 @@
             border: 1px solid rgba(0, 229, 255, 0.2);
             text-decoration: none;
             margin-bottom: 0.4rem;
+            width: fit-content;
         }
         .back-arrow:hover {
             background: var(--theme-back-arrow-hover);
@@ -941,6 +954,12 @@
 
         /* ----- RESPONSIVE ----- */
         @media (max-width: 600px) {
+            .app-wrapper {
+                padding: 0.5rem 0 100px 0;
+            }
+            .container {
+                padding: 0 1rem 1rem;
+            }
             .page-title {
                 font-size: 1.5rem;
             }
@@ -997,6 +1016,9 @@
             .time-indicator {
                 font-size: 0.5rem;
             }
+            .header {
+                margin-bottom: 1rem;
+            }
         }
 
         @media (min-width: 601px) and (max-width: 900px) {
@@ -1011,114 +1033,121 @@
 </head>
 <body>
 
-    <!-- ===== 4 FLOATING ORBS ===== -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
+    <!-- ===== SCROLLABLE WRAPPER ===== -->
+    <div class="app-wrapper">
 
-    <canvas id="fireworksCanvas" class="fireworks-canvas"></canvas>
+        <!-- ===== 4 FLOATING ORBS ===== -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="orb orb-4"></div>
 
-    <div class="container">
+        <canvas id="fireworksCanvas" class="fireworks-canvas"></canvas>
 
-        <!-- ===== HEADER ===== -->
-        <div class="header">
-            <div class="header-left">
-                <a href="dashboard.html" class="back-arrow">
-                    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                    Back
-                </a>
-                <div class="page-title">
-                    <span class="icon">📦</span> J PRODUCT PLAN
+        <div class="container">
+
+            <!-- ===== HEADER ===== -->
+            <div class="header">
+                <div class="header-left">
+                    <a href="dashboard.html" class="back-arrow">
+                        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                        Back
+                    </a>
+                    <div class="page-title">
+                        <span class="icon">📦</span> J PRODUCT PLAN
+                    </div>
+                    <div class="time-indicator">
+                        🕐 <span id="currentTimeDisplay">--:--</span> &nbsp;·&nbsp; <span class="theme-name" id="themeNameDisplay">Loading</span>
+                    </div>
                 </div>
-                <div class="time-indicator">
-                    🕐 <span id="currentTimeDisplay">--:--</span> &nbsp;·&nbsp; <span class="theme-name" id="themeNameDisplay">Loading</span>
+                <!-- JProduct Avatar -->
+                <div class="jproduct-avatar" title="J Product">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+                    </svg>
                 </div>
             </div>
-            <!-- JProduct Avatar -->
-            <div class="jproduct-avatar" title="J Product">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
-                </svg>
+
+            <!-- ===== LOADER ===== -->
+            <div id="loadingIndicator" class="loader"></div>
+
+            <!-- ===== PLANS GRID ===== -->
+            <div class="plans-grid" id="plansGrid"></div>
+
+            <!-- ===== EMPTY MESSAGE ===== -->
+            <div id="emptyMessage" class="empty-msg" style="display: none;">No investment plans available. Please check back later.</div>
+
+        </div>
+        <!-- /container -->
+
+        <!-- ===== CONFIRMATION MODAL ===== -->
+        <div id="confirmModal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <button class="modal-close" id="modalCloseBtn">✕</button>
+                <div class="modal-title">💎 Confirm Investment</div>
+                <div class="modal-subtitle">Review plan details before confirming</div>
+
+                <div class="modal-plan-name" id="modalPlanName">Plan Name</div>
+
+                <div class="modal-details">
+                    <div class="modal-detail-item">
+                        <span class="label">💰 Investment</span>
+                        <span class="value cyan" id="modalInvestAmount">0.00 ZMW</span>
+                    </div>
+                    <div class="modal-detail-item">
+                        <span class="label">📈 Daily Income</span>
+                        <span class="value green" id="modalDailyIncome">0.00 ZMW</span>
+                    </div>
+                    <div class="modal-detail-item">
+                        <span class="label">📅 Duration</span>
+                        <span class="value" id="modalDuration">0 Days</span>
+                    </div>
+                    <div class="modal-detail-item">
+                        <span class="label">⏰ Expiry</span>
+                        <span class="value" id="modalExpiry">Auto</span>
+                    </div>
+                </div>
+
+                <div class="modal-total">
+                    <div class="label">💵 TOTAL INCOME</div>
+                    <div class="amount" id="modalTotalIncome">0.00 ZMW</div>
+                </div>
+
+                <div class="modal-note">
+                    <strong>📝 Note:</strong> This plan can only be purchased once. Daily income generated automatically.
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-btn-cancel" id="modalCancelBtn">Cancel</button>
+                    <button class="modal-btn-confirm" id="modalConfirmBtn">✅ Confirm</button>
+                </div>
             </div>
         </div>
 
-        <!-- ===== LOADER ===== -->
-        <div id="loadingIndicator" class="loader"></div>
-
-        <!-- ===== PLANS GRID ===== -->
-        <div class="plans-grid" id="plansGrid"></div>
-
-        <!-- ===== EMPTY MESSAGE ===== -->
-        <div id="emptyMessage" class="empty-msg" style="display: none;">No investment plans available. Please check back later.</div>
+        <!-- ===== BOTTOM NAV ===== -->
+        <div class="bottom-nav">
+            <div class="nav-item" data-page="dashboard.html">
+                <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home"><span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item" data-page="mkvip.html">
+                <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip"><span class="nav-label">Mkvip</span>
+            </div>
+            <div class="nav-item active" data-page="jproduct.html">
+                <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product"><span class="nav-label">Jproduct</span>
+            </div>
+            <div class="nav-item" data-page="income.html">
+                <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income"><span class="nav-label">Income</span>
+            </div>
+            <div class="nav-item" data-page="team.html">
+                <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team"><span class="nav-label">Team</span>
+            </div>
+            <div class="nav-item" data-page="me.html">
+                <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me"><span class="nav-label">Me</span>
+            </div>
+        </div>
 
     </div>
-
-    <!-- ===== CONFIRMATION MODAL ===== -->
-    <div id="confirmModal" class="modal-overlay hidden">
-        <div class="modal-card">
-            <button class="modal-close" id="modalCloseBtn">✕</button>
-            <div class="modal-title">💎 Confirm Investment</div>
-            <div class="modal-subtitle">Review plan details before confirming</div>
-
-            <div class="modal-plan-name" id="modalPlanName">Plan Name</div>
-
-            <div class="modal-details">
-                <div class="modal-detail-item">
-                    <span class="label">💰 Investment</span>
-                    <span class="value cyan" id="modalInvestAmount">0.00 ZMW</span>
-                </div>
-                <div class="modal-detail-item">
-                    <span class="label">📈 Daily Income</span>
-                    <span class="value green" id="modalDailyIncome">0.00 ZMW</span>
-                </div>
-                <div class="modal-detail-item">
-                    <span class="label">📅 Duration</span>
-                    <span class="value" id="modalDuration">0 Days</span>
-                </div>
-                <div class="modal-detail-item">
-                    <span class="label">⏰ Expiry</span>
-                    <span class="value" id="modalExpiry">Auto</span>
-                </div>
-            </div>
-
-            <div class="modal-total">
-                <div class="label">💵 TOTAL INCOME</div>
-                <div class="amount" id="modalTotalIncome">0.00 ZMW</div>
-            </div>
-
-            <div class="modal-note">
-                <strong>📝 Note:</strong> This plan can only be purchased once. Daily income generated automatically.
-            </div>
-
-            <div class="modal-actions">
-                <button class="modal-btn-cancel" id="modalCancelBtn">Cancel</button>
-                <button class="modal-btn-confirm" id="modalConfirmBtn">✅ Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== BOTTOM NAV ===== -->
-    <div class="bottom-nav">
-        <div class="nav-item" data-page="dashboard.html">
-            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home"><span class="nav-label">Home</span>
-        </div>
-        <div class="nav-item" data-page="mkvip.html">
-            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip"><span class="nav-label">Mkvip</span>
-        </div>
-        <div class="nav-item active" data-page="jproduct.html">
-            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product"><span class="nav-label">Jproduct</span>
-        </div>
-        <div class="nav-item" data-page="income.html">
-            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income"><span class="nav-label">Income</span>
-        </div>
-        <div class="nav-item" data-page="team.html">
-            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team"><span class="nav-label">Team</span>
-        </div>
-        <div class="nav-item" data-page="me.html">
-            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me"><span class="nav-label">Me</span>
-        </div>
-    </div>
+    <!-- /app-wrapper -->
 
     <script>
         // ================================================================
@@ -1317,7 +1346,11 @@
             document.getElementById('currentTimeDisplay').textContent = timeStr;
             document.getElementById('themeNameDisplay').textContent = theme.themeName;
 
-            document.body.style.transition = 'background 2s ease, color 2s ease';
+            // Update background overlay (the wrapper's before pseudo) – we handle via CSS vars
+            document.querySelector('.app-wrapper').style.setProperty('--theme-bg-start', theme.bgStart);
+            document.querySelector('.app-wrapper').style.setProperty('--theme-bg-mid', theme.bgMid);
+            document.querySelector('.app-wrapper').style.setProperty('--theme-bg-end', theme.bgEnd);
+            document.querySelector('.app-wrapper').style.setProperty('--theme-bg-last', theme.bgLast);
 
             console.log('🎨 J Product Theme applied: ' + theme.themeName + ' at ' + timeStr);
         }
@@ -1477,37 +1510,29 @@
         // UPGRADED getSafeImageUrl – converts short links and ensures HTTPS
         // ================================================================
         function getSafeImageUrl(url) {
-            // If URL is missing or empty, return fallback
             if (!url || typeof url !== 'string' || url.trim() === '') {
                 return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
             }
 
             let safeUrl = url.trim();
 
-            // --- Convert ibb.co short links to direct i.ibb.co image URLs ---
-            // Example: https://ibb.co/0VYR9Qc6  -> https://i.ibb.co/0VYR9Qc6/image.jpg
-            // Also works if there's a filename like https://ibb.co/0VYR9Qc6/IMG-20260709-102014.jpg
             if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
                 const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
                 if (match && match[1]) {
                     let code = match[1];
                     let filename = match[2] || '';
-                    // Try to extract the extension from the filename if present
                     let ext = 'jpg';
                     if (filename) {
                         const extMatch = filename.match(/\.([a-zA-Z0-9]+)$/);
                         if (extMatch && extMatch[1]) ext = extMatch[1];
                     }
-                    // Build the direct URL
                     safeUrl = `https://i.ibb.co/${code}/image.${ext}`;
-                    // If we have a filename, use it (better)
                     if (filename) {
                         safeUrl = `https://i.ibb.co/${code}${filename}`;
                     }
                 }
             }
 
-            // --- Convert imgur short links ---
             if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
                 const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
                 if (match && match[1]) {
@@ -1515,7 +1540,6 @@
                 }
             }
 
-            // --- Ensure HTTPS ---
             if (safeUrl.startsWith('http://')) {
                 safeUrl = safeUrl.replace('http://', 'https://');
             }
@@ -1523,7 +1547,6 @@
                 safeUrl = 'https:' + safeUrl;
             }
 
-            // --- Final validation ---
             if (!safeUrl.startsWith('https://')) {
                 return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
             }
@@ -1587,7 +1610,6 @@
                 const limitReached = (purchaseLimit && purchaseLimit > 0 && userPurchased >= purchaseLimit);
                 const isComingSoon = plan.status === 'coming_soon';
 
-                // Currency symbol
                 const currency = plan.currency || 'ZMW';
                 const symbolMap = {
                     'ZMW': 'K',
@@ -1599,7 +1621,6 @@
                 };
                 const currencySymbol = symbolMap[currency] || currency;
 
-                // Countries
                 const countries = plan.countries || [];
                 let countriesDisplay = '';
                 if (countries.length > 0) {
@@ -1633,12 +1654,8 @@
                     limitText = '🔒 1 per user';
                 }
 
-                // ----- FIXED: image URL handling with enhanced getSafeImageUrl -----
                 const imageUrl = plan.image || '';
                 const safeImageUrl = getSafeImageUrl(imageUrl);
-                // Log for debugging
-                console.log(`📸 Plan "${plan.name}" image URL:`, imageUrl);
-                console.log(`   Safe URL:`, safeImageUrl);
 
                 const btnDisabled = limitReached || isComingSoon;
                 let btnClass = 'invest-btn';
@@ -1670,7 +1687,6 @@
 
                 card.innerHTML = `
                     ${badgeHtml}
-                    <!-- FIXED: removed crossorigin="anonymous" -->
                     <img class="plan-image" src="${safeImageUrl}" alt="${escapeHtml(plan.name)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'">
                     <div class="plan-content">
                         <div class="plan-title">${escapeHtml(plan.name)}</div>
@@ -2079,6 +2095,7 @@
         console.log('🕐 Current theme applied based on local time');
         console.log('✅ Image fix: removed crossorigin="anonymous" to allow i.ibb.co images');
         console.log('✅ getSafeImageUrl now converts ibb.co short links and ensures HTTPS');
+        console.log('📱 Scrolling fixed with scrollable wrapper – no bounce, no snap');
     </script>
 </body>
 </html>

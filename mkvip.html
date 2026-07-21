@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <meta name="referrer" content="no-referrer">
     <title>MK VIP | Pureore Capital</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -88,20 +88,31 @@
             --theme-ad-border: linear-gradient(135deg, #00E676, #00E5FF, #FFD700, #2979FF);
         }
 
-        /* ----- BASE BODY ----- */
+        /* ----- FIXED BODY – prevents layout shift on keyboard open ----- */
+        html,
         body {
+            height: 100%;
+            overflow: hidden;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-            min-height: 100vh;
-            color: var(--theme-text-primary);
-            padding: 1rem;
-            padding-bottom: 85px;
-            position: relative;
-            overflow-x: hidden;
-            transition: background 2s ease, color 2s ease;
+            background: var(--theme-bg-start);
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* ----- ANIMATED BACKGROUND ----- */
-        body::before {
+        /* ----- SCROLLABLE WRAPPER (handles all scrolling) ----- */
+        .app-wrapper {
+            position: relative;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 0 100px 0;
+            /* room for bottom nav */
+            transition: background 2s ease;
+        }
+
+        /* ----- ANIMATED BACKGROUND (moved to wrapper) ----- */
+        .app-wrapper::before {
             content: "";
             position: fixed;
             top: 0;
@@ -179,6 +190,7 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 1rem 1.2rem 1.5rem;
             position: relative;
             z-index: 2;
         }
@@ -212,6 +224,7 @@
             border: 1px solid rgba(179, 136, 255, 0.2);
             text-decoration: none;
             margin-bottom: 0.4rem;
+            width: fit-content;
         }
         .back-arrow:hover {
             background: var(--theme-back-arrow-hover);
@@ -423,7 +436,6 @@
             transition: color 2s ease;
         }
 
-        /* ----- NEW: Country availability ----- */
         .plan-countries {
             font-size: 0.65rem;
             color: var(--theme-text-muted);
@@ -510,7 +522,6 @@
             transition: background 2s ease;
         }
 
-        /* ----- INVEST BUTTON ----- */
         .invest-btn {
             width: 100%;
             background: var(--theme-btn-invest);
@@ -897,6 +908,9 @@
 
         /* ----- RESPONSIVE ----- */
         @media (max-width: 600px) {
+            .container {
+                padding: 0.8rem 1rem 1rem;
+            }
             .page-title { font-size: 1.5rem; }
             .plan-title { font-size: 1.1rem; }
             .plan-image { height: 120px; }
@@ -914,6 +928,7 @@
             .modal-actions { flex-direction: column; }
             .modal-btn-cancel, .modal-btn-confirm { width: 100%; }
             .time-indicator { font-size: 0.5rem; }
+            .header { margin-bottom: 1rem; }
         }
 
         @media (min-width: 601px) and (max-width: 900px) {
@@ -924,114 +939,121 @@
 </head>
 <body>
 
-    <!-- ===== 4 FLOATING ORBS ===== -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
+    <!-- ===== SCROLLABLE WRAPPER ===== -->
+    <div class="app-wrapper">
 
-    <canvas id="fireworksCanvas" class="fireworks-canvas"></canvas>
+        <!-- ===== 4 FLOATING ORBS ===== -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="orb orb-4"></div>
 
-    <div class="container">
+        <canvas id="fireworksCanvas" class="fireworks-canvas"></canvas>
 
-        <!-- ===== HEADER ===== -->
-        <div class="header">
-            <div class="header-left">
-                <a href="dashboard.html" class="back-arrow">
-                    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                    Back
-                </a>
-                <div class="page-title">
-                    <span class="icon">👑</span> MK VIP PLAN
+        <div class="container">
+
+            <!-- ===== HEADER ===== -->
+            <div class="header">
+                <div class="header-left">
+                    <a href="dashboard.html" class="back-arrow">
+                        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                        Back
+                    </a>
+                    <div class="page-title">
+                        <span class="icon">👑</span> MK VIP PLAN
+                    </div>
+                    <div class="time-indicator">
+                        🕐 <span id="currentTimeDisplay">--:--</span> &nbsp;·&nbsp; <span class="theme-name" id="themeNameDisplay">Loading</span>
+                    </div>
                 </div>
-                <div class="time-indicator">
-                    🕐 <span id="currentTimeDisplay">--:--</span> &nbsp;·&nbsp; <span class="theme-name" id="themeNameDisplay">Loading</span>
+                <!-- MKVIP Avatar -->
+                <div class="mkvip-avatar" title="MK VIP">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                    </svg>
                 </div>
             </div>
-            <!-- MKVIP Avatar -->
-            <div class="mkvip-avatar" title="MK VIP">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                </svg>
+
+            <!-- ===== LOADER ===== -->
+            <div id="loadingIndicator" class="loader"></div>
+
+            <!-- ===== PLANS GRID ===== -->
+            <div class="plans-grid" id="plansGrid"></div>
+
+            <!-- ===== EMPTY MESSAGE ===== -->
+            <div id="emptyMessage" class="empty-msg" style="display: none;">No investment plans available. Please check back later.</div>
+
+        </div>
+        <!-- /container -->
+
+        <!-- ===== CONFIRMATION MODAL ===== -->
+        <div id="confirmModal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <button class="modal-close" id="modalCloseBtn">✕</button>
+                <div class="modal-title">💎 Confirm Investment</div>
+                <div class="modal-subtitle">Review plan details before confirming</div>
+
+                <div class="modal-plan-name" id="modalPlanName">Plan Name</div>
+
+                <div class="modal-details">
+                    <div class="modal-detail-item">
+                        <span class="label">💰 Investment</span>
+                        <span class="value gold" id="modalInvestAmount">0.00 ZMW</span>
+                    </div>
+                    <div class="modal-detail-item">
+                        <span class="label">📈 Daily Income</span>
+                        <span class="value green" id="modalDailyIncome">0.00 ZMW</span>
+                    </div>
+                    <div class="modal-detail-item">
+                        <span class="label">📅 Duration</span>
+                        <span class="value" id="modalDuration">0 Days</span>
+                    </div>
+                    <div class="modal-detail-item">
+                        <span class="label">⏰ Expiry</span>
+                        <span class="value" id="modalExpiry">Auto</span>
+                    </div>
+                </div>
+
+                <div class="modal-total">
+                    <div class="label">💵 TOTAL INCOME</div>
+                    <div class="amount" id="modalTotalIncome">0.00 ZMW</div>
+                </div>
+
+                <div class="modal-note">
+                    <strong>📝 Note:</strong> This plan can only be purchased once. Daily income generated automatically.
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-btn-cancel" id="modalCancelBtn">Cancel</button>
+                    <button class="modal-btn-confirm" id="modalConfirmBtn">✅ Confirm</button>
+                </div>
             </div>
         </div>
 
-        <!-- ===== LOADER ===== -->
-        <div id="loadingIndicator" class="loader"></div>
-
-        <!-- ===== PLANS GRID ===== -->
-        <div class="plans-grid" id="plansGrid"></div>
-
-        <!-- ===== EMPTY MESSAGE ===== -->
-        <div id="emptyMessage" class="empty-msg" style="display: none;">No investment plans available. Please check back later.</div>
+        <!-- ===== BOTTOM NAV ===== -->
+        <div class="bottom-nav">
+            <div class="nav-item" data-page="dashboard.html">
+                <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home"><span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item active" data-page="mkvip.html">
+                <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip"><span class="nav-label">Mkvip</span>
+            </div>
+            <div class="nav-item" data-page="jproduct.html">
+                <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product"><span class="nav-label">Jproduct</span>
+            </div>
+            <div class="nav-item" data-page="income.html">
+                <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income"><span class="nav-label">Income</span>
+            </div>
+            <div class="nav-item" data-page="team.html">
+                <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team"><span class="nav-label">Team</span>
+            </div>
+            <div class="nav-item" data-page="me.html">
+                <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me"><span class="nav-label">Me</span>
+            </div>
+        </div>
 
     </div>
-
-    <!-- ===== CONFIRMATION MODAL ===== -->
-    <div id="confirmModal" class="modal-overlay hidden">
-        <div class="modal-card">
-            <button class="modal-close" id="modalCloseBtn">✕</button>
-            <div class="modal-title">💎 Confirm Investment</div>
-            <div class="modal-subtitle">Review plan details before confirming</div>
-
-            <div class="modal-plan-name" id="modalPlanName">Plan Name</div>
-
-            <div class="modal-details">
-                <div class="modal-detail-item">
-                    <span class="label">💰 Investment</span>
-                    <span class="value gold" id="modalInvestAmount">0.00 ZMW</span>
-                </div>
-                <div class="modal-detail-item">
-                    <span class="label">📈 Daily Income</span>
-                    <span class="value green" id="modalDailyIncome">0.00 ZMW</span>
-                </div>
-                <div class="modal-detail-item">
-                    <span class="label">📅 Duration</span>
-                    <span class="value" id="modalDuration">0 Days</span>
-                </div>
-                <div class="modal-detail-item">
-                    <span class="label">⏰ Expiry</span>
-                    <span class="value" id="modalExpiry">Auto</span>
-                </div>
-            </div>
-
-            <div class="modal-total">
-                <div class="label">💵 TOTAL INCOME</div>
-                <div class="amount" id="modalTotalIncome">0.00 ZMW</div>
-            </div>
-
-            <div class="modal-note">
-                <strong>📝 Note:</strong> This plan can only be purchased once. Daily income generated automatically.
-            </div>
-
-            <div class="modal-actions">
-                <button class="modal-btn-cancel" id="modalCancelBtn">Cancel</button>
-                <button class="modal-btn-confirm" id="modalConfirmBtn">✅ Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== BOTTOM NAV ===== -->
-    <div class="bottom-nav">
-        <div class="nav-item" data-page="dashboard.html">
-            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home"><span class="nav-label">Home</span>
-        </div>
-        <div class="nav-item active" data-page="mkvip.html">
-            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mk vip"><span class="nav-label">Mkvip</span>
-        </div>
-        <div class="nav-item" data-page="jproduct.html">
-            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="J product"><span class="nav-label">Jproduct</span>
-        </div>
-        <div class="nav-item" data-page="income.html">
-            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income"><span class="nav-label">Income</span>
-        </div>
-        <div class="nav-item" data-page="team.html">
-            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team"><span class="nav-label">Team</span>
-        </div>
-        <div class="nav-item" data-page="me.html">
-            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me"><span class="nav-label">Me</span>
-        </div>
-    </div>
+    <!-- /app-wrapper -->
 
     <script>
         // ================================================================
@@ -1212,12 +1234,13 @@
             root.style.setProperty('--theme-btn-confirm', 'linear-gradient(135deg, ' + theme.green + ', ' + theme
                 .greenDark + ')');
 
+            // Update background of the wrapper (the ::before is handled via CSS vars)
+            // No need to set additional properties, they are already in the CSS.
+
             var now = new Date();
             var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
             document.getElementById('currentTimeDisplay').textContent = timeStr;
             document.getElementById('themeNameDisplay').textContent = theme.themeName;
-
-            document.body.style.transition = 'background 2s ease, color 2s ease';
 
             console.log('🎨 Theme applied: ' + theme.themeName + ' at ' + timeStr);
         }
@@ -1260,8 +1283,23 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        db.settings({ persistence: false });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ----- UPDATED: Enable Firestore offline persistence -----
+        db.settings({ persistence: true });
+
+        // ----- UPDATED: Auth persistence with logging -----
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(() => console.log("🔐 Auth persistence set to LOCAL"))
+            .catch(error => console.warn("⚠️ Persistence error:", error));
+
+        // ----- UPDATED: Auth state observer with session logging -----
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                console.log("👤 User already logged in:", user.email);
+            } else {
+                console.log("🚪 No saved user session");
+            }
+        });
 
         // ================================================================
         // HELPERS
@@ -1377,14 +1415,12 @@
         // UPGRADED getSafeImageUrl – converts short links and ensures HTTPS
         // ================================================================
         function getSafeImageUrl(url) {
-            // If URL is missing or empty, return fallback
             if (!url || typeof url !== 'string' || url.trim() === '') {
                 return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
             }
 
             let safeUrl = url.trim();
 
-            // --- Convert ibb.co short links to direct i.ibb.co image URLs ---
             if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
                 const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
                 if (match && match[1]) {
@@ -1402,7 +1438,6 @@
                 }
             }
 
-            // --- Convert imgur short links ---
             if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
                 const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
                 if (match && match[1]) {
@@ -1410,7 +1445,6 @@
                 }
             }
 
-            // --- Ensure HTTPS ---
             if (safeUrl.startsWith('http://')) {
                 safeUrl = safeUrl.replace('http://', 'https://');
             }
@@ -1418,7 +1452,6 @@
                 safeUrl = 'https:' + safeUrl;
             }
 
-            // --- Final validation ---
             if (!safeUrl.startsWith('https://')) {
                 return 'https://i.ibb.co/7t9YKLX7/IMG-20260525-113152.jpg';
             }
@@ -1970,6 +2003,8 @@
         console.log('🕐 Current theme applied based on local time');
         console.log('✅ Image fix: removed crossorigin="anonymous" to allow i.ibb.co images');
         console.log('✅ getSafeImageUrl now converts ibb.co short links and ensures HTTPS');
+        console.log('📱 Scrolling fixed with scrollable wrapper – no bounce, no snap');
+        console.log('💾 Firestore persistence enabled (offline cache)');
     </script>
 </body>
 </html>

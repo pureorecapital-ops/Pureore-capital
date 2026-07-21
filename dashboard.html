@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>PC • Pureore Capital</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
@@ -34,19 +34,30 @@
             --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
         }
 
+        /* ----- FIXED BODY – prevents layout shift on keyboard open ----- */
         html,
         body {
+            height: 100%;
+            overflow: hidden;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
-            color: #fff;
             background: var(--dark);
-            overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
-            padding-bottom: 85px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ----- SCROLLABLE WRAPPER (handles all scrolling) ----- */
+        .app-wrapper {
+            position: relative;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 0 100px 0;
+            /* room for bottom nav + floating buttons */
         }
 
         /* ----- subtle background glow ----- */
-        body::after {
+        .app-wrapper::after {
             content: "";
             position: fixed;
             top: 0;
@@ -1277,13 +1288,12 @@
             justify-content: center;
         }
 
-        /* === UPDATED: BIGGER IMAGE === */
         .ad-modal .ad-image img {
             width: 100%;
             height: auto;
             display: block;
-            max-height: 450px;   /* larger */
-            object-fit: contain; /* show full image */
+            max-height: 450px;
+            object-fit: contain;
             border-radius: 8px;
         }
 
@@ -1331,7 +1341,6 @@
             font-weight: 700;
         }
 
-        /* mobile override */
         @media (max-width: 500px) {
             .ad-modal {
                 padding: 1.2rem 1rem;
@@ -1347,264 +1356,251 @@
                 padding: 0.75rem;
             }
             .ad-modal .ad-image img {
-                max-height: 280px; /* smaller on mobile */
+                max-height: 280px;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ================================================================
-    PROMOTIONAL AD OVERLAY – dynamically populated from Firestore
-    ================================================================ -->
-    <div id="adOverlay" class="ad-overlay">
-        <div class="ad-modal">
-            <button class="ad-close" id="adCloseBtn">✕</button>
-            <div class="ad-badge" id="adBadge">🚀 Limited Offer</div>
-            <h2 id="adTitle">Grow Your Wealth with <span>PureOreCapital</span></h2>
-            <p class="ad-desc" id="adDesc">Secure investments, daily returns, and a community that cares about your financial freedom.</p>
-            <div class="ad-image" id="adImageContainer">
-                <!-- FIX: added referrerpolicy="no-referrer" -->
-                <img id="adImage" src="https://i.ibb.co/nNF1c4qL/file-00000000094c71f88a477b719e193bfb.png" alt="Ad" referrerpolicy="no-referrer" />
-            </div>
-            <a href="mkvip.html" class="ad-cta" id="adCta">Start Investing Today</a>
-            <p class="ad-timer">This ad will close in <span id="adTimer">5</span>s</p>
-        </div>
-    </div>
+    <!-- ===== SCROLLABLE WRAPPER ===== -->
+    <div class="app-wrapper">
 
-    <!-- ===== ORBS ===== -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+        <!-- ===== ORBS ===== -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
 
-    <!-- ===== MAIN CONTAINER ===== -->
-    <div class="container">
-
-        <!-- ===== HEADER ===== -->
-        <div class="header">
-            <div class="brand">
-                <div class="brand-icon">
-                    <svg viewBox="0 0 24 24">
-                        <polyline points="6 6 18 6 6 18 18 18" />
-                    </svg>
+        <!-- ===== AD OVERLAY ===== -->
+        <div id="adOverlay" class="ad-overlay">
+            <div class="ad-modal">
+                <button class="ad-close" id="adCloseBtn">✕</button>
+                <div class="ad-badge" id="adBadge">🚀 Limited Offer</div>
+                <h2 id="adTitle">Grow Your Wealth with <span>PureOreCapital</span></h2>
+                <p class="ad-desc" id="adDesc">Secure investments, daily returns, and a community that cares about your financial freedom.</p>
+                <div class="ad-image" id="adImageContainer">
+                    <img id="adImage" src="https://i.ibb.co/nNF1c4qL/file-00000000094c71f88a477b719e193bfb.png" alt="Ad" referrerpolicy="no-referrer" />
                 </div>
-                <span class="brand-name">Pureore<span class="pc">·PC</span></span>
-                <span class="brand-badge">v3</span>
-            </div>
-            <div class="header-actions">
-                <button class="avatar-btn" id="avatarBtn">JM</button>
+                <a href="mkvip.html" class="ad-cta" id="adCta">Start Investing Today</a>
+                <p class="ad-timer">This ad will close in <span id="adTimer">5</span>s</p>
             </div>
         </div>
 
-        <!-- ===== GREETING ===== -->
-        <div class="greeting-area">
-            <div class="greeting-text" id="greetingText">Good Morning ☀️</div>
-            <div class="greeting-sub" id="greetingUser">Welcome back!</div>
-        </div>
+        <!-- ===== MAIN CONTAINER ===== -->
+        <div class="container">
 
-        <!-- ============================================================
-        HERO SLIDESHOW – 4 images auto‑scrolling every 4s
-        ============================================================ -->
-        <div class="hero-slideshow" id="heroSlideshow">
-            <div class="slides-wrapper" id="slidesWrapper">
-                <!-- Slide 1: mr-pugo -->
-                <div class="slide" style="background-image: url('https://i.ibb.co/FLssskPH/mr-pugo-XHUs2y-Z-ZXA-unsplash.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <div class="slide-tag">
-                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                            Pureore Capital
+            <!-- ===== HEADER ===== -->
+            <div class="header">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <svg viewBox="0 0 24 24">
+                            <polyline points="6 6 18 6 6 18 18 18" />
+                        </svg>
+                    </div>
+                    <span class="brand-name">Pureore<span class="pc">·PC</span></span>
+                    <span class="brand-badge">v3</span>
+                </div>
+                <div class="header-actions">
+                    <button class="avatar-btn" id="avatarBtn">JM</button>
+                </div>
+            </div>
+
+            <!-- ===== GREETING ===== -->
+            <div class="greeting-area">
+                <div class="greeting-text" id="greetingText">Good Morning ☀️</div>
+                <div class="greeting-sub" id="greetingUser">Welcome back!</div>
+            </div>
+
+            <!-- ===== HERO SLIDESHOW ===== -->
+            <div class="hero-slideshow" id="heroSlideshow">
+                <div class="slides-wrapper" id="slidesWrapper">
+                    <div class="slide" style="background-image: url('https://i.ibb.co/FLssskPH/mr-pugo-XHUs2y-Z-ZXA-unsplash.jpg');">
+                        <div class="slide-overlay"></div>
+                        <div class="slide-content">
+                            <div class="slide-tag">
+                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                Pureore Capital
+                            </div>
+                            <h2>Build Your Future<br />With Confidence</h2>
+                            <p>Smart investments for a brighter tomorrow</p>
                         </div>
-                        <h2>Build Your Future<br />With Confidence</h2>
-                        <p>Smart investments for a brighter tomorrow</p>
+                    </div>
+                    <div class="slide" style="background-image: url('https://i.ibb.co/ynpx7bZg/kelli-mcclintock-d-J0-Mx-SIas-Gs-unsplash.jpg');">
+                        <div class="slide-overlay"></div>
+                        <div class="slide-content">
+                            <div class="slide-tag">
+                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                Grow Your Wealth
+                            </div>
+                            <h2>Daily Returns<br />That Compound</h2>
+                            <p>Start earning from day one with our proven plans</p>
+                        </div>
+                    </div>
+                    <div class="slide" style="background-image: url('https://i.ibb.co/ycsCkq15/v2osk-1-Z2nii-BPg5-A-unsplash.jpg');">
+                        <div class="slide-overlay"></div>
+                        <div class="slide-content">
+                            <div class="slide-tag">
+                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                Premium Plans
+                            </div>
+                            <h2>Invest Smarter<br />Earn Bigger</h2>
+                            <p>Choose from multiple investment tiers</p>
+                        </div>
+                    </div>
+                    <div class="slide" style="background-image: url('https://i.ibb.co/DHPnRwy4/goutham-krishna-h5wv-MCd-OV3w-unsplash.jpg');">
+                        <div class="slide-overlay"></div>
+                        <div class="slide-content">
+                            <div class="slide-tag">
+                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                Join Us Today
+                            </div>
+                            <h2>Your Journey<br />Starts Here</h2>
+                            <p>Over 10,000 members already earning</p>
+                        </div>
                     </div>
                 </div>
+                <div class="indicators" id="slideIndicators">
+                    <button class="dot active" data-index="0"></button>
+                    <button class="dot" data-index="1"></button>
+                    <button class="dot" data-index="2"></button>
+                    <button class="dot" data-index="3"></button>
+                </div>
+            </div>
 
-                <!-- Slide 2: kelli-mcclintock -->
-                <div class="slide" style="background-image: url('https://i.ibb.co/ynpx7bZg/kelli-mcclintock-d-J0-Mx-SIas-Gs-unsplash.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <div class="slide-tag">
-                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                            Grow Your Wealth
-                        </div>
-                        <h2>Daily Returns<br />That Compound</h2>
-                        <p>Start earning from day one with our proven plans</p>
+            <!-- ===== COUNTRY FLAGS ===== -->
+            <div class="flags-container glass-card">
+                <div class="flags-marquee" id="flagsMarquee"></div>
+            </div>
+
+            <!-- ===== BALANCES ===== -->
+            <div class="balances-row">
+                <div class="balance-card deposit">
+                    <div class="glow"></div>
+                    <div class="balance-label">
+                        Deposit Balance
+                        <span class="badge">ZMW</span>
                     </div>
+                    <div class="balance-amount" id="depositBalanceSpan">0.00</div>
+                    <div class="balance-sub">For purchasing plans</div>
                 </div>
-
-                <!-- Slide 3: v2osk -->
-                <div class="slide" style="background-image: url('https://i.ibb.co/ycsCkq15/v2osk-1-Z2nii-BPg5-A-unsplash.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <div class="slide-tag">
-                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                            Premium Plans
-                        </div>
-                        <h2>Invest Smarter<br />Earn Bigger</h2>
-                        <p>Choose from multiple investment tiers</p>
+                <div class="balance-card wallet">
+                    <div class="glow"></div>
+                    <div class="balance-label">
+                        Wallet Balance
+                        <span class="badge">ZMW</span>
                     </div>
+                    <div class="balance-amount" id="walletBalanceSpan">0.00</div>
+                    <div class="balance-sub">For bonuses &amp; withdrawals</div>
                 </div>
+            </div>
 
-                <!-- Slide 4: goutham-krishna -->
-                <div class="slide" style="background-image: url('https://i.ibb.co/DHPnRwy4/goutham-krishna-h5wv-MCd-OV3w-unsplash.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <div class="slide-tag">
-                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                            Join Us Today
-                        </div>
-                        <h2>Your Journey<br />Starts Here</h2>
-                        <p>Over 10,000 members already earning</p>
+            <!-- ===== ACTION BUTTONS ===== -->
+            <div class="button-group">
+                <button class="btn-action btn-deposit" id="depositBtn">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                    Deposit
+                </button>
+                <button class="btn-action btn-withdraw" id="withdrawBtn">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                    Withdraw
+                </button>
+            </div>
+
+            <!-- ===== QUICK ACCESS ===== -->
+            <div class="quick-row">
+                <div class="quick-item" onclick="location.href='treasure.html';">
+                    <div class="qi-icon">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                     </div>
+                    <div class="qi-label">Treasure</div>
+                </div>
+                <div class="quick-item" onclick="location.href='loan.html';">
+                    <div class="qi-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <div class="qi-label">Loan</div>
+                </div>
+                <div class="quick-item" onclick="location.href='voucher.html';">
+                    <div class="qi-icon">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
+                    </div>
+                    <div class="qi-label">Voucher</div>
                 </div>
             </div>
 
-            <!-- Indicators -->
-            <div class="indicators" id="slideIndicators">
-                <button class="dot active" data-index="0"></button>
-                <button class="dot" data-index="1"></button>
-                <button class="dot" data-index="2"></button>
-                <button class="dot" data-index="3"></button>
+            <!-- ===== FOOTER LINKS ===== -->
+            <div class="footer-links">
+                <a href="term.html">Terms of Service</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="risk-disclaimer.html">Risk Disclaimer</a>
+                <div class="copyright">© Pureore Capital 2025</div>
             </div>
-        </div>
 
-        <!-- ============================================================
-        COUNTRY SCROLLING (FLAGS)
-        ============================================================ -->
-        <div class="flags-container glass-card">
-            <div class="flags-marquee" id="flagsMarquee"></div>
         </div>
+        <!-- /container -->
 
-        <!-- ===== BALANCES ===== -->
-        <div class="balances-row">
-            <div class="balance-card deposit">
-                <div class="glow"></div>
-                <div class="balance-label">
-                    Deposit Balance
-                    <span class="badge">ZMW</span>
-                </div>
-                <div class="balance-amount" id="depositBalanceSpan">0.00</div>
-                <div class="balance-sub">For purchasing plans</div>
-            </div>
-            <div class="balance-card wallet">
-                <div class="glow"></div>
-                <div class="balance-label">
-                    Wallet Balance
-                    <span class="badge">ZMW</span>
-                </div>
-                <div class="balance-amount" id="walletBalanceSpan">0.00</div>
-                <div class="balance-sub">For bonuses &amp; withdrawals</div>
-            </div>
-        </div>
-
-        <!-- ===== ACTION BUTTONS ===== -->
-        <div class="button-group">
-            <button class="btn-action btn-deposit" id="depositBtn">
-                <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                Deposit
+        <!-- ===== BOTTOM NAV ===== -->
+        <div class="bottom-nav">
+            <button class="nav-item active" data-page="dashboard.html">
+                <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home" />
+                <span class="nav-label">Home</span>
             </button>
-            <button class="btn-action btn-withdraw" id="withdrawBtn">
-                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                Withdraw
+            <button class="nav-item" data-page="mkvip.html">
+                <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mkvip" />
+                <span class="nav-label">Mkvip</span>
+            </button>
+            <button class="nav-item" data-page="jproduct.html">
+                <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="Jproduct" />
+                <span class="nav-label">Jproduct</span>
+            </button>
+            <button class="nav-item" data-page="income.html">
+                <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income" />
+                <span class="nav-label">Income</span>
+            </button>
+            <button class="nav-item" data-page="team.html">
+                <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team" />
+                <span class="nav-label">Team</span>
+            </button>
+            <button class="nav-item" data-page="me.html">
+                <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me" />
+                <span class="nav-label">Me</span>
             </button>
         </div>
 
-        <!-- ===== QUICK ACCESS ===== -->
-        <div class="quick-row">
-            <div class="quick-item" onclick="location.href='treasure.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                </div>
-                <div class="qi-label">Treasure</div>
-            </div>
-            <div class="quick-item" onclick="location.href='loan.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                </div>
-                <div class="qi-label">Loan</div>
-            </div>
-            <div class="quick-item" onclick="location.href='voucher.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
-                </div>
-                <div class="qi-label">Voucher</div>
-            </div>
+        <!-- ===== FLOATING BUTTONS ===== -->
+        <div class="floating-buttons">
+            <a href="https://chat.whatsapp.com/CAphZ7CmNScGkp9un8MSjB" target="_blank" class="floating-btn whatsapp" title="Join WhatsApp">
+                <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            </a>
+            <a href="https://t.me/+UrRHXeb9QyowOTU8" target="_blank" class="floating-btn telegram" title="Join Telegram">
+                <svg viewBox="0 0 24 24"><path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.497-.302.953-.14.579.192l-8.533 7.701h-.002l.002.001-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z"/></svg>
+            </a>
+            <button class="floating-btn history" id="historyFloatBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+            <button class="floating-btn support" id="supportFloatBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </button>
         </div>
 
-        <!-- ===== FOOTER LINKS ===== -->
-        <div class="footer-links">
-            <a href="term.html">Terms of Service</a>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="risk-disclaimer.html">Risk Disclaimer</a>
-            <div class="copyright">© Pureore Capital 2025</div>
-        </div>
-
-    </div>
-
-    <!-- ===== BOTTOM NAV ===== -->
-    <div class="bottom-nav">
-        <button class="nav-item active" data-page="dashboard.html">
-            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home" />
-            <span class="nav-label">Home</span>
-        </button>
-        <button class="nav-item" data-page="mkvip.html">
-            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mkvip" />
-            <span class="nav-label">Mkvip</span>
-        </button>
-        <button class="nav-item" data-page="jproduct.html">
-            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="Jproduct" />
-            <span class="nav-label">Jproduct</span>
-        </button>
-        <button class="nav-item" data-page="income.html">
-            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income" />
-            <span class="nav-label">Income</span>
-        </button>
-        <button class="nav-item" data-page="team.html">
-            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team" />
-            <span class="nav-label">Team</span>
-        </button>
-        <button class="nav-item" data-page="me.html">
-            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me" />
-            <span class="nav-label">Me</span>
-        </button>
-    </div>
-
-    <!-- ===== FLOATING BUTTONS ===== -->
-    <div class="floating-buttons">
-        <a href="https://chat.whatsapp.com/CAphZ7CmNScGkp9un8MSjB" target="_blank" class="floating-btn whatsapp" title="Join WhatsApp">
-            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        </a>
-
-        <a href="https://t.me/+UrRHXeb9QyowOTU8" target="_blank" class="floating-btn telegram" title="Join Telegram">
-            <svg viewBox="0 0 24 24"><path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.497-.302.953-.14.579.192l-8.533 7.701h-.002l.002.001-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z"/></svg>
-        </a>
-
-        <button class="floating-btn history" id="historyFloatBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </button>
-
-        <button class="floating-btn support" id="supportFloatBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        </button>
-    </div>
-
-    <!-- ===== SUPPORT MODAL ===== -->
-    <div class="modal-overlay" id="supportModal">
-        <div class="support-modal">
-            <button class="close-modal" id="closeModalBtn">✕</button>
-            <h3>Community &amp; Support</h3>
-            <div class="support-line">
-                <strong>👥 WhatsApp Group</strong>
-                <p>If you want to join the WhatsApp group, please ask the person who invited you or contact our support team through the app.</p>
+        <!-- ===== SUPPORT MODAL ===== -->
+        <div class="modal-overlay" id="supportModal">
+            <div class="support-modal">
+                <button class="close-modal" id="closeModalBtn">✕</button>
+                <h3>Community &amp; Support</h3>
+                <div class="support-line">
+                    <strong>👥 WhatsApp Group</strong>
+                    <p>If you want to join the WhatsApp group, please ask the person who invited you or contact our support team through the app.</p>
+                </div>
+                <div class="support-line">
+                    <strong>📱 In-App Support</strong>
+                    <p>For urgent assistance, please use the in-app support ticket system or reach out to your upline.</p>
+                </div>
+                <div class="support-footer">We're here 24/7 to help you grow. 🚀</div>
             </div>
-            <div class="support-line">
-                <strong>📱 In-App Support</strong>
-                <p>For urgent assistance, please use the in-app support ticket system or reach out to your upline.</p>
-            </div>
-            <div class="support-footer">We're here 24/7 to help you grow. 🚀</div>
         </div>
     </div>
+    <!-- /app-wrapper -->
 
     <script>
         // ================================================================
@@ -1622,8 +1618,27 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         var auth = firebase.auth();
         var db = firebase.firestore();
-        db.settings({ persistence: false });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ----- UPDATED: Enable Firestore offline persistence -----
+        db.settings({ persistence: true });
+
+        // ----- UPDATED: Auth persistence with logging -----
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(function() {
+                console.log("🔐 Auth persistence set to LOCAL");
+            })
+            .catch(function(error) {
+                console.warn("⚠️ Persistence error:", error);
+            });
+
+        // ----- UPDATED: Auth state observer with session logging -----
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                console.log("👤 User already logged in:", user.email);
+            } else {
+                console.log("🚪 No saved user session");
+            }
+        });
 
         // ================================================================
         // TOAST
@@ -1676,22 +1691,31 @@
         }
 
         // ================================================================
-        // AUTH + BALANCES
+        // MAIN AUTH STATE
         // ================================================================
         auth.onAuthStateChanged(function(user) {
-            if (!user) { window.location.href = 'login.html'; return; }
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
             var uid = user.uid;
             watchBlock(uid);
-            db.collection('users').doc(uid).get().then(function(doc) {
-                if (doc.exists) {
-                    var data = doc.data();
-                    document.getElementById('depositBalanceSpan').textContent = (data.depositBalance || 0).toFixed(2);
-                    var wallet = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
-                    document.getElementById('walletBalanceSpan').textContent = wallet.toFixed(2);
-                    updateGreeting(data.fullName || data.displayName || null);
-                } else { updateGreeting(null); }
-            }).catch(function(e) { console.warn('Initial load:', e);
-                updateGreeting(null); });
+            db.collection('users').doc(uid).get()
+                .then(function(doc) {
+                    if (doc.exists) {
+                        var data = doc.data();
+                        document.getElementById('depositBalanceSpan').textContent = (data.depositBalance || 0).toFixed(
+                        2);
+                        var wallet = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
+                        document.getElementById('walletBalanceSpan').textContent = wallet.toFixed(2);
+                        updateGreeting(data.fullName || data.displayName || null);
+                    } else {
+                        auth.signOut();
+                        window.location.href = 'login.html';
+                    }
+                })
+                .catch(function(e) { console.warn('Initial load error:', e);
+                    updateGreeting(null); });
 
             db.collection('users').doc(uid).onSnapshot(function(doc) {
                 if (doc.exists) {
@@ -1702,22 +1726,17 @@
                 }
             }, function(err) { console.error('Balance listener error:', err); });
 
-            // ================================================================
-            // LOAD DYNAMIC AD FROM FIRESTORE
-            // ================================================================
             loadActiveAd();
         });
 
         // ================================================================
-        // IMAGE URL CONVERTER – same as admin
+        // IMAGE URL CONVERTER
         // ================================================================
         function getSafeImageUrl(url) {
             if (!url || typeof url !== 'string' || url.trim() === '') {
-                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; // fallback
+                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
             }
             let safeUrl = url.trim();
-
-            // Convert ibb.co short links to direct i.ibb.co image URLs
             if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
                 const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
                 if (match && match[1]) {
@@ -1734,24 +1753,18 @@
                     }
                 }
             }
-
-            // Convert imgur short links
             if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
                 const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
                 if (match && match[1]) {
                     safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
                 }
             }
-
-            // Ensure HTTPS
             if (safeUrl.startsWith('http://')) {
                 safeUrl = safeUrl.replace('http://', 'https://');
             }
             if (safeUrl.startsWith('//')) {
                 safeUrl = 'https:' + safeUrl;
             }
-
-            // Final validation
             if (!safeUrl.startsWith('https://')) {
                 return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
             }
@@ -1759,7 +1772,7 @@
         }
 
         // ================================================================
-        // DYNAMIC AD SYSTEM – fetches from Firestore and displays
+        // DYNAMIC AD SYSTEM
         // ================================================================
         var adOverlay = document.getElementById('adOverlay');
         var adTimerEl = document.getElementById('adTimer');
@@ -1775,8 +1788,6 @@
         var adTimeoutSeconds = 5;
 
         function loadActiveAd() {
-            console.log('🔄 Loading active ad...');
-            // First try: with orderBy (requires createdAt)
             db.collection('ads')
                 .where('active', '==', true)
                 .orderBy('createdAt', 'desc')
@@ -1786,11 +1797,8 @@
                     if (!snapshot.empty) {
                         var doc = snapshot.docs[0];
                         var data = doc.data();
-                        console.log('✅ Active ad found (with orderBy):', data.title || 'Untitled');
                         displayAd(data);
                     } else {
-                        console.log('ℹ️ No active ad found with orderBy – trying fallback.');
-                        // Fallback: try without orderBy (in case createdAt is missing)
                         db.collection('ads')
                             .where('active', '==', true)
                             .limit(1)
@@ -1799,46 +1807,29 @@
                                 if (!snap2.empty) {
                                     var doc2 = snap2.docs[0];
                                     var data2 = doc2.data();
-                                    console.log('✅ Ad found (fallback):', data2.title || 'Untitled');
                                     displayAd(data2);
                                 } else {
-                                    console.log('❌ No active ad found at all.');
                                     hideAd();
                                 }
                             })
-                            .catch(function(err2) {
-                                console.warn('⚠️ Fallback query error:', err2);
-                                hideAd();
-                            });
+                            .catch(function(err2) { hideAd(); });
                     }
                 })
                 .catch(function(err) {
-                    console.warn('⚠️ First query error (with orderBy):', err);
-                    // If error mentions createdAt, try without orderBy.
-                    if (err.message && (err.message.includes('createdAt') || err.message.includes('index'))) {
-                        console.log('🔄 Retrying without orderBy (missing createdAt/index)...');
-                        db.collection('ads')
-                            .where('active', '==', true)
-                            .limit(1)
-                            .get()
-                            .then(function(snap2) {
-                                if (!snap2.empty) {
-                                    var doc2 = snap2.docs[0];
-                                    var data2 = doc2.data();
-                                    console.log('✅ Ad found (fallback):', data2.title || 'Untitled');
-                                    displayAd(data2);
-                                } else {
-                                    console.log('❌ No active ad found (fallback).');
-                                    hideAd();
-                                }
-                            })
-                            .catch(function(err2) {
-                                console.warn('⚠️ Fallback query error:', err2);
+                    db.collection('ads')
+                        .where('active', '==', true)
+                        .limit(1)
+                        .get()
+                        .then(function(snap2) {
+                            if (!snap2.empty) {
+                                var doc2 = snap2.docs[0];
+                                var data2 = doc2.data();
+                                displayAd(data2);
+                            } else {
                                 hideAd();
-                            });
-                    } else {
-                        hideAd();
-                    }
+                            }
+                        })
+                        .catch(function(err2) { hideAd(); });
                 });
         }
 
@@ -1852,24 +1843,15 @@
         }
 
         function displayAd(data) {
-            // Populate the ad content
             adBadge.textContent = data.badge || '🚀 Limited Offer';
             adTitle.innerHTML = (data.title || 'Grow Your Wealth with <span>PureOreCapital</span>');
-
             adDesc.textContent = data.description || 'Secure investments, daily returns, and a community that cares about your financial freedom.';
-
-            // Image
             var rawImageUrl = data.imageUrl || '';
             var safeImageUrl = getSafeImageUrl(rawImageUrl);
-            console.log('🖼️ Ad image URL (raw):', rawImageUrl);
-            console.log('   → (safe):', safeImageUrl);
-
             if (safeImageUrl && safeImageUrl.trim() !== '') {
-                // FIX: set referrerPolicy to match plan pages
                 adImage.referrerPolicy = 'no-referrer';
                 adImage.src = safeImageUrl;
                 adImage.style.display = 'block';
-                // Remove any existing placeholder
                 var placeholder = adImageContainer.querySelector('.placeholder-text');
                 if (placeholder) placeholder.remove();
                 adImage.onerror = function() {
@@ -1886,28 +1868,19 @@
                 p.textContent = '📸 No image provided';
                 adImageContainer.appendChild(p);
             }
-
-            // CTA
             adCta.textContent = data.ctaText || 'Start Investing Today';
             adCta.href = data.ctaLink || 'mkvip.html';
-
-            // Timeout
             adTimeoutSeconds = data.timeout || 5;
             if (adTimeoutSeconds < 1) adTimeoutSeconds = 1;
             if (adTimeoutSeconds > 60) adTimeoutSeconds = 60;
-
-            // Show the ad
             adOverlay.style.display = 'flex';
             adOverlay.classList.add('active');
-
-            // Start the countdown timer
             startAdTimer(adTimeoutSeconds);
         }
 
         function startAdTimer(seconds) {
             var remaining = seconds;
             if (adTimerEl) adTimerEl.textContent = remaining;
-
             if (adCountdown) clearInterval(adCountdown);
             adCountdown = setInterval(function() {
                 remaining--;
@@ -1918,7 +1891,6 @@
                     closeAd();
                 }
             }, 1000);
-
             if (adInterval) clearTimeout(adInterval);
             adInterval = setTimeout(function() {
                 closeAd();
@@ -1935,8 +1907,6 @@
                 adOverlay.style.display = 'none';
             }, 500);
         }
-
-        // Close button handler
         adCloseBtn.addEventListener('click', closeAd);
 
         // ================================================================
@@ -1960,7 +1930,7 @@
         modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
 
         // ================================================================
-        // HERO SLIDESHOW, FLAGS, NAV, GLOW CYCLE (keep unchanged)
+        // HERO SLIDESHOW
         // ================================================================
         var slides = document.querySelectorAll('.slide');
         var dots = document.querySelectorAll('.dot');
@@ -1986,7 +1956,6 @@
             if (slideInterval) clearInterval(slideInterval);
             slideInterval = setInterval(nextSlide, 4000);
         }
-
         dots.forEach(function(dot) {
             dot.addEventListener('click', function() {
                 var index = parseInt(this.getAttribute('data-index'));
@@ -1997,19 +1966,17 @@
                 }
             });
         });
-
         var hero = document.getElementById('heroSlideshow');
-        hero.addEventListener('mouseenter', function() {
-            if (slideInterval) clearInterval(slideInterval);
-        });
+        hero.addEventListener('mouseenter', function() { if (slideInterval) clearInterval(slideInterval); });
         hero.addEventListener('mouseleave', function() {
             if (slideInterval) clearInterval(slideInterval);
             slideInterval = setInterval(nextSlide, 4000);
         });
-
         startSlideshow();
 
-        // ===== FLAGS MARQUEE =====
+        // ================================================================
+        // FLAGS MARQUEE
+        // ================================================================
         var countries = [
             { name: "UK", emoji: "🇬🇧" },
             { name: "Tanzania", emoji: "🇹🇿" },
@@ -2028,7 +1995,9 @@
         }
         marquee.innerHTML = flagHtml;
 
-        // ===== NAVIGATION =====
+        // ================================================================
+        // NAVIGATION
+        // ================================================================
         var navItems = document.querySelectorAll('.nav-item');
         var current = window.location.pathname.split('/').pop() || 'dashboard.html';
         navItems.forEach(function(item) {
@@ -2041,7 +2010,9 @@
             });
         });
 
-        // ===== NAV GLOW CYCLE =====
+        // ================================================================
+        // NAV GLOW CYCLE
+        // ================================================================
         var glowClasses = ['glow', 'glow-gold', 'glow-cyan', ''];
         var gi = 0;
         setInterval(function() {
@@ -2053,9 +2024,10 @@
             gi = (gi + 1) % (navItems.length + 1);
         }, 3000);
 
-        console.log('✨ Pureore Capital · Dashboard with dynamic ads (image converter + fallback + referrerpolicy)');
-        console.log('📢 Ads loaded from Firestore collection "ads"');
-        console.log('🔐 Firebase config untouched');
+        console.log('✨ Pureore Capital · Dashboard (rock-solid scrolling + auto-login)');
+        console.log('📱 No bounce, no snap — smooth scrolling guaranteed');
+        console.log('🔐 Auto-redirects to login if not authenticated');
+        console.log('💾 Firestore persistence enabled (offline cache)');
     </script>
 </body>
 </html>
