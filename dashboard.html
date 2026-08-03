@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>PC • Pureore Capital</title>
+    <title>Dashboard – VisionCore Capital</title>
+    <link rel="preconnect" href="https://www.gstatic.com" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
@@ -11,247 +12,351 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BASE ----- */
-        *,
-        *::before,
-        *::after {
+        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --gold: #f6c96e;
-            --gold-glow: rgba(246, 201, 110, 0.30);
-            --cyan: #5dd9f2;
-            --cyan-glow: rgba(93, 217, 242, 0.25);
-            --violet: #7c6df0;
-            --violet-glow: rgba(124, 109, 240, 0.30);
-            --dark: #0a0815;
-            --radius-lg: 28px;
-            --radius-md: 18px;
-            --radius-sm: 12px;
-            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
-        }
-
-        /* ----- FIXED BODY – prevents layout shift on keyboard open ----- */
-        html,
         body {
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--dark);
-            -webkit-font-smoothing: antialiased;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* ----- SCROLLABLE WRAPPER (handles all scrolling) ----- */
-        .app-wrapper {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            min-height: 100vh;
+            padding-top: 80px;
+            padding-bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
             position: relative;
-            height: 100%;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-            padding: 0 0 100px 0;
-            /* room for bottom nav + floating buttons */
+            background: #000;
         }
 
-        /* ----- subtle background glow ----- */
-        .app-wrapper::after {
-            content: "";
+        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
+        .hero-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at 20% 0%, rgba(124, 109, 240, 0.08) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 100%, rgba(93, 217, 242, 0.06) 0%, transparent 50%);
             z-index: -1;
-            pointer-events: none;
+            overflow: hidden;
         }
 
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.06;
-            z-index: -1;
-            pointer-events: none;
-            animation: orbFloat 18s ease-in-out infinite alternate;
-        }
-        .orb-1 {
-            width: 500px;
-            height: 500px;
-            background: var(--violet);
-            top: -10%;
-            left: -10%;
-        }
-        .orb-2 {
-            width: 400px;
-            height: 400px;
-            background: var(--cyan);
-            bottom: -10%;
-            right: -10%;
-            animation-delay: 6s;
-        }
-        .orb-3 {
-            width: 300px;
-            height: 300px;
-            background: var(--gold);
-            top: 50%;
-            left: 60%;
-            animation-delay: 12s;
-            opacity: 0.04;
+        .hero-bg::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
+            background-size: cover;
+            background-position: center;
+            filter: blur(14px) brightness(0.25) saturate(0.7);
+            transform: scale(1.1);
         }
 
-        @keyframes orbFloat {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-            50% {
-                transform: translate(30px, -40px) scale(1.08);
-            }
-            100% {
-                transform: translate(-20px, 30px) scale(0.92);
-            }
+        .hero-bg::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
         }
 
-        /* ----- CONTAINER ----- */
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 1rem 1.2rem 1.5rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        /* ----- HEADER / BRAND ----- */
+        /* ----- HEADER (DARK GLASS) ----- */
         .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 0.8rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.8rem;
-            flex-wrap: wrap;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.50);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            letter-spacing: -0.4px;
+        }
+        .logo-text .vc {
+            color: #60a5fa;
+        }
+
+        .logo-sub {
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 0.3px;
+            font-weight: 400;
+            margin-top: -2px;
+        }
+        .logo-sub .highlight {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .header-social {
+            display: flex;
+            align-items: center;
             gap: 0.5rem;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: var(--radius-sm);
-            background: linear-gradient(135deg, var(--violet), var(--cyan));
+        .header-social a {
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 24px var(--violet-glow);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.3);
+            transition: 0.2s;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .header-social a svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .header-social a.whatsapp:hover {
+            color: #25D366;
+            border-color: #25D366;
+            background: rgba(37, 211, 102, 0.08);
+        }
+
+        .header-social a.telegram:hover {
+            color: #29A9E1;
+            border-color: #29A9E1;
+            background: rgba(41, 169, 225, 0.08);
+        }
+
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+
+        .hamburger:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* ----- SLIDE MENU PANEL (GLASS) ----- */
+        .menu-panel {
+            position: fixed;
+            top: 0;
+            right: -380px;
+            width: 340px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
+            padding: 2rem 1.8rem;
+            transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 200;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            color: #f1f5f9;
+            border-left: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .menu-panel.open {
+            right: 0;
+        }
+
+        .menu-panel .close-btn {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0 0.5rem;
+            transition: 0.2s;
+        }
+        .menu-panel .close-btn:hover {
+            color: #ffffff;
+        }
+
+        .menu-panel .panel-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .menu-panel .panel-header .panel-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .menu-panel .panel-header .panel-email {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.7rem 0.8rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.5);
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+
+        .menu-item .mi-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
         }
 
-        .brand-icon svg {
-            width: 24px;
-            height: 24px;
-            stroke: #fff;
-            stroke-width: 2.2;
+        .menu-item .mi-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 1.8;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
 
-        .brand-name {
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .menu-item .mi-label {
+            flex: 1;
         }
 
-        .brand-name .pc {
-            color: var(--gold);
-            -webkit-text-fill-color: var(--gold);
-            font-weight: 900;
+        .menu-item .mi-arrow {
+            color: rgba(255, 255, 255, 0.15);
+        }
+        .menu-item .mi-arrow svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
-        .brand-badge {
-            font-size: 9px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.2);
-            letter-spacing: 1px;
-            text-transform: uppercase;
+        .menu-divider {
+            height: 1px;
             background: rgba(255, 255, 255, 0.04);
-            padding: 3px 12px;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            margin: 0.2rem 0.8rem;
         }
 
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .avatar-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            border: none;
-            color: var(--dark);
-            font-weight: 700;
-            font-size: 16px;
-            cursor: pointer;
-            box-shadow: 0 4px 20px var(--gold-glow);
-            transition: transform 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .avatar-btn:hover {
-            transform: scale(1.06);
+        /* ----- CONTAINER ----- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 1.2rem;
+            flex: 1;
+            width: 100%;
         }
 
         /* ----- GREETING ----- */
         .greeting-area {
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.8rem;
+            text-align: center;
         }
 
         .greeting-text {
-            font-size: 1.6rem;
+            font-size: 2rem;
             font-weight: 700;
+            color: #ffffff;
             letter-spacing: -0.3px;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        }
+
+        .greeting-text span {
+            color: #60a5fa;
         }
 
         .greeting-sub {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.35);
-            font-weight: 400;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.25);
             margin-top: 2px;
         }
 
-        /* ==========================================================
-               HERO SLIDESHOW – the 4 scrolling images
-               ========================================================== */
+        /* ----- SLIDESHOW (glass) ----- */
         .hero-slideshow {
             position: relative;
             width: 100%;
-            border-radius: var(--radius-lg);
+            border-radius: 28px;
             overflow: hidden;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
             aspect-ratio: 16 / 9;
-            background: var(--dark);
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .hero-slideshow .slides-wrapper {
@@ -267,10 +372,9 @@
             width: 100%;
             height: 100%;
             opacity: 0;
-            transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: opacity 0.9s ease;
             background-size: cover;
             background-position: center;
-            will-change: opacity;
         }
 
         .hero-slideshow .slide.active {
@@ -280,12 +384,8 @@
         .hero-slideshow .slide-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg,
-                    rgba(10, 8, 21, 0.60) 0%,
-                    rgba(10, 8, 21, 0.20) 50%,
-                    rgba(10, 8, 21, 0.50) 100%);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.2) 60%);
             z-index: 1;
-            pointer-events: none;
         }
 
         .hero-slideshow .slide-content {
@@ -294,59 +394,30 @@
             left: 8%;
             z-index: 2;
             max-width: 70%;
-        }
-
-        .hero-slideshow .slide-content .slide-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(246, 201, 110, 0.12);
-            border: 1px solid rgba(246, 201, 110, 0.15);
-            border-radius: 40px;
-            padding: 4px 14px 4px 10px;
-            font-size: 10px;
-            font-weight: 600;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-        }
-
-        .hero-slideshow .slide-content .slide-tag svg {
-            width: 14px;
-            height: 14px;
-            stroke: var(--gold);
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+            color: #fff;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
         }
 
         .hero-slideshow .slide-content h2 {
-            font-size: clamp(1.2rem, 3vw, 2.2rem);
+            font-size: clamp(1.4rem, 3.5vw, 2.6rem);
             font-weight: 700;
-            color: #fff;
             line-height: 1.2;
-            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            letter-spacing: -0.3px;
         }
 
         .hero-slideshow .slide-content p {
-            font-size: clamp(0.75rem, 1.2vw, 1rem);
-            color: rgba(255, 255, 255, 0.6);
+            font-size: clamp(0.8rem, 1.2vw, 1.1rem);
+            opacity: 0.85;
             margin-top: 4px;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
         }
 
-        /* Slide indicators (dots) */
         .hero-slideshow .indicators {
             position: absolute;
-            bottom: 14px;
+            bottom: 16px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 3;
             display: flex;
-            gap: 8px;
+            gap: 10px;
         }
 
         .hero-slideshow .indicators .dot {
@@ -354,336 +425,190 @@
             height: 10px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.15);
-            cursor: pointer;
-            transition: all 0.4s ease;
             border: none;
+            cursor: pointer;
+            transition: all 0.3s;
             padding: 0;
         }
 
         .hero-slideshow .indicators .dot.active {
-            background: var(--gold);
-            box-shadow: 0 0 20px var(--gold-glow);
+            background: #60a5fa;
             transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
         }
 
-        .hero-slideshow .indicators .dot:hover {
-            background: rgba(255, 255, 255, 0.4);
-        }
-
-        /* ----- COUNTRY SCROLLING (FLAGS MARQUEE) ----- */
-        .flags-container {
-            border-radius: 60px;
-            padding: 0.4rem 0;
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            background: rgba(10, 8, 21, 0.35);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-
-        .flags-marquee {
-            display: flex;
-            animation: scrollFlags 28s linear infinite;
-            width: fit-content;
-            align-items: center;
-        }
-
-        .flag-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 80px;
-            margin: 0 1.2rem;
-        }
-
-        .flag-item .flag-emoji {
-            font-size: 1.8rem;
-            line-height: 1;
-        }
-
-        .flag-item .flag-name {
-            font-size: 0.6rem;
-            margin-top: 2px;
-            color: rgba(255, 255, 255, 0.35);
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-
-        @keyframes scrollFlags {
-            0% {
-                transform: translateX(0);
-            }
-            100% {
-                transform: translateX(-50%);
-            }
-        }
-
-        /* ----- BALANCE ROW ----- */
-        .balances-row {
+        /* ----- QUICK ACCESS ROW (GLASS) ----- */
+        .quick-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
-            margin-bottom: 1.2rem;
+            margin-bottom: 2rem;
         }
 
         @media (max-width: 500px) {
-            .balances-row {
-                grid-template-columns: 1fr;
+            .quick-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.6rem;
             }
         }
 
-        .balance-card {
-            border-radius: var(--radius-lg);
-            padding: 1.2rem 1rem 1rem;
+        .quick-item {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 28px;
+            padding: 1.2rem 0.5rem;
             text-align: center;
-            background: rgba(10, 8, 21, 0.50);
-            backdrop-filter: blur(16px) saturate(1.3);
-            -webkit-backdrop-filter: blur(16px) saturate(1.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: var(--shadow-card);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .balance-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        .balance-card .glow {
-            position: absolute;
-            top: -40%;
-            right: -30%;
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.10;
-            pointer-events: none;
-        }
-
-        .balance-card.deposit .glow {
-            background: var(--gold);
-        }
-        .balance-card.wallet .glow {
-            background: var(--cyan);
-        }
-
-        .balance-label {
-            font-size: 0.7rem;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .balance-label .badge {
-            font-size: 0.5rem;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 2px 8px;
-            border-radius: 20px;
-            color: rgba(255, 255, 255, 0.2);
-        }
-
-        .balance-amount {
-            font-size: 2.2rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            position: relative;
-            z-index: 1;
-            line-height: 1.2;
-        }
-
-        .balance-card.deposit .balance-amount {
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .balance-card.wallet .balance-amount {
-            background: linear-gradient(135deg, var(--cyan), var(--violet));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .balance-sub {
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.15);
-            margin-top: 2px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ----- ACTION BUTTONS ----- */
-        .button-group {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
-
-        .btn-action {
-            padding: 0.8rem 2rem;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 0.95rem;
-            border: none;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-family: inherit;
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
             position: relative;
             overflow: hidden;
         }
 
-        .btn-action::after {
+        .quick-item::before {
             content: '';
             position: absolute;
             top: -50%;
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
             pointer-events: none;
         }
 
-        .btn-action:hover::after {
-            opacity: 1;
-        }
-
-        .btn-action svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            flex-shrink: 0;
-        }
-
-        .btn-deposit {
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            color: var(--dark);
-            box-shadow: 0 4px 24px var(--gold-glow);
-        }
-
-        .btn-deposit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 32px var(--gold-glow);
-        }
-
-        .btn-withdraw {
-            background: linear-gradient(135deg, var(--cyan), var(--violet));
-            color: #fff;
-            box-shadow: 0 4px 24px var(--cyan-glow);
-        }
-
-        .btn-withdraw:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 32px var(--cyan-glow);
-        }
-
-        .btn-action:active {
-            transform: scale(0.96);
-        }
-
-        /* ----- QUICK ACCESS ----- */
-        .quick-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.8rem;
-            margin-bottom: 1.5rem;
-        }
-
-        @media (max-width: 420px) {
-            .quick-row {
-                gap: 0.6rem;
-            }
-        }
-
-        .quick-item {
-            border-radius: var(--radius-md);
-            padding: 0.9rem 0.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            background: rgba(10, 8, 21, 0.35);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
         .quick-item:hover {
-            transform: translateY(-5px);
-            border-color: rgba(93, 217, 242, 0.15);
-            background: rgba(10, 8, 21, 0.50);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+            transform: translateY(-6px);
+            border-color: rgba(96, 165, 250, 0.15);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
         }
 
         .quick-item .qi-icon {
             width: 48px;
             height: 48px;
             margin: 0 auto 6px;
+            background: rgba(255, 255, 255, 0.02);
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.03);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.3s ease;
+            transition: 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.02);
         }
 
         .quick-item:hover .qi-icon {
-            background: rgba(124, 109, 240, 0.06);
+            background: rgba(96, 165, 250, 0.04);
+            border-color: rgba(96, 165, 250, 0.06);
         }
 
         .quick-item .qi-icon svg {
             width: 24px;
             height: 24px;
-            stroke: rgba(255, 255, 255, 0.3);
-            stroke-width: 1.6;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 1.8;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
-            transition: stroke 0.3s ease;
+            transition: 0.2s;
         }
 
         .quick-item:hover .qi-icon svg {
-            stroke: var(--cyan);
+            stroke: #60a5fa;
         }
 
         .quick-item .qi-label {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.35);
-            transition: color 0.3s ease;
+            color: rgba(255, 255, 255, 0.3);
         }
 
-        .quick-item:hover .qi-label {
-            color: rgba(255, 255, 255, 0.7);
+        /* ----- MARKETPLACE CARD (GLASS) ----- */
+        .marketplace-card {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 28px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            margin-bottom: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .marketplace-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .marketplace-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(96, 165, 250, 0.15);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        .marketplace-card .marketplace-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 0.8rem;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 30px rgba(37, 99, 235, 0.15);
+        }
+
+        .marketplace-card .marketplace-icon svg {
+            width: 40px;
+            height: 40px;
+            stroke: #fff;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .marketplace-card h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+        }
+
+        .marketplace-card p {
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 1rem;
+        }
+
+        .marketplace-card .badge-new {
+            display: inline-block;
+            background: rgba(74, 222, 128, 0.06);
+            color: #4ade80;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            margin-top: 0.5rem;
+            border: 1px solid rgba(74, 222, 128, 0.06);
         }
 
         /* ----- FOOTER LINKS ----- */
         .footer-links {
             text-align: center;
             margin-top: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
             padding-top: 1.2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -692,40 +617,39 @@
 
         .footer-links a {
             font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.08);
             text-decoration: none;
-            transition: color 0.3s ease;
-            letter-spacing: 0.3px;
+            transition: 0.2s;
         }
 
         .footer-links a:hover {
-            color: var(--cyan);
+            color: #60a5fa;
         }
 
         .footer-links .copyright {
             font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.04);
             width: 100%;
             text-align: center;
-            margin-top: 0.3rem;
+            margin-top: 0.2rem;
         }
 
-        /* ----- BOTTOM NAV ----- */
+        /* ----- BOTTOM NAV (DARK GLASS) ----- */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(10, 8, 21, 0.92);
-            backdrop-filter: blur(20px) saturate(1.4);
-            -webkit-backdrop-filter: blur(20px) saturate(1.4);
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(0, 0, 0, 0.50);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
             display: flex;
             justify-content: space-around;
             align-items: center;
             padding: 6px 4px 14px;
             z-index: 30;
-            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
         }
 
         .nav-item {
@@ -734,7 +658,7 @@
             align-items: center;
             gap: 2px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             flex: 1;
             text-align: center;
             padding: 4px 2px;
@@ -742,865 +666,340 @@
             border: none;
             background: transparent;
             font-family: inherit;
+            color: rgba(255, 255, 255, 0.15);
         }
 
         .nav-item .nav-icon {
-            width: 26px;
-            height: 26px;
-            object-fit: contain;
-            filter: brightness(0.35) grayscale(0.6);
-            transition: all 0.3s ease;
-            border-radius: 6px;
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.3s;
         }
 
         .nav-item.active .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 12px rgba(93, 217, 242, 0.35));
-            transform: scale(1.06);
-        }
-
-        .nav-item.glow .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 14px rgba(124, 109, 240, 0.4));
-            transform: scale(1.07);
-        }
-        .nav-item.glow-gold .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 14px rgba(246, 201, 110, 0.4));
-            transform: scale(1.07);
-        }
-        .nav-item.glow-cyan .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 14px rgba(93, 217, 242, 0.4));
-            transform: scale(1.07);
+            stroke: #60a5fa;
+            transform: scale(1.05);
         }
 
         .nav-item .nav-label {
-            font-size: 0.5rem;
-            color: rgba(255, 255, 255, 0.2);
-            font-weight: 500;
-            transition: color 0.3s ease;
+            font-size: 0.45rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.15);
+            transition: 0.3s;
             letter-spacing: 0.3px;
         }
 
         .nav-item.active .nav-label {
-            color: var(--cyan);
+            color: #60a5fa;
         }
 
-        .nav-item.glow .nav-label,
-        .nav-item.glow-gold .nav-label,
-        .nav-item.glow-cyan .nav-label {
-            color: rgba(255, 255, 255, 0.5);
+        .nav-item:hover .nav-icon {
+            stroke: #60a5fa;
         }
 
-        /* ----- FLOATING BUTTONS ----- */
-        .floating-buttons {
-            position: fixed;
-            bottom: 92px;
-            right: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 25;
-        }
-
-        .floating-btn {
-            width: 52px;
-            height: 52px;
+        .nav-item.marketplace .nav-icon {
+            width: 32px;
+            height: 32px;
+            stroke-width: 2;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border: none;
-            text-decoration: none;
-            position: relative;
-            overflow: hidden;
+            padding: 4px;
+            stroke: #fff;
+            margin-bottom: 2px;
         }
 
-        .floating-btn::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
-            pointer-events: none;
+        .nav-item.marketplace.active .nav-icon {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(37, 99, 235, 0.15);
         }
 
-        .floating-btn:hover {
-            transform: scale(1.08) translateY(-3px);
-            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
-        }
-
-        .floating-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: #fff;
-            position: relative;
-            z-index: 1;
-        }
-
-        .floating-btn.whatsapp {
-            background: #25D366;
-            box-shadow: 0 4px 24px rgba(37, 211, 102, 0.25);
-        }
-        .floating-btn.whatsapp:hover {
-            box-shadow: 0 8px 32px rgba(37, 211, 102, 0.4);
-        }
-
-        .floating-btn.telegram {
-            background: #29A9E1;
-            box-shadow: 0 4px 24px rgba(41, 169, 225, 0.25);
-        }
-        .floating-btn.telegram:hover {
-            box-shadow: 0 8px 32px rgba(41, 169, 225, 0.4);
-        }
-
-        .floating-btn.history {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-        }
-
-        .floating-btn.support {
-            background: linear-gradient(135deg, var(--violet), var(--cyan));
-            box-shadow: 0 4px 24px var(--violet-glow);
-        }
-        .floating-btn.support:hover {
-            box-shadow: 0 8px 32px var(--violet-glow);
-        }
-
-        /* ----- SUPPORT MODAL ----- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.82);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            visibility: hidden;
-            opacity: 0;
-            transition: all 0.3s ease;
-            padding: 1.5rem;
-        }
-
-        .modal-overlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .support-modal {
-            border-radius: var(--radius-lg);
-            width: 100%;
-            max-width: 420px;
-            padding: 2rem 1.8rem;
-            position: relative;
-            color: #fff;
-            max-height: 80vh;
-            overflow-y: auto;
-            background: rgba(10, 8, 21, 0.90);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-        }
-
-        .support-modal::-webkit-scrollbar {
-            width: 3px;
-        }
-        .support-modal::-webkit-scrollbar-thumb {
-            background: var(--violet);
-            border-radius: 10px;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 14px;
-            right: 18px;
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.2);
-            font-size: 26px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            line-height: 1;
-        }
-
-        .close-modal:hover {
-            color: #fff;
-            transform: rotate(90deg);
-        }
-
-        .support-modal h3 {
-            font-size: 1.4rem;
+        .nav-item.marketplace .nav-label {
+            color: #60a5fa;
             font-weight: 700;
-            margin-bottom: 1rem;
-            text-align: center;
-            background: linear-gradient(135deg, var(--gold), var(--cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .support-line {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: var(--radius-sm);
-            padding: 0.8rem 1rem;
-            margin-bottom: 0.8rem;
-        }
-
-        .support-line strong {
-            display: block;
-            margin-bottom: 0.2rem;
-            color: var(--gold);
-            font-size: 0.85rem;
-        }
-
-        .support-line p {
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 0.85rem;
-            line-height: 1.5;
-        }
-
-        .support-footer {
-            text-align: center;
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.15);
-            margin-top: 0.5rem;
-        }
-
-        /* ----- TOAST ----- */
-        .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 24px;
-            border-radius: 60px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            z-index: 9999;
-            background: rgba(10, 8, 21, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: #fff;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-            animation: toastIn 0.3s ease;
-            max-width: 90%;
-            text-align: center;
-        }
-
-        .toast.error {
-            border-color: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-        }
-
-        .toast.success {
-            border-color: rgba(74, 222, 128, 0.15);
-            color: #6ee7b7;
-        }
-
-        @keyframes toastIn {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0) scale(1);
-            }
         }
 
         /* ----- RESPONSIVE ----- */
-        @media (max-width: 600px) {
-            .brand-name {
-                font-size: 18px;
+        @media (max-width: 500px) {
+            .header {
+                padding: 0.6rem 1rem;
             }
-            .brand-icon {
-                width: 38px;
-                height: 38px;
+            .logo-text {
+                font-size: 1.2rem;
             }
-            .brand-icon svg {
-                width: 20px;
-                height: 20px;
+            .logo-sub {
+                font-size: 0.5rem;
             }
-            .brand-badge {
-                font-size: 7px;
-                padding: 2px 8px;
+            .header-social a {
+                width: 32px;
+                height: 32px;
             }
-            .greeting-text {
-                font-size: 1.3rem;
-            }
-            .greeting-sub {
-                font-size: 0.8rem;
-            }
-            .balance-amount {
-                font-size: 1.8rem;
-            }
-            .balance-card {
-                padding: 1rem 0.8rem;
-            }
-            .btn-action {
-                padding: 0.7rem 1.4rem;
-                font-size: 0.85rem;
-            }
-            .btn-action svg {
+            .header-social a svg {
                 width: 16px;
                 height: 16px;
             }
+            .hamburger span {
+                width: 22px;
+                height: 2px;
+            }
+            .menu-panel {
+                width: 280px;
+                right: -300px;
+                padding: 1.5rem;
+            }
+            .container {
+                padding: 0.8rem;
+            }
+            .greeting-text {
+                font-size: 1.6rem;
+            }
+            .marketplace-card {
+                padding: 1.8rem 1.2rem;
+            }
+            .marketplace-card .marketplace-icon {
+                width: 64px;
+                height: 64px;
+            }
+            .marketplace-card .marketplace-icon svg {
+                width: 32px;
+                height: 32px;
+            }
+            .quick-row {
+                gap: 0.6rem;
+            }
+            .quick-item {
+                padding: 1rem 0.3rem;
+            }
             .quick-item .qi-icon {
-                width: 42px;
-                height: 42px;
+                width: 40px;
+                height: 40px;
             }
             .quick-item .qi-icon svg {
                 width: 20px;
                 height: 20px;
-            }
-            .quick-item .qi-label {
-                font-size: 0.65rem;
             }
             .nav-item .nav-icon {
                 width: 22px;
                 height: 22px;
             }
-            .nav-item .nav-label {
-                font-size: 0.45rem;
-            }
-            .floating-buttons {
-                bottom: 82px;
-                right: 12px;
-                gap: 10px;
-            }
-            .floating-btn {
-                width: 46px;
-                height: 46px;
-            }
-            .floating-btn svg {
-                width: 20px;
-                height: 20px;
-            }
-            .support-modal {
-                padding: 1.5rem 1.2rem;
-            }
-            .hero-slideshow .slide-content {
-                bottom: 16%;
-                left: 6%;
-                max-width: 80%;
-            }
-            .hero-slideshow .slide-content h2 {
-                font-size: 1.1rem;
-            }
-            .hero-slideshow .slide-content p {
-                font-size: 0.7rem;
-            }
-            .hero-slideshow .indicators .dot {
-                width: 8px;
-                height: 8px;
-            }
-            .footer-links {
-                gap: 0.8rem;
-            }
-            .footer-links a {
-                font-size: 0.6rem;
-            }
-            .flags-container {
-                padding: 0.3rem 0;
-            }
-            .flag-item {
-                min-width: 60px;
-                margin: 0 0.8rem;
-            }
-            .flag-item .flag-emoji {
-                font-size: 1.4rem;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .container {
-                padding: 0.8rem 0.8rem 1.2rem;
-            }
-            .balance-amount {
-                font-size: 1.5rem;
-            }
-            .button-group {
-                gap: 0.6rem;
-            }
-            .btn-action {
-                padding: 0.6rem 1.2rem;
-                font-size: 0.78rem;
-            }
-            .quick-row {
-                gap: 0.4rem;
-            }
-            .quick-item {
-                padding: 0.6rem 0.3rem;
-            }
-            .quick-item .qi-icon {
-                width: 38px;
-                height: 38px;
-            }
-            .quick-item .qi-icon svg {
-                width: 18px;
-                height: 18px;
-            }
-            .hero-slideshow .slide-content h2 {
-                font-size: 0.95rem;
-            }
-            .hero-slideshow .slide-content p {
-                font-size: 0.65rem;
-            }
-        }
-
-        /* ================================================================
-               PROMOTIONAL AD OVERLAY – dynamically populated from Firestore
-               ================================================================ */
-        .ad-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.88);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            padding: 1.5rem;
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-
-        .ad-overlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .ad-modal {
-            background: rgba(10, 8, 21, 0.95);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(246, 201, 110, 0.15);
-            border-radius: var(--radius-lg);
-            max-width: 600px;
-            width: 100%;
-            padding: 2rem 1.8rem;
-            box-shadow: 0 0 80px rgba(246, 201, 110, 0.04);
-            position: relative;
-            animation: adModalIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .ad-modal::-webkit-scrollbar {
-            width: 3px;
-        }
-        .ad-modal::-webkit-scrollbar-thumb {
-            background: var(--gold);
-            border-radius: 10px;
-        }
-        .ad-modal::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        @keyframes adModalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .ad-modal .ad-close {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.15);
-            font-size: 28px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            line-height: 1;
-            z-index: 2;
-            padding: 4px 8px;
-            border-radius: 50%;
-        }
-
-        .ad-modal .ad-close:hover {
-            color: #fff;
-            transform: rotate(90deg);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .ad-modal .ad-badge {
-            display: inline-block;
-            background: rgba(239, 68, 68, 0.08);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.12);
-            padding: 0.15rem 0.8rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
-        }
-
-        .ad-modal h2 {
-            font-size: 1.8rem;
-            font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 0.3rem;
-            color: #fff;
-        }
-
-        .ad-modal h2 span {
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .ad-modal .ad-desc {
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 1.2rem;
-        }
-
-        .ad-modal .ad-image {
-            margin-bottom: 1.2rem;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-            background: #1a1838;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .ad-modal .ad-image img {
-            width: 100%;
-            height: auto;
-            display: block;
-            max-height: 450px;
-            object-fit: contain;
-            border-radius: 8px;
-        }
-
-        .ad-modal .ad-image .placeholder-text {
-            color: rgba(255, 255, 255, 0.1);
-            font-size: 0.8rem;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .ad-modal .ad-cta {
-            width: 100%;
-            padding: 0.9rem;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-family: inherit;
-            font-weight: 700;
-            font-size: 1rem;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            color: #0a0815;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 30px var(--gold-glow);
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.3px;
-            text-align: center;
-            display: inline-block;
-            text-decoration: none;
-        }
-
-        .ad-modal .ad-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 40px var(--gold-glow);
-        }
-
-        .ad-modal .ad-timer {
-            text-align: center;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.2);
-            margin-bottom: 0;
-        }
-
-        .ad-modal .ad-timer span {
-            color: var(--gold);
-            font-weight: 700;
-        }
-
-        @media (max-width: 500px) {
-            .ad-modal {
-                padding: 1.2rem 1rem;
-            }
-            .ad-modal h2 {
-                font-size: 1.4rem;
-            }
-            .ad-modal .ad-desc {
-                font-size: 0.85rem;
-            }
-            .ad-modal .ad-cta {
-                font-size: 0.9rem;
-                padding: 0.75rem;
-            }
-            .ad-modal .ad-image img {
-                max-height: 280px;
+            .nav-item.marketplace .nav-icon {
+                width: 30px;
+                height: 30px;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== SCROLLABLE WRAPPER ===== -->
-    <div class="app-wrapper">
+    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
+    <div class="hero-bg"></div>
 
-        <!-- ===== ORBS ===== -->
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-
-        <!-- ===== AD OVERLAY ===== -->
-        <div id="adOverlay" class="ad-overlay">
-            <div class="ad-modal">
-                <button class="ad-close" id="adCloseBtn">✕</button>
-                <div class="ad-badge" id="adBadge">🚀 Limited Offer</div>
-                <h2 id="adTitle">Grow Your Wealth with <span>PureOreCapital</span></h2>
-                <p class="ad-desc" id="adDesc">Secure investments, daily returns, and a community that cares about your financial freedom.</p>
-                <div class="ad-image" id="adImageContainer">
-                    <img id="adImage" src="https://i.ibb.co/nNF1c4qL/file-00000000094c71f88a477b719e193bfb.png" alt="Ad" referrerpolicy="no-referrer" />
-                </div>
-                <a href="mkvip.html" class="ad-cta" id="adCta">Start Investing Today</a>
-                <p class="ad-timer">This ad will close in <span id="adTimer">5</span>s</p>
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header-left">
+            <a href="index.html" class="logo-text">Vision<span class="vc">Core</span></a>
+            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
+        </div>
+        <div class="header-right">
+            <div class="header-social">
+                <a href="https://chat.whatsapp.com/CAphZ7CmNScGkp9un8MSjB" target="_blank" rel="noopener" class="whatsapp" aria-label="WhatsApp">
+                    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                </a>
+                <a href="https://t.me/+UrRHXeb9QyowOTU8" target="_blank" rel="noopener" class="telegram" aria-label="Telegram">
+                    <svg viewBox="0 0 24 24"><path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.497-.302.953-.14.579.192l-8.533 7.701h-.002l.002.001-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z"/></svg>
+                </a>
+            </div>
+            <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
+                <span></span><span></span><span></span>
             </div>
         </div>
+    </header>
 
-        <!-- ===== MAIN CONTAINER ===== -->
-        <div class="container">
-
-            <!-- ===== HEADER ===== -->
-            <div class="header">
-                <div class="brand">
-                    <div class="brand-icon">
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="6 6 18 6 6 18 18 18" />
-                        </svg>
-                    </div>
-                    <span class="brand-name">Pureore<span class="pc">·PC</span></span>
-                    <span class="brand-badge">v3</span>
-                </div>
-                <div class="header-actions">
-                    <button class="avatar-btn" id="avatarBtn">JM</button>
-                </div>
-            </div>
-
-            <!-- ===== GREETING ===== -->
-            <div class="greeting-area">
-                <div class="greeting-text" id="greetingText">Good Morning ☀️</div>
-                <div class="greeting-sub" id="greetingUser">Welcome back!</div>
-            </div>
-
-            <!-- ===== HERO SLIDESHOW ===== -->
-            <div class="hero-slideshow" id="heroSlideshow">
-                <div class="slides-wrapper" id="slidesWrapper">
-                    <div class="slide" style="background-image: url('https://i.ibb.co/FLssskPH/mr-pugo-XHUs2y-Z-ZXA-unsplash.jpg');">
-                        <div class="slide-overlay"></div>
-                        <div class="slide-content">
-                            <div class="slide-tag">
-                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                Pureore Capital
-                            </div>
-                            <h2>Build Your Future<br />With Confidence</h2>
-                            <p>Smart investments for a brighter tomorrow</p>
-                        </div>
-                    </div>
-                    <div class="slide" style="background-image: url('https://i.ibb.co/ynpx7bZg/kelli-mcclintock-d-J0-Mx-SIas-Gs-unsplash.jpg');">
-                        <div class="slide-overlay"></div>
-                        <div class="slide-content">
-                            <div class="slide-tag">
-                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                Grow Your Wealth
-                            </div>
-                            <h2>Daily Returns<br />That Compound</h2>
-                            <p>Start earning from day one with our proven plans</p>
-                        </div>
-                    </div>
-                    <div class="slide" style="background-image: url('https://i.ibb.co/ycsCkq15/v2osk-1-Z2nii-BPg5-A-unsplash.jpg');">
-                        <div class="slide-overlay"></div>
-                        <div class="slide-content">
-                            <div class="slide-tag">
-                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                Premium Plans
-                            </div>
-                            <h2>Invest Smarter<br />Earn Bigger</h2>
-                            <p>Choose from multiple investment tiers</p>
-                        </div>
-                    </div>
-                    <div class="slide" style="background-image: url('https://i.ibb.co/DHPnRwy4/goutham-krishna-h5wv-MCd-OV3w-unsplash.jpg');">
-                        <div class="slide-overlay"></div>
-                        <div class="slide-content">
-                            <div class="slide-tag">
-                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                Join Us Today
-                            </div>
-                            <h2>Your Journey<br />Starts Here</h2>
-                            <p>Over 10,000 members already earning</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="indicators" id="slideIndicators">
-                    <button class="dot active" data-index="0"></button>
-                    <button class="dot" data-index="1"></button>
-                    <button class="dot" data-index="2"></button>
-                    <button class="dot" data-index="3"></button>
-                </div>
-            </div>
-
-            <!-- ===== COUNTRY FLAGS ===== -->
-            <div class="flags-container glass-card">
-                <div class="flags-marquee" id="flagsMarquee"></div>
-            </div>
-
-            <!-- ===== BALANCES ===== -->
-            <div class="balances-row">
-                <div class="balance-card deposit">
-                    <div class="glow"></div>
-                    <div class="balance-label">
-                        Deposit Balance
-                        <span class="badge">ZMW</span>
-                    </div>
-                    <div class="balance-amount" id="depositBalanceSpan">0.00</div>
-                    <div class="balance-sub">For purchasing plans</div>
-                </div>
-                <div class="balance-card wallet">
-                    <div class="glow"></div>
-                    <div class="balance-label">
-                        Wallet Balance
-                        <span class="badge">ZMW</span>
-                    </div>
-                    <div class="balance-amount" id="walletBalanceSpan">0.00</div>
-                    <div class="balance-sub">For bonuses &amp; withdrawals</div>
-                </div>
-            </div>
-
-            <!-- ===== ACTION BUTTONS ===== -->
-            <div class="button-group">
-                <button class="btn-action btn-deposit" id="depositBtn">
-                    <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                    Deposit
-                </button>
-                <button class="btn-action btn-withdraw" id="withdrawBtn">
-                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                    Withdraw
-                </button>
-            </div>
-
-            <!-- ===== QUICK ACCESS ===== -->
-            <div class="quick-row">
-                <div class="quick-item" onclick="location.href='treasure.html';">
-                    <div class="qi-icon">
-                        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                    </div>
-                    <div class="qi-label">Treasure</div>
-                </div>
-                <div class="quick-item" onclick="location.href='loan.html';">
-                    <div class="qi-icon">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    </div>
-                    <div class="qi-label">Loan</div>
-                </div>
-                <div class="quick-item" onclick="location.href='voucher.html';">
-                    <div class="qi-icon">
-                        <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
-                    </div>
-                    <div class="qi-label">Voucher</div>
-                </div>
-            </div>
-
-            <!-- ===== FOOTER LINKS ===== -->
-            <div class="footer-links">
-                <a href="term.html">Terms of Service</a>
-                <a href="privacy.html">Privacy Policy</a>
-                <a href="risk-disclaimer.html">Risk Disclaimer</a>
-                <div class="copyright">© Pureore Capital 2025</div>
-            </div>
-
-        </div>
-        <!-- /container -->
-
-        <!-- ===== BOTTOM NAV ===== -->
-        <div class="bottom-nav">
-            <button class="nav-item active" data-page="dashboard.html">
-                <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home" />
-                <span class="nav-label">Home</span>
-            </button>
-            <button class="nav-item" data-page="mkvip.html">
-                <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mkvip" />
-                <span class="nav-label">Mkvip</span>
-            </button>
-            <button class="nav-item" data-page="jproduct.html">
-                <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="Jproduct" />
-                <span class="nav-label">Jproduct</span>
-            </button>
-            <button class="nav-item" data-page="income.html">
-                <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income" />
-                <span class="nav-label">Income</span>
-            </button>
-            <button class="nav-item" data-page="team.html">
-                <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Team" />
-                <span class="nav-label">Team</span>
-            </button>
-            <button class="nav-item" data-page="me.html">
-                <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me" />
-                <span class="nav-label">Me</span>
-            </button>
+    <!-- ===== SLIDE MENU (GLASS) ===== -->
+    <div class="menu-panel" id="menuPanel">
+        <button class="close-btn" id="closeMenu">✕</button>
+        <div class="panel-header">
+            <div class="panel-name" id="panelName">Loading...</div>
+            <div class="panel-email" id="panelEmail">Loading...</div>
         </div>
 
-        <!-- ===== FLOATING BUTTONS ===== -->
-        <div class="floating-buttons">
-            <a href="https://chat.whatsapp.com/CAphZ7CmNScGkp9un8MSjB" target="_blank" class="floating-btn whatsapp" title="Join WhatsApp">
-                <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            </a>
-            <a href="https://t.me/+UrRHXeb9QyowOTU8" target="_blank" class="floating-btn telegram" title="Join Telegram">
-                <svg viewBox="0 0 24 24"><path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.497-.302.953-.14.579.192l-8.533 7.701h-.002l.002.001-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z"/></svg>
-            </a>
-            <button class="floating-btn history" id="historyFloatBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </button>
-            <button class="floating-btn support" id="supportFloatBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-            </button>
-        </div>
+        <button class="menu-item" onclick="window.location.href='dashboard.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
+            <span class="mi-label">Dashboard</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
 
-        <!-- ===== SUPPORT MODAL ===== -->
-        <div class="modal-overlay" id="supportModal">
-            <div class="support-modal">
-                <button class="close-modal" id="closeModalBtn">✕</button>
-                <h3>Community &amp; Support</h3>
-                <div class="support-line">
-                    <strong>👥 WhatsApp Group</strong>
-                    <p>If you want to join the WhatsApp group, please ask the person who invited you or contact our support team through the app.</p>
-                </div>
-                <div class="support-line">
-                    <strong>📱 In-App Support</strong>
-                    <p>For urgent assistance, please use the in-app support ticket system or reach out to your upline.</p>
-                </div>
-                <div class="support-footer">We're here 24/7 to help you grow. 🚀</div>
-            </div>
-        </div>
+        <button class="menu-item" onclick="window.location.href='income.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+            <span class="mi-label">Income</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='marketplace.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+            <span class="mi-label">Marketplace</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='team.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span class="mi-label">Team</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='me.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <span class="mi-label">Profile</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='support.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+            <span class="mi-label">Customer Service</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <div class="menu-divider"></div>
+
+        <button class="menu-item" id="logoutBtn" style="color:#f87171;">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+            <span class="mi-label">Logout</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
     </div>
-    <!-- /app-wrapper -->
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="container">
+
+        <!-- Greeting -->
+        <div class="greeting-area">
+            <div class="greeting-text">Welcome back, <span id="userNameDisplay">Investor</span> 👋</div>
+            <div class="greeting-sub" id="greetingSub">Let's grow your portfolio today</div>
+        </div>
+
+        <!-- SLIDESHOW (4 images) -->
+        <div class="hero-slideshow" id="heroSlideshow">
+            <div class="slides-wrapper" id="slidesWrapper">
+                <div class="slide active" style="background-image: url('https://i.ibb.co/BKQJsR4L/file-00000000d73881f482171aab413d03c3.png');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2>Welcome to VisionCore</h2>
+                        <p>Your journey to financial freedom starts here</p>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://i.ibb.co/tMH4F5b0/IMG-20260731-WA4226.jpg');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2>Smart Investments</h2>
+                        <p>Secure, transparent, and high-yield opportunities</p>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://i.ibb.co/9mL84qPz/IMG-20260731-WA4127.jpg');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2>Diversify Your Portfolio</h2>
+                        <p>Explore multiple investment plans</p>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://i.ibb.co/4wQgzQZZ/IMG-20260731-WA1244.jpg');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2>Start Earning Today</h2>
+                        <p>Join thousands of satisfied investors</p>
+                    </div>
+                </div>
+            </div>
+            <div class="indicators" id="slideIndicators">
+                <button class="dot active" data-index="0"></button>
+                <button class="dot" data-index="1"></button>
+                <button class="dot" data-index="2"></button>
+                <button class="dot" data-index="3"></button>
+            </div>
+        </div>
+
+        <!-- QUICK ACCESS ROW: Loan | Voucher | Treasure | Daily Check -->
+        <div class="quick-row">
+            <!-- Loan -->
+            <div class="quick-item" onclick="location.href='loan.html';">
+                <div class="qi-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </div>
+                <div class="qi-label">Loan</div>
+            </div>
+            <!-- Voucher -->
+            <div class="quick-item" onclick="location.href='voucher.html';">
+                <div class="qi-icon">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
+                </div>
+                <div class="qi-label">Voucher</div>
+            </div>
+            <!-- Treasure -->
+            <div class="quick-item" onclick="location.href='treasure.html';">
+                <div class="qi-icon">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                </div>
+                <div class="qi-label">Treasure</div>
+            </div>
+            <!-- Daily Check -->
+            <div class="quick-item" onclick="location.href='daily-check.html';">
+                <div class="qi-icon">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="12 14 12 18 16 18"/></svg>
+                </div>
+                <div class="qi-label">Daily Check</div>
+            </div>
+        </div>
+
+        <!-- BIG MARKETPLACE CARD -->
+        <div class="marketplace-card" id="marketplaceCard">
+            <div class="marketplace-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                </svg>
+            </div>
+            <h3>Marketplace</h3>
+            <p>Browse investment opportunities and exclusive deals</p>
+            <span class="badge-new">🔥 New plans available</span>
+        </div>
+
+        <!-- Footer links -->
+        <div class="footer-links">
+            <a href="term.html">Terms of Service</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="risk-disclaimer.html">Risk Disclaimer</a>
+            <div class="copyright">© VisionCore Capital 2026</div>
+        </div>
+
+    </main>
+
+    <!-- ===== BOTTOM NAV (DARK GLASS) ===== -->
+    <div class="bottom-nav">
+        <button class="nav-item active" data-page="dashboard.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-page="income.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            <span class="nav-label">Income</span>
+        </button>
+        <!-- Marketplace in center -->
+        <button class="nav-item marketplace" data-page="marketplace.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span class="nav-label">Market</span>
+        </button>
+        <button class="nav-item" data-page="team.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="nav-label">Team</span>
+        </button>
+        <button class="nav-item" data-page="me.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="nav-label">Me</span>
+        </button>
+    </div>
 
     <script>
         // ================================================================
@@ -1618,80 +1017,11 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         var auth = firebase.auth();
         var db = firebase.firestore();
-
-        // ----- UPDATED: Enable Firestore offline persistence -----
         db.settings({ persistence: true });
-
-        // ----- UPDATED: Auth persistence with logging -----
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-            .then(function() {
-                console.log("🔐 Auth persistence set to LOCAL");
-            })
-            .catch(function(error) {
-                console.warn("⚠️ Persistence error:", error);
-            });
-
-        // ----- UPDATED: Auth state observer with session logging -----
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                console.log("👤 User already logged in:", user.email);
-            } else {
-                console.log("🚪 No saved user session");
-            }
-        });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ================================================================
-        // TOAST
-        // ================================================================
-        function showToast(msg, isError) {
-            var existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (isError ? ' error' : ' success');
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 3500);
-        }
-
-        // ================================================================
-        // BLOCK LISTENER
-        // ================================================================
-        var blockUnsub = null;
-
-        function watchBlock(userId) {
-            if (blockUnsub) blockUnsub();
-            blockUnsub = db.collection('users').doc(userId).onSnapshot(function(doc) {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked. Redirecting...', true);
-                    setTimeout(function() {
-                        auth.signOut().then(function() { window.location.href = 'login.html'; });
-                    }, 2000);
-                }
-            }, function(err) { console.warn('Block listener error:', err); });
-        }
-        window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
-
-        // ================================================================
-        // GREETING
-        // ================================================================
-        function updateGreeting(userName) {
-            var hour = new Date().getHours();
-            var greet = '',
-                emoji = '';
-            if (hour < 12) { greet = 'Good Morning';
-                emoji = '☀️'; } else if (hour < 17) { greet = 'Good Afternoon';
-                emoji = '🌤️'; } else if (hour < 21) { greet = 'Good Evening';
-                emoji = '🌙'; } else { greet = 'Good Night';
-                emoji = '🌃'; }
-            var el = document.getElementById('greetingText');
-            if (el) el.textContent = greet + ' ' + emoji;
-            var sub = document.getElementById('greetingUser');
-            if (sub && userName) sub.textContent = 'Welcome back, ' + userName + '!';
-            else if (sub) sub.textContent = 'Welcome back!';
-        }
-
-        // ================================================================
-        // MAIN AUTH STATE
+        // AUTH STATE
         // ================================================================
         auth.onAuthStateChanged(function(user) {
             if (!user) {
@@ -1699,238 +1029,42 @@
                 return;
             }
             var uid = user.uid;
-            watchBlock(uid);
             db.collection('users').doc(uid).get()
                 .then(function(doc) {
                     if (doc.exists) {
                         var data = doc.data();
-                        document.getElementById('depositBalanceSpan').textContent = (data.depositBalance || 0).toFixed(
-                        2);
-                        var wallet = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
-                        document.getElementById('walletBalanceSpan').textContent = wallet.toFixed(2);
-                        updateGreeting(data.fullName || data.displayName || null);
+                        var name = data.fullName || data.displayName || 'Investor';
+                        document.getElementById('userNameDisplay').textContent = name;
+                        document.getElementById('panelName').textContent = name;
+                        document.getElementById('panelEmail').textContent = data.email || user.email || '';
                     } else {
                         auth.signOut();
                         window.location.href = 'login.html';
                     }
                 })
-                .catch(function(e) { console.warn('Initial load error:', e);
-                    updateGreeting(null); });
-
-            db.collection('users').doc(uid).onSnapshot(function(doc) {
-                if (doc.exists) {
-                    var data = doc.data();
-                    document.getElementById('depositBalanceSpan').textContent = (data.depositBalance || 0).toFixed(2);
-                    var wallet = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
-                    document.getElementById('walletBalanceSpan').textContent = wallet.toFixed(2);
-                }
-            }, function(err) { console.error('Balance listener error:', err); });
-
-            loadActiveAd();
+                .catch(function(e) { console.warn('User load error:', e); });
         });
 
         // ================================================================
-        // IMAGE URL CONVERTER
+        // HAMBURGER
         // ================================================================
-        function getSafeImageUrl(url) {
-            if (!url || typeof url !== 'string' || url.trim() === '') {
-                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-            }
-            let safeUrl = url.trim();
-            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
-                const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
-                if (match && match[1]) {
-                    let code = match[1];
-                    let filename = match[2] || '';
-                    let ext = 'jpg';
-                    if (filename) {
-                        const extMatch = filename.match(/\.([a-zA-Z0-9]+)$/);
-                        if (extMatch && extMatch[1]) ext = extMatch[1];
-                    }
-                    safeUrl = `https://i.ibb.co/${code}/image.${ext}`;
-                    if (filename) {
-                        safeUrl = `https://i.ibb.co/${code}${filename}`;
-                    }
-                }
-            }
-            if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
-                const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
-                if (match && match[1]) {
-                    safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
-                }
-            }
-            if (safeUrl.startsWith('http://')) {
-                safeUrl = safeUrl.replace('http://', 'https://');
-            }
-            if (safeUrl.startsWith('//')) {
-                safeUrl = 'https:' + safeUrl;
-            }
-            if (!safeUrl.startsWith('https://')) {
-                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-            }
-            return safeUrl;
+        var hamburger = document.getElementById('hamburger');
+        var menuPanel = document.getElementById('menuPanel');
+        var closeMenu = document.getElementById('closeMenu');
+
+        function toggleMenu() {
+            var open = menuPanel.classList.toggle('open');
+            hamburger.classList.toggle('active', open);
+            document.body.style.overflow = open ? 'hidden' : '';
         }
+        hamburger.addEventListener('click', toggleMenu);
+        closeMenu.addEventListener('click', toggleMenu);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && menuPanel.classList.contains('open')) toggleMenu();
+        });
 
         // ================================================================
-        // DYNAMIC AD SYSTEM
-        // ================================================================
-        var adOverlay = document.getElementById('adOverlay');
-        var adTimerEl = document.getElementById('adTimer');
-        var adCloseBtn = document.getElementById('adCloseBtn');
-        var adBadge = document.getElementById('adBadge');
-        var adTitle = document.getElementById('adTitle');
-        var adDesc = document.getElementById('adDesc');
-        var adImage = document.getElementById('adImage');
-        var adImageContainer = document.getElementById('adImageContainer');
-        var adCta = document.getElementById('adCta');
-        var adInterval = null;
-        var adCountdown = null;
-        var adTimeoutSeconds = 5;
-
-        function loadActiveAd() {
-            db.collection('ads')
-                .where('active', '==', true)
-                .orderBy('createdAt', 'desc')
-                .limit(1)
-                .get()
-                .then(function(snapshot) {
-                    if (!snapshot.empty) {
-                        var doc = snapshot.docs[0];
-                        var data = doc.data();
-                        displayAd(data);
-                    } else {
-                        db.collection('ads')
-                            .where('active', '==', true)
-                            .limit(1)
-                            .get()
-                            .then(function(snap2) {
-                                if (!snap2.empty) {
-                                    var doc2 = snap2.docs[0];
-                                    var data2 = doc2.data();
-                                    displayAd(data2);
-                                } else {
-                                    hideAd();
-                                }
-                            })
-                            .catch(function(err2) { hideAd(); });
-                    }
-                })
-                .catch(function(err) {
-                    db.collection('ads')
-                        .where('active', '==', true)
-                        .limit(1)
-                        .get()
-                        .then(function(snap2) {
-                            if (!snap2.empty) {
-                                var doc2 = snap2.docs[0];
-                                var data2 = doc2.data();
-                                displayAd(data2);
-                            } else {
-                                hideAd();
-                            }
-                        })
-                        .catch(function(err2) { hideAd(); });
-                });
-        }
-
-        function hideAd() {
-            adOverlay.classList.remove('active');
-            adOverlay.style.display = 'none';
-            if (adCountdown) { clearInterval(adCountdown);
-                adCountdown = null; }
-            if (adInterval) { clearTimeout(adInterval);
-                adInterval = null; }
-        }
-
-        function displayAd(data) {
-            adBadge.textContent = data.badge || '🚀 Limited Offer';
-            adTitle.innerHTML = (data.title || 'Grow Your Wealth with <span>PureOreCapital</span>');
-            adDesc.textContent = data.description || 'Secure investments, daily returns, and a community that cares about your financial freedom.';
-            var rawImageUrl = data.imageUrl || '';
-            var safeImageUrl = getSafeImageUrl(rawImageUrl);
-            if (safeImageUrl && safeImageUrl.trim() !== '') {
-                adImage.referrerPolicy = 'no-referrer';
-                adImage.src = safeImageUrl;
-                adImage.style.display = 'block';
-                var placeholder = adImageContainer.querySelector('.placeholder-text');
-                if (placeholder) placeholder.remove();
-                adImage.onerror = function() {
-                    this.style.display = 'none';
-                    var p = document.createElement('div');
-                    p.className = 'placeholder-text';
-                    p.textContent = '📸 Ad Image';
-                    adImageContainer.appendChild(p);
-                };
-            } else {
-                adImage.style.display = 'none';
-                var p = document.createElement('div');
-                p.className = 'placeholder-text';
-                p.textContent = '📸 No image provided';
-                adImageContainer.appendChild(p);
-            }
-            adCta.textContent = data.ctaText || 'Start Investing Today';
-            adCta.href = data.ctaLink || 'mkvip.html';
-            adTimeoutSeconds = data.timeout || 5;
-            if (adTimeoutSeconds < 1) adTimeoutSeconds = 1;
-            if (adTimeoutSeconds > 60) adTimeoutSeconds = 60;
-            adOverlay.style.display = 'flex';
-            adOverlay.classList.add('active');
-            startAdTimer(adTimeoutSeconds);
-        }
-
-        function startAdTimer(seconds) {
-            var remaining = seconds;
-            if (adTimerEl) adTimerEl.textContent = remaining;
-            if (adCountdown) clearInterval(adCountdown);
-            adCountdown = setInterval(function() {
-                remaining--;
-                if (adTimerEl) adTimerEl.textContent = remaining;
-                if (remaining <= 0) {
-                    clearInterval(adCountdown);
-                    adCountdown = null;
-                    closeAd();
-                }
-            }, 1000);
-            if (adInterval) clearTimeout(adInterval);
-            adInterval = setTimeout(function() {
-                closeAd();
-            }, seconds * 1000 + 500);
-        }
-
-        function closeAd() {
-            if (adCountdown) { clearInterval(adCountdown);
-                adCountdown = null; }
-            if (adInterval) { clearTimeout(adInterval);
-                adInterval = null; }
-            adOverlay.classList.remove('active');
-            setTimeout(function() {
-                adOverlay.style.display = 'none';
-            }, 500);
-        }
-        adCloseBtn.addEventListener('click', closeAd);
-
-        // ================================================================
-        // BUTTONS
-        // ================================================================
-        document.getElementById('depositBtn').addEventListener('click', function() { window.location.href = 'deposit.html'; });
-        document.getElementById('withdrawBtn').addEventListener('click', function() { window.location.href =
-            'withdraw.html'; });
-        document.getElementById('historyFloatBtn').addEventListener('click', function() { window.location.href =
-            'history.html'; });
-        document.getElementById('avatarBtn').addEventListener('click', function() { window.location.href = 'me.html'; });
-
-        // ================================================================
-        // SUPPORT MODAL
-        // ================================================================
-        var modal = document.getElementById('supportModal');
-        var supportBtn = document.getElementById('supportFloatBtn');
-        var closeModal = document.getElementById('closeModalBtn');
-        supportBtn.addEventListener('click', function() { modal.classList.add('active'); });
-        closeModal.addEventListener('click', function() { modal.classList.remove('active'); });
-        modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
-
-        // ================================================================
-        // HERO SLIDESHOW
+        // SLIDESHOW
         // ================================================================
         var slides = document.querySelectorAll('.slide');
         var dots = document.querySelectorAll('.dot');
@@ -1975,28 +1109,14 @@
         startSlideshow();
 
         // ================================================================
-        // FLAGS MARQUEE
+        // MARKETPLACE CARD CLICK
         // ================================================================
-        var countries = [
-            { name: "UK", emoji: "🇬🇧" },
-            { name: "Tanzania", emoji: "🇹🇿" },
-            { name: "Ghana", emoji: "🇬🇭" },
-            { name: "Zimbabwe", emoji: "🇿🇼" },
-            { name: "Congo", emoji: "🇨🇬" },
-            { name: "Zambia", emoji: "🇿🇲" }
-        ];
-        var marquee = document.getElementById('flagsMarquee');
-        var flagHtml = '';
-        for (var r = 0; r < 2; r++) {
-            for (var c = 0; c < countries.length; c++) {
-                flagHtml += '<div class="flag-item"><div class="flag-emoji">' + countries[c].emoji +
-                    '</div><div class="flag-name">' + countries[c].name + '</div></div>';
-            }
-        }
-        marquee.innerHTML = flagHtml;
+        document.getElementById('marketplaceCard').addEventListener('click', function() {
+            window.location.href = 'marketplace.html';
+        });
 
         // ================================================================
-        // NAVIGATION
+        // BOTTOM NAV
         // ================================================================
         var navItems = document.querySelectorAll('.nav-item');
         var current = window.location.pathname.split('/').pop() || 'dashboard.html';
@@ -2011,23 +1131,33 @@
         });
 
         // ================================================================
-        // NAV GLOW CYCLE
+        // DYNAMIC GREETING
         // ================================================================
-        var glowClasses = ['glow', 'glow-gold', 'glow-cyan', ''];
-        var gi = 0;
-        setInterval(function() {
-            navItems.forEach(function(item) { item.classList.remove('glow', 'glow-gold', 'glow-cyan'); });
-            if (glowClasses[gi]) {
-                var idx = gi % navItems.length;
-                navItems[idx].classList.add(glowClasses[gi]);
-            }
-            gi = (gi + 1) % (navItems.length + 1);
-        }, 3000);
+        (function() {
+            var sub = document.getElementById('greetingSub');
+            if (!sub) return;
+            var hour = new Date().getHours();
+            var msg = '';
+            if (hour < 12) msg = 'Start your day with smart investing';
+            else if (hour < 17) msg = 'Keep growing your portfolio';
+            else if (hour < 21) msg = 'Evening is a great time to review your earnings';
+            else msg = 'Rest well, tomorrow is another opportunity';
+            sub.textContent = msg;
+        })();
 
-        console.log('✨ Pureore Capital · Dashboard (rock-solid scrolling + auto-login)');
-        console.log('📱 No bounce, no snap — smooth scrolling guaranteed');
-        console.log('🔐 Auto-redirects to login if not authenticated');
-        console.log('💾 Firestore persistence enabled (offline cache)');
+        // ================================================================
+        // LOGOUT
+        // ================================================================
+        document.getElementById('logoutBtn')?.addEventListener('click', function() {
+            auth.signOut().then(function() {
+                window.location.href = 'login.html';
+            }).catch(function(err) {
+                console.warn('Logout error:', err);
+                window.location.href = 'login.html';
+            });
+        });
+
+        console.log('✅ Dashboard · VisionCore Capital · Blue glassmorphism design');
     </script>
 </body>
 </html>

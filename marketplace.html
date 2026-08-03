@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Marketplace – VisionCore Capital</title>
+    <link rel="preconnect" href="https://www.gstatic.com" />
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
+    </script>
+    <style>
+        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #060d1a;
+            min-height: 100vh;
+            padding-top: 70px;
+            padding-bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            position: relative;
+        }
+
+        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
+        .hero-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .hero-bg::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://i.ibb.co/hJKq9tHT/file-0000000016a4820cade58b3dbac7151c.png');
+            background-size: cover;
+            background-position: center;
+            filter: blur(12px) brightness(0.3) saturate(0.8);
+            transform: scale(1.1);
+        }
+
+        .hero-bg::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(10, 22, 40, 0.40) 0%, rgba(6, 13, 26, 0.85) 100%);
+        }
+
+        /* ----- HEADER (TRANSLUCENT GLASS) ----- */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(10, 22, 40, 0.60);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            letter-spacing: -0.4px;
+        }
+        .logo-text .vc {
+            color: #60a5fa;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .hamburger:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* ----- SLIDE MENU PANEL (GLASS) ----- */
+        .menu-panel {
+            position: fixed;
+            top: 0;
+            right: -380px;
+            width: 340px;
+            height: 100%;
+            background: rgba(10, 22, 40, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
+            padding: 2rem 1.8rem;
+            transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 200;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            color: #f1f5f9;
+            border-left: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .menu-panel.open {
+            right: 0;
+        }
+
+        .menu-panel .close-btn {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0 0.5rem;
+            transition: 0.2s;
+        }
+        .menu-panel .close-btn:hover {
+            color: #ffffff;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.7rem 0.8rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.5);
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+
+        .menu-item .mi-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .menu-item .mi-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .menu-item .mi-label {
+            flex: 1;
+        }
+
+        .menu-item .mi-arrow {
+            color: rgba(255, 255, 255, 0.15);
+        }
+        .menu-item .mi-arrow svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.04);
+            margin: 0.2rem 0.8rem;
+        }
+
+        /* ----- CONTAINER ----- */
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            flex: 1;
+            width: 100%;
+        }
+
+        /* ----- PAGE HEADER ----- */
+        .page-header {
+            margin-bottom: 1.2rem;
+            text-align: center;
+        }
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .page-header h1 span {
+            color: #60a5fa;
+        }
+        .page-header p {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85rem;
+            margin-top: 2px;
+        }
+
+        /* ----- FILTERS & SEARCH (GLASS) ----- */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.2rem;
+            padding: 0.6rem 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.3);
+            padding: 0.25rem 0.8rem;
+            border-radius: 30px;
+            font-family: inherit;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+        }
+        .filter-btn.active {
+            background: rgba(59, 130, 246, 0.20);
+            color: #60a5fa;
+            border-color: rgba(59, 130, 246, 0.15);
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 30px;
+            padding: 0.15rem 0.15rem 0.15rem 0.8rem;
+            flex: 1;
+            min-width: 140px;
+            max-width: 260px;
+            margin-left: auto;
+        }
+        .search-box input {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.8rem;
+            outline: none;
+            flex: 1;
+            padding: 0.3rem 0;
+        }
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.10);
+        }
+        .search-box button {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border: none;
+            color: #fff;
+            padding: 0.3rem 0.9rem;
+            border-radius: 30px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .search-box button:hover {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        /* ----- PLANS GRID (FIXED 2 COLUMNS) ----- */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+
+        /* ===== PLAN CARD (GLASSMORPHISM) ===== */
+        .plan-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 20px;
+            padding: 1rem 0.9rem 1rem;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.20);
+        }
+
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #2563eb, #7c3aed, #2563eb);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+            opacity: 0.5;
+        }
+
+        @keyframes shimmer {
+            0%,
+            100% {
+                background-position: 0% 0%;
+            }
+            50% {
+                background-position: 100% 0%;
+            }
+        }
+
+        .plan-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.15);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+        }
+
+        .plan-card .plan-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.5rem;
+            font-weight: 700;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            z-index: 2;
+        }
+
+        .badge-available {
+            background: rgba(34, 197, 94, 0.10);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.06);
+        }
+        .badge-coming {
+            background: rgba(245, 158, 11, 0.10);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.06);
+        }
+        .badge-soldout {
+            background: rgba(239, 68, 68, 0.10);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.06);
+        }
+        .badge-expired {
+            background: rgba(148, 163, 184, 0.08);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.06);
+        }
+        .badge-hidden {
+            display: none;
+        }
+
+        .plan-card .plan-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(124, 58, 237, 0.15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 0.4rem;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .plan-card .plan-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 0.1rem;
+            line-height: 1.3;
+        }
+
+        .plan-card .plan-amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #facc15;
+            margin-bottom: 0.1rem;
+        }
+        .plan-card .plan-amount .currency {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 400;
+        }
+
+        .plan-card .plan-return {
+            font-size: 0.7rem;
+            color: #60a5fa;
+            margin-bottom: 0.1rem;
+        }
+
+        .plan-card .plan-duration {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.2);
+            margin-bottom: 0.1rem;
+        }
+
+        .plan-card .plan-daily {
+            font-size: 0.65rem;
+            color: #4ade80;
+            margin-bottom: 0.3rem;
+        }
+
+        /* Countdown */
+        .plan-card .countdown {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #fbbf24;
+            background: rgba(245, 158, 11, 0.04);
+            padding: 0.15rem 0.5rem;
+            border-radius: 30px;
+            margin-bottom: 0.3rem;
+            text-align: center;
+            border: 1px solid rgba(245, 158, 11, 0.04);
+        }
+
+        /* Buy button */
+        .plan-card .buy-btn {
+            width: 100%;
+            padding: 0.4rem;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: auto;
+            letter-spacing: 0.2px;
+        }
+
+        .plan-card .buy-btn.available {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+        }
+        .plan-card .buy-btn.available:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+        }
+
+        .plan-card .buy-btn:disabled {
+            background: rgba(255, 255, 255, 0.02);
+            color: rgba(255, 255, 255, 0.15);
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .plan-card .buy-btn.sold {
+            background: rgba(34, 197, 94, 0.04);
+            color: #4ade80;
+        }
+
+        /* ----- TOAST (GLASS) ----- */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 22, 40, 0.90);
+            backdrop-filter: blur(16px);
+            color: #f1f5f9;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            z-index: 1001;
+            animation: toastFade 4.5s ease forwards;
+            max-width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+        .toast.success {
+            border-color: rgba(52, 211, 153, 0.15);
+            color: #6ee7b7;
+        }
+
+        @keyframes toastFade {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px) scale(0.95);
+            }
+            15% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px) scale(0.95);
+            }
+        }
+
+        /* ----- LOADING & EMPTY ----- */
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.04);
+            border-top: 3px solid #60a5fa;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.2);
+            padding: 2rem;
+            font-size: 0.9rem;
+        }
+
+        /* ===== CONFIRMATION MODAL (GLASS) ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.35s ease;
+            padding: 1.5rem;
+        }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: rgba(10, 22, 40, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 24px;
+            padding: 2rem 1.8rem;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+            position: relative;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: scale(0.96) translateY(10px);
+            transition: all 0.35s ease;
+        }
+        .modal-overlay.active .modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-card .modal-close {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+            line-height: 1;
+        }
+        .modal-card .modal-close:hover {
+            color: #ffffff;
+        }
+
+        .modal-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 0.1rem;
+        }
+        .modal-card .modal-sub {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.8rem;
+            text-align: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .modal-card .modal-plan-name {
+            background: rgba(59, 130, 246, 0.04);
+            border: 1px solid rgba(59, 130, 246, 0.06);
+            border-radius: 12px;
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 0.6rem;
+        }
+
+        .modal-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.4rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 0.6rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            margin-bottom: 0.6rem;
+        }
+
+        .modal-detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-detail-item .label {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 0.3px;
+        }
+        .modal-detail-item .value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-top: 1px;
+        }
+        .modal-detail-item .value.gold {
+            color: #facc15;
+        }
+        .modal-detail-item .value.green {
+            color: #4ade80;
+        }
+        .modal-detail-item .value.blue {
+            color: #60a5fa;
+        }
+
+        .modal-total {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.04), rgba(124, 58, 237, 0.04));
+            border-radius: 12px;
+            padding: 0.6rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            margin-bottom: 0.6rem;
+        }
+        .modal-total .label {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 0.3px;
+        }
+        .modal-total .amount {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #facc15;
+        }
+
+        .modal-note {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.15);
+            text-align: center;
+            padding: 0.3rem;
+            border-radius: 8px;
+            margin-bottom: 0.6rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.6rem;
+        }
+        .modal-actions button {
+            flex: 1;
+            padding: 0.6rem;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+        .modal-actions .cancel-btn {
+            background: rgba(255, 255, 255, 0.02);
+            color: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .modal-actions .cancel-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .modal-actions .confirm-btn {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            flex: 2;
+        }
+        .modal-actions .confirm-btn:hover {
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.20);
+        }
+        .modal-actions .confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none !important;
+        }
+
+        /* ----- BOTTOM NAV (GLASS) ----- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 22, 40, 0.70);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 4px 14px;
+            z-index: 30;
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+            padding: 4px 2px;
+            border-radius: 16px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .nav-item .nav-icon {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.3s;
+        }
+
+        .nav-item.active .nav-icon {
+            stroke: #60a5fa;
+            transform: scale(1.05);
+        }
+        .nav-item .nav-label {
+            font-size: 0.45rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.15);
+            transition: 0.3s;
+            letter-spacing: 0.3px;
+        }
+        .nav-item.active .nav-label {
+            color: #60a5fa;
+        }
+        .nav-item:hover .nav-icon {
+            stroke: #60a5fa;
+        }
+
+        .nav-item.marketplace .nav-icon {
+            width: 32px;
+            height: 32px;
+            stroke-width: 2;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            border-radius: 50%;
+            padding: 4px;
+            stroke: #fff;
+            margin-bottom: 2px;
+        }
+        .nav-item.marketplace.active .nav-icon {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(37, 99, 235, 0.15);
+        }
+        .nav-item.marketplace .nav-label {
+            color: #60a5fa;
+            font-weight: 700;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 500px) {
+            .header {
+                padding: 0.6rem 1rem;
+            }
+            .logo-text {
+                font-size: 1.2rem;
+            }
+            .menu-panel {
+                width: 280px;
+                right: -300px;
+                padding: 1.5rem;
+            }
+            .container {
+                padding: 0 0.8rem;
+            }
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+            .controls {
+                padding: 0.5rem 0.6rem;
+                gap: 0.4rem;
+            }
+            .filter-btn {
+                font-size: 0.6rem;
+                padding: 0.2rem 0.6rem;
+            }
+            .search-box {
+                max-width: 100%;
+                margin-left: 0;
+                min-width: 100px;
+            }
+            .search-box input {
+                font-size: 0.7rem;
+            }
+            .plans-grid {
+                gap: 0.6rem;
+            }
+            .plan-card {
+                padding: 0.8rem 0.7rem;
+            }
+            .plan-card .plan-name {
+                font-size: 0.8rem;
+            }
+            .plan-card .plan-amount {
+                font-size: 0.95rem;
+            }
+            .plan-card .plan-icon {
+                width: 34px;
+                height: 34px;
+                font-size: 0.9rem;
+            }
+            .plan-card .buy-btn {
+                font-size: 0.65rem;
+                padding: 0.35rem;
+            }
+            .nav-item .nav-icon {
+                width: 22px;
+                height: 22px;
+            }
+            .nav-item.marketplace .nav-icon {
+                width: 30px;
+                height: 30px;
+            }
+            .modal-card {
+                padding: 1.5rem 1.2rem;
+            }
+            .modal-details {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.3rem;
+                padding: 0.5rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .plans-grid {
+                gap: 0.5rem;
+            }
+            .plan-card {
+                padding: 0.6rem 0.5rem;
+            }
+            .plan-card .plan-name {
+                font-size: 0.7rem;
+            }
+            .plan-card .plan-amount {
+                font-size: 0.85rem;
+            }
+            .plan-card .plan-return {
+                font-size: 0.6rem;
+            }
+            .plan-card .plan-duration,
+            .plan-card .plan-daily {
+                font-size: 0.55rem;
+            }
+            .plan-card .buy-btn {
+                font-size: 0.6rem;
+                padding: 0.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
+    <div class="hero-bg"></div>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <a href="index.html" class="logo-text">Vision<span class="vc">Core</span></a>
+        <div class="header-right">
+            <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== SLIDE MENU (GLASS) ===== -->
+    <div class="menu-panel" id="menuPanel">
+        <button class="close-btn" id="closeMenu">✕</button>
+
+        <button class="menu-item" onclick="window.location.href='dashboard.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
+            <span class="mi-label">Dashboard</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='income.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+            <span class="mi-label">Income</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='chat.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <span class="mi-label">Chat</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='news.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></span>
+            <span class="mi-label">News</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='me.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <span class="mi-label">Profile</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='support.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+            <span class="mi-label">Customer Service</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <div class="menu-divider"></div>
+
+        <button class="menu-item" id="logoutBtn" style="color:#f87171;">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+            <span class="mi-label">Logout</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+    </div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="container">
+
+        <div class="page-header">
+            <h1>🛒 <span>Marketplace</span></h1>
+            <p>Discover available plans and prepare for upcoming releases.</p>
+        </div>
+
+        <!-- Controls (filters + search) -->
+        <div class="controls">
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="available">Available</button>
+                <button class="filter-btn" data-filter="coming_soon">Coming Soon</button>
+                <button class="filter-btn" data-filter="expired">Expired</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search plans..." />
+                <button id="searchBtn">Search</button>
+            </div>
+        </div>
+
+        <!-- Plans Grid (2 columns) -->
+        <div id="loadingIndicator" class="loader"></div>
+        <div class="plans-grid" id="plansGrid"></div>
+        <div id="emptyMessage" class="empty-msg" style="display: none;">No investment plans available. Please check back later.</div>
+
+    </main>
+
+    <!-- ===== CONFIRMATION MODAL ===== -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-card">
+            <button class="modal-close" id="modalCloseBtn">✕</button>
+            <h3>💎 Confirm Investment</h3>
+            <p class="modal-sub">Review plan details before confirming</p>
+
+            <div class="modal-plan-name" id="modalPlanName">Plan Name</div>
+
+            <div class="modal-details">
+                <div class="modal-detail-item">
+                    <span class="label">💰 Investment</span>
+                    <span class="value gold" id="modalInvestAmount">0.00 ZMW</span>
+                </div>
+                <div class="modal-detail-item">
+                    <span class="label">📈 Daily Income</span>
+                    <span class="value green" id="modalDailyIncome">0.00 ZMW</span>
+                </div>
+                <div class="modal-detail-item">
+                    <span class="label">📅 Duration</span>
+                    <span class="value blue" id="modalDuration">0 Days</span>
+                </div>
+                <div class="modal-detail-item">
+                    <span class="label">⏰ Expiry</span>
+                    <span class="value" id="modalExpiry" style="color:rgba(255,255,255,0.2);">Auto</span>
+                </div>
+            </div>
+
+            <div class="modal-total">
+                <div class="label">💵 TOTAL INCOME</div>
+                <div class="amount" id="modalTotalIncome">0.00 ZMW</div>
+            </div>
+
+            <div class="modal-note">📝 This plan can only be purchased once. Daily income is generated automatically.</div>
+
+            <div class="modal-actions">
+                <button class="cancel-btn" id="modalCancelBtn">Cancel</button>
+                <button class="confirm-btn" id="modalConfirmBtn">✅ Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== BOTTOM NAV ===== -->
+    <div class="bottom-nav">
+        <button class="nav-item" data-page="dashboard.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-page="income.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            <span class="nav-label">Income</span>
+        </button>
+        <button class="nav-item marketplace active" data-page="marketplace.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span class="nav-label">Market</span>
+        </button>
+        <button class="nav-item" data-page="team.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="nav-label">Team</span>
+        </button>
+        <button class="nav-item" data-page="me.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="nav-label">Me</span>
+        </button>
+    </div>
+
+    <script>
+        // ================================================================
+        // FIREBASE CONFIG
+        // ================================================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b",
+            measurementId: "G-FQKC29NYE9"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        db.settings({ persistence: true });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        var currentUser = null;
+        var allPlans = [];
+        var filteredPlans = [];
+        var currentFilter = 'all';
+        var countdownIntervals = {};
+
+        // ================================================================
+        // HAMBURGER
+        // ================================================================
+        var hamburger = document.getElementById('hamburger');
+        var menuPanel = document.getElementById('menuPanel');
+        var closeMenu = document.getElementById('closeMenu');
+
+        function toggleMenu() {
+            var open = menuPanel.classList.toggle('open');
+            hamburger.classList.toggle('active', open);
+            document.body.style.overflow = open ? 'hidden' : '';
+        }
+        hamburger.addEventListener('click', toggleMenu);
+        closeMenu.addEventListener('click', toggleMenu);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && menuPanel.classList.contains('open')) toggleMenu();
+        });
+
+        // ================================================================
+        // BOTTOM NAV
+        // ================================================================
+        var navItems = document.querySelectorAll('.nav-item');
+        var currentPage = window.location.pathname.split('/').pop() || 'marketplace.html';
+        navItems.forEach(function(item) {
+            var target = item.getAttribute('data-page');
+            if (currentPage === target) item.classList.add('active');
+            item.addEventListener('click', function() {
+                if (target && !window.location.pathname.includes(target)) {
+                    window.location.href = target;
+                }
+            });
+        });
+
+        // ================================================================
+        // HELPERS
+        // ================================================================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' } [m]; });
+        }
+
+        function showToast(message, isError) {
+            var existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            var toast = document.createElement('div');
+            toast.className = 'toast' + (isError ? ' error' : ' success');
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4500);
+        }
+
+        function getStatusBadgeClass(status) {
+            var map = {
+                'available': 'badge-available',
+                'coming_soon': 'badge-coming',
+                'sold_out': 'badge-soldout',
+                'expired': 'badge-expired',
+                'hidden': 'badge-hidden'
+            };
+            return map[status] || 'badge-available';
+        }
+
+        function getStatusLabel(status) {
+            var map = {
+                'available': 'Available',
+                'coming_soon': 'Coming Soon',
+                'sold_out': 'Sold Out',
+                'expired': 'Expired',
+                'hidden': 'Hidden'
+            };
+            return map[status] || status;
+        }
+
+        function getCurrencySymbol(currency) {
+            var map = { 'ZMW': 'K', 'TZS': 'TSh', 'GHS': 'GH₵', 'ZWL': '$', 'CDF': 'FC', 'GBP': '£' };
+            return map[currency] || currency;
+        }
+
+        function isWeekend(date) {
+            var day = date.getDay();
+            return day === 0 || day === 6;
+        }
+
+        function addWeekdays(startDate, days) {
+            var result = new Date(startDate);
+            var added = 0;
+            while (added < days) {
+                result.setDate(result.getDate() + 1);
+                if (!isWeekend(result)) added++;
+            }
+            return result;
+        }
+
+        // ================================================================
+        // CONFIRMATION MODAL
+        // ================================================================
+        var modalOverlay = document.getElementById('confirmModal');
+        var modalCloseBtn = document.getElementById('modalCloseBtn');
+        var modalCancelBtn = document.getElementById('modalCancelBtn');
+        var modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        var modalPlanName = document.getElementById('modalPlanName');
+        var modalInvestAmount = document.getElementById('modalInvestAmount');
+        var modalDailyIncome = document.getElementById('modalDailyIncome');
+        var modalDuration = document.getElementById('modalDuration');
+        var modalExpiry = document.getElementById('modalExpiry');
+        var modalTotalIncome = document.getElementById('modalTotalIncome');
+
+        var selectedPlan = null;
+
+        function showConfirmationModal(plan) {
+            selectedPlan = plan;
+            modalPlanName.textContent = plan.name || 'Investment Plan';
+            var currencySymbol = getCurrencySymbol(plan.currency || 'ZMW');
+            modalInvestAmount.textContent = plan.minAmount.toFixed(2) + ' ' + currencySymbol;
+            modalDailyIncome.textContent = plan.dailyReturn.toFixed(2) + ' ' + currencySymbol;
+            modalDuration.textContent = plan.days + ' Days';
+            modalExpiry.textContent = plan.expiry || 'Auto';
+            modalTotalIncome.textContent = (plan.dailyReturn * plan.days).toFixed(2) + ' ' + currencySymbol;
+
+            modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            modalConfirmBtn.disabled = false;
+            modalConfirmBtn.textContent = '✅ Confirm';
+        }
+
+        function closeConfirmationModal() {
+            modalOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            selectedPlan = null;
+        }
+
+        modalCloseBtn.addEventListener('click', closeConfirmationModal);
+        modalCancelBtn.addEventListener('click', closeConfirmationModal);
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === this) closeConfirmationModal();
+        });
+
+        // ================================================================
+        // SECURE PURCHASE (Firestore Transaction)
+        // ================================================================
+        modalConfirmBtn.addEventListener('click', function() {
+            if (!selectedPlan || modalConfirmBtn.disabled) return;
+            var plan = selectedPlan;
+            var uid = currentUser ? currentUser.uid : null;
+            if (!uid) {
+                showToast('Please log in first.', true);
+                return;
+            }
+
+            modalConfirmBtn.disabled = true;
+            modalConfirmBtn.textContent = '⏳ Processing...';
+
+            db.runTransaction(function(transaction) {
+                var planRef = db.collection('marketplacePlans').doc(plan.id);
+                var userRef = db.collection('users').doc(uid);
+
+                return transaction.get(planRef).then(function(planDoc) {
+                    if (!planDoc.exists) throw new Error('Plan no longer exists.');
+                    var planData = planDoc.data();
+
+                    // VERIFY 1: Status must be 'available'
+                    if (planData.status !== 'available') {
+                        throw new Error('This plan is not currently available.');
+                    }
+
+                    // VERIFY 2: Release date passed
+                    var now = new Date();
+                    if (planData.releaseDate) {
+                        var releaseDate = planData.releaseDate.toDate ? planData.releaseDate.toDate() :
+                            new Date(planData.releaseDate);
+                        if (now < releaseDate) {
+                            throw new Error('This plan is not yet released.');
+                        }
+                    }
+
+                    // VERIFY 3: Expiry date not passed
+                    if (planData.expiryDate) {
+                        var expiryDate = planData.expiryDate.toDate ? planData.expiryDate.toDate() : new Date(
+                        planData.expiryDate);
+                        if (now > expiryDate) {
+                            throw new Error('This plan has expired.');
+                        }
+                    }
+
+                    // VERIFY 4: Check available slots
+                    if (planData.availableSlots !== undefined && planData.availableSlots !== null) {
+                        if (planData.availableSlots <= 0) {
+                            throw new Error('This plan is sold out.');
+                        }
+                    }
+
+                    // VERIFY 5: Check purchase limit per user
+                    var purchasedBy = planData.purchasedBy || [];
+                    if (purchasedBy.includes(uid)) {
+                        throw new Error('You have already purchased this plan.');
+                    }
+
+                    var purchaseLimit = planData.purchaseLimit || 0;
+                    if (purchaseLimit > 0) {
+                        var userPurchases = 0;
+                        purchasedBy.forEach(function(userId) {
+                            if (userId === uid) userPurchases++;
+                        });
+                        if (userPurchases >= purchaseLimit) {
+                            throw new Error('You have reached the purchase limit for this plan.');
+                        }
+                    }
+
+                    // VERIFY 6: User has enough deposit balance
+                    return transaction.get(userRef).then(function(userDoc) {
+                        if (!userDoc.exists) throw new Error('User not found.');
+                        var userData = userDoc.data();
+                        var depositBalance = userData.depositBalance || 0;
+                        if (depositBalance < planData.minAmount) {
+                            throw new Error('Insufficient deposit balance. You need ' + planData.minAmount
+                                .toFixed(2) + ' ZMW.');
+                        }
+
+                        // All checks passed! Perform updates.
+                        var updates = {};
+                        var newBalance = depositBalance - planData.minAmount;
+                        updates.depositBalance = newBalance;
+
+                        // Deduct from available slots if tracking
+                        if (planData.availableSlots !== undefined && planData.availableSlots !== null) {
+                            transaction.update(planRef, {
+                                availableSlots: planData.availableSlots - 1,
+                                purchasedBy: firebase.firestore.FieldValue.arrayUnion(uid)
+                            });
+                        } else {
+                            transaction.update(planRef, {
+                                purchasedBy: firebase.firestore.FieldValue.arrayUnion(uid)
+                            });
+                        }
+
+                        transaction.update(userRef, updates);
+
+                        // Record investment
+                        var investmentRef = db.collection('investments').doc();
+                        var startDate = new Date();
+                        var purchasedOnWeekend = isWeekend(startDate);
+                        if (purchasedOnWeekend) {
+                            var dayOffset = (8 - startDate.getDay()) % 7;
+                            var addDays = (dayOffset === 0) ? 7 : dayOffset;
+                            startDate.setDate(startDate.getDate() + addDays);
+                        }
+                        var businessEndDate = addWeekdays(startDate, planData.days);
+
+                        transaction.set(investmentRef, {
+                            userId: uid,
+                            planName: planData.name,
+                            planId: plan.id,
+                            investAmount: planData.minAmount,
+                            dailyReturn: planData.dailyReturn,
+                            days: planData.days,
+                            businessDays: planData.days,
+                            startDate: firebase.firestore.Timestamp.fromDate(startDate),
+                            businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),
+                            lastClaimed: firebase.firestore.Timestamp.fromDate(startDate),
+                            status: 'active',
+                            totalReturn: 0,
+                            claimsCount: 0,
+                            purchasedOnWeekend: purchasedOnWeekend,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+
+                        // Record transaction
+                        var txRef = db.collection('transactions').doc();
+                        transaction.set(txRef, {
+                            userId: uid,
+                            type: 'investment',
+                            amount: planData.minAmount,
+                            description: 'Purchased ' + planData.name + ' from Marketplace',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+
+                        return true;
+                    });
+                });
+            }).then(function() {
+                showToast('✅ Success! You have purchased ' + selectedPlan.name + '!', false);
+                showFireworks();
+                closeConfirmationModal();
+                setTimeout(function() {
+                    window.location.href = 'income.html';
+                }, 2000);
+            }).catch(function(error) {
+                console.error('Purchase error:', error);
+                showToast('❌ ' + error.message, true);
+                modalConfirmBtn.disabled = false;
+                modalConfirmBtn.textContent = '✅ Confirm';
+            });
+        });
+
+        // ================================================================
+        // FIREWORKS
+        // ================================================================
+        var fireworksCanvas = document.createElement('canvas');
+        fireworksCanvas.style.cssText =
+            'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;';
+        document.body.appendChild(fireworksCanvas);
+        var ctx = fireworksCanvas.getContext('2d');
+        var fireworksAnimationId = null;
+
+        function showFireworks() {
+            if (fireworksAnimationId) cancelAnimationFrame(fireworksAnimationId);
+            fireworksCanvas.width = window.innerWidth;
+            fireworksCanvas.height = window.innerHeight;
+            var particles = [];
+            for (var i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * fireworksCanvas.width,
+                    y: Math.random() * fireworksCanvas.height,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4 - 1.5,
+                    life: 1,
+                    color: 'hsl(' + Math.random() * 360 + ', 100%, 60%)'
+                });
+            }
+
+            function animateFireworks() {
+                ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+                var anyAlive = false;
+                for (var j = 0; j < particles.length; j++) {
+                    var p = particles[j];
+                    if (p.life <= 0) continue;
+                    anyAlive = true;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= 0.025;
+                    ctx.globalAlpha = p.life;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, 3, 3);
+                }
+                if (anyAlive) {
+                    fireworksAnimationId = requestAnimationFrame(animateFireworks);
+                } else {
+                    ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+                    fireworksAnimationId = null;
+                }
+            }
+            animateFireworks();
+            setTimeout(function() {
+                if (fireworksAnimationId) {
+                    cancelAnimationFrame(fireworksAnimationId);
+                    fireworksAnimationId = null;
+                    ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+                }
+            }, 2500);
+        }
+
+        // ================================================================
+        // LOAD & RENDER PLANS
+        // ================================================================
+        function loadPlans() {
+            var loading = document.getElementById('loadingIndicator');
+            var grid = document.getElementById('plansGrid');
+            var empty = document.getElementById('emptyMessage');
+
+            loading.style.display = 'block';
+            grid.innerHTML = '';
+            empty.style.display = 'none';
+
+            db.collection('marketplacePlans')
+                .where('status', '!=', 'hidden')
+                .orderBy('createdAt', 'desc')
+                .get()
+                .then(function(snapshot) {
+                    loading.style.display = 'none';
+                    if (snapshot.empty) {
+                        empty.style.display = 'block';
+                        return;
+                    }
+                    allPlans = [];
+                    snapshot.forEach(function(doc) {
+                        var data = doc.data();
+                        data.id = doc.id;
+                        allPlans.push(data);
+                    });
+                    applyFilters();
+                })
+                .catch(function(err) {
+                    console.error('Load plans error:', err);
+                    loading.style.display = 'none';
+                    empty.style.display = 'block';
+                    empty.textContent = 'Failed to load plans. Please refresh.';
+                });
+        }
+
+        function applyFilters() {
+            var searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            filteredPlans = allPlans.filter(function(plan) {
+                // Filter by status
+                if (currentFilter !== 'all' && plan.status !== currentFilter) return false;
+
+                // Search by name
+                if (searchTerm && !plan.name.toLowerCase().includes(searchTerm)) return false;
+
+                // Check if user has already purchased this plan
+                if (currentUser) {
+                    var purchasedBy = plan.purchasedBy || [];
+                    if (purchasedBy.includes(currentUser.uid)) {
+                        plan._userPurchased = true;
+                    } else {
+                        plan._userPurchased = false;
+                    }
+                }
+
+                // Check availability
+                var now = new Date();
+                if (plan.status === 'available') {
+                    if (plan.releaseDate) {
+                        var releaseDate = plan.releaseDate.toDate ? plan.releaseDate.toDate() : new Date(plan
+                        .releaseDate);
+                        if (now < releaseDate) plan.status = 'coming_soon';
+                    }
+                    if (plan.expiryDate) {
+                        var expiryDate = plan.expiryDate.toDate ? plan.expiryDate.toDate() : new Date(plan
+                        .expiryDate);
+                        if (now > expiryDate) plan.status = 'expired';
+                    }
+                    if (plan.availableSlots !== undefined && plan.availableSlots <= 0) {
+                        plan.status = 'sold_out';
+                    }
+                }
+
+                return true;
+            });
+
+            renderPlans(filteredPlans);
+            startCountdowns();
+        }
+
+        function renderPlans(plans) {
+            var grid = document.getElementById('plansGrid');
+            var empty = document.getElementById('emptyMessage');
+
+            if (plans.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            var html = '';
+
+            plans.forEach(function(plan) {
+                var statusClass = getStatusBadgeClass(plan.status);
+                var statusLabel = getStatusLabel(plan.status);
+                var isAvailable = plan.status === 'available' && !plan._userPurchased;
+                var isComingSoon = plan.status === 'coming_soon';
+                var isSoldOut = plan.status === 'sold_out';
+                var isExpired = plan.status === 'expired';
+                var isPurchased = plan._userPurchased === true;
+
+                var btnDisabled = true;
+                var btnText = 'Buy Now';
+                var btnClass = 'buy-btn';
+                var showCountdown = false;
+                var countdownText = '';
+
+                if (isComingSoon) {
+                    btnText = 'Coming Soon';
+                    btnDisabled = true;
+                    showCountdown = true;
+                    var now = new Date();
+                    var releaseDate = plan.releaseDate ? (plan.releaseDate.toDate ? plan.releaseDate.toDate() :
+                        new Date(plan.releaseDate)) : null;
+                    if (releaseDate && releaseDate > now) {
+                        countdownText = getCountdownText(releaseDate, now);
+                    } else {
+                        countdownText = 'Releasing soon...';
+                    }
+                } else if (isSoldOut) {
+                    btnText = 'Sold Out';
+                    btnDisabled = true;
+                } else if (isExpired) {
+                    btnText = 'Expired';
+                    btnDisabled = true;
+                } else if (isPurchased) {
+                    btnText = '✅ Purchased';
+                    btnDisabled = true;
+                    btnClass += ' sold';
+                } else if (isAvailable) {
+                    btnText = '💎 Buy Now';
+                    btnDisabled = false;
+                    btnClass += ' available';
+                } else {
+                    btnText = 'Unavailable';
+                    btnDisabled = true;
+                }
+
+                var iconEmoji = plan.icon || '📈';
+                var currencySym = getCurrencySymbol(plan.currency || 'ZMW');
+                var totalIncome = (plan.dailyReturn || 0) * (plan.days || 0);
+
+                // Build card
+                html += '<div class="plan-card" data-plan-id="' + plan.id + '">';
+                html += '<div class="plan-badge ' + statusClass + '">' + statusLabel + '</div>';
+                html += '<div class="plan-icon">' + iconEmoji + '</div>';
+                html += '<div class="plan-name">' + escapeHtml(plan.name) + '</div>';
+                html += '<div class="plan-amount">' + (plan.minAmount || 0).toFixed(2) + ' <span class="currency">' +
+                    currencySym + '</span></div>';
+                if (plan.dailyReturn) {
+                    html += '<div class="plan-return">📈 ' + plan.dailyReturn.toFixed(2) + ' ' + currencySym +
+                        ' / day</div>';
+                }
+                if (plan.days) {
+                    html += '<div class="plan-duration">📅 ' + plan.days + ' days</div>';
+                }
+                if (plan.dailyReturn && plan.days) {
+                    html += '<div class="plan-daily">💵 Total: ' + totalIncome.toFixed(2) + ' ' + currencySym +
+                        '</div>';
+                }
+
+                if (showCountdown && countdownText) {
+                    html += '<div class="countdown" id="countdown-' + plan.id + '">⏳ ' + countdownText + '</div>';
+                }
+
+                var dataAttrs = 'data-id="' + plan.id + '" data-name="' + escapeHtml(plan.name) + '" data-amount="' +
+                    (plan.minAmount || 0) + '" data-daily="' + (plan.dailyReturn || 0) + '" data-days="' + (plan
+                    .days || 0) + '" data-currency="' + (plan.currency || 'ZMW') + '" data-expiry="' + (plan
+                    .expiry || 'Auto') + '"';
+                html += '<button class="' + btnClass + '" ' + dataAttrs + (btnDisabled ? ' disabled' : '') + '>' +
+                    btnText + '</button>';
+                html += '</div>';
+            });
+
+            grid.innerHTML = html;
+
+            // Attach buy handlers
+            document.querySelectorAll('.buy-btn.available').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    var planData = {
+                        id: this.getAttribute('data-id'),
+                        name: this.getAttribute('data-name'),
+                        minAmount: parseFloat(this.getAttribute('data-amount')),
+                        dailyReturn: parseFloat(this.getAttribute('data-daily')),
+                        days: parseInt(this.getAttribute('data-days')),
+                        currency: this.getAttribute('data-currency'),
+                        expiry: this.getAttribute('data-expiry')
+                    };
+                    showConfirmationModal(planData);
+                });
+            });
+        }
+
+        // ================================================================
+        // COUNTDOWN TIMERS
+        // ================================================================
+        function getCountdownText(releaseDate, now) {
+            var diff = releaseDate.getTime() - now.getTime();
+            if (diff <= 0) return 'Available now!';
+            var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            if (days > 0) return days + 'd ' + hours + 'h ' + minutes + 'm';
+            return hours + 'h ' + minutes + 'm ' + seconds + 's';
+        }
+
+        function startCountdowns() {
+            // Clear existing intervals
+            for (var key in countdownIntervals) {
+                clearInterval(countdownIntervals[key]);
+                delete countdownIntervals[key];
+            }
+
+            var now = new Date();
+            var plansWithCountdown = filteredPlans.filter(function(p) {
+                return p.status === 'coming_soon' && p.releaseDate;
+            });
+
+            plansWithCountdown.forEach(function(plan) {
+                var releaseDate = plan.releaseDate.toDate ? plan.releaseDate.toDate() : new Date(plan
+                    .releaseDate);
+                if (releaseDate <= now) return;
+
+                var el = document.getElementById('countdown-' + plan.id);
+                if (!el) return;
+
+                var interval = setInterval(function() {
+                    var now2 = new Date();
+                    var diff = releaseDate.getTime() - now2.getTime();
+                    if (diff <= 0) {
+                        clearInterval(interval);
+                        el.textContent = '✅ Available now!';
+                        // Re-render to update button state
+                        applyFilters();
+                        return;
+                    }
+                    var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                    var text = '';
+                    if (days > 0) text = days + 'd ' + hours + 'h ' + minutes + 'm';
+                    else text = hours + 'h ' + minutes + 'm ' + seconds + 's';
+                    el.textContent = '⏳ ' + text;
+                }, 1000);
+                countdownIntervals[plan.id] = interval;
+            });
+        }
+
+        // ================================================================
+        // FILTERS & SEARCH
+        // ================================================================
+        document.querySelectorAll('.filter-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                currentFilter = this.getAttribute('data-filter');
+                applyFilters();
+            });
+        });
+
+        document.getElementById('searchBtn').addEventListener('click', applyFilters);
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') applyFilters();
+        });
+
+        // ================================================================
+        // AUTH STATE & BLOCK WATCH
+        // ================================================================
+        auth.onAuthStateChanged(function(user) {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+            loadPlans();
+
+            // Watch user data for block status
+            db.collection('users').doc(user.uid).onSnapshot(function(doc) {
+                if (doc.exists && doc.data().isBlocked === true) {
+                    showToast('⚠️ Your account has been blocked. Redirecting...', true);
+                    setTimeout(function() {
+                        auth.signOut().then(function() { window.location.href = 'login.html'; });
+                    }, 2000);
+                }
+            }, function(err) { console.warn('Block listener error:', err); });
+        });
+
+        // ================================================================
+        // LOGOUT
+        // ================================================================
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            try {
+                await auth.signOut();
+                await new Promise(function(resolve) { setTimeout(resolve, 300); });
+            } catch (err) {
+                console.warn('Sign out error:', err);
+            }
+            window.location.href = 'login.html';
+        });
+
+        console.log('🛒 Marketplace · VisionCore Capital glassmorphism design');
+        console.log('📱 2‑column plan cards with blue blurred background');
+        console.log('💎 Full purchase flow with Firestore transaction');
+    </script>
+</body>
+</html>

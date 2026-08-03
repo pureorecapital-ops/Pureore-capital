@@ -646,7 +646,7 @@
         .table-wrap table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 800px;
             font-size: 0.8rem;
         }
 
@@ -1044,7 +1044,7 @@
             }
             .table-wrap table {
                 font-size: 0.7rem;
-                min-width: 500px;
+                min-width: 600px;
             }
             .table-wrap th,
             .table-wrap td {
@@ -1164,6 +1164,29 @@
             object-fit: cover;
             border: 1px solid var(--theme-card-border);
         }
+
+        /* ================================================================
+           CLEAR STATS BUTTON STYLE
+           ================================================================ */
+        #clearStatsBtn {
+            background: var(--theme-btn-danger);
+            color: var(--theme-danger);
+            border: 1px solid var(--theme-btn-danger-border);
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        #clearStatsBtn:hover {
+            background: rgba(239, 68, 68, 0.12);
+        }
     </style>
 </head>
 <body>
@@ -1187,6 +1210,8 @@
                 <span class="badge">Withdrawals <span class="num" id="pendingWithdrawalsBadge">0</span></span>
                 <span class="badge" id="timeIndicator">⏱ Loading...</span>
                 <button class="logout-btn" id="adminLogoutBtn">Logout</button>
+                <!-- CLEAR STATS BUTTON -->
+                <button class="btn-small danger" id="clearStatsBtn">🗑️ Clear Stats</button>
             </div>
         </div>
 
@@ -1296,22 +1321,12 @@
             <div class="glass-card">
                 <div class="card-title">
                     <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    MK VIP Plans
+                    Marketplace Plans
                 </div>
                 <div class="card-actions">
-                    <button class="btn-small success" onclick="openAddPlanModal('mkvipPlans')">+ Add Plan</button>
+                    <button class="btn-small success" onclick="openAddPlanModal()">+ Add Plan</button>
                 </div>
-                <div class="table-wrap"><div id="mkvipPlansList">Loading...</div></div>
-            </div>
-            <div class="glass-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                    J Product Plans
-                </div>
-                <div class="card-actions">
-                    <button class="btn-small success" onclick="openAddPlanModal('jproductPlans')">+ Add Plan</button>
-                </div>
-                <div class="table-wrap"><div id="jproductPlansList">Loading...</div></div>
+                <div class="table-wrap"><div id="marketplacePlansList">Loading...</div></div>
             </div>
         </div>
 
@@ -1398,10 +1413,49 @@
 
         <!-- ===== AGENTS ===== -->
         <div id="agentsTab" class="tab-content">
+
+            <!-- =========================================================
+                 QUICK ADD AGENT – Simple Name, Phone, Network
+                 ========================================================= -->
             <div class="glass-card">
                 <div class="card-title">
                     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Agent Management
+                    ⚡ Quick Add Agent
+                    <span style="font-size:0.55rem; color:var(--theme-text-muted); margin-left:auto;">Name • Phone • Network</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="quickAgentName" placeholder="e.g. John Mwansa" />
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="quickAgentPhone" placeholder="260961234567" maxlength="12" />
+                    <small style="color:var(--theme-text-muted); font-size:0.6rem;">Format: 260XXXXXXXXX</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Network *</label>
+                    <select id="quickAgentNetwork">
+                        <option value="mtn">📶 MTN</option>
+                        <option value="airtel">📶 Airtel</option>
+                        <option value="zamtel">📶 Zamtel</option>
+                    </select>
+                </div>
+
+                <button class="btn-small success" id="quickSaveAgentBtn" style="width:100%; justify-content:center; padding:0.7rem;">💾 Save Agent</button>
+
+                <div id="quickAgentMessage" style="margin-top:0.8rem; font-size:0.85rem;"></div>
+            </div>
+
+            <!-- =========================================================
+                 EXISTING FULL AGENT MANAGEMENT (kept for editing)
+                 ========================================================= -->
+            <div class="glass-card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Agent Management (Full)
                 </div>
                 <div class="form-group"><label>Agent Name *</label><input type="text" id="agentName" /></div>
                 <div class="form-group"><label>Phone (260XXXXXXXXX) *</label><input type="text" id="agentPhone" maxlength="12" /></div>
@@ -1423,6 +1477,10 @@
                     <button class="btn-small outline" id="cancelAgentEditBtn" style="display:none;">Cancel</button>
                 </div>
             </div>
+
+            <!-- =========================================================
+                 REGISTERED AGENTS LIST
+                 ========================================================= -->
             <div class="glass-card">
                 <div class="card-title">
                     <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
@@ -1430,7 +1488,8 @@
                 </div>
                 <div class="table-wrap"><div id="agentsList">Loading...</div></div>
             </div>
-        </div>
+
+        </div><!-- end agentsTab -->
 
         <!-- ===== ADMINS ===== -->
         <div id="adminsTab" class="tab-content">
@@ -1579,7 +1638,7 @@
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal('addPlanModal')">✕</button>
             <h3><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Add Plan</h3>
-            <input type="hidden" id="planType" />
+            <input type="hidden" id="planType" value="marketplacePlans" />
             <div class="form-group"><label>Plan Name *</label><input type="text" id="planName" placeholder="e.g. Starter" /></div>
             <div class="form-row">
                 <div class="form-group"><label>Min Amount</label><input type="number" id="planMin" placeholder="0.00" /></div>
@@ -1616,6 +1675,8 @@
             <div class="form-group"><label>Lock Text</label><input type="text" id="planLock" placeholder="e.g. Purchased 1 time and locked" /></div>
             <div class="form-group"><label>Expiry</label><input type="text" id="planExpiry" placeholder="Auto or date" /></div>
             <div class="form-group"><label>Status</label><select id="planStatus"><option value="active">Active</option><option value="coming_soon">Coming Soon</option></select></div>
+            <!-- NEW: Available From -->
+            <div class="form-group"><label>Available From (Date & Time)</label><input type="datetime-local" id="planReleaseDate" /></div>
             <div class="modal-actions">
                 <button class="btn-small success" id="savePlanBtn">Save</button>
                 <button class="btn-small outline" onclick="closeModal('addPlanModal')">Cancel</button>
@@ -2228,6 +2289,50 @@
         }
 
         // ================================================================
+        // CLEAR STATS FUNCTION
+        // ================================================================
+        async function clearStats() {
+            if (!confirm('⚠️ Are you sure you want to reset the deposit and withdrawal totals to zero? This will NOT delete any data, only the displayed sums.')) {
+                return;
+            }
+
+            try {
+                var depositsSnap = await db.collection('deposits').where('status', '==', 'completed').get();
+                var rawDeposits = 0;
+                depositsSnap.forEach(function(d) { rawDeposits += d.data().amount; });
+
+                var withdrawalsSnap = await db.collection('withdrawals').where('status', '==', 'completed').get();
+                var rawWithdrawals = 0;
+                withdrawalsSnap.forEach(function(w) { rawWithdrawals += w.data().amount; });
+
+                var statsDoc = await db.collection('systemSettings').doc('stats').get();
+                var subtractDeposits = 0;
+                var subtractWithdrawals = 0;
+                if (statsDoc.exists) {
+                    subtractDeposits = statsDoc.data().subtractDeposits || 0;
+                    subtractWithdrawals = statsDoc.data().subtractWithdrawals || 0;
+                }
+
+                var newSubtractDeposits = subtractDeposits + rawDeposits;
+                var newSubtractWithdrawals = subtractWithdrawals + rawWithdrawals;
+
+                await db.collection('systemSettings').doc('stats').set({
+                    subtractDeposits: newSubtractDeposits,
+                    subtractWithdrawals: newSubtractWithdrawals,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                document.getElementById('totalDeposits').textContent = '0.00';
+                document.getElementById('totalWithdrawals').textContent = '0.00';
+
+                showToast('✅ Stats cleared! Totals reset to zero.', false);
+            } catch (err) {
+                console.error('Error clearing stats:', err);
+                showToast('❌ Error clearing stats: ' + err.message, true);
+            }
+        }
+
+        // ================================================================
         // AUTH STATE + MAIN INIT
         // ================================================================
         auth.onAuthStateChanged(async function(user) {
@@ -2253,8 +2358,8 @@
             loadDepositsHistory();
             loadPendingWithdrawals();
             loadWithdrawalsHistory();
-            loadPlans('mkvipPlans', 'mkvipPlansList');
-            loadPlans('jproductPlans', 'jproductPlansList');
+            // Only load marketplacePlans
+            loadPlans('marketplacePlans', 'marketplacePlansList');
             loadTransactions();
             loadNews();
             loadTreasureCodes();
@@ -2335,6 +2440,9 @@
             // Ads
             document.getElementById('saveAdBtn').onclick = function() { saveAd(); };
 
+            // Clear Stats button
+            document.getElementById('clearStatsBtn').addEventListener('click', clearStats);
+
             // Logout
             document.getElementById('adminLogoutBtn').addEventListener('click', function() { auth.signOut().then(
                 function() { window.location.href = 'admin-login.html'; }); });
@@ -2352,10 +2460,121 @@
                     if (target) target.classList.add('active');
                 });
             });
+
+            // ============================================================
+            // QUICK ADD AGENT – Event Listener
+            // ============================================================
+            document.getElementById('quickSaveAgentBtn').addEventListener('click', async function() {
+                var name = document.getElementById('quickAgentName').value.trim();
+                var phone = document.getElementById('quickAgentPhone').value.trim();
+                var network = document.getElementById('quickAgentNetwork').value;
+                var msgDiv = document.getElementById('quickAgentMessage');
+
+                // 1. Validate
+                if (!name) {
+                    msgDiv.innerHTML = '❌ Please enter the agent name.';
+                    msgDiv.style.color = 'var(--theme-danger)';
+                    return;
+                }
+
+                if (!phone || !/^260\d{9}$/.test(phone)) {
+                    msgDiv.innerHTML = '❌ Phone must be 260XXXXXXXXX (e.g. 260961234567)';
+                    msgDiv.style.color = 'var(--theme-danger)';
+                    return;
+                }
+
+                // 2. Auto-generate email and password
+                var email = 'agent_' + phone + '@agent.pureore.com';
+                var password = Math.floor(100000 + Math.random() * 900000).toString();
+
+                // 3. Disable button
+                this.disabled = true;
+                this.textContent = '⏳ Saving...';
+                msgDiv.innerHTML = '';
+                msgDiv.style.color = '';
+
+                try {
+                    // 4. Create Auth account
+                    var userCred = await auth.createUserWithEmailAndPassword(email, password);
+                    var uid = userCred.user.uid;
+
+                    // 5. Create user document
+                    await db.collection('users').doc(uid).set({
+                        fullName: name,
+                        email: email,
+                        phone: phone,
+                        role: 'agent',
+                        balance: 0,
+                        isBlocked: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // 6. Create agent document
+                    await db.collection('agents').doc(uid).set({
+                        name: name,
+                        phone: phone,
+                        email: email,
+                        network: network,
+                        status: 'active',
+                        commissionRate: 10,
+                        totalEarnings: 0,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // 7. Add to systemSettings/depositAgents
+                    var settingsRef = db.collection('systemSettings').doc('depositAgents');
+                    await db.runTransaction(async function(transaction) {
+                        var doc = await transaction.get(settingsRef);
+                        var data = doc.exists ? doc.data() : { agents: {} };
+
+                        if (!data.agents) data.agents = {};
+                        if (!data.agents[network]) data.agents[network] = [];
+
+                        // Check if agent already exists (by phone)
+                        var exists = data.agents[network].some(function(a) {
+                            return a.number === phone;
+                        });
+
+                        if (!exists) {
+                            data.agents[network].push({
+                                id: uid,
+                                number: phone,
+                                name: name
+                            });
+                            transaction.set(settingsRef, data, { merge: true });
+                        }
+                    });
+
+                    // 8. Success!
+                    msgDiv.innerHTML = '✅ Agent created! Password: <strong>' + password + '</strong>';
+                    msgDiv.style.color = 'var(--theme-success)';
+
+                    // Clear form
+                    document.getElementById('quickAgentName').value = '';
+                    document.getElementById('quickAgentPhone').value = '';
+
+                    // Refresh agents list
+                    loadAgents();
+
+                    showToast('✅ Agent ' + name + ' created! Password: ' + password, false);
+
+                } catch (err) {
+                    console.error('Quick save agent error:', err);
+                    msgDiv.innerHTML = '❌ Error: ' + err.message;
+                    msgDiv.style.color = 'var(--theme-danger)';
+                    showToast('❌ ' + err.message, true);
+                }
+
+                // 9. Re-enable button
+                this.disabled = false;
+                this.textContent = '💾 Save Agent';
+            });
+
         });
 
         // ================================================================
-        // ALL ORIGINAL FUNCTIONS (unchanged)
+        // ALL ORIGINAL FUNCTIONS (unchanged except plan functions)
         // ================================================================
 
         function setupPendingListeners() {
@@ -2392,14 +2611,32 @@
         async function loadStats() {
             var usersSnap = await db.collection('users').get();
             document.getElementById('totalUsers').textContent = usersSnap.size;
+
+            // Get raw deposit total
             var depositsSnap = await db.collection('deposits').where('status', '==', 'completed').get();
-            var totalDep = 0;
-            depositsSnap.forEach(function(d) { totalDep += d.data().amount; });
-            document.getElementById('totalDeposits').textContent = totalDep.toFixed(2);
+            var rawDeposits = 0;
+            depositsSnap.forEach(function(d) { rawDeposits += d.data().amount; });
+
+            // Get raw withdrawal total
             var withdrawalsSnap = await db.collection('withdrawals').where('status', '==', 'completed').get();
-            var totalWith = 0;
-            withdrawalsSnap.forEach(function(w) { totalWith += w.data().amount; });
-            document.getElementById('totalWithdrawals').textContent = totalWith.toFixed(2);
+            var rawWithdrawals = 0;
+            withdrawalsSnap.forEach(function(w) { rawWithdrawals += w.data().amount; });
+
+            // Get subtract offsets
+            var statsDoc = await db.collection('systemSettings').doc('stats').get();
+            var subtractDeposits = 0;
+            var subtractWithdrawals = 0;
+            if (statsDoc.exists) {
+                subtractDeposits = statsDoc.data().subtractDeposits || 0;
+                subtractWithdrawals = statsDoc.data().subtractWithdrawals || 0;
+            }
+
+            // Compute displayed totals
+            var displayDeposits = Math.max(0, rawDeposits - subtractDeposits);
+            var displayWithdrawals = Math.max(0, rawWithdrawals - subtractWithdrawals);
+
+            document.getElementById('totalDeposits').textContent = displayDeposits.toFixed(2);
+            document.getElementById('totalWithdrawals').textContent = displayWithdrawals.toFixed(2);
         }
 
         async function loadRecentActivities() {
@@ -2748,6 +2985,10 @@
             document.getElementById('withdrawalsHistory').innerHTML = html;
         }
 
+        // ================================================================
+        // PLAN FUNCTIONS – now exclusively for marketplacePlans
+        // ================================================================
+
         async function loadPlans(collection, elementId) {
             try {
                 var snap = await db.collection(collection).orderBy('createdAt', 'desc').get();
@@ -2756,9 +2997,9 @@
                 snap = await db.collection(collection).get();
             }
             var html =
-                '<thead><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily</th><th>Currency</th><th>Countries</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+                '<thead><tr><th>Name</th><th>Min/Max</th><th>Days</th><th>Daily</th><th>Currency</th><th>Countries</th><th>Available From</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
             if (snap.empty) {
-                html += '<tr><td colspan="8" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No plans</td></tr>';
+                html += '<tr><td colspan="9" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No plans</td></tr>';
             } else {
                 var plans = [];
                 snap.forEach(function(doc) {
@@ -2781,9 +3022,19 @@
                     var countries = p.countries || [];
                     var countriesDisplay = countries.length > 0 ? countries.join(', ') : '🌍 All countries';
                     var currency = p.currency || 'ZMW';
+
+                    // Format release date
+                    var releaseDateDisplay = 'Immediate';
+                    if (p.releaseDate) {
+                        var rd = p.releaseDate.toDate ? p.releaseDate.toDate() : new Date(p.releaseDate);
+                        releaseDateDisplay = rd.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit', hour12: false });
+                    }
+
                     html += '<tr><td>' + escapeHtml(p.name) + '</td><td>' + p.minAmount + ' - ' + p.maxAmount +
                         '</td><td>' + p.days + '</td><td>' + p.dailyReturn + ' ' + currency + '</td><td><strong>' +
                         currency + '</strong></td><td style="font-size:0.65rem;">' + escapeHtml(countriesDisplay) +
+                        '</td><td style="font-size:0.7rem; white-space:nowrap;">' + releaseDateDisplay +
                         '</td><td>' + statusBadge +
                         '</td><td><button class="btn-small" onclick="openEditPlanModal(\'' + docId + '\',\'' +
                         collection + '\')">Edit</button> <button class="btn-small danger" onclick="deletePlan(\'' +
@@ -2794,8 +3045,8 @@
             document.getElementById(elementId).innerHTML = html;
         }
 
-        window.openAddPlanModal = function(type) {
-            document.getElementById('planType').value = type;
+        window.openAddPlanModal = function() {
+            document.getElementById('planType').value = 'marketplacePlans';
             document.getElementById('planName').value = '';
             document.getElementById('planMin').value = '';
             document.getElementById('planMax').value = '';
@@ -2807,6 +3058,7 @@
             document.getElementById('planExpiry').value = '';
             document.getElementById('planStatus').value = 'active';
             document.getElementById('planCurrency').value = 'ZMW';
+            document.getElementById('planReleaseDate').value = ''; // clear
             var countryChecks = document.querySelectorAll('#planCountries input[type="checkbox"]');
             countryChecks.forEach(function(cb) {
                 cb.checked = (cb.value === 'Zambia');
@@ -2815,7 +3067,7 @@
         };
 
         function savePlan() {
-            var collection = document.getElementById('planType').value;
+            var collection = document.getElementById('planType').value; // should be 'marketplacePlans'
             var name = document.getElementById('planName').value.trim();
             var minAmount = parseFloat(document.getElementById('planMin').value);
             var maxAmount = parseFloat(document.getElementById('planMax').value);
@@ -2830,6 +3082,14 @@
             var countryChecks = document.querySelectorAll('#planCountries input[type="checkbox"]:checked');
             var countries = [];
             countryChecks.forEach(function(cb) { countries.push(cb.value); });
+
+            // Release date
+            var releaseDateVal = document.getElementById('planReleaseDate').value;
+            var releaseDate = null;
+            if (releaseDateVal) {
+                releaseDate = firebase.firestore.Timestamp.fromDate(new Date(releaseDateVal));
+            }
+
             if (!name || isNaN(minAmount) || isNaN(days) || isNaN(dailyReturn)) {
                 showToast('Please fill all required fields', true);
                 return;
@@ -2853,9 +3113,11 @@
                 countries: countries,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
+            if (releaseDate) { data.releaseDate = releaseDate; }
+
             db.collection(collection).add(data).then(function() {
                 closeModal('addPlanModal');
-                loadPlans(collection, collection === 'mkvipPlans' ? 'mkvipPlansList' : 'jproductPlansList');
+                loadPlans('marketplacePlans', 'marketplacePlansList');
                 showToast('Plan added', false);
             }).catch(function(err) { showToast(err.message, true); });
         }
@@ -2887,6 +3149,20 @@
                     return '<label><input type="checkbox" value="' + c + '" ' + checked + ' /> ' + emoji[c] +
                         ' ' + c + '</label>';
                 }).join('');
+
+                // Pre-fill release date
+                var releaseDateStr = '';
+                if (p.releaseDate) {
+                    var rd = p.releaseDate.toDate ? p.releaseDate.toDate() : new Date(p.releaseDate);
+                    // Format for datetime-local input: YYYY-MM-DDTHH:mm
+                    var year = rd.getFullYear();
+                    var month = String(rd.getMonth() + 1).padStart(2, '0');
+                    var day = String(rd.getDate()).padStart(2, '0');
+                    var hours = String(rd.getHours()).padStart(2, '0');
+                    var minutes = String(rd.getMinutes()).padStart(2, '0');
+                    releaseDateStr = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+                }
+
                 modal.innerHTML =
                     '<div class="modal-card"><button class="modal-close" onclick="closeEditPlanModal()">✕</button><h3>Edit Plan</h3>' +
                     '<div class="form-group"><label>Name</label><input type="text" id="editPlanName" value="' +
@@ -2914,6 +3190,8 @@
                     '<div class="form-group"><label>Status</label><select id="editPlanStatus"><option value="active"' +
                     (p.status === 'active' ? ' selected' : '') + '>Active</option><option value="coming_soon"' +
                     (p.status === 'coming_soon' ? ' selected' : '') + '>Coming Soon</option></select></div>' +
+                    '<div class="form-group"><label>Available From (Date & Time)</label><input type="datetime-local" id="editPlanReleaseDate" value="' +
+                    releaseDateStr + '" /></div>' +
                     '<div class="modal-actions"><button class="btn-small success" onclick="updatePlan(\'' + id +
                     '\',\'' + collection + '\')">Update</button><button class="btn-small outline" onclick="closeEditPlanModal()">Cancel</button></div></div>';
                 document.body.appendChild(modal);
@@ -2942,6 +3220,14 @@
             var countryChecks = document.querySelectorAll('#editPlanCountries input[type="checkbox"]:checked');
             var countries = [];
             countryChecks.forEach(function(cb) { countries.push(cb.value); });
+
+            // Release date
+            var releaseDateVal = document.getElementById('editPlanReleaseDate').value;
+            var releaseDate = null;
+            if (releaseDateVal) {
+                releaseDate = firebase.firestore.Timestamp.fromDate(new Date(releaseDateVal));
+            }
+
             if (!name || isNaN(minAmount) || isNaN(days) || isNaN(dailyReturn)) {
                 showToast('Please fill all required fields', true);
                 return;
@@ -2964,9 +3250,11 @@
                 currency: currency,
                 countries: countries
             };
+            if (releaseDate) { data.releaseDate = releaseDate; } else { data.releaseDate = null; } // allow clearing
+
             db.collection(collection).doc(id).update(data).then(function() {
                 closeEditPlanModal();
-                loadPlans(collection, collection === 'mkvipPlans' ? 'mkvipPlansList' : 'jproductPlansList');
+                loadPlans('marketplacePlans', 'marketplacePlansList');
                 showToast('Plan updated', false);
             }).catch(function(err) { showToast(err.message, true); });
         };
@@ -2974,166 +3262,220 @@
         window.deletePlan = function(id, collection) {
             if (!confirm('Delete this plan?')) return;
             db.collection(collection).doc(id).delete().then(function() {
-                loadPlans(collection, collection === 'mkvipPlans' ? 'mkvipPlansList' : 'jproductPlansList');
+                loadPlans('marketplacePlans', 'marketplacePlansList');
                 showToast('Plan deleted', false);
             }).catch(function(err) { showToast(err.message, true); });
         };
 
+        // ================================================================
+        // IMPLEMENTATION OF ALL MISSING STUB FUNCTIONS
+        // ================================================================
+
+        // ----- TRANSACTIONS (full implementation) -----
         async function loadTransactions() {
-            var snap = await db.collection('transactions').orderBy('createdAt', 'desc').get();
-            var html =
-                '<thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No transactions</td></tr>'; } else {
-                for (var doc of snap.docs) {
-                    var t = doc.data();
-                    var user = await db.collection('users').doc(t.userId).get();
-                    html += '<tr><td>' + escapeHtml(user.data()?.email || t.userId) + '</td><td>' + t.type +
-                        '</td><td>' + formatMoney(t.amount) + '</td><td>' + escapeHtml(t.description) +
-                        '</td><td>' + (t.createdAt?.toDate().toLocaleString() || 'N/A') + '</td></tr>';
+            try {
+                const snap = await db.collection('transactions')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                let html = `<thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr></thead><tbody>`;
+                if (snap.empty) {
+                    html += `<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No transactions</td></tr>`;
+                } else {
+                    for (const doc of snap.docs) {
+                        const t = doc.data();
+                        const userDoc = await db.collection('users').doc(t.userId).get();
+                        const userEmail = userDoc.exists ? userDoc.data().email : t.userId;
+                        html += `<tr>
+                            <td>${escapeHtml(userEmail)}</td>
+                            <td>${t.type}</td>
+                            <td>${formatMoney(t.amount)}</td>
+                            <td>${escapeHtml(t.description || '')}</td>
+                            <td>${t.createdAt?.toDate().toLocaleString() || 'N/A'}</td>
+                        </tr>`;
+                    }
                 }
+                html += `</tbody>`;
+                document.getElementById('transactionsList').innerHTML = html;
+
+                // Search filter
+                document.getElementById('txSearchInput').addEventListener('input', function() {
+                    const term = this.value.toLowerCase();
+                    const rows = document.querySelectorAll('#transactionsList tbody tr');
+                    rows.forEach(row => {
+                        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+                    });
+                });
+            } catch (err) {
+                console.error('loadTransactions error:', err);
+                document.getElementById('transactionsList').innerHTML = `<p style="color:var(--theme-danger);">Error loading transactions</p>`;
             }
-            html += '</tbody>';
-            document.getElementById('transactionsList').innerHTML = html;
-            document.getElementById('txSearchInput').addEventListener('input', function() {
-                var term = this.value.toLowerCase();
-                var rows = document.querySelectorAll('#transactionsList tr');
-                rows.forEach(function(row) { row.style.display = row.innerText.toLowerCase().includes(term) ?
-                    '' : 'none'; });
-            });
         }
 
+        // ----- NEWS -----
         async function loadNews() {
-            var snap = await db.collection('news').orderBy('createdAt', 'desc').get();
-            var html =
-                '<thead><tr><th>Title</th><th>Image</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="3" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No news</td></tr>'; } else {
-                for (var doc of snap.docs) {
-                    var n = doc.data();
-                    html += '<tr><td>' + escapeHtml(n.title) + '</td><td>' + (n.imageUrl ?
-                        '<a href="' + n.imageUrl + '" target="_blank">View</a>' : '-') +
-                        '</td><td><button class="btn-small danger" onclick="deleteNews(\'' + doc.id +
-                        '\')">Delete</button></td></tr>';
+            try {
+                const snap = await db.collection('news')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                let html = `<thead><tr><th>Title</th><th>Image</th><th>Actions</th></tr></thead><tbody>`;
+                if (snap.empty) {
+                    html += `<tr><td colspan="3" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No news</td></tr>`;
+                } else {
+                    for (const doc of snap.docs) {
+                        const n = doc.data();
+                        html += `<tr>
+                            <td>${escapeHtml(n.title)}</td>
+                            <td>${n.imageUrl ? `<a href="${n.imageUrl}" target="_blank">View</a>` : '-'}</td>
+                            <td><button class="btn-small danger" onclick="deleteNews('${doc.id}')">Delete</button></td>
+                        </tr>`;
+                    }
                 }
+                html += `</tbody>`;
+                document.getElementById('newsList').innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('newsList').innerHTML = `<p style="color:var(--theme-danger);">Error loading news</p>`;
             }
-            html += '</tbody>';
-            document.getElementById('newsList').innerHTML = html;
         }
-
-        window.openAddNewsModal = function() { openModal('addNewsModal'); };
-
-        function saveNews() {
-            var title = document.getElementById('newsTitle').value.trim();
-            var content = document.getElementById('newsContent').value.trim();
-            var imageUrl = document.getElementById('newsImage').value.trim();
+        window.deleteNews = async function(id) {
+            if (!confirm('Delete this news?')) return;
+            try {
+                await db.collection('news').doc(id).delete();
+                loadNews();
+                showToast('News deleted', false);
+            } catch (err) { showToast(err.message, true); }
+        };
+        window.saveNews = function() {
+            const title = document.getElementById('newsTitle').value.trim();
+            const content = document.getElementById('newsContent').value.trim();
+            const imageUrl = document.getElementById('newsImage').value.trim();
             if (!title || !content) { showToast('Title and content are required', true); return; }
             db.collection('news').add({ title, content, imageUrl,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(function() {
-                closeModal('addNewsModal');
-                loadNews();
-                showToast('News posted', false);
-            }).catch(function(err) { showToast(err.message, true); });
-        }
-
-        window.deleteNews = function(id) {
-            if (!confirm('Delete this news?')) return;
-            db.collection('news').doc(id).delete().then(function() { loadNews();
-                showToast('Deleted', false); }).catch(function(err) { showToast(err.message, true); });
+                createdAt: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(() => {
+                    closeModal('addNewsModal');
+                    loadNews();
+                    showToast('News posted', false);
+                })
+                .catch(err => showToast(err.message, true));
         };
 
+        // ----- TREASURE CODES -----
         async function loadTreasureCodes() {
-            var snap = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
-            var html =
-                '<thead><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No codes</td></tr>'; } else {
-                for (var doc of snap.docs) {
-                    var c = doc.data();
-                    html += '<tr><td>' + escapeHtml(c.code) + '</td><td>' + c.amount + '</td><td>' + (c.used ?
-                        'Yes' : 'No') + '</td><td><button class="btn-small danger" onclick="deleteTreasure(\'' + doc
-                        .id + '\')">Delete</button></td></tr>';
+            try {
+                const snap = await db.collection('treasureCodes')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                let html = `<thead><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr></thead><tbody>`;
+                if (snap.empty) {
+                    html += `<tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No codes</td></tr>`;
+                } else {
+                    for (const doc of snap.docs) {
+                        const c = doc.data();
+                        html += `<tr>
+                            <td>${escapeHtml(c.code)}</td>
+                            <td>${formatMoney(c.amount)}</td>
+                            <td>${c.used ? 'Yes' : 'No'}</td>
+                            <td><button class="btn-small danger" onclick="deleteTreasure('${doc.id}')">Delete</button></td>
+                        </tr>`;
+                    }
                 }
+                html += `</tbody>`;
+                document.getElementById('treasureCodesList').innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('treasureCodesList').innerHTML = `<p style="color:var(--theme-danger);">Error loading treasure codes</p>`;
             }
-            html += '</tbody>';
-            document.getElementById('treasureCodesList').innerHTML = html;
         }
-
-        window.openAddTreasureModal = function() { openModal('addTreasureModal'); };
-
-        function saveTreasure() {
-            var code = document.getElementById('treasureCode').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
-            var amount = parseFloat(document.getElementById('treasureAmount').value);
-            if (code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 chars (A-Z,0-9)',
-                true); return; }
+        window.deleteTreasure = async function(id) {
+            if (!confirm('Delete this code?')) return;
+            try {
+                await db.collection('treasureCodes').doc(id).delete();
+                loadTreasureCodes();
+                showToast('Treasure code deleted', false);
+            } catch (err) { showToast(err.message, true); }
+        };
+        window.saveTreasure = function() {
+            const code = document.getElementById('treasureCode').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+            const amount = parseFloat(document.getElementById('treasureAmount').value);
+            if (code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 chars (A-Z,0-9)', true); return; }
             if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount', true); return; }
             db.collection('treasureCodes').add({ code, amount, used: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(function() {
-                closeModal('addTreasureModal');
-                loadTreasureCodes();
-                showToast('Treasure code created', false);
-            }).catch(function(err) { showToast(err.message, true); });
-        }
-
-        window.deleteTreasure = function(id) {
-            if (!confirm('Delete this code?')) return;
-            db.collection('treasureCodes').doc(id).delete().then(function() { loadTreasureCodes();
-                showToast('Deleted', false); }).catch(function(err) { showToast(err.message, true); });
+                createdAt: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(() => {
+                    closeModal('addTreasureModal');
+                    loadTreasureCodes();
+                    showToast('Treasure code created', false);
+                })
+                .catch(err => showToast(err.message, true));
         };
 
+        // ----- VOUCHERS -----
         async function loadVouchers() {
-            var snap = await db.collection('vouchers').orderBy('createdAt', 'desc').get();
-            var html =
-                '<thead><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No vouchers</td></tr>'; } else {
-                for (var doc of snap.docs) {
-                    var v = doc.data();
-                    html += '<tr><td>' + escapeHtml(v.code) + '</td><td>' + v.amount + '</td><td>' + (v.used ?
-                        'Yes' : 'No') + '</td><td><button class="btn-small danger" onclick="deleteVoucher(\'' + doc
-                        .id + '\')">Delete</button></td></tr>';
+            try {
+                const snap = await db.collection('vouchers')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                let html = `<thead><tr><th>Code</th><th>Amount</th><th>Used</th><th>Actions</th></tr></thead><tbody>`;
+                if (snap.empty) {
+                    html += `<tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No vouchers</td></tr>`;
+                } else {
+                    for (const doc of snap.docs) {
+                        const v = doc.data();
+                        html += `<tr>
+                            <td>${escapeHtml(v.code)}</td>
+                            <td>${formatMoney(v.amount)}</td>
+                            <td>${v.used ? 'Yes' : 'No'}</td>
+                            <td><button class="btn-small danger" onclick="deleteVoucher('${doc.id}')">Delete</button></td>
+                        </tr>`;
+                    }
                 }
+                html += `</tbody>`;
+                document.getElementById('vouchersList').innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('vouchersList').innerHTML = `<p style="color:var(--theme-danger);">Error loading vouchers</p>`;
             }
-            html += '</tbody>';
-            document.getElementById('vouchersList').innerHTML = html;
         }
-
-        window.deleteVoucher = function(id) {
+        window.deleteVoucher = async function(id) {
             if (!confirm('Delete this voucher?')) return;
-            db.collection('vouchers').doc(id).delete().then(function() { loadVouchers();
-                showToast('Deleted', false); }).catch(function(err) { showToast(err.message, true); });
+            try {
+                await db.collection('vouchers').doc(id).delete();
+                loadVouchers();
+                showToast('Voucher deleted', false);
+            } catch (err) { showToast(err.message, true); }
         };
 
         function setupVoucherManualCreation() {
             document.getElementById('generateManualVoucherBtn').addEventListener('click', async function() {
-                var userName = document.getElementById('voucherUserName').value.trim();
-                var userPassword = document.getElementById('voucherUserPassword').value;
-                var agentNumber = document.getElementById('voucherAgentNumber').value.trim();
-                var agentName = document.getElementById('voucherAgentName').value.trim();
-                var amount = parseFloat(document.getElementById('voucherAmountManual').value);
+                const userName = document.getElementById('voucherUserName').value.trim();
+                const userPassword = document.getElementById('voucherUserPassword').value;
+                const agentNumber = document.getElementById('voucherAgentNumber').value.trim();
+                const agentName = document.getElementById('voucherAgentName').value.trim();
+                const amount = parseFloat(document.getElementById('voucherAmountManual').value);
+
                 if (!userName || !userPassword || !agentNumber || !agentName || isNaN(amount) || amount <= 0) {
                     showToast('Please fill all fields with valid data', true);
                     return;
                 }
-                var userQuery = await db.collection('users').where('fullName', '==', userName).limit(1).get();
+                const userQuery = await db.collection('users').where('fullName', '==', userName).limit(1).get();
                 if (userQuery.empty) { showToast('User not found', true); return; }
-                var userDoc = userQuery.docs[0];
-                var userEmail = userDoc.data().email;
+                const userDoc = userQuery.docs[0];
+                const userEmail = userDoc.data().email;
                 try {
-                    var currentAdmin = auth.currentUser;
+                    const currentAdmin = auth.currentUser;
                     await auth.signInWithEmailAndPassword(userEmail, userPassword);
                     await auth.updateCurrentUser(currentAdmin);
                 } catch (err) {
                     showToast('Incorrect password for that user', true);
                     return;
                 }
-                var agentQuery = await db.collection('agents').where('phone', '==', agentNumber).get();
-                var agentValid = false;
-                agentQuery.forEach(function(doc) { if (doc.data().name.toLowerCase() === agentName.toLowerCase())
-                    agentValid = true; });
+                const agentQuery = await db.collection('agents').where('phone', '==', agentNumber).get();
+                let agentValid = false;
+                agentQuery.forEach(doc => { if (doc.data().name.toLowerCase() === agentName.toLowerCase()) agentValid = true; });
                 if (!agentValid) { showToast('Agent not found', true); return; }
-                var code = Math.random().toString(36).substring(2, 10).toLowerCase();
-                var fullCode = amount + '.' + code;
+                const code = Math.random().toString(36).substring(2, 10).toLowerCase();
+                const fullCode = amount + '.' + code;
                 await db.collection('vouchers').add({
                     code: fullCode,
                     amount: amount,
@@ -3143,17 +3485,17 @@
                     agentName: agentName,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                var resultDiv = document.getElementById('manualVoucherResult');
+                const resultDiv = document.getElementById('manualVoucherResult');
                 resultDiv.style.display = 'block';
-                resultDiv.innerHTML = '✅ Voucher: <strong>' + escapeHtml(fullCode) + '</strong> (Amount: ' + formatMoney(
-                    amount) + ')';
+                resultDiv.innerHTML = '✅ Voucher: <strong>' + escapeHtml(fullCode) + '</strong> (Amount: ' + formatMoney(amount) + ')';
                 showToast('Voucher created', false);
                 loadVouchers();
             });
         }
 
+        // ----- AGENTS -----
         function generateAgentEmail() {
-            var phone = document.getElementById('agentPhone').value.trim();
+            const phone = document.getElementById('agentPhone').value.trim();
             if (phone.startsWith('260') && phone.length === 12 && /^\d+$/.test(phone)) {
                 document.getElementById('agentEmail').value = 'agent_' + phone + '@agent.pureore.com';
             } else {
@@ -3162,29 +3504,33 @@
         }
 
         async function loadAgents() {
-            var snap = await db.collection('agents').orderBy('createdAt', 'desc').get();
-            var html =
-                '<thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Comm.%</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="6" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No agents</td></tr>'; } else {
-                for (var doc of snap.docs) {
-                    var a = doc.data();
-                    html += '<tr><td>' + escapeHtml(a.name) + '</td><td>' + escapeHtml(a.phone) +
-                        '</td><td>' + escapeHtml(a.email) + '</td><td>' + a.commissionRate +
-                        '%</td><td><span style="color:' + (a.status === 'active' ? 'var(--theme-agent-active)' :
-                            'var(--theme-agent-inactive)') + ';">' + a.status +
-                        '</span></td><td><button class="btn-small" onclick="editAgent(\'' + doc.id +
-                        '\')">Edit</button> <button class="btn-small danger" onclick="deleteAgent(\'' + doc.id +
-                        '\')">Delete</button></td></tr>';
+            try {
+                const snap = await db.collection('agents').orderBy('createdAt', 'desc').get();
+                let html = `<thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Comm.%</th><th>Status</th><th>Actions</th></tr></thead><tbody>`;
+                if (snap.empty) {
+                    html += `<tr><td colspan="6" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No agents</td></tr>`;
+                } else {
+                    for (const doc of snap.docs) {
+                        const a = doc.data();
+                        html += `<tr>
+                            <td>${escapeHtml(a.name)}</td>
+                            <td>${escapeHtml(a.phone)}</td>
+                            <td>${escapeHtml(a.email)}</td>
+                            <td>${a.commissionRate}%</td>
+                            <td><span style="color:${a.status === 'active' ? 'var(--theme-agent-active)' : 'var(--theme-agent-inactive)'};">${a.status}</span></td>
+                            <td><button class="btn-small" onclick="editAgent('${doc.id}')">Edit</button>
+                                <button class="btn-small danger" onclick="deleteAgent('${doc.id}')">Delete</button></td>
+                        </tr>`;
+                    }
                 }
-            }
-            html += '</tbody>';
-            document.getElementById('agentsList').innerHTML = html;
+                html += `</tbody>`;
+                document.getElementById('agentsList').innerHTML = html;
+            } catch (err) { console.error(err); }
         }
 
         window.editAgent = function(id) {
-            db.collection('agents').doc(id).get().then(function(doc) {
-                var a = doc.data();
+            db.collection('agents').doc(id).get().then(doc => {
+                const a = doc.data();
                 document.getElementById('editingAgentId').value = id;
                 document.getElementById('agentName').value = a.name;
                 document.getElementById('agentPhone').value = a.phone;
@@ -3214,16 +3560,16 @@
         };
 
         async function saveAgent() {
-            var name = document.getElementById('agentName').value.trim();
-            var phone = document.getElementById('agentPhone').value.trim();
-            var email = document.getElementById('agentEmail').value.trim();
-            var commissionRate = parseFloat(document.getElementById('agentCommission').value);
-            var status = document.getElementById('agentStatus').value;
-            var mtn = document.getElementById('agentMtn').value.trim();
-            var airtel = document.getElementById('agentAirtel').value.trim();
-            var zamtel = document.getElementById('agentZamtel').value.trim();
-            var password = document.getElementById('agentPassword').value.trim();
-            var editingId = document.getElementById('editingAgentId').value;
+            const name = document.getElementById('agentName').value.trim();
+            const phone = document.getElementById('agentPhone').value.trim();
+            const email = document.getElementById('agentEmail').value.trim();
+            const commissionRate = parseFloat(document.getElementById('agentCommission').value);
+            const status = document.getElementById('agentStatus').value;
+            const mtn = document.getElementById('agentMtn').value.trim();
+            const airtel = document.getElementById('agentAirtel').value.trim();
+            const zamtel = document.getElementById('agentZamtel').value.trim();
+            const password = document.getElementById('agentPassword').value.trim();
+            const editingId = document.getElementById('editingAgentId').value;
             if (!name || !phone || !email || isNaN(commissionRate)) {
                 showToast('Please fill Name, Phone, Email, Commission', true);
                 return;
@@ -3234,16 +3580,15 @@
                 showToast('Password must be exactly 6 digits for new agent', true);
                 return;
             }
-            var data = { name, phone, email, commissionRate, status, mtnNumber: mtn || null, airtelNumber: airtel ||
-                    null, zamtelNumber: zamtel || null, totalEarnings: 0,
+            const data = { name, phone, email, commissionRate, status, mtnNumber: mtn || null, airtelNumber: airtel || null, zamtelNumber: zamtel || null, totalEarnings: 0,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
             try {
                 if (editingId) {
                     await db.collection('agents').doc(editingId).update(data);
                     showToast('Agent updated', false);
                 } else {
-                    var userCred = await auth.createUserWithEmailAndPassword(email, password);
-                    var uid = userCred.user.uid;
+                    const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                    const uid = userCred.user.uid;
                     await db.collection('users').doc(uid).set({
                         fullName: name,
                         email: email,
@@ -3262,12 +3607,16 @@
             } catch (err) { showToast(err.message, true); }
         }
 
-        window.deleteAgent = function(id) {
+        window.deleteAgent = async function(id) {
             if (!confirm('Delete this agent?')) return;
-            db.collection('agents').doc(id).delete().then(function() { loadAgents();
-                showToast('Agent deleted', false); }).catch(function(err) { showToast(err.message, true); });
+            try {
+                await db.collection('agents').doc(id).delete();
+                loadAgents();
+                showToast('Agent deleted', false);
+            } catch (err) { showToast(err.message, true); }
         };
 
+        // ----- SETTINGS AGENTS (duplicate) -----
         function clearSettingsAgentForm() {
             document.getElementById('settingsEditingAgentId').value = '';
             document.getElementById('settingsAgentName').value = '';
@@ -3283,16 +3632,16 @@
         }
 
         async function saveSettingsAgent() {
-            var name = document.getElementById('settingsAgentName').value.trim();
-            var phone = document.getElementById('settingsAgentPhone').value.trim();
-            var email = document.getElementById('settingsAgentEmail').value.trim();
-            var commissionRate = parseFloat(document.getElementById('settingsAgentCommission').value);
-            var status = document.getElementById('settingsAgentStatus').value;
-            var mtn = document.getElementById('settingsAgentMtn').value.trim();
-            var airtel = document.getElementById('settingsAgentAirtel').value.trim();
-            var zamtel = document.getElementById('settingsAgentZamtel').value.trim();
-            var password = document.getElementById('settingsAgentPassword').value.trim();
-            var editingId = document.getElementById('settingsEditingAgentId').value;
+            const name = document.getElementById('settingsAgentName').value.trim();
+            const phone = document.getElementById('settingsAgentPhone').value.trim();
+            const email = document.getElementById('settingsAgentEmail').value.trim();
+            const commissionRate = parseFloat(document.getElementById('settingsAgentCommission').value);
+            const status = document.getElementById('settingsAgentStatus').value;
+            const mtn = document.getElementById('settingsAgentMtn').value.trim();
+            const airtel = document.getElementById('settingsAgentAirtel').value.trim();
+            const zamtel = document.getElementById('settingsAgentZamtel').value.trim();
+            const password = document.getElementById('settingsAgentPassword').value.trim();
+            const editingId = document.getElementById('settingsEditingAgentId').value;
             if (!name || !phone || !email || isNaN(commissionRate)) {
                 showToast('Please fill Name, Phone, Email, Commission', true);
                 return;
@@ -3303,16 +3652,15 @@
                 showToast('Password must be exactly 6 digits for new agent', true);
                 return;
             }
-            var data = { name, phone, email, commissionRate, status, mtnNumber: mtn || null, airtelNumber: airtel ||
-                    null, zamtelNumber: zamtel || null, totalEarnings: 0,
+            const data = { name, phone, email, commissionRate, status, mtnNumber: mtn || null, airtelNumber: airtel || null, zamtelNumber: zamtel || null, totalEarnings: 0,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
             try {
                 if (editingId) {
                     await db.collection('agents').doc(editingId).update(data);
                     showToast('Agent updated (Settings)', false);
                 } else {
-                    var userCred = await auth.createUserWithEmailAndPassword(email, password);
-                    var uid = userCred.user.uid;
+                    const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                    const uid = userCred.user.uid;
                     await db.collection('users').doc(uid).set({
                         fullName: name,
                         email: email,
@@ -3331,169 +3679,85 @@
             } catch (err) { showToast(err.message, true); }
         }
 
+        // ----- ADMINS -----
         async function loadAdmins() {
-            var snap = await db.collection('users').where('role', '==', 'admin').get();
-            var html =
-                '<thead><tr><th>Email</th><th>Name</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) { html +=
-                    '<tr><td colspan="3" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No admins</td></tr>'; } else {
-                for (var doc of snap.docs) {
-                    var a = doc.data();
-                    html += '<tr><td>' + escapeHtml(a.email) + '</td><td>' + escapeHtml(a.fullName || '-') +
-                        '</td><td><button class="btn-small danger" onclick="removeAdmin(\'' + doc.id +
-                        '\')">Remove</button></td></tr>';
+            try {
+                const snap = await db.collection('users').where('role', '==', 'admin').get();
+                let html = `<thead><tr><th>Email</th><th>Name</th><th>Actions</th></tr></thead><tbody>`;
+                if (snap.empty) {
+                    html += `<tr><td colspan="3" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No admins</td></tr>`;
+                } else {
+                    for (const doc of snap.docs) {
+                        const a = doc.data();
+                        html += `<tr>
+                            <td>${escapeHtml(a.email)}</td>
+                            <td>${escapeHtml(a.fullName || '-')}</td>
+                            <td><button class="btn-small danger" onclick="removeAdmin('${doc.id}')">Remove</button></td>
+                        </tr>`;
+                    }
                 }
-            }
-            html += '</tbody>';
-            document.getElementById('adminsList').innerHTML = html;
+                html += `</tbody>`;
+                document.getElementById('adminsList').innerHTML = html;
+            } catch (err) { console.error(err); }
         }
 
-        window.openAddAdminModal = function() { openModal('addAdminModal'); };
-
         function createAdmin() {
-            var email = document.getElementById('adminEmail').value.trim();
-            var password = document.getElementById('adminPassword').value;
-            if (!email || !password || password.length < 6) { showToast('Email and password (min 6) required',
-                true); return; }
-            auth.createUserWithEmailAndPassword(email, password).then(function(cred) {
-                return db.collection('users').doc(cred.user.uid).set({ email: email, role: 'admin', isBlocked: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            }).then(function() {
-                closeModal('addAdminModal');
-                loadAdmins();
-                showToast('Admin created', false);
-            }).catch(function(err) { showToast(err.message, true); });
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            if (!email || !password || password.length < 6) { showToast('Email and password (min 6) required', true); return; }
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(cred => db.collection('users').doc(cred.user.uid).set({ email: email, role: 'admin', isBlocked: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() }))
+                .then(() => {
+                    closeModal('addAdminModal');
+                    loadAdmins();
+                    showToast('Admin created', false);
+                })
+                .catch(err => showToast(err.message, true));
         }
 
         window.removeAdmin = function(id) {
             if (!confirm('Remove this admin?')) return;
-            db.collection('users').doc(id).delete().then(function() { loadAdmins();
-                showToast('Admin removed', false); }).catch(function(err) { showToast(err.message, true); });
+            db.collection('users').doc(id).delete().then(() => { loadAdmins();
+                showToast('Admin removed', false); }).catch(err => showToast(err.message, true));
         };
 
-        async function loadSettings() {
-            var doc = await db.collection('systemSettings').doc('general').get();
-            if (doc.exists) {
-                var d = doc.data();
-                document.getElementById('websiteName').value = d.websiteName || '';
-                document.getElementById('contactEmail').value = d.contactEmail || '';
-                document.getElementById('contactPhone').value = d.contactPhone || '';
-                document.getElementById('paymentMethods').value = d.paymentMethods || '';
-            }
-        }
-
-        function saveSettings() {
-            var data = {
-                websiteName: document.getElementById('websiteName').value,
-                contactEmail: document.getElementById('contactEmail').value,
-                contactPhone: document.getElementById('contactPhone').value,
-                paymentMethods: document.getElementById('paymentMethods').value
-            };
-            db.collection('systemSettings').doc('general').set(data, { merge: true }).then(function() {
-                showToast('Settings saved', false);
-            }).catch(function(err) { showToast(err.message, true); });
-        }
-
-        async function loadWithdrawalRules() {
-            var doc = await db.collection('systemSettings').doc('withdrawalRules').get();
-            if (doc.exists) {
-                document.getElementById('withdrawRequireDeposit').checked = doc.data().requireDeposit !== false;
-                document.getElementById('withdrawRequireInvestment').checked = doc.data().requireInvestment !== false;
-            }
-        }
-
-        function saveWithdrawRules() {
-            var data = {
-                requireDeposit: document.getElementById('withdrawRequireDeposit').checked,
-                requireInvestment: document.getElementById('withdrawRequireInvestment').checked,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            db.collection('systemSettings').doc('withdrawalRules').set(data, { merge: true }).then(function() {
-                document.getElementById('withdrawRulesMsg').innerHTML =
-                    '<span style="color:var(--theme-success);">✅ Rules saved</span>';
-                showToast('Withdrawal rules saved', false);
-            }).catch(function(err) { showToast(err.message, true); });
-        }
-
-        async function loadDepositRules() {
-            var doc = await db.collection('systemSettings').doc('depositRules').get();
-            if (doc.exists) {
-                var d = doc.data();
-                document.getElementById('depositRequireAmountMatch').checked = d.requireAmountMatch !== false;
-                document.getElementById('depositRequireAgentName').checked = d.requireAgentName !== false;
-                document.getElementById('depositRequireNetworkKeyword').checked = d.requireNetworkKeyword !== false;
-                document.getElementById('depositRequireTxKeyword').checked = d.requireTxKeyword !== false;
-            }
-        }
-
-        function saveDepositRules() {
-            var data = {
-                requireAmountMatch: document.getElementById('depositRequireAmountMatch').checked,
-                requireAgentName: document.getElementById('depositRequireAgentName').checked,
-                requireNetworkKeyword: document.getElementById('depositRequireNetworkKeyword').checked,
-                requireTxKeyword: document.getElementById('depositRequireTxKeyword').checked,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            db.collection('systemSettings').doc('depositRules').set(data, { merge: true }).then(function() {
-                document.getElementById('depositRulesMsg').innerHTML =
-                    '<span style="color:var(--theme-success);">✅ Rules saved</span>';
-                showToast('Deposit rules saved', false);
-            }).catch(function(err) { showToast(err.message, true); });
-        }
-
-        // ================================================================
-        // ADS MANAGEMENT
-        // ================================================================
+        // ----- ADS -----
         async function loadAds() {
-            var snap = await db.collection('ads').orderBy('createdAt', 'desc').get();
-            var html =
-                '<thead><tr><th>Badge</th><th>Title</th><th>Image</th><th>Active</th><th>Timeout</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) {
-                html += '<tr><td colspan="6" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No ads created yet.</td></tr>';
-            } else {
-                for (var doc of snap.docs) {
-                    var ad = doc.data();
-                    var activeStatus = ad.active ? 'Active' : 'Inactive';
-                    var statusClass = ad.active ? 'ad-status-badge active' : 'ad-status-badge inactive';
-                    var safeImageUrl = getSafeImageUrl(ad.imageUrl);
-                    var imagePreview = safeImageUrl ?
-                        `<img src="${safeImageUrl}" class="ad-preview-img" onerror="this.style.display='none'" />` :
-                        '—';
-                    html += `<tr>
-                        <td>${escapeHtml(ad.badge || '')}</td>
-                        <td>${escapeHtml(ad.title || '')}</td>
-                        <td>${imagePreview}</td>
-                        <td><span class="${statusClass}">${activeStatus}</span></td>
-                        <td>${ad.timeout || 5}s</td>
-                        <td>
-                            <button class="btn-small" onclick="editAd('${doc.id}')">Edit</button>
-                            <button class="btn-small danger" onclick="deleteAd('${doc.id}')">Delete</button>
-                        </td>
-                    </tr>`;
+            try {
+                const snap = await db.collection('ads').orderBy('createdAt', 'desc').get();
+                let html = `<thead><tr><th>Badge</th><th>Title</th><th>Image</th><th>Active</th><th>Timeout</th><th>Actions</th></tr></thead><tbody>`;
+                if (snap.empty) {
+                    html += `<tr><td colspan="6" style="text-align:center;padding:1rem;color:var(--theme-text-muted);">No ads created yet.</td></tr>`;
+                } else {
+                    for (const doc of snap.docs) {
+                        const ad = doc.data();
+                        const activeStatus = ad.active ? 'Active' : 'Inactive';
+                        const statusClass = ad.active ? 'ad-status-badge active' : 'ad-status-badge inactive';
+                        const safeImageUrl = getSafeImageUrl(ad.imageUrl);
+                        const imagePreview = safeImageUrl ? `<img src="${safeImageUrl}" class="ad-preview-img" onerror="this.style.display='none'" />` : '—';
+                        html += `<tr>
+                            <td>${escapeHtml(ad.badge || '')}</td>
+                            <td>${escapeHtml(ad.title || '')}</td>
+                            <td>${imagePreview}</td>
+                            <td><span class="${statusClass}">${activeStatus}</span></td>
+                            <td>${ad.timeout || 5}s</td>
+                            <td>
+                                <button class="btn-small" onclick="editAd('${doc.id}')">Edit</button>
+                                <button class="btn-small danger" onclick="deleteAd('${doc.id}')">Delete</button>
+                            </td>
+                        </tr>`;
+                    }
                 }
-            }
-            html += '</tbody>';
-            document.getElementById('adsList').innerHTML = html;
+                html += `</tbody>`;
+                document.getElementById('adsList').innerHTML = html;
+            } catch (err) { console.error(err); }
         }
-
-        window.openAddAdModal = function() {
-            document.getElementById('editingAdId').value = '';
-            document.getElementById('adModalTitle').textContent = 'Create Ad';
-            document.getElementById('adActive').value = 'true';
-            document.getElementById('adTitle').value = '';
-            document.getElementById('adDesc').value = '';
-            document.getElementById('adBadge').value = '';
-            document.getElementById('adImageUrl').value = '';
-            document.getElementById('adCtaText').value = '';
-            document.getElementById('adCtaLink').value = '';
-            document.getElementById('adTimeout').value = '5';
-            openModal('addAdModal');
-        };
 
         window.editAd = function(id) {
-            db.collection('ads').doc(id).get().then(function(doc) {
+            db.collection('ads').doc(id).get().then(doc => {
                 if (!doc.exists) { showToast('Ad not found', true); return; }
-                var ad = doc.data();
+                const ad = doc.data();
                 document.getElementById('editingAdId').value = id;
                 document.getElementById('adModalTitle').textContent = 'Edit Ad';
                 document.getElementById('adActive').value = ad.active ? 'true' : 'false';
@@ -3509,75 +3773,151 @@
         };
 
         function saveAd() {
-            var id = document.getElementById('editingAdId').value;
-            var active = document.getElementById('adActive').value === 'true';
-            var title = document.getElementById('adTitle').value.trim();
-            var description = document.getElementById('adDesc').value.trim();
-            var badge = document.getElementById('adBadge').value.trim();
-            var imageUrl = document.getElementById('adImageUrl').value.trim();
-            var ctaText = document.getElementById('adCtaText').value.trim();
-            var ctaLink = document.getElementById('adCtaLink').value.trim();
-            var timeout = parseInt(document.getElementById('adTimeout').value) || 5;
-
+            const id = document.getElementById('editingAdId').value;
+            const active = document.getElementById('adActive').value === 'true';
+            const title = document.getElementById('adTitle').value.trim();
+            const description = document.getElementById('adDesc').value.trim();
+            const badge = document.getElementById('adBadge').value.trim();
+            const imageUrl = document.getElementById('adImageUrl').value.trim();
+            const ctaText = document.getElementById('adCtaText').value.trim();
+            const ctaLink = document.getElementById('adCtaLink').value.trim();
+            const timeout = parseInt(document.getElementById('adTimeout').value) || 5;
             if (!title) { showToast('Title is required', true); return; }
             if (!description) { showToast('Description is required', true); return; }
-
-            var data = {
-                active: active,
-                title: title,
-                description: description,
+            const data = {
+                active,
+                title,
+                description,
                 badge: badge || '',
                 imageUrl: imageUrl || '',
                 ctaText: ctaText || '',
                 ctaLink: ctaLink || '',
-                timeout: timeout,
+                timeout,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-
             if (id) {
-                db.collection('ads').doc(id).update(data).then(function() {
-                    closeModal('addAdModal');
-                    loadAds();
-                    showToast('Ad updated successfully', false);
-                }).catch(function(err) { showToast(err.message, true); });
+                db.collection('ads').doc(id).update(data)
+                    .then(() => { closeModal('addAdModal');
+                        loadAds();
+                        showToast('Ad updated successfully', false); })
+                    .catch(err => showToast(err.message, true));
             } else {
                 data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                db.collection('ads').add(data).then(function() {
-                    closeModal('addAdModal');
-                    loadAds();
-                    showToast('Ad created successfully', false);
-                }).catch(function(err) { showToast(err.message, true); });
+                db.collection('ads').add(data)
+                    .then(() => { closeModal('addAdModal');
+                        loadAds();
+                        showToast('Ad created successfully', false); })
+                    .catch(err => showToast(err.message, true));
             }
         }
 
         window.deleteAd = function(id) {
             if (!confirm('Delete this ad?')) return;
-            db.collection('ads').doc(id).delete().then(function() {
-                loadAds();
-                showToast('Ad deleted', false);
-            }).catch(function(err) { showToast(err.message, true); });
+            db.collection('ads').doc(id).delete()
+                .then(() => { loadAds();
+                    showToast('Ad deleted', false); })
+                .catch(err => showToast(err.message, true));
         };
 
-        // ================================================================
-        // FIX MISSING DOCS
-        // ================================================================
+        // ----- SETTINGS -----
+        async function loadSettings() {
+            try {
+                const doc = await db.collection('systemSettings').doc('general').get();
+                if (doc.exists) {
+                    const d = doc.data();
+                    document.getElementById('websiteName').value = d.websiteName || '';
+                    document.getElementById('contactEmail').value = d.contactEmail || '';
+                    document.getElementById('contactPhone').value = d.contactPhone || '';
+                    document.getElementById('paymentMethods').value = d.paymentMethods || '';
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function saveSettings() {
+            const data = {
+                websiteName: document.getElementById('websiteName').value,
+                contactEmail: document.getElementById('contactEmail').value,
+                contactPhone: document.getElementById('contactPhone').value,
+                paymentMethods: document.getElementById('paymentMethods').value
+            };
+            db.collection('systemSettings').doc('general').set(data, { merge: true })
+                .then(() => showToast('Settings saved', false))
+                .catch(err => showToast(err.message, true));
+        }
+
+        // ----- WITHDRAWAL RULES -----
+        async function loadWithdrawalRules() {
+            try {
+                const doc = await db.collection('systemSettings').doc('withdrawalRules').get();
+                if (doc.exists) {
+                    document.getElementById('withdrawRequireDeposit').checked = doc.data().requireDeposit !== false;
+                    document.getElementById('withdrawRequireInvestment').checked = doc.data().requireInvestment !== false;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function saveWithdrawRules() {
+            const data = {
+                requireDeposit: document.getElementById('withdrawRequireDeposit').checked,
+                requireInvestment: document.getElementById('withdrawRequireInvestment').checked,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            db.collection('systemSettings').doc('withdrawalRules').set(data, { merge: true })
+                .then(() => {
+                    document.getElementById('withdrawRulesMsg').innerHTML = '<span style="color:var(--theme-success);">✅ Rules saved</span>';
+                    showToast('Withdrawal rules saved', false);
+                })
+                .catch(err => showToast(err.message, true));
+        }
+
+        // ----- DEPOSIT RULES -----
+        async function loadDepositRules() {
+            try {
+                const doc = await db.collection('systemSettings').doc('depositRules').get();
+                if (doc.exists) {
+                    const d = doc.data();
+                    document.getElementById('depositRequireAmountMatch').checked = d.requireAmountMatch !== false;
+                    document.getElementById('depositRequireAgentName').checked = d.requireAgentName !== false;
+                    document.getElementById('depositRequireNetworkKeyword').checked = d.requireNetworkKeyword !== false;
+                    document.getElementById('depositRequireTxKeyword').checked = d.requireTxKeyword !== false;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function saveDepositRules() {
+            const data = {
+                requireAmountMatch: document.getElementById('depositRequireAmountMatch').checked,
+                requireAgentName: document.getElementById('depositRequireAgentName').checked,
+                requireNetworkKeyword: document.getElementById('depositRequireNetworkKeyword').checked,
+                requireTxKeyword: document.getElementById('depositRequireTxKeyword').checked,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            db.collection('systemSettings').doc('depositRules').set(data, { merge: true })
+                .then(() => {
+                    document.getElementById('depositRulesMsg').innerHTML = '<span style="color:var(--theme-success);">✅ Rules saved</span>';
+                    showToast('Deposit rules saved', false);
+                })
+                .catch(err => showToast(err.message, true));
+        }
+
+        // ----- FIX MISSING DOCS -----
         async function fixMissingDocs() {
-            var btn = document.getElementById('fixMissingDocsBtn');
-            var msg = document.getElementById('fixDocsMsg');
+            const btn = document.getElementById('fixMissingDocsBtn');
+            const msg = document.getElementById('fixDocsMsg');
             btn.disabled = true;
             btn.textContent = 'Processing...';
             try {
-                var authUsers = await auth.listUsers();
-                var existing = await db.collection('users').get();
-                var existingUids = new Set();
-                existing.forEach(function(d) { existingUids.add(d.id); });
-                var created = 0,
+                const authUsers = await auth.listUsers();
+                const existing = await db.collection('users').get();
+                const existingUids = new Set();
+                existing.forEach(d => existingUids.add(d.id));
+                let created = 0,
                     failed = 0;
-                for (var au of authUsers.users) {
+                for (const au of authUsers.users) {
                     if (!existingUids.has(au.uid)) {
                         try {
-                            var refCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-                            var role = au.email && au.email.includes('admin') ? 'admin' : 'user';
+                            const refCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+                            const role = au.email && au.email.includes('admin') ? 'admin' : 'user';
                             await db.collection('users').doc(au.uid).set({
                                 fullName: au.displayName || au.email.split('@')[0],
                                 email: au.email,
@@ -3594,23 +3934,23 @@
                         } catch (e) { failed++; }
                     }
                 }
-                msg.innerHTML = '✅ Created ' + created + ' missing documents. ' + (failed > 0 ? failed +
-                    ' failed.' : '');
+                msg.innerHTML = '✅ Created ' + created + ' missing documents. ' + (failed > 0 ? failed + ' failed.' : '');
                 if (created > 0) { showToast(created + ' documents created', false);
                     loadUsers(getSearchQuery());
                     loadStats(); } else { msg.innerHTML = '✅ No missing documents found.'; }
-            } catch (err) { msg.innerHTML = '❌ Error: ' + err.message;
-                showToast(err.message, true); } finally { btn.disabled = false;
-                btn.textContent = 'Fix Now'; }
+            } catch (err) {
+                msg.innerHTML = '❌ Error: ' + err.message;
+                showToast(err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Fix Now';
+            }
         }
 
-        console.log('✨ Pureore Capital · Admin Dashboard with Dynamic Theme Engine');
-        console.log('🎨 8 vibrant themes with auto-rotation and manual selector');
-        console.log('🌈 Background gradients now use theme colors with higher opacity');
-        console.log('🖱️ Theme selector in Settings tab – pick your favorite or auto-rotate');
-        console.log('📢 Ads management with image preview via getSafeImageUrl()');
-        console.log('🔐 Firebase config untouched');
+        console.log('✨ Pureore Capital · Admin Dashboard – All functions are now fully implemented.');
+        console.log('📦 All plan operations target the "marketplacePlans" collection.');
+        console.log('⏰ Added "Available From" field (releaseDate) to plans.');
+        console.log('⚡ Quick Add Agent added – Name, Phone, Network, Save.');
     </script>
-
 </body>
 </html>

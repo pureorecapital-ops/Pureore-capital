@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Loan History – VisionCore Capital</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
+    </script>
+    <style>
+        /* ----- RESET & BASE ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            min-height: 100vh;
+            padding-top: 80px;
+            padding-bottom: 90px;
+            color: #ffffff;
+            position: relative;
+            background: #000;
+        }
+
+        .hero-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .hero-bg::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
+            background-size: cover;
+            background-position: center;
+            filter: blur(14px) brightness(0.25) saturate(0.7);
+            transform: scale(1.1);
+        }
+
+        .hero-bg::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.50);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            letter-spacing: -0.4px;
+        }
+        .logo-text .vc {
+            color: #60a5fa;
+        }
+
+        .logo-sub {
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 0.3px;
+            font-weight: 400;
+            margin-top: -2px;
+        }
+        .logo-sub .highlight {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.3);
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 1.2rem;
+            flex: 1;
+            width: 100%;
+        }
+
+        .page-header {
+            margin-bottom: 1.2rem;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .page-header h1 span {
+            color: #60a5fa;
+        }
+        .page-header p {
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 0.85rem;
+            margin-top: 2px;
+        }
+
+        .glass-card {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 28px;
+            padding: 1.5rem 1.2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            margin-bottom: 1.2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .glass-card .card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1rem;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .glass-card .card-title svg {
+            width: 18px;
+            height: 18px;
+            stroke: #60a5fa;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.3rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .filter-tab:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .filter-tab.active {
+            background: rgba(96, 165, 250, 0.06);
+            border-color: rgba(96, 165, 250, 0.08);
+            color: #60a5fa;
+        }
+
+        .loan-item {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
+            padding: 0.7rem 0.8rem;
+            margin-bottom: 0.6rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: all 0.3s ease;
+        }
+
+        .loan-item:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .loan-item .loan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+
+        .loan-item .loan-amount {
+            font-weight: 700;
+            color: #facc15;
+            font-size: 1rem;
+        }
+
+        .loan-item .loan-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 0.2rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .loan-item .loan-details span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-pending {
+            background: rgba(250, 204, 21, 0.06);
+            color: #facc15;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            border: 1px solid rgba(250, 204, 21, 0.06);
+        }
+
+        .badge-active {
+            background: rgba(74, 222, 128, 0.06);
+            color: #4ade80;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            border: 1px solid rgba(74, 222, 128, 0.06);
+        }
+
+        .badge-paid {
+            background: rgba(96, 165, 250, 0.06);
+            color: #60a5fa;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            border: 1px solid rgba(96, 165, 250, 0.06);
+        }
+
+        .badge-rejected {
+            background: rgba(239, 68, 68, 0.06);
+            color: #f87171;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            border: 1px solid rgba(239, 68, 68, 0.06);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.15);
+            padding: 1.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .summary-stat {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            padding: 0.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .summary-stat .num {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .summary-stat .label {
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.15);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 1px;
+        }
+
+        .summary-stat .num.gold {
+            color: #facc15;
+        }
+        .summary-stat .num.green {
+            color: #4ade80;
+        }
+        .summary-stat .num.blue {
+            color: #60a5fa;
+        }
+        .summary-stat .num.red {
+            color: #f87171;
+        }
+
+        @media (max-width: 450px) {
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .loan-item .loan-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .header {
+                padding: 0.6rem 1rem;
+            }
+            .logo-text {
+                font-size: 1.2rem;
+            }
+            .logo-sub {
+                font-size: 0.5rem;
+            }
+            .container {
+                padding: 0 0.8rem;
+            }
+            .page-header h1 {
+                font-size: 1.4rem;
+            }
+            .glass-card {
+                padding: 1.2rem 1rem;
+                border-radius: 24px;
+            }
+            .filter-tab {
+                font-size: 0.6rem;
+                padding: 0.2rem 0.7rem;
+            }
+            .back-btn {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hero-bg"></div>
+
+    <header class="header">
+        <div class="header-left">
+            <a href="index.html" class="logo-text">Vision<span class="vc">Core</span></a>
+            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
+        </div>
+        <div class="header-right">
+            <a href="loan.html" class="back-btn">← Back</a>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <div class="page-header">
+            <h1>📋 <span>Loan History</span></h1>
+            <p>View all your loan requests and status</p>
+        </div>
+
+        <div class="glass-card">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Loan Summary
+            </div>
+            <div class="summary-stats" id="loanSummary">
+                <div class="summary-stat">
+                    <div class="num gold" id="statPending">0</div>
+                    <div class="label">Pending</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="num green" id="statActive">0</div>
+                    <div class="label">Active</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="num blue" id="statPaid">0</div>
+                    <div class="label">Paid</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="num red" id="statRejected">0</div>
+                    <div class="label">Rejected</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                All Loans
+                <span style="margin-left:auto; font-size:0.6rem; font-weight:400; color:rgba(255,255,255,0.08);">Filter by status</span>
+            </div>
+
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">All</button>
+                <button class="filter-tab" data-filter="pending">Pending</button>
+                <button class="filter-tab" data-filter="active">Active</button>
+                <button class="filter-tab" data-filter="paid">Paid</button>
+                <button class="filter-tab" data-filter="rejected">Rejected</button>
+            </div>
+
+            <div id="loanHistoryList">
+                <div class="empty-state">Loading your loan history...</div>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="bottom-nav">
+        <button class="nav-item" data-page="dashboard.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-page="income.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            <span class="nav-label">Income</span>
+        </button>
+        <button class="nav-item marketplace" data-page="marketplace.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span class="nav-label">Market</span>
+        </button>
+        <button class="nav-item active" data-page="loan.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="6 6 18 6 6 18 18 18"/></svg>
+            <span class="nav-label">Loan</span>
+        </button>
+        <button class="nav-item" data-page="me.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="nav-label">Me</span>
+        </button>
+    </div>
+
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        db.settings({ persistence: false });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' } [m]; });
+        }
+
+        var currentFilter = 'all';
+        var allLoans = [];
+
+        auth.onAuthStateChanged(async function(user) {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            await loadLoanHistory(user.uid);
+        });
+
+        async function loadLoanHistory(userId) {
+            var snap = await db.collection('loans')
+                .where('userId', '==', userId)
+                .orderBy('createdAt', 'desc')
+                .get();
+
+            allLoans = [];
+            snap.forEach(function(doc) {
+                var loan = doc.data();
+                loan.id = doc.id;
+                allLoans.push(loan);
+            });
+
+            updateSummary();
+            renderLoans();
+        }
+
+        function updateSummary() {
+            var pending = allLoans.filter(function(l) { return l.status === 'pending'; }).length;
+            var active = allLoans.filter(function(l) { return l.status === 'active'; }).length;
+            var paid = allLoans.filter(function(l) { return l.status === 'paid'; }).length;
+            var rejected = allLoans.filter(function(l) { return l.status === 'rejected'; }).length;
+
+            document.getElementById('statPending').textContent = pending;
+            document.getElementById('statActive').textContent = active;
+            document.getElementById('statPaid').textContent = paid;
+            document.getElementById('statRejected').textContent = rejected;
+        }
+
+        function renderLoans() {
+            var container = document.getElementById('loanHistoryList');
+            var filtered = allLoans;
+
+            if (currentFilter !== 'all') {
+                filtered = allLoans.filter(function(l) { return l.status === currentFilter; });
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">No loans found for this status.</div>';
+                return;
+            }
+
+            var html = '';
+            filtered.forEach(function(loan) {
+                var statusClass = 'badge-' + loan.status;
+                var statusLabel = loan.status.charAt(0).toUpperCase() + loan.status.slice(1);
+                var dueDate = loan.dueDate ? loan.dueDate.toDate().toLocaleDateString() : 'N/A';
+                var requestedAt = loan.createdAt ? loan.createdAt.toDate().toLocaleString() : 'N/A';
+                var repayTotal = loan.repayTotal || (loan.amount * 1.15);
+
+                html += `
+                    <div class="loan-item">
+                        <div class="loan-header">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:600; color:#ffffff;">${loan.amount.toFixed(2)} ZMW</div>
+                                <div style="font-size:0.7rem; color:rgba(255,255,255,0.15);">💸 Repay: ${repayTotal.toFixed(2)} ZMW</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div class="loan-amount">${loan.amount.toFixed(2)} ZMW</div>
+                                <div><span class="${statusClass}">${statusLabel}</span></div>
+                            </div>
+                        </div>
+                        <div class="loan-details">
+                            <span>📅 ${requestedAt}</span>
+                            <span>📆 Due: ${dueDate}</span>
+                            ${loan.approvedAt ? `<span>✅ Approved: ${loan.approvedAt.toDate().toLocaleDateString()}</span>` : ''}
+                            ${loan.rejectedAt ? `<span>❌ Rejected: ${loan.rejectedAt.toDate().toLocaleDateString()}</span>` : ''}
+                            ${loan.repaidAt ? `<span>💚 Repaid: ${loan.repaidAt.toDate().toLocaleDateString()}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        document.querySelectorAll('.filter-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderLoans();
+            });
+        });
+
+        document.querySelectorAll('.nav-item').forEach(function(item) {
+            var targetPage = item.getAttribute('data-page');
+            if (window.location.pathname.includes('loan3.html') && targetPage === 'loan.html') {
+                item.classList.add('active');
+            }
+            item.addEventListener('click', function() {
+                var target = this.getAttribute('data-page');
+                if (target && !window.location.pathname.includes(target)) {
+                    window.location.href = target;
+                }
+            });
+        });
+
+        console.log('📋 Loan History · VisionCore Capital');
+    </script>
+</body>
+</html>

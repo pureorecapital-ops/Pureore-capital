@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <meta name="referrer" content="no-referrer" />
-    <title>Treasure – PC • Pureore Capital</title>
+    <title>Treasure – VisionCore Capital</title>
+    <link rel="preconnect" href="https://www.gstatic.com" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
@@ -12,198 +13,121 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BASE ----- */
-        *,
-        *::before,
-        *::after {
+        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --gold: #f6c96e;
-            --gold-glow: rgba(246, 201, 110, 0.25);
-            --cyan: #5dd9f2;
-            --cyan-glow: rgba(93, 217, 242, 0.20);
-            --violet: #7c6df0;
-            --violet-glow: rgba(124, 109, 240, 0.30);
-            --green: #4ade80;
-            --green-glow: rgba(74, 222, 128, 0.15);
-            --red: #ef4444;
-            --red-glow: rgba(239, 68, 68, 0.15);
-            --radius-lg: 28px;
-            --radius-md: 18px;
-            --radius-sm: 12px;
-            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
-        }
-
-        html,
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             min-height: 100vh;
-            color: #fff;
-            background: #0a0815;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            padding-bottom: 90px;
+            padding-top: 80px;
+            padding-bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            position: relative;
+            background: #000;
         }
 
-        /* ----- BACKGROUND with Ravi Sharma image & brightness reduction ----- */
-        body::before {
-            content: "";
+        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
+        .hero-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://i.ibb.co/Vcg0rgNY/ravi-sharma-h-Nv5s6-NEYig-unsplash.jpg');
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .hero-bg::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
-            filter: brightness(0.30) saturate(1.1) contrast(1.05);
-            z-index: -3;
+            filter: blur(14px) brightness(0.25) saturate(0.7);
+            transform: scale(1.1);
         }
-        body::after {
+
+        .hero-bg::after {
             content: "";
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.10) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.06) 0%, transparent 50%);
-            z-index: -2;
-            pointer-events: none;
+            background: rgba(0, 0, 0, 0.65);
         }
 
-        /* ----- FLOATING ORBS ----- */
-        .orb {
+        /* ----- HEADER (DARK GLASS) ----- */
+        .header {
             position: fixed;
-            border-radius: 50%;
-            filter: blur(70px);
-            opacity: 0.08;
-            z-index: -1;
-            pointer-events: none;
-            animation: orbFloat 16s ease-in-out infinite alternate;
-        }
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: var(--violet);
-            top: -8%;
-            left: -10%;
-            animation-delay: 0s;
-        }
-        .orb-2 {
-            width: 350px;
-            height: 350px;
-            background: var(--cyan);
-            bottom: -8%;
-            right: -10%;
-            animation-delay: 5s;
-        }
-        .orb-3 {
-            width: 280px;
-            height: 280px;
-            background: var(--gold);
-            top: 40%;
-            left: 70%;
-            animation-delay: 10s;
-            opacity: 0.06;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.50);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        @keyframes orbFloat {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-            33% {
-                transform: translate(25px, -35px) scale(1.06);
-            }
-            66% {
-                transform: translate(-15px, 25px) scale(0.94);
-            }
-            100% {
-                transform: translate(20px, -10px) scale(1.02);
-            }
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            letter-spacing: -0.4px;
+        }
+        .logo-text .vc {
+            color: #60a5fa;
+        }
+
+        .logo-sub {
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 0.3px;
+            font-weight: 400;
+            margin-top: -2px;
+        }
+        .logo-sub .highlight {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
         }
 
         /* ----- CONTAINER ----- */
         .container {
             max-width: 560px;
             margin: 0 auto;
-            padding: 1rem 1.2rem 2rem;
-            position: relative;
-            z-index: 2;
+            padding: 0 1.2rem;
+            flex: 1;
+            width: 100%;
         }
 
-        /* ----- HEADER / BRAND ----- */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.8rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: var(--radius-sm);
-            background: linear-gradient(135deg, var(--violet), var(--cyan));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px var(--violet-glow);
-            flex-shrink: 0;
-        }
-
-        .brand-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: #fff;
-            stroke-width: 2.2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .brand-name {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .brand-name .pc {
-            color: var(--gold);
-            -webkit-text-fill-color: var(--gold);
-            font-weight: 900;
-        }
-
-        .brand-badge {
-            font-size: 9px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.2);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 3px 12px;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        /* ----- BACK BUTTON ----- */
+        /* ----- BACK BUTTON (GLASS) ----- */
         .back-row {
             display: flex;
             align-items: center;
@@ -216,12 +140,12 @@
             align-items: center;
             gap: 6px;
             background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.04);
             border-radius: 40px;
             padding: 8px 16px;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.3);
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: inherit;
@@ -230,7 +154,7 @@
 
         .back-btn:hover {
             background: rgba(255, 255, 255, 0.08);
-            color: #fff;
+            color: #ffffff;
             transform: translateX(-3px);
         }
 
@@ -244,55 +168,64 @@
             stroke-linejoin: round;
         }
 
-        /* ----- PAGE TITLE ----- */
-        .page-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: -0.3px;
-            margin-bottom: 0.2rem;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .page-sub {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.3);
+        /* ----- PAGE HEADER ----- */
+        .page-header {
             margin-bottom: 1.2rem;
-            font-weight: 400;
+            text-align: center;
         }
 
-        /* ----- MAIN GLASS CARD ----- */
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .page-header h1 span {
+            color: #60a5fa;
+        }
+
+        .page-header p {
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 0.85rem;
+            margin-top: 2px;
+        }
+
+        /* ----- GLASS CARD ----- */
         .glass-card {
-            background: rgba(10, 8, 21, 0.55);
-            backdrop-filter: blur(16px) saturate(1.3);
-            -webkit-backdrop-filter: blur(16px) saturate(1.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: var(--radius-lg);
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 28px;
             padding: 1.8rem 1.5rem;
-            box-shadow: var(--shadow-card);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: fadeUp 0.5s ease forwards;
             position: relative;
             overflow: hidden;
-            text-align: center;
             margin-bottom: 1.2rem;
+            text-align: center;
         }
 
         .glass-card::before {
             content: '';
             position: absolute;
-            top: -40%;
-            right: -20%;
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(124, 109, 240, 0.04) 0%, transparent 70%);
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
             pointer-events: none;
         }
 
-        .glass-card:hover {
-            border-color: rgba(255, 255, 255, 0.08);
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .glass-card .card-icon {
@@ -302,17 +235,15 @@
             width: 72px;
             height: 72px;
             border-radius: 50%;
-            background: rgba(246, 201, 110, 0.06);
-            border: 1px solid rgba(246, 201, 110, 0.08);
+            background: rgba(96, 165, 250, 0.04);
+            border: 1px solid rgba(96, 165, 250, 0.06);
             margin-bottom: 0.6rem;
-            position: relative;
-            z-index: 1;
         }
 
         .glass-card .card-icon svg {
             width: 36px;
             height: 36px;
-            stroke: var(--gold);
+            stroke: #60a5fa;
             stroke-width: 1.8;
             fill: none;
             stroke-linecap: round;
@@ -322,26 +253,21 @@
         .glass-card .card-title {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #fff;
-            position: relative;
-            z-index: 1;
+            color: #ffffff;
             margin-bottom: 0.2rem;
         }
 
         .glass-card .card-subtitle {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.35);
-            position: relative;
-            z-index: 1;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.15);
             margin-bottom: 1.2rem;
             line-height: 1.5;
         }
 
-        /* ----- CODE INPUT ----- */
+        /* ----- INPUT (GLASS) ----- */
         .input-wrap {
             position: relative;
             margin-bottom: 0.3rem;
-            z-index: 1;
         }
 
         .input-wrap .input-icon {
@@ -351,7 +277,7 @@
             transform: translateY(-50%);
             width: 20px;
             height: 20px;
-            stroke: rgba(255, 255, 255, 0.15);
+            stroke: rgba(255, 255, 255, 0.06);
             stroke-width: 2;
             fill: none;
             stroke-linecap: round;
@@ -361,33 +287,33 @@
         }
 
         .input-wrap:focus-within .input-icon {
-            stroke: var(--gold);
+            stroke: #60a5fa;
         }
 
         .input-wrap input {
             width: 100%;
             padding: 0.9rem 1rem 0.9rem 50px;
-            border-radius: var(--radius-sm);
-            border: 1.5px solid rgba(255, 255, 255, 0.06);
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
+            border-radius: 14px;
+            border: 1.5px solid rgba(255, 255, 255, 0.04);
+            background: rgba(0, 0, 0, 0.25);
+            color: #ffffff;
             font-size: 1.1rem;
             font-family: 'Monaco', 'Menlo', monospace;
             text-transform: uppercase;
             letter-spacing: 4px;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             outline: none;
             text-align: center;
         }
 
         .input-wrap input:focus {
-            border-color: rgba(246, 201, 110, 0.15);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 30px rgba(246, 201, 110, 0.02);
+            border-color: rgba(96, 165, 250, 0.15);
+            background: rgba(0, 0, 0, 0.35);
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.02);
         }
 
         .input-wrap input::placeholder {
-            color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.06);
             font-family: 'Inter', sans-serif;
             letter-spacing: 1px;
             text-transform: none;
@@ -399,70 +325,49 @@
             top: 50%;
             transform: translateY(-50%);
             font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.06);
             font-weight: 600;
         }
 
         .input-error {
-            font-size: 0.75rem;
-            color: var(--red);
+            font-size: 0.7rem;
+            color: #f87171;
             margin-top: 0.3rem;
             min-height: 1.2rem;
             text-align: left;
             padding-left: 4px;
-            z-index: 1;
-            position: relative;
         }
 
-        /* ----- CLAIM BUTTON ----- */
+        /* ----- CLAIM BUTTON (BLUE GRADIENT) ----- */
         .btn-claim {
             width: 100%;
             padding: 0.9rem;
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: 14px;
             font-family: inherit;
             font-weight: 700;
             font-size: 1rem;
-            color: #0a0815;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 30px var(--gold-glow);
-            position: relative;
-            overflow: hidden;
+            transition: all 0.3s ease;
             letter-spacing: 0.3px;
             margin-top: 0.8rem;
-            z-index: 1;
+            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
         }
 
-        .btn-claim::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-        }
-
-        .btn-claim:hover::after {
-            opacity: 1;
-        }
-
-        .btn-claim:hover {
+        .btn-claim:hover:not(:disabled) {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             transform: translateY(-2px);
-            box-shadow: 0 8px 40px var(--gold-glow);
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
         }
 
-        .btn-claim:active {
+        .btn-claim:active:not(:disabled) {
             transform: scale(0.97);
         }
 
         .btn-claim:disabled {
-            opacity: 0.4;
+            opacity: 0.3;
             transform: none;
             cursor: not-allowed;
             box-shadow: none;
@@ -484,32 +389,30 @@
             stroke-linejoin: round;
         }
 
-        /* ----- MESSAGE BOX ----- */
+        /* ----- MESSAGE BOX (GLASS) ----- */
         .msg-box {
             padding: 0.8rem 1rem;
-            border-radius: var(--radius-sm);
+            border-radius: 14px;
             text-align: center;
             font-weight: 500;
             font-size: 0.9rem;
             margin-top: 0.8rem;
             display: none;
             border: 1.5px solid transparent;
-            position: relative;
-            z-index: 1;
         }
 
         .msg-box.success {
             display: block;
             background: rgba(74, 222, 128, 0.06);
-            border-color: rgba(74, 222, 128, 0.12);
-            color: #6ee7b7;
+            border-color: rgba(74, 222, 128, 0.08);
+            color: #4ade80;
         }
 
         .msg-box.error {
             display: block;
             background: rgba(239, 68, 68, 0.06);
-            border-color: rgba(239, 68, 68, 0.12);
-            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.08);
+            color: #f87171;
         }
 
         .msg-box svg {
@@ -518,25 +421,33 @@
             stroke: currentColor;
             stroke-width: 2;
             fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
             vertical-align: middle;
             margin-right: 8px;
         }
 
-        /* ----- INFO CARD ----- */
+        /* ----- INFO CARD (GLASS) ----- */
         .info-card {
-            background: rgba(10, 8, 21, 0.40);
-            backdrop-filter: blur(12px) saturate(1.2);
-            -webkit-backdrop-filter: blur(12px) saturate(1.2);
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: var(--radius-md);
+            border-radius: 28px;
             padding: 1.2rem 1.2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .info-card:hover {
-            border-color: rgba(255, 255, 255, 0.06);
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+            pointer-events: none;
         }
 
         .info-card .info-header {
@@ -549,7 +460,7 @@
         .info-card .info-header svg {
             width: 20px;
             height: 20px;
-            stroke: var(--gold);
+            stroke: #60a5fa;
             stroke-width: 2;
             fill: none;
             stroke-linecap: round;
@@ -560,26 +471,26 @@
         .info-card .info-title {
             font-size: 0.95rem;
             font-weight: 700;
-            color: #fff;
+            color: #ffffff;
         }
 
         .info-card .info-text {
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.35);
+            color: rgba(255, 255, 255, 0.15);
             line-height: 1.6;
             padding-left: 30px;
         }
 
         .info-card .info-note {
             font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.08);
             margin-top: 0.5rem;
             padding-left: 30px;
             line-height: 1.5;
         }
 
         .info-card .info-note strong {
-            color: var(--gold);
+            color: #60a5fa;
         }
 
         .info-card .info-note svg {
@@ -597,61 +508,66 @@
         /* ----- TOAST ----- */
         .toast {
             position: fixed;
-            bottom: 90px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(16px);
+            color: #f1f5f9;
             padding: 12px 24px;
-            border-radius: 60px;
+            border-radius: 40px;
             font-weight: 600;
             font-size: 0.85rem;
-            z-index: 9999;
-            background: rgba(10, 8, 21, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: #fff;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-            animation: toastIn 0.3s ease;
+            z-index: 1001;
+            animation: toastFade 4.5s ease forwards;
             max-width: 90%;
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .toast.error {
             border-color: rgba(239, 68, 68, 0.15);
             color: #fca5a5;
         }
-
         .toast.success {
             border-color: rgba(74, 222, 128, 0.15);
             color: #6ee7b7;
         }
 
-        @keyframes toastIn {
-            from {
+        @keyframes toastFade {
+            0% {
                 opacity: 0;
                 transform: translateX(-50%) translateY(20px) scale(0.95);
             }
-            to {
+            15% {
                 opacity: 1;
                 transform: translateX(-50%) translateY(0) scale(1);
             }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px) scale(0.95);
+            }
         }
 
-        /* ----- BOTTOM NAV ----- */
+        /* ===== BOTTOM NAV (5 icons – NO Treasure) ===== */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(10, 8, 21, 0.92);
-            backdrop-filter: blur(20px) saturate(1.4);
-            -webkit-backdrop-filter: blur(20px) saturate(1.4);
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(0, 0, 0, 0.50);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
             display: flex;
             justify-content: space-around;
             align-items: center;
             padding: 6px 4px 14px;
             z-index: 30;
-            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
         }
 
         .nav-item {
@@ -660,7 +576,7 @@
             align-items: center;
             gap: 2px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             flex: 1;
             text-align: center;
             padding: 4px 2px;
@@ -668,59 +584,82 @@
             border: none;
             background: transparent;
             font-family: inherit;
+            color: rgba(255, 255, 255, 0.15);
         }
 
         .nav-item .nav-icon {
-            width: 26px;
-            height: 26px;
-            object-fit: contain;
-            filter: brightness(0.35) grayscale(0.6);
-            transition: all 0.3s ease;
-            border-radius: 6px;
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.3s;
         }
 
         .nav-item.active .nav-icon {
-            filter: brightness(1) drop-shadow(0 0 12px rgba(93, 217, 242, 0.35));
-            transform: scale(1.06);
+            stroke: #60a5fa;
+            transform: scale(1.05);
         }
 
         .nav-item .nav-label {
-            font-size: 0.5rem;
-            color: rgba(255, 255, 255, 0.2);
-            font-weight: 500;
-            transition: color 0.3s ease;
+            font-size: 0.45rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.15);
+            transition: 0.3s;
             letter-spacing: 0.3px;
         }
 
         .nav-item.active .nav-label {
-            color: var(--cyan);
+            color: #60a5fa;
         }
 
-        /* ----- RESPONSIVE ----- */
-        @media (max-width: 600px) {
+        .nav-item:hover .nav-icon {
+            stroke: #60a5fa;
+        }
+
+        .nav-item.marketplace .nav-icon {
+            width: 32px;
+            height: 32px;
+            stroke-width: 2;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            border-radius: 50%;
+            padding: 4px;
+            stroke: #fff;
+            margin-bottom: 2px;
+        }
+
+        .nav-item.marketplace.active .nav-icon {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(37, 99, 235, 0.15);
+        }
+
+        .nav-item.marketplace .nav-label {
+            color: #60a5fa;
+            font-weight: 700;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 500px) {
+            .header {
+                padding: 0.6rem 1rem;
+            }
+            .logo-text {
+                font-size: 1.2rem;
+            }
+            .logo-sub {
+                font-size: 0.5rem;
+            }
             .container {
-                padding: 0.8rem 0.8rem 1.5rem;
+                padding: 0 0.8rem;
             }
-            .brand-name {
-                font-size: 17px;
-            }
-            .brand-icon {
-                width: 36px;
-                height: 36px;
-            }
-            .brand-icon svg {
-                width: 18px;
-                height: 18px;
-            }
-            .brand-badge {
-                font-size: 7px;
-                padding: 2px 8px;
-            }
-            .page-title {
-                font-size: 1.3rem;
+            .page-header h1 {
+                font-size: 1.4rem;
             }
             .glass-card {
                 padding: 1.2rem 1rem;
+                border-radius: 24px;
             }
             .glass-card .card-icon {
                 width: 60px;
@@ -760,16 +699,17 @@
             .info-card .info-header {
                 flex-wrap: wrap;
             }
-            .back-btn {
-                font-size: 0.75rem;
-                padding: 6px 12px;
-            }
             .nav-item .nav-icon {
                 width: 22px;
                 height: 22px;
             }
-            .nav-item .nav-label {
-                font-size: 0.45rem;
+            .nav-item.marketplace .nav-icon {
+                width: 30px;
+                height: 30px;
+            }
+            .back-btn {
+                font-size: 0.65rem;
+                padding: 6px 12px;
             }
         }
 
@@ -787,28 +727,24 @@
 </head>
 <body>
 
-    <!-- ===== ORBS ===== -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
+    <div class="hero-bg"></div>
 
-    <!-- ===== MAIN CONTAINER ===== -->
-    <div class="container">
-
-        <!-- ===== HEADER ===== -->
-        <div class="header">
-            <div class="brand">
-                <div class="brand-icon">
-                    <svg viewBox="0 0 24 24">
-                        <polyline points="6 6 18 6 6 18 18 18" />
-                    </svg>
-                </div>
-                <span class="brand-name">Pureore<span class="pc">·PC</span></span>
-                <span class="brand-badge">Treasure</span>
-            </div>
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header-left">
+            <a href="index.html" class="logo-text">Vision<span class="vc">Core</span></a>
+            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
         </div>
+        <div class="header-right">
+            <!-- No hamburger menu -->
+        </div>
+    </header>
 
-        <!-- ===== BACK ROW ===== -->
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="container">
+
+        <!-- Back Row -->
         <div class="back-row">
             <button class="back-btn" id="backBtn">
                 <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
@@ -816,11 +752,13 @@
             </button>
         </div>
 
-        <!-- ===== PAGE TITLE ===== -->
-        <div class="page-title">🎁 Treasure Hunt</div>
-        <div class="page-sub">Enter a secret code to claim your reward</div>
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🎁 <span>Treasure Hunt</span></h1>
+            <p>Enter a secret code to claim your reward</p>
+        </div>
 
-        <!-- ===== MAIN CARD ===== -->
+        <!-- Main Glass Card -->
         <div class="glass-card">
             <div class="card-icon">
                 <svg viewBox="0 0 24 24">
@@ -854,7 +792,7 @@
             <div class="msg-box" id="messageArea"></div>
         </div>
 
-        <!-- ===== INFO CARD ===== -->
+        <!-- Info Glass Card -->
         <div class="info-card">
             <div class="info-header">
                 <svg viewBox="0 0 24 24">
@@ -873,39 +811,35 @@
             </div>
         </div>
 
-    </div>
+    </main>
 
-    <!-- ===== BOTTOM NAV ===== -->
+    <!-- ===== BOTTOM NAV (5 icons – NO Treasure) ===== -->
     <div class="bottom-nav">
         <button class="nav-item" data-page="dashboard.html">
-            <img class="nav-icon" src="https://i.ibb.co/qM4qxgGj/file-00000000248871f4bb1e73df45bacb92.png" alt="Home" />
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
             <span class="nav-label">Home</span>
         </button>
-        <button class="nav-item" data-page="mkvip.html">
-            <img class="nav-icon" src="https://i.ibb.co/5WSyHGRZ/IMG-20260622-183230.jpg" alt="Mkvip" />
-            <span class="nav-label">Mkvip</span>
-        </button>
-        <button class="nav-item" data-page="jproduct.html">
-            <img class="nav-icon" src="https://i.ibb.co/1fzvRd58/IMG-20260622-183217.jpg" alt="Jproduct" />
-            <span class="nav-label">Jproduct</span>
-        </button>
         <button class="nav-item" data-page="income.html">
-            <img class="nav-icon" src="https://i.ibb.co/60hq0ds8/IMG-20260622-183154.jpg" alt="Income" />
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
             <span class="nav-label">Income</span>
         </button>
-        <button class="nav-item active" data-page="treasure.html">
-            <img class="nav-icon" src="https://i.ibb.co/QRRSRzC/IMG-20260622-183120.jpg" alt="Treasure" />
-            <span class="nav-label">Treasure</span>
+        <button class="nav-item marketplace" data-page="marketplace.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span class="nav-label">Market</span>
+        </button>
+        <button class="nav-item" data-page="team.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="nav-label">Team</span>
         </button>
         <button class="nav-item" data-page="me.html">
-            <img class="nav-icon" src="https://i.ibb.co/JwY3HLVx/IMG-20260622-WA5359.jpg" alt="Me" />
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="nav-label">Me</span>
         </button>
     </div>
 
     <script>
         // ================================================================
-        // FIREBASE CONFIG (unchanged)
+        // FIREBASE CONFIG
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -1146,10 +1080,8 @@
             });
         });
 
-        console.log('✨ Pureore Capital · Treasure (unique design)');
-        console.log('🎁 Glass-morphism with SVG icons');
-        console.log('🔐 Firebase config untouched');
-        console.log('💰 Adds to walletBalance only');
+        console.log('✅ treasure.html · VisionCore Capital · Blue glassmorphism design');
+        console.log('🎁 Bottom nav has 5 icons only (NO Treasure icon)');
     </script>
 
     <!-- ===== SPINNER STYLES (inline) ===== -->
@@ -1158,8 +1090,8 @@
             display: inline-block;
             width: 18px;
             height: 18px;
-            border: 2px solid rgba(10, 8, 21, 0.1);
-            border-top-color: #0a0815;
+            border: 2px solid rgba(255, 255, 255, 0.04);
+            border-top-color: #60a5fa;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             vertical-align: middle;

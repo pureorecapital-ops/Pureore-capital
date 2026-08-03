@@ -272,7 +272,6 @@
             min-height: 0;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: auto;
-            /* smooth scroll handled by JS */;
         }
 
         .chat-box::-webkit-scrollbar {
@@ -297,6 +296,9 @@
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
             animation: msgFadeIn 0.25s ease;
             position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
         }
 
         @keyframes msgFadeIn {
@@ -318,6 +320,16 @@
             border-bottom-right-radius: 4px;
             box-shadow: 0 4px 16px rgba(26, 115, 232, 0.15);
         }
+        .user-message .msg-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            stroke: #ffffff;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
         .user-message a {
             color: #bbdefb;
             text-decoration: underline;
@@ -334,6 +346,20 @@
             border-bottom-left-radius: 4px;
             box-shadow: 0 4px 16px rgba(255, 255, 255, 0.04);
         }
+        .ai-message .msg-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            stroke: #7c6df0;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            margin-top: 2px;
+        }
+        .ai-message .msg-content {
+            flex: 1;
+        }
         .ai-message a {
             color: #0d47a1;
             text-decoration: underline;
@@ -341,10 +367,65 @@
         .ai-message a:hover {
             color: #1a73e8;
         }
-        .ai-message .msg-icon {
-            display: inline-block;
-            margin-right: 6px;
+        .ai-message ul,
+        .ai-message ol {
+            padding-left: 1.4rem;
+            margin: 0.3rem 0;
+        }
+        .ai-message li {
+            margin-bottom: 0.2rem;
+        }
+        .ai-message strong {
+            color: #f97316;
+        }
+        .ai-message .section-title {
             font-weight: 700;
+            color: #0d47a1;
+            display: block;
+            margin-top: 0.4rem;
+        }
+
+        /* ----- TYPING INDICATOR ----- */
+        .typing-indicator {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 0.6rem 1rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: msgFadeIn 0.3s ease;
+        }
+        .typing-indicator .dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+        .typing-indicator .dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            animation: dotPulse 1.2s ease-in-out infinite;
+        }
+        .typing-indicator .dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator .dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes dotPulse {
+            0%,
+            100% {
+                opacity: 0.2;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
         }
 
         /* ----- EMPTY STATE ----- */
@@ -498,6 +579,10 @@
                 font-size: 0.88rem;
                 padding: 0.6rem 0.8rem;
             }
+            .message .msg-icon {
+                width: 22px;
+                height: 22px;
+            }
             .back-btn {
                 font-size: 0.75rem;
                 padding: 5px 10px;
@@ -524,6 +609,10 @@
                 max-width: 92%;
                 font-size: 0.82rem;
                 padding: 0.5rem 0.7rem;
+            }
+            .message .msg-icon {
+                width: 20px;
+                height: 20px;
             }
             .page-title {
                 font-size: 1rem;
@@ -578,7 +667,7 @@
 
         <!-- ===== CHAT BOX ===== -->
         <div class="chat-box" id="chatBox">
-            <div class="empty-state">
+            <div class="empty-state" id="emptyState">
                 <span class="icon">🤖</span>
                 <div class="title">Pureore Assistant</div>
                 <div class="sub">Ask me anything about the platform</div>
@@ -597,7 +686,7 @@
 
     <script>
         // ================================================================
-        // FIREBASE CONFIG (unchanged)
+        // FIREBASE CONFIG
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -613,6 +702,16 @@
         var db = firebase.firestore();
         db.settings({ persistence: true });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ================================================================
+        // GEMINI API CONFIGURATION
+        // ================================================================
+        // Replace this with your own Gemini API key from Google AI Studio.
+        // If the key is missing or the API fails, the assistant falls back
+        // to the static response system.
+        var GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
+        var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' +
+            GEMINI_API_KEY;
 
         // ================================================================
         // HELPERS
@@ -631,6 +730,7 @@
         // DOM REFS
         // ================================================================
         var chatBox = document.getElementById('chatBox');
+        var emptyState = document.getElementById('emptyState');
         var userInput = document.getElementById('userInput');
         var sendBtn = document.getElementById('sendBtn');
         var backBtn = document.getElementById('backBtn');
@@ -639,6 +739,7 @@
         var messagesRef = null;
         var unsubscribe = null;
         var isFirstLoad = true;
+        var typingIndicator = null;
 
         // ================================================================
         // SCROLL MANAGEMENT – stable, no jumping
@@ -676,7 +777,158 @@
         window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
         // ================================================================
-        // SAVE MESSAGE
+        // SVG ICONS
+        // ================================================================
+        var userIconSVG =
+            '<svg class="msg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+        var botIconSVG =
+            '<svg class="msg-icon" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M8 12h8"/><path d="M8 16h6"/><circle cx="10" cy="10" r="0.5" fill="currentColor"/><circle cx="14" cy="10" r="0.5" fill="currentColor"/></svg>';
+
+        // ================================================================
+        // FORMAT AI RESPONSE: convert markdown-like syntax to HTML
+        // ================================================================
+        function formatAIResponse(text) {
+            // Preserve line breaks
+            var html = text.replace(/\n/g, '<br>');
+
+            // Convert numbered lists: "1. item" -> <ol><li>item</li></ol>
+            // We'll handle ordered lists by detecting lines starting with number+dot
+            var lines = text.split('\n');
+            var inList = false;
+            var listType = null;
+            var listItems = [];
+            var result = [];
+
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                // Check for ordered list item: "1. item" or "1. item"
+                var olMatch = line.match(/^(\d+)\.\s+(.+)/);
+                // Check for unordered list item: "- item" or "• item"
+                var ulMatch = line.match(/^[-•]\s+(.+)/);
+
+                if (olMatch) {
+                    if (!inList || listType !== 'ol') {
+                        if (inList) {
+                            // close previous list
+                            result.push('</' + (listType === 'ol' ? 'ol' : 'ul') + '>');
+                        }
+                        inList = true;
+                        listType = 'ol';
+                        result.push('<ol>');
+                    }
+                    result.push('<li>' + olMatch[2] + '</li>');
+                } else if (ulMatch) {
+                    if (!inList || listType !== 'ul') {
+                        if (inList) {
+                            result.push('</' + (listType === 'ol' ? 'ol' : 'ul') + '>');
+                        }
+                        inList = true;
+                        listType = 'ul';
+                        result.push('<ul>');
+                    }
+                    result.push('<li>' + ulMatch[1] + '</li>');
+                } else {
+                    if (inList) {
+                        result.push('</' + (listType === 'ol' ? 'ol' : 'ul') + '>');
+                        inList = false;
+                        listType = null;
+                    }
+                    // If line is empty, just add a line break
+                    if (line === '') {
+                        result.push('<br>');
+                    } else {
+                        // Detect section titles: lines ending with ':' or starting with '──'
+                        var sectionMatch = line.match(/^─+$/);
+                        if (sectionMatch) {
+                            result.push('<hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 0.3rem 0;">');
+                        } else if (line.endsWith(':')) {
+                            result.push('<span class="section-title">' + line + '</span>');
+                        } else {
+                            result.push(line);
+                        }
+                    }
+                }
+            }
+            if (inList) {
+                result.push('</' + (listType === 'ol' ? 'ol' : 'ul') + '>');
+            }
+
+            var finalHtml = result.join('<br>');
+
+            // Convert URLs to clickable blue underlined links
+            var urlRegex = /(https?:\/\/[^\s]+)/g;
+            finalHtml = finalHtml.replace(urlRegex, function(url) {
+                return '<a href="' + url + '" target="_blank" rel="noopener" style="color: #0d47a1; text-decoration: underline;">' +
+                    url + '</a>';
+            });
+
+            // Convert @mentions to Telegram links
+            finalHtml = finalHtml.replace(/@(\w+)/g, function(match, username) {
+                return '<a href="https://t.me/' + username + '" target="_blank" rel="noopener" style="color: #0d47a1; text-decoration: underline;">@' +
+                    username + '</a>';
+            });
+
+            return finalHtml;
+        }
+
+        // ================================================================
+        // DISPLAY MESSAGE
+        // ================================================================
+        function displayMessage(doc) {
+            var data = doc.data();
+            if (!data.text) return;
+
+            var msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + (data.isUser ? 'user-message' : 'ai-message');
+
+            if (data.isUser) {
+                msgDiv.innerHTML = userIconSVG + '<div class="msg-content">' + escapeHtml(data.text) + '</div>';
+            } else {
+                var formatted = formatAIResponse(data.text);
+                msgDiv.innerHTML = botIconSVG + '<div class="msg-content">' + formatted + '</div>';
+            }
+
+            // Remove empty state if it exists
+            var empty = document.getElementById('emptyState');
+            if (empty) empty.remove();
+
+            chatBox.appendChild(msgDiv);
+            if (isFirstLoad) {
+                scrollToBottomImmediate();
+                isFirstLoad = false;
+            } else {
+                scrollToBottom();
+            }
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ================================================================
+        // TYPING INDICATOR
+        // ================================================================
+        function showTyping() {
+            removeTyping();
+            var div = document.createElement('div');
+            div.className = 'typing-indicator';
+            div.id = 'typingIndicator';
+            div.innerHTML = botIconSVG +
+                '<span style="margin-left:4px;">Assistant is thinking</span><span class="dots"><span></span><span></span><span></span></span>';
+            chatBox.appendChild(div);
+            scrollToBottom();
+        }
+
+        function removeTyping() {
+            var existing = document.getElementById('typingIndicator');
+            if (existing) existing.remove();
+        }
+
+        // ================================================================
+        // SAVE MESSAGE (Firestore)
         // ================================================================
         async function saveMessage(text, isUser) {
             if (!currentUserId) return;
@@ -691,33 +943,6 @@
         }
 
         // ================================================================
-        // DISPLAY MESSAGE
-        // ================================================================
-        function displayMessage(doc) {
-            var data = doc.data();
-            if (!data.text) return;
-            var msgDiv = document.createElement('div');
-            msgDiv.className = 'message ' + (data.isUser ? 'user-message' : 'ai-message');
-
-            if (data.isUser) {
-                msgDiv.textContent = data.text;
-            } else {
-                // AI message: preserve line breaks
-                msgDiv.innerHTML = data.text.replace(/\n/g, '<br>');
-                // Add a small icon to distinguish AI
-                msgDiv.innerHTML = '<span class="msg-icon">🤖</span> ' + msgDiv.innerHTML;
-            }
-            chatBox.appendChild(msgDiv);
-            // Use immediate scroll for the first few messages, then smooth
-            if (isFirstLoad) {
-                scrollToBottomImmediate();
-                isFirstLoad = false;
-            } else {
-                scrollToBottom();
-            }
-        }
-
-        // ================================================================
         // LOAD CHAT HISTORY
         // ================================================================
         function loadChatHistory() {
@@ -728,9 +953,11 @@
 
             var firstBatch = true;
             unsubscribe = query.onSnapshot(function(snapshot) {
-                // Clear only if we have messages or it's a real update
                 if (snapshot.empty && firstBatch) {
-                    chatBox.innerHTML = '';
+                    // Show empty state
+                    chatBox.innerHTML =
+                        '<div class="empty-state" id="emptyState"><span class="icon">🤖</span><div class="title">Pureore Assistant</div><div class="sub">Ask me anything about the platform</div></div>';
+                    // Send welcome message
                     var welcomeText =
                         "Hello! I'm Pureore Assistant, your personal guide.\n\nAsk me anything about deposits, withdrawals, investments, daily income, platform rules, or referral bonuses.\n\nI can explain how to use every page: Register, Login, Dashboard, Deposit, Withdraw, Treasure, Voucher, Loan, News, Change Password, Income, Team, Mk Vip, J Product, and more.\n\nHow can I help you today?";
                     saveMessage(welcomeText, false).catch(console.warn);
@@ -738,25 +965,27 @@
                     return;
                 }
 
-                // If we have existing messages, rebuild the list
                 if (!snapshot.empty) {
+                    // Remove empty state if present
+                    var empty = document.getElementById('emptyState');
+                    if (empty) empty.remove();
+                    // Clear and rebuild
                     chatBox.innerHTML = '';
                     snapshot.forEach(function(doc) { displayMessage(doc); });
-                    // Ensure we're at the bottom after loading
                     scrollToBottomImmediate();
                 }
                 firstBatch = false;
             }, function(error) {
                 console.error("Chat listener error:", error);
                 chatBox.innerHTML =
-                    '<div class="empty-state"><div class="icon">⚠️</div><div class="title">Error loading chat</div><div class="sub">Please refresh the page</div></div>';
+                    '<div class="empty-state" id="emptyState"><div class="icon">⚠️</div><div class="title">Error loading chat</div><div class="sub">Please refresh the page</div></div>';
             });
         }
 
         // ================================================================
-        // AI RESPONSE GENERATOR
+        // STATIC RESPONSE FALLBACK (used when Gemini API is unavailable)
         // ================================================================
-        function getAIResponse(userMessage) {
+        function getFallbackResponse(userMessage) {
             var msg = userMessage.toLowerCase();
 
             // Blocked keywords – no admin/owner info
@@ -873,23 +1102,94 @@
         }
 
         // ================================================================
-        // SEND MESSAGE
+        // GEMINI API – REAL AI
+        // ================================================================
+        async function getGeminiResponse(userMessage) {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+                console.warn('Gemini API key not set. Using fallback responses.');
+                return null;
+            }
+
+            try {
+                var response = await fetch(GEMINI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: "You are Pureore Assistant, a helpful AI assistant for Pureore Capital, an African-focused investment platform. Answer questions about the platform, deposits, withdrawals, investments, rules, loans, referrals, etc. Keep answers clear, structured with numbered lists or bullet points, and be friendly. Always direct users to official support channels (Telegram @pureorecapital, WhatsApp group). If you don't know something, say so and suggest contacting support. Here is the user's question: " +
+                                    userMessage
+                            }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    console.warn('Gemini API error:', response.status);
+                    return null;
+                }
+
+                var data = await response.json();
+                if (data.candidates && data.candidates.length > 0) {
+                    var content = data.candidates[0].content;
+                    if (content && content.parts && content.parts.length > 0) {
+                        return content.parts[0].text;
+                    }
+                }
+                return null;
+            } catch (err) {
+                console.warn('Gemini API error:', err);
+                return null;
+            }
+        }
+
+        // ================================================================
+        // SEND MESSAGE (with AI integration)
         // ================================================================
         async function sendMessage(text) {
             if (!text.trim()) return;
             if (!currentUserId) return;
-            // Disable input while sending
+
+            // Disable input
             userInput.disabled = true;
             sendBtn.disabled = true;
 
+            // Save user message
             await saveMessage(text, true);
-            var reply = getAIResponse(text);
-            setTimeout(async function() {
+
+            // Show typing indicator
+            showTyping();
+
+            try {
+                // Try Gemini API first
+                var reply = await getGeminiResponse(text);
+
+                // If Gemini failed, use fallback
+                if (!reply) {
+                    reply = getFallbackResponse(text);
+                }
+
+                // Remove typing indicator
+                removeTyping();
+
+                // Save AI response
                 await saveMessage(reply, false);
+
+                // Re-enable input
                 userInput.disabled = false;
                 sendBtn.disabled = false;
                 userInput.focus();
-            }, 400);
+
+            } catch (err) {
+                console.error('Error in sendMessage:', err);
+                removeTyping();
+                var fallbackReply = getFallbackResponse(text);
+                await saveMessage(fallbackReply, false);
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+                showToast('Using fallback responses – AI service unavailable.', true);
+            }
         }
 
         function handleSend() {
@@ -911,7 +1211,6 @@
             currentUserId = user.uid;
             watchBlockStatus(currentUserId);
             loadChatHistory();
-            // Focus input after a moment
             setTimeout(function() { userInput.focus(); }, 600);
         });
 
@@ -941,10 +1240,10 @@
             }, 200);
         });
 
-        console.log('✨ Pureore Capital · Chat (redesigned)');
-        console.log('💬 AI messages: white background, User messages: blue');
-        console.log('📱 Stable scroll – no touch‑to‑dismiss');
-        console.log('🔐 Firebase config untouched');
+        console.log('✨ Pureore Capital · Chat with REAL AI (Gemini)');
+        console.log('🤖 AI messages: white with SVG bot icon, User: blue with SVG user icon');
+        console.log('🔗 Links in AI responses are blue and underlined');
+        console.log('📋 Responses are structured with ordered lists (numbering)');
     </script>
 
 </body>

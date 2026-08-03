@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-    <title>Withdraw – PC • Pureore Capital</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Withdraw – VisionCore Capital</title>
+    <link rel="preconnect" href="https://www.gstatic.com" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
@@ -11,236 +12,159 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BASE ----- */
-        *,
-        *::before,
-        *::after {
+        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --gold: #f6c96e;
-            --gold-glow: rgba(246, 201, 110, 0.25);
-            --cyan: #5dd9f2;
-            --cyan-glow: rgba(93, 217, 242, 0.20);
-            --violet: #7c6df0;
-            --violet-glow: rgba(124, 109, 240, 0.30);
-            --green: #4ade80;
-            --green-glow: rgba(74, 222, 128, 0.15);
-            --red: #ef4444;
-            --red-glow: rgba(239, 68, 68, 0.15);
-            --radius-lg: 28px;
-            --radius-md: 18px;
-            --radius-sm: 12px;
-            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
-        }
-
-        html,
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             min-height: 100vh;
-            color: #fff;
-            background: #0a0815;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            padding-bottom: 30px;
+            padding-top: 80px;
+            padding-bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            position: relative;
+            background: #000;
         }
 
-        /* ----- BACKGROUND with Ravi Sharma image & brightness reduction ----- */
-        body::before {
-            content: "";
+        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
+        .hero-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://i.ibb.co/Vcg0rgNY/ravi-sharma-h-Nv5s6-NEYig-unsplash.jpg');
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .hero-bg::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
-            filter: brightness(0.30) saturate(1.1) contrast(1.05);
-            z-index: -3;
+            filter: blur(14px) brightness(0.25) saturate(0.7);
+            transform: scale(1.1);
         }
-        body::after {
+
+        .hero-bg::after {
             content: "";
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.10) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.06) 0%, transparent 50%);
-            z-index: -2;
-            pointer-events: none;
+            background: rgba(0, 0, 0, 0.65);
+            /* Dark overlay only */
         }
 
-        /* ----- FLOATING ORBS ----- */
-        .orb {
+        /* ----- HEADER (DARK GLASS) ----- */
+        .header {
             position: fixed;
-            border-radius: 50%;
-            filter: blur(70px);
-            opacity: 0.08;
-            z-index: -1;
-            pointer-events: none;
-            animation: orbFloat 16s ease-in-out infinite alternate;
-        }
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: var(--violet);
-            top: -8%;
-            left: -10%;
-            animation-delay: 0s;
-        }
-        .orb-2 {
-            width: 350px;
-            height: 350px;
-            background: var(--cyan);
-            bottom: -8%;
-            right: -10%;
-            animation-delay: 5s;
-        }
-        .orb-3 {
-            width: 280px;
-            height: 280px;
-            background: var(--gold);
-            top: 40%;
-            left: 70%;
-            animation-delay: 10s;
-            opacity: 0.06;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.50);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        @keyframes orbFloat {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-            33% {
-                transform: translate(25px, -35px) scale(1.06);
-            }
-            66% {
-                transform: translate(-15px, 25px) scale(0.94);
-            }
-            100% {
-                transform: translate(20px, -10px) scale(1.02);
-            }
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            letter-spacing: -0.4px;
+        }
+        .logo-text .vc {
+            color: #60a5fa;
+        }
+
+        .logo-sub {
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 0.3px;
+            font-weight: 400;
+            margin-top: -2px;
+        }
+        .logo-sub .highlight {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.3);
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
         }
 
         /* ----- CONTAINER ----- */
         .container {
             max-width: 560px;
             margin: 0 auto;
-            padding: 1rem 1.2rem 2rem;
-            position: relative;
-            z-index: 2;
+            padding: 0 1.2rem;
+            flex: 1;
+            width: 100%;
         }
 
-        /* ----- HEADER / BRAND ----- */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.8rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
+        /* ----- PAGE HEADER ----- */
+        .page-header {
+            margin-bottom: 1.2rem;
+            text-align: center;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
         }
 
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: var(--radius-sm);
-            background: linear-gradient(135deg, var(--violet), var(--cyan));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px var(--violet-glow);
-            flex-shrink: 0;
+        .page-header h1 span {
+            color: #60a5fa;
         }
 
-        .brand-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: #fff;
-            stroke-width: 2.2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .brand-name {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .brand-name .pc {
-            color: var(--gold);
-            -webkit-text-fill-color: var(--gold);
-            font-weight: 900;
-        }
-
-        .brand-badge {
-            font-size: 9px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.2);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 3px 12px;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        /* ----- BACK BUTTON ----- */
-        .back-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 0.8rem;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 40px;
-            padding: 8px 16px;
+        .page-header p {
+            color: rgba(255, 255, 255, 0.25);
             font-size: 0.85rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-            text-decoration: none;
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
-            transform: translateX(-3px);
-        }
-
-        .back-btn svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+            margin-top: 2px;
         }
 
         /* ----- STEP INDICATOR ----- */
@@ -250,47 +174,53 @@
             justify-content: center;
             gap: 8px;
             margin-bottom: 1.2rem;
+            padding: 0.5rem 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .step-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-            transition: all 0.5s ease;
+            background: rgba(255, 255, 255, 0.06);
+            transition: all 0.4s ease;
             border: none;
             padding: 0;
             cursor: default;
         }
 
         .step-dot.active {
-            background: var(--gold);
-            box-shadow: 0 0 20px var(--gold-glow);
+            background: #60a5fa;
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.15);
             transform: scale(1.2);
         }
 
         .step-dot.done {
-            background: var(--green);
-            box-shadow: 0 0 20px var(--green-glow);
+            background: #4ade80;
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.10);
         }
 
         .step-line {
             width: 30px;
             height: 2px;
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.04);
             border-radius: 2px;
-            transition: background 0.5s ease;
+            transition: background 0.4s ease;
         }
 
         .step-line.done {
-            background: var(--green);
+            background: #4ade80;
         }
 
         .step-label {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.10);
             text-align: center;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             text-transform: uppercase;
             margin-top: 4px;
         }
@@ -301,55 +231,47 @@
             align-items: center;
         }
 
-        /* ----- PAGE TITLE ----- */
-        .page-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: -0.3px;
-            margin-bottom: 1.2rem;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .page-sub {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.35);
-            margin-bottom: 1.2rem;
-            font-weight: 400;
-        }
-
         /* ----- GLASS CARD ----- */
-        .card {
-            background: rgba(10, 8, 21, 0.55);
-            backdrop-filter: blur(16px) saturate(1.3);
-            -webkit-backdrop-filter: blur(16px) saturate(1.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem 1.5rem 1.8rem;
-            box-shadow: var(--shadow-card);
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        .glass-card {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 28px;
+            padding: 1.5rem 1.2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: fadeUp 0.5s ease forwards;
             position: relative;
             overflow: hidden;
+            margin-bottom: 1.2rem;
         }
 
-        .card::before {
+        .glass-card::before {
             content: '';
             position: absolute;
-            top: -60%;
-            right: -30%;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(124, 109, 240, 0.04) 0%, transparent 70%);
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
             pointer-events: none;
         }
 
-        .card-title {
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .glass-card .card-title {
             font-size: 0.85rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.15);
             display: flex;
             align-items: center;
             gap: 8px;
@@ -358,10 +280,10 @@
             text-transform: uppercase;
         }
 
-        .card-title svg {
+        .glass-card .card-title svg {
             width: 18px;
             height: 18px;
-            stroke: var(--gold);
+            stroke: #60a5fa;
             stroke-width: 2;
             fill: none;
             stroke-linecap: round;
@@ -371,22 +293,11 @@
         /* ----- STEP CONTAINER ----- */
         .step-container {
             display: block;
-            animation: stepFadeIn 0.5s ease forwards;
+            animation: fadeUp 0.4s ease forwards;
         }
 
         .step-container.hidden {
             display: none;
-        }
-
-        @keyframes stepFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(16px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         /* ----- FORM ELEMENTS ----- */
@@ -396,41 +307,43 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .form-group select,
         .form-group input:not([type="checkbox"]) {
             width: 100%;
-            padding: 0.85rem 1rem;
-            border-radius: var(--radius-sm);
-            border: 1.5px solid rgba(255, 255, 255, 0.06);
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
+            padding: 0.8rem 1rem;
+            border-radius: 14px;
+            border: 1.5px solid rgba(255, 255, 255, 0.04);
+            background: rgba(0, 0, 0, 0.25);
+            color: #ffffff;
             font-size: 0.95rem;
             font-family: inherit;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             outline: none;
         }
 
         .form-group select:focus,
         .form-group input:focus {
-            border-color: rgba(93, 217, 242, 0.15);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 30px rgba(93, 217, 242, 0.02);
+            border-color: rgba(96, 165, 250, 0.15);
+            background: rgba(0, 0, 0, 0.35);
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.02);
         }
 
         .form-group select option {
-            background: #1a1a2e;
+            background: #000;
             color: #fff;
         }
 
         .form-group select {
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.2)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 1rem center;
             padding-right: 2.5rem;
@@ -439,20 +352,21 @@
         .phone-prefix {
             display: flex;
             align-items: center;
-            border: 1.5px solid rgba(255, 255, 255, 0.06);
-            border-radius: var(--radius-sm);
-            background: rgba(255, 255, 255, 0.03);
-            padding: 0 0.5rem;
-            transition: border-color 0.3s ease;
+            border: 1.5px solid rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.25);
+            transition: border-color 0.3s;
         }
 
         .phone-prefix:focus-within {
-            border-color: rgba(93, 217, 242, 0.15);
+            border-color: rgba(96, 165, 250, 0.15);
+            background: rgba(0, 0, 0, 0.35);
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.02);
         }
 
         .phone-prefix span {
-            color: rgba(255, 255, 255, 0.3);
-            padding: 0.85rem 0 0.85rem 0.5rem;
+            color: rgba(255, 255, 255, 0.15);
+            padding: 0.8rem 0 0.8rem 0.5rem;
             font-weight: 600;
             font-size: 0.95rem;
             flex-shrink: 0;
@@ -462,24 +376,25 @@
             border: none;
             background: transparent;
             flex: 1;
-            padding: 0.85rem 0.5rem;
-            color: #fff;
+            padding: 0.8rem 0.5rem;
+            color: #ffffff;
             font-size: 0.95rem;
             font-family: inherit;
             outline: none;
         }
 
         .phone-prefix input::placeholder {
-            color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.06);
         }
 
         .input-error {
-            font-size: 0.75rem;
-            color: var(--red);
+            font-size: 0.7rem;
+            color: #f87171;
             margin-top: 0.2rem;
             min-height: 1.2rem;
         }
 
+        /* ----- BANK CHIPS ----- */
         .bank-chips {
             display: flex;
             gap: 0.6rem;
@@ -488,28 +403,28 @@
         }
 
         .bank-chip {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1.5px solid rgba(255, 255, 255, 0.04);
             border-radius: 40px;
             padding: 0.4rem 1.2rem;
             font-size: 0.8rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.15);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             font-family: inherit;
         }
 
         .bank-chip:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 0.10);
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .bank-chip.active {
-            border-color: var(--cyan);
-            background: rgba(93, 217, 242, 0.04);
-            color: var(--cyan);
-            box-shadow: 0 0 30px rgba(93, 217, 242, 0.04);
+            border-color: rgba(96, 165, 250, 0.15);
+            background: rgba(96, 165, 250, 0.06);
+            color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.02);
         }
 
         /* ----- BUTTONS ----- */
@@ -517,52 +432,33 @@
             width: 100%;
             padding: 0.9rem;
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: 14px;
             font-family: inherit;
             font-weight: 700;
             font-size: 1rem;
-            color: #0a0815;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 30px var(--gold-glow);
-            position: relative;
-            overflow: hidden;
-            letter-spacing: 0.3px;
+            transition: all 0.3s;
+            letter-spacing: 0.2px;
+            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
             margin-top: 0.8rem;
         }
 
-        .btn-primary::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-        }
-
-        .btn-primary:hover::after {
-            opacity: 1;
-        }
-
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 40px var(--gold-glow);
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
         }
 
-        .btn-primary:active {
-            transform: scale(0.97);
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
         }
 
         .btn-primary:disabled {
-            opacity: 0.4;
-            transform: none;
+            opacity: 0.3;
             cursor: not-allowed;
-            box-shadow: none;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         .btn-primary .btn-icon {
@@ -581,42 +477,111 @@
             stroke-linejoin: round;
         }
 
-        .btn-success {
-            width: 100%;
-            padding: 0.9rem;
+        .btn-blue {
+            width: auto;
+            padding: 0.6rem 1.8rem;
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: 40px;
             font-family: inherit;
             font-weight: 700;
-            font-size: 1rem;
-            color: #0a0815;
-            background: linear-gradient(135deg, var(--green), #22c55e);
+            font-size: 0.9rem;
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 30px var(--green-glow);
-            letter-spacing: 0.3px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
+            letter-spacing: 0.2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             margin-top: 0.8rem;
         }
 
-        .btn-success:hover {
+        .btn-blue:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 40px var(--green-glow);
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
         }
 
-        .btn-success:active {
+        .btn-blue:active:not(:disabled) {
             transform: scale(0.97);
         }
 
-        .btn-success:disabled {
-            opacity: 0.4;
-            transform: none;
+        .btn-blue:disabled {
+            opacity: 0.3;
             cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-blue .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-blue .btn-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn-blue-full {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 14px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
+            letter-spacing: 0.2px;
+            margin-top: 0.8rem;
+        }
+
+        .btn-blue-full:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-blue-full:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .btn-blue-full:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-blue-full .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-blue-full .btn-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         /* ----- SAVED INFO DISPLAY ----- */
         .saved-info {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: var(--radius-sm);
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
             padding: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.04);
             margin: 0.5rem 0 1rem 0;
@@ -627,7 +592,7 @@
             display: flex;
             justify-content: space-between;
             padding: 0.4rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
             font-size: 0.9rem;
         }
 
@@ -636,32 +601,31 @@
         }
 
         .saved-info .info-label {
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.15);
         }
 
         .saved-info .info-value {
-            color: rgba(255, 255, 255, 0.8);
+            color: #ffffff;
             font-weight: 500;
         }
 
         .saved-info .info-value.gold {
-            color: var(--gold);
+            color: #facc15;
         }
 
-        /* Delete button for saved info */
         .saved-info .delete-saved-btn {
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.08);
             border-radius: 40px;
             padding: 0.2rem 0.8rem;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
-            color: var(--red);
+            color: #f87171;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             font-family: inherit;
             display: flex;
             align-items: center;
@@ -669,8 +633,7 @@
         }
 
         .saved-info .delete-saved-btn:hover {
-            background: rgba(239, 68, 68, 0.15);
-            transform: scale(1.05);
+            background: rgba(239, 68, 68, 0.12);
         }
 
         .saved-info .delete-saved-btn svg {
@@ -683,12 +646,12 @@
             stroke-linejoin: round;
         }
 
-        /* ----- WITHDRAW SUMMARY ----- */
+        /* ----- SUMMARY ----- */
         .summary-row {
             display: flex;
             justify-content: space-between;
             padding: 0.6rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
             font-size: 0.95rem;
         }
 
@@ -697,28 +660,28 @@
         }
 
         .summary-label {
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.15);
         }
 
         .summary-value {
-            color: rgba(255, 255, 255, 0.9);
+            color: #ffffff;
             font-weight: 600;
         }
 
         .summary-value.gold {
-            color: var(--gold);
+            color: #facc15;
         }
         .summary-value.green {
-            color: var(--green);
+            color: #4ade80;
         }
         .summary-value.red {
-            color: var(--red);
+            color: #f87171;
         }
 
         /* ----- MESSAGE BOX ----- */
         .msg-box {
             padding: 0.8rem 1rem;
-            border-radius: var(--radius-sm);
+            border-radius: 14px;
             text-align: center;
             font-weight: 500;
             font-size: 0.9rem;
@@ -730,22 +693,22 @@
         .msg-box.error {
             display: block;
             background: rgba(239, 68, 68, 0.06);
-            border-color: rgba(239, 68, 68, 0.12);
-            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.08);
+            color: #f87171;
         }
 
         .msg-box.success {
             display: block;
             background: rgba(74, 222, 128, 0.06);
-            border-color: rgba(74, 222, 128, 0.12);
-            color: #6ee7b7;
+            border-color: rgba(74, 222, 128, 0.08);
+            color: #4ade80;
         }
 
         .msg-box.info {
             display: block;
-            background: rgba(93, 217, 242, 0.06);
-            border-color: rgba(93, 217, 242, 0.12);
-            color: var(--cyan);
+            background: rgba(96, 165, 250, 0.06);
+            border-color: rgba(96, 165, 250, 0.08);
+            color: #60a5fa;
         }
 
         .msg-box svg {
@@ -765,8 +728,8 @@
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-top-color: var(--gold);
+            border: 2px solid rgba(255, 255, 255, 0.04);
+            border-top-color: #60a5fa;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             vertical-align: middle;
@@ -790,7 +753,7 @@
         .success-icon svg {
             width: 100%;
             height: 100%;
-            stroke: var(--green);
+            stroke: #4ade80;
             stroke-width: 2;
             fill: none;
             stroke-linecap: round;
@@ -800,77 +763,84 @@
         /* ----- TOAST ----- */
         .toast {
             position: fixed;
-            bottom: 90px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(16px);
+            color: #f1f5f9;
             padding: 12px 24px;
-            border-radius: 60px;
+            border-radius: 40px;
             font-weight: 600;
             font-size: 0.85rem;
-            z-index: 9999;
-            background: rgba(10, 8, 21, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: #fff;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-            animation: toastIn 0.3s ease;
+            z-index: 1001;
+            animation: toastFade 4.5s ease forwards;
             max-width: 90%;
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .toast.error {
             border-color: rgba(239, 68, 68, 0.15);
             color: #fca5a5;
         }
-
         .toast.success {
             border-color: rgba(74, 222, 128, 0.15);
             color: #6ee7b7;
         }
 
-        @keyframes toastIn {
-            from {
+        @keyframes toastFade {
+            0% {
                 opacity: 0;
                 transform: translateX(-50%) translateY(20px) scale(0.95);
             }
-            to {
+            15% {
                 opacity: 1;
                 transform: translateX(-50%) translateY(0) scale(1);
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px) scale(0.95);
             }
         }
 
         /* ----- RESPONSIVE ----- */
-        @media (max-width: 600px) {
+        @media (max-width: 500px) {
+            .header {
+                padding: 0.6rem 1rem;
+            }
+            .logo-text {
+                font-size: 1.2rem;
+            }
+            .logo-sub {
+                font-size: 0.5rem;
+            }
             .container {
-                padding: 0.8rem 0.8rem 1.5rem;
+                padding: 0 0.8rem;
             }
-            .brand-name {
-                font-size: 17px;
+            .page-header h1 {
+                font-size: 1.4rem;
             }
-            .brand-icon {
-                width: 36px;
-                height: 36px;
-            }
-            .brand-icon svg {
-                width: 18px;
-                height: 18px;
-            }
-            .brand-badge {
-                font-size: 7px;
-                padding: 2px 8px;
-            }
-            .page-title {
-                font-size: 1.3rem;
-            }
-            .card {
-                padding: 1.2rem 1rem 1.4rem;
+            .glass-card {
+                padding: 1.2rem 1rem;
+                border-radius: 24px;
             }
             .step-line {
                 width: 20px;
             }
-            .back-btn {
-                font-size: 0.75rem;
-                padding: 6px 12px;
+            .step-indicator {
+                padding: 0.4rem 0.6rem;
+                gap: 4px;
+            }
+            .step-label {
+                font-size: 0.4rem;
+            }
+            .step-dot {
+                width: 8px;
+                height: 8px;
             }
             .bank-chip {
                 font-size: 0.7rem;
@@ -883,8 +853,20 @@
                 font-size: 0.85rem;
             }
             .saved-info .delete-saved-btn {
-                font-size: 0.6rem;
+                font-size: 0.55rem;
                 padding: 0.15rem 0.6rem;
+            }
+            .btn-blue {
+                font-size: 0.8rem;
+                padding: 0.5rem 1.4rem;
+            }
+            .btn-blue-full {
+                font-size: 0.9rem;
+                padding: 0.7rem;
+            }
+            .back-btn {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.8rem;
             }
         }
 
@@ -893,7 +875,7 @@
                 gap: 0.4rem;
             }
             .bank-chip {
-                font-size: 0.65rem;
+                font-size: 0.6rem;
                 padding: 0.25rem 0.6rem;
             }
             .saved-info .delete-saved-btn {
@@ -907,33 +889,27 @@
 </head>
 <body>
 
-    <!-- ===== ORBS ===== -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
+    <div class="hero-bg"></div>
 
-    <!-- ===== MAIN CONTAINER ===== -->
-    <div class="container">
-
-        <!-- ===== HEADER ===== -->
-        <div class="header">
-            <div class="brand">
-                <div class="brand-icon">
-                    <svg viewBox="0 0 24 24">
-                        <polyline points="6 6 18 6 6 18 18 18" />
-                    </svg>
-                </div>
-                <span class="brand-name">Pureore<span class="pc">·PC</span></span>
-                <span class="brand-badge">Withdraw</span>
-            </div>
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header-left">
+            <a href="index.html" class="logo-text">Vision<span class="vc">Core</span></a>
+            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
         </div>
+        <div class="header-right">
+            <a href="dashboard.html" class="back-btn">← Back</a>
+        </div>
+    </header>
 
-        <!-- ===== BACK ROW ===== -->
-        <div class="back-row">
-            <button class="back-btn" id="backBtn">
-                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
-                Back
-            </button>
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="container">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>💳 <span>Withdraw</span></h1>
+            <p>Withdraw your earnings (10% fee applies)</p>
         </div>
 
         <!-- ===== STEP INDICATOR ===== -->
@@ -963,16 +939,13 @@
         <!-- ===== STEP 1: SAVE TRANSACTION INFO ===== -->
         <!-- ========================================================== -->
         <div class="step-container" id="step1">
-            <div class="page-title">📋 Transaction Info</div>
-            <div class="page-sub">We need your withdrawal details saved before you can withdraw</div>
-
-            <div class="card" id="step1Card">
+            <div class="glass-card" id="step1Card">
                 <div class="card-title">
                     <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.5"/><path d="M8 2v20"/><path d="M16 2v20"/><path d="M2 8h20"/><path d="M2 16h20"/></svg>
-                    <span id="step1Title">Set Up Withdrawal Info</span>
+                    <span id="step1Title">Withdrawal Info</span>
                 </div>
 
-                <!-- Saved info display (hidden initially) -->
+                <!-- Saved info display -->
                 <div id="savedInfoDisplay" class="saved-info" style="display:none;">
                     <div class="info-row">
                         <span class="info-label">Network</span>
@@ -1040,7 +1013,7 @@
                         </div>
                     </div>
 
-                    <button class="btn-success" id="saveInfoBtn">
+                    <button class="btn-blue" id="saveInfoBtn">
                         <span class="btn-icon">
                             Save Information
                             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
@@ -1049,10 +1022,9 @@
                     <div class="msg-box" id="infoMessage"></div>
                 </div>
 
-                <!-- Continue button (hidden until info is saved) -->
                 <button class="btn-primary" id="step1Continue" style="display:none;">
                     <span class="btn-icon">
-                        Continue to Withdraw
+                        Continue →
                         <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18" /></svg>
                     </span>
                 </button>
@@ -1060,31 +1032,28 @@
         </div>
 
         <!-- ========================================================== -->
-        <!-- ===== STEP 2: ENTER AMOUNT ===== -->
+        <!-- ===== STEP 2: ENTER AMOUNT (no minimum, 10% fee) ===== -->
         <!-- ========================================================== -->
         <div class="step-container hidden" id="step2">
-            <div class="page-title">💰 Enter Amount</div>
-            <div class="page-sub">How much do you want to withdraw?</div>
-
-            <div class="card">
+            <div class="glass-card">
                 <div class="card-title">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     Withdrawal Amount
                 </div>
 
                 <div class="form-group">
-                    <label>Amount (min 20 ZMW)</label>
-                    <input type="number" id="withdrawAmount" placeholder="Enter amount" min="20" step="1" />
+                    <label>Amount (ZMW) – 10% fee applies</label>
+                    <input type="number" id="withdrawAmount" placeholder="0.00" min="0.01" step="0.01" />
                     <div class="input-error" id="amountError"></div>
                 </div>
 
-                <div id="feeSummary" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); padding:0.8rem 1rem; margin:0.8rem 0; display:none;">
+                <div id="feeSummary" style="background:rgba(0,0,0,0.25); border-radius:14px; padding:0.8rem 1rem; margin:0.8rem 0; display:none; border:1px solid rgba(255,255,255,0.04);">
                     <div class="summary-row">
                         <span class="summary-label">Withdrawal Amount</span>
                         <span class="summary-value gold" id="summaryGross">0.00 ZMW</span>
                     </div>
                     <div class="summary-row">
-                        <span class="summary-label">Processing Fee (20%)</span>
+                        <span class="summary-label">Processing Fee (10%)</span>
                         <span class="summary-value red" id="summaryFee">0.00 ZMW</span>
                     </div>
                     <div class="summary-row">
@@ -1107,16 +1076,13 @@
         <!-- ===== STEP 3: CONFIRMATION ===== -->
         <!-- ========================================================== -->
         <div class="step-container hidden" id="step3">
-            <div class="page-title">🔍 Confirm Withdrawal</div>
-            <div class="page-sub">Please verify all details before submitting</div>
-
-            <div class="card">
+            <div class="glass-card">
                 <div class="card-title">
                     <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    Summary
+                    Confirm
                 </div>
 
-                <div style="background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); padding:0.8rem 1rem;">
+                <div style="background:rgba(0,0,0,0.25); border-radius:14px; padding:0.8rem 1rem; border:1px solid rgba(255,255,255,0.04);">
                     <div class="summary-row">
                         <span class="summary-label">Network</span>
                         <span class="summary-value" id="confirmNetwork">—</span>
@@ -1138,23 +1104,22 @@
                         <span class="summary-value gold" id="confirmAmount">0.00 ZMW</span>
                     </div>
                     <div class="summary-row">
-                        <span class="summary-label">Fee (20%)</span>
+                        <span class="summary-label">Fee (10%)</span>
                         <span class="summary-value red" id="confirmFee">0.00 ZMW</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label">Net Receive</span>
                         <span class="summary-value green" id="confirmNet">0.00 ZMW</span>
                     </div>
-                    <!-- NEW: Estimated Processing Time -->
                     <div class="summary-row">
                         <span class="summary-label">⏳ Estimated Processing</span>
-                        <span class="summary-value" id="confirmEta" style="color:var(--cyan);">—</span>
+                        <span class="summary-value" id="confirmEta" style="color:#60a5fa; font-weight:700;">—</span>
                     </div>
                 </div>
 
                 <div class="msg-box" id="confirmMessage"></div>
 
-                <button class="btn-success" id="confirmSubmit">
+                <button class="btn-blue-full" id="confirmSubmit">
                     <span class="btn-icon">
                         Submit Withdrawal
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
@@ -1167,23 +1132,20 @@
         <!-- ===== STEP 4: SUCCESS ===== -->
         <!-- ========================================================== -->
         <div class="step-container hidden" id="step4">
-            <div class="page-title">✅ Withdrawal Submitted</div>
-            <div class="page-sub">Your request has been received</div>
-
-            <div class="card">
+            <div class="glass-card">
                 <div class="success-icon">
                     <svg viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" stroke="var(--green)" />
-                        <polyline points="20 6 9 17 4 12" stroke="var(--green)" />
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="20 6 9 17 4 12" />
                     </svg>
                 </div>
 
                 <div style="text-align:center; margin-bottom:1.2rem;">
-                    <div style="font-size:1.1rem; font-weight:700; color:#fff;">Withdrawal Request Received</div>
-                    <div style="font-size:0.85rem; color:rgba(255,255,255,0.3); margin-top:0.2rem;">Admin will process your request within 24 hours</div>
+                    <div style="font-size:1.1rem; font-weight:700; color:#ffffff;">Withdrawal Request Received</div>
+                    <div style="font-size:0.85rem; color:rgba(255,255,255,0.15); margin-top:0.2rem;">Admin will process your request within 24 hours</div>
                 </div>
 
-                <div style="background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); padding:0.8rem 1rem;">
+                <div style="background:rgba(0,0,0,0.25); border-radius:14px; padding:0.8rem 1rem; border:1px solid rgba(255,255,255,0.04);">
                     <div class="summary-row">
                         <span class="summary-label">Amount</span>
                         <span class="summary-value gold" id="finalAmount">0.00 ZMW</span>
@@ -1194,11 +1156,11 @@
                     </div>
                     <div class="summary-row">
                         <span class="summary-label">Estimated Processing</span>
-                        <span class="summary-value" id="finalEta" style="color:var(--cyan);">—</span>
+                        <span class="summary-value" id="finalEta" style="color:#60a5fa; font-weight:700;">—</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label">Status</span>
-                        <span class="summary-value" style="color:var(--gold);">Pending</span>
+                        <span class="summary-value" style="color:#facc15; font-weight:700;">Pending</span>
                     </div>
                 </div>
 
@@ -1211,11 +1173,11 @@
             </div>
         </div>
 
-    </div>
+    </main>
 
     <script>
         // ================================================================
-        // FIREBASE CONFIG (unchanged)
+        // FIREBASE CONFIG
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -1236,13 +1198,13 @@
         // STATE
         // ================================================================
         var currentStep = 1;
-        var savedInfo = null; // { network, phone, accountName, bank, cardNumber }
+        var savedInfo = null;
         var selectedAmount = 0;
         var netAfterFee = 0;
         var currentBalance = 0;
         var isSubmitting = false;
         var withdrawRules = { requireDeposit: true, requireInvestment: true };
-        var userPhone = ''; // from user document
+        var userPhone = '';
 
         // ================================================================
         // DOM REFS
@@ -1283,16 +1245,14 @@
         var confirmAmount = document.getElementById('confirmAmount');
         var confirmFee = document.getElementById('confirmFee');
         var confirmNet = document.getElementById('confirmNet');
-        var confirmEta = document.getElementById('confirmEta'); // NEW
+        var confirmEta = document.getElementById('confirmEta');
         var confirmMessage = document.getElementById('confirmMessage');
         var confirmSubmit = document.getElementById('confirmSubmit');
 
         var finalAmount = document.getElementById('finalAmount');
         var finalNetwork = document.getElementById('finalNetwork');
-        var finalEta = document.getElementById('finalEta'); // NEW
+        var finalEta = document.getElementById('finalEta');
         var step4Done = document.getElementById('step4Done');
-
-        var backBtn = document.getElementById('backBtn');
 
         var dots = [
             document.getElementById('dot1'),
@@ -1336,18 +1296,15 @@
                 target.classList.remove('hidden');
                 target.style.animation = 'none';
                 requestAnimationFrame(function() {
-                    target.style.animation = 'stepFadeIn 0.45s ease forwards';
+                    target.style.animation = 'fadeUp 0.4s ease forwards';
                 });
             }
             for (var i = 0; i < 4; i++) {
                 dots[i].classList.remove('active', 'done');
-                labels[i].style.color = 'rgba(255,255,255,0.15)';
                 if (i + 1 < step) {
                     dots[i].classList.add('done');
-                    labels[i].style.color = 'rgba(74,222,128,0.5)';
                 } else if (i + 1 === step) {
                     dots[i].classList.add('active');
-                    labels[i].style.color = 'rgba(246,201,110,0.7)';
                 }
             }
             for (var j = 0; j < 3; j++) {
@@ -1380,14 +1337,12 @@
         function loadSavedInfo() {
             var user = auth.currentUser;
             if (!user) return;
-            // First load user data to get phone and balance
             db.collection('users').doc(user.uid).get()
                 .then(function(doc) {
                     if (doc.exists) {
                         var data = doc.data();
                         userPhone = data.phone || '';
                         currentBalance = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
-                        // Auto-fill phone input if user has phone
                         if (userPhone && userPhone.startsWith('+260')) {
                             phoneInput.value = userPhone.replace('+260', '');
                         }
@@ -1398,12 +1353,11 @@
                             savedInfoDisplay.style.display = 'block';
                             step1Continue.style.display = 'block';
                             document.getElementById('step1Title').textContent = 'Your Saved Information';
-                            prefillFromSavedInfo(savedInfo);
                         } else {
                             document.getElementById('infoForm').style.display = 'block';
                             savedInfoDisplay.style.display = 'none';
                             step1Continue.style.display = 'none';
-                            document.getElementById('step1Title').textContent = 'Set Up Withdrawal Info';
+                            document.getElementById('step1Title').textContent = 'Withdrawal Info';
                         }
                     }
                 })
@@ -1425,23 +1379,14 @@
             savedPhone.textContent = info.phone || userPhone || '—';
         }
 
-        function prefillFromSavedInfo(info) {
-            // Not needed
-        }
-
         // ================================================================
         // DELETE SAVED INFO
         // ================================================================
         function deleteSavedInfo() {
-            if (!confirm('Are you sure you want to delete your saved withdrawal information? You will need to set it up again.')) {
-                return;
-            }
+            if (!confirm('Are you sure you want to delete your saved withdrawal information?')) return;
 
             var user = auth.currentUser;
-            if (!user) {
-                showToast('Please login again.', true);
-                return;
-            }
+            if (!user) { showToast('Please login again.', true); return; }
 
             deleteSavedInfoBtn.disabled = true;
             deleteSavedInfoBtn.textContent = 'Deleting...';
@@ -1453,7 +1398,7 @@
                 savedInfoDisplay.style.display = 'none';
                 document.getElementById('infoForm').style.display = 'block';
                 step1Continue.style.display = 'none';
-                document.getElementById('step1Title').textContent = 'Set Up Withdrawal Info';
+                document.getElementById('step1Title').textContent = 'Withdrawal Info';
                 networkSelect.value = '';
                 phoneInput.value = userPhone || '';
                 accountNameInput.value = '';
@@ -1464,13 +1409,13 @@
                 document.getElementById('bankGroup').style.display = 'none';
                 selectedNetwork = '';
                 selectedBank = '';
-                showToast('✅ Saved info deleted. You can set up new details.', false);
+                showToast('✅ Saved info deleted.', false);
                 deleteSavedInfoBtn.disabled = false;
                 deleteSavedInfoBtn.innerHTML =
                     '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete Info';
             }).catch(function(err) {
                 console.error(err);
-                showToast('Error deleting saved info: ' + err.message, true);
+                showToast('Error deleting saved info.', true);
                 deleteSavedInfoBtn.disabled = false;
                 deleteSavedInfoBtn.innerHTML =
                     '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete Info';
@@ -1480,7 +1425,7 @@
         deleteSavedInfoBtn.addEventListener('click', deleteSavedInfo);
 
         // ================================================================
-        // SAVE INFO FORM HANDLING
+        // SAVE INFO FORM
         // ================================================================
         var selectedNetwork = '';
         var selectedBank = '';
@@ -1502,7 +1447,6 @@
                 document.getElementById('nameGroup').style.display = 'block';
                 document.getElementById('bankGroup').style.display = 'none';
             }
-            validateInfoForm();
         });
 
         bankChips.forEach(function(chip) {
@@ -1510,24 +1454,16 @@
                 bankChips.forEach(function(c) { c.classList.remove('active'); });
                 this.classList.add('active');
                 selectedBank = this.dataset.bank;
-                validateInfoForm();
             });
         });
 
         phoneInput.addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '').slice(0, 9);
-            validateInfoForm();
         });
 
-        accountNameInput.addEventListener('input', validateInfoForm);
         cardNumberInput.addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '').slice(0, 16);
-            validateInfoForm();
         });
-
-        function validateInfoForm() {
-            // Just for UI feedback, we'll validate on save click
-        }
 
         function validateInfoForSave() {
             var errors = [];
@@ -1565,7 +1501,6 @@
                 return;
             }
 
-            // Build saved info object
             var info = {
                 network: selectedNetwork,
                 accountName: accountNameInput.value.trim()
@@ -1573,14 +1508,12 @@
             if (selectedNetwork === 'bank') {
                 info.bank = selectedBank;
                 info.cardNumber = cardNumberInput.value.trim();
-                // For bank, also store phone if available (from user or input)
                 info.phone = userPhone || '';
             } else {
                 var phone = '+260' + phoneInput.value.trim();
                 info.phone = phone;
             }
 
-            // Save to Firestore
             var user = auth.currentUser;
             if (!user) { window.location.href = 'login.html'; return; }
             saveInfoBtn.disabled = true;
@@ -1616,19 +1549,19 @@
         });
 
         // ================================================================
-        // STEP 2: AMOUNT
+        // STEP 2: AMOUNT (no minimum, 10% fee)
         // ================================================================
         withdrawAmount.addEventListener('input', function() {
             var val = parseFloat(this.value);
-            if (isNaN(val) || val < 20) {
-                amountError.innerText = val > 0 ? 'Minimum amount is 20 ZMW' : '';
+            if (isNaN(val) || val <= 0) {
+                amountError.innerText = val > 0 ? 'Please enter a valid amount' : '';
                 feeSummary.style.display = 'none';
                 step2Next.disabled = true;
                 selectedAmount = 0;
                 return;
             }
             amountError.innerText = '';
-            var fee = val * 0.2;
+            var fee = val * 0.10; // 10% fee
             var net = val - fee;
             summaryGross.textContent = val.toFixed(2) + ' ZMW';
             summaryFee.textContent = fee.toFixed(2) + ' ZMW';
@@ -1641,7 +1574,6 @@
 
         step2Next.addEventListener('click', function() {
             if (this.disabled) return;
-            // Check balance
             if (currentBalance < selectedAmount) {
                 step2Message.className = 'msg-box error';
                 step2Message.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Insufficient balance. You have ' +
@@ -1649,7 +1581,6 @@
                 step2Message.style.display = 'block';
                 return;
             }
-            // Check withdrawal rules (deposit/investment requirements)
             checkEligibility(function(eligible, msg) {
                 if (!eligible) {
                     step2Message.className = 'msg-box error';
@@ -1658,7 +1589,6 @@
                     step2Message.style.display = 'block';
                     return;
                 }
-                // Go to step 3 with data
                 populateConfirm();
                 goToStep(3);
             });
@@ -1682,9 +1612,8 @@
             } else {
                 checks.push(Promise.resolve(true));
             }
-            // Also check for active loan
             checks.push(db.collection('loans').where('userId', '==', userId).where('status', '==', 'active').limit(1).get()
-                .then(function(snap) { return snap.empty; })); // true if no active loan
+                .then(function(snap) { return snap.empty; }));
 
             Promise.all(checks).then(function(results) {
                 var hasDeposit = results[0];
@@ -1715,22 +1644,17 @@
         function getEstimatedProcessingTime() {
             var now = new Date();
             var hours = now.getHours();
-            var mins = now.getMinutes();
 
-            // Business hours: 09:00 – 17:00
             if (hours >= 9 && hours < 17) {
-                // Within business hours: process within 2 hours (cap at 17:00)
                 var eta = new Date(now.getTime() + 2 * 60 * 60 * 1000);
                 if (eta.getHours() >= 17 || (eta.getHours() === 17 && eta.getMinutes() > 0)) {
                     eta.setHours(17, 0, 0, 0);
                 }
                 return "by " + eta.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             } else {
-                // Outside business hours: next business day at 09:00
                 var nextDay = new Date(now);
                 nextDay.setDate(nextDay.getDate() + 1);
                 nextDay.setHours(9, 0, 0, 0);
-                // If Saturday, move to Monday
                 if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2);
                 if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1);
                 return "on " + nextDay.toLocaleDateString([], { day: 'numeric', month: 'short' }) + " at 09:00";
@@ -1738,7 +1662,7 @@
         }
 
         // ================================================================
-        // POPULATE CONFIRM WITH ETA
+        // POPULATE CONFIRM
         // ================================================================
         function populateConfirm() {
             var info = savedInfo;
@@ -1751,16 +1675,13 @@
             confirmName.textContent = info.accountName;
             confirmPhone.textContent = info.phone || userPhone || '—';
             confirmAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
-            confirmFee.textContent = (selectedAmount * 0.2).toFixed(2) + ' ZMW';
+            confirmFee.textContent = (selectedAmount * 0.10).toFixed(2) + ' ZMW';
             confirmNet.textContent = netAfterFee.toFixed(2) + ' ZMW';
-
-            // Set estimated processing time
-            var eta = getEstimatedProcessingTime();
-            confirmEta.textContent = eta;
+            confirmEta.textContent = getEstimatedProcessingTime();
         }
 
         // ================================================================
-        // STEP 3: CONFIRM SUBMIT
+        // STEP 3: SUBMIT
         // ================================================================
         confirmSubmit.addEventListener('click', function() {
             if (isSubmitting) return;
@@ -1776,6 +1697,7 @@
                 userId: userId,
                 amount: selectedAmount,
                 netAmount: netAfterFee,
+                fee: selectedAmount * 0.10,
                 status: 'pending',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 network: savedInfo.network,
@@ -1787,7 +1709,6 @@
                 withdrawData.cardNumber = savedInfo.cardNumber;
             }
 
-            // Run transaction to deduct balance
             db.runTransaction(function(transaction) {
                 var userRef = db.collection('users').doc(userId);
                 return transaction.get(userRef).then(function(doc) {
@@ -1804,11 +1725,9 @@
                     transaction.set(withdrawalRef, withdrawData);
                 });
             }).then(function() {
-                // Success
                 finalAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
                 finalNetwork.textContent = savedInfo.network.toUpperCase();
-                var eta = getEstimatedProcessingTime();
-                finalEta.textContent = eta;
+                finalEta.textContent = getEstimatedProcessingTime();
                 goToStep(4);
                 showToast('✅ Withdrawal submitted successfully!', false);
                 isSubmitting = false;
@@ -1838,7 +1757,7 @@
         // ================================================================
         // BACK BUTTON
         // ================================================================
-        backBtn.addEventListener('click', function() {
+        document.getElementById('backBtn')?.addEventListener('click', function() {
             if (currentStep === 1) {
                 window.location.href = 'dashboard.html';
             } else if (currentStep === 2) {
@@ -1860,7 +1779,6 @@
             }
             loadWithdrawalRules();
             loadSavedInfo();
-            // Also watch for block
             watchBlockStatus(user.uid);
         });
 
@@ -1882,10 +1800,9 @@
         }
         window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
-        console.log('✨ Pureore Capital · Withdraw page (phone saved + ETA)');
-        console.log('⏱️ Estimated processing time based on business hours (09:00-17:00)');
-        console.log('📱 Phone number will be stored in withdrawal document');
-        console.log('🔐 Firebase config untouched');
+        console.log('✅ withdraw.html · VisionCore Capital · Blue glassmorphism design');
+        console.log('💳 Any amount above 0 is allowed, 10% fee applies');
+        console.log('🔵 Blue gradient buttons and glass cards');
     </script>
 
 </body>

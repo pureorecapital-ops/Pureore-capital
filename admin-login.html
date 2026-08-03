@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-    <title>Admin Login – PC • Pureore Capital</title>
-    <!-- Firebase SDKs (unchanged) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Admin Login – Pureore Capital</title>
+    <link rel="preconnect" href="https://www.gstatic.com" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
@@ -12,436 +12,333 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
     </script>
     <style>
-        /* ----- RESET & BASE ----- */
-        *,
-        *::before,
-        *::after {
+        /* ----- RESET & BODY (WHITE BACKGROUND) ----- */
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --gold: #f6c96e;
-            --gold-glow: rgba(246, 201, 110, 0.25);
-            --cyan: #5dd9f2;
-            --cyan-glow: rgba(93, 217, 242, 0.20);
-            --violet: #7c6df0;
-            --violet-glow: rgba(124, 109, 240, 0.30);
-            --radius-lg: 28px;
-            --radius-sm: 12px;
-            --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.5);
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            padding-top: 80px;
+            display: flex;
+            flex-direction: column;
+            color: #0f172a;
         }
 
-        html,
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
+        /* ----- HEADER (WHITE, clean, matches other pages) ----- */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .logo-text {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0f172a;
+            text-decoration: none;
+            letter-spacing: -0.4px;
+        }
+        .logo-text .pc {
+            color: #3b82f6;
+        }
+
+        .header-right {
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: #0a0815;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
+            gap: 1.2rem;
         }
 
-        /* ----- BACKGROUND with brightness reduction ----- */
-        body::before {
-            content: "";
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .hamburger:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .hamburger span {
+            display: block;
+            width: 26px;
+            height: 2.5px;
+            background: #0f172a;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* ----- SLIDE PANEL (WHITE) ----- */
+        .menu-panel {
             position: fixed;
             top: 0;
-            left: 0;
-            width: 100%;
+            right: -380px;
+            width: 340px;
             height: 100%;
-            background-image: url('https://i.ibb.co/nNW3TyNv/andre-kaim-m777i-BIFI3-M-unsplash.jpg');
-            background-size: cover;
-            background-position: center;
-            filter: brightness(0.45) saturate(1.1) contrast(1.05);
-            z-index: -2;
+            background: #ffffff;
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.06);
+            padding: 2rem 1.8rem;
+            transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 200;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            color: #0f172a;
+            border-left: 1px solid rgba(0, 0, 0, 0.04);
         }
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.10) 0%, transparent 50%);
-            z-index: -1;
+        .menu-panel.open {
+            right: 0;
         }
-
-        /* ----- DECORATIVE ORBS (floating) ----- */
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(70px);
-            opacity: 0.15;
-            z-index: -1;
-            pointer-events: none;
-            animation: orbFloat 12s ease-in-out infinite alternate;
+        .menu-panel .close-btn {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0 0.5rem;
         }
-        .orb-1 {
-            width: 350px;
-            height: 350px;
-            background: var(--violet);
-            top: -5%;
-            left: -8%;
-            animation-delay: 0s;
+        .menu-panel .close-btn:hover {
+            color: #0f172a;
         }
-        .orb-2 {
-            width: 280px;
-            height: 280px;
-            background: var(--cyan);
-            bottom: -5%;
-            right: -8%;
-            animation-delay: 4s;
+        .menu-panel h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 0.5rem;
         }
-        .orb-3 {
-            width: 220px;
-            height: 220px;
-            background: var(--gold);
-            top: 45%;
-            right: 10%;
-            animation-delay: 8s;
-            opacity: 0.10;
+        .menu-panel p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #475569;
         }
-
-        @keyframes orbFloat {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-            33% {
-                transform: translate(20px, -30px) scale(1.05);
-            }
-            66% {
-                transform: translate(-10px, 20px) scale(0.95);
-            }
-            100% {
-                transform: translate(15px, -10px) scale(1.02);
-            }
+        .menu-panel .highlight {
+            color: #3b82f6;
+            font-weight: 600;
         }
 
         /* ----- MAIN CONTAINER ----- */
-        .admin-container {
-            width: 100%;
+        .container {
             max-width: 440px;
-            margin: 1.2rem;
-            animation: containerIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-            position: relative;
-            z-index: 10;
-            opacity: 0;
-            transform: translateY(24px) scale(0.98);
+            margin: 2rem auto 0;
+            padding: 0 1.2rem;
+            flex: 1;
+            width: 100%;
+            animation: fadeUp 0.5s ease-out;
         }
 
-        @keyframes containerIn {
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        /* ----- GLASS CARD with animated gradient border ----- */
-        .auth-card {
-            position: relative;
-            background: rgba(10, 8, 21, 0.78);
-            backdrop-filter: blur(24px) saturate(1.4);
-            -webkit-backdrop-filter: blur(24px) saturate(1.4);
-            border-radius: var(--radius-lg);
-            padding: 2rem 1.8rem 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-            overflow: hidden;
-        }
-
-        /* Animated gradient border ring */
-        .auth-card::before {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            border-radius: var(--radius-lg);
-            padding: 2px;
-            background: conic-gradient(from 0deg,
-                    var(--violet),
-                    var(--cyan),
-                    var(--gold),
-                    var(--violet),
-                    var(--cyan),
-                    var(--gold),
-                    var(--violet));
-            background-size: 300% 300%;
-            animation: borderSpin 8s linear infinite;
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-            opacity: 0.5;
-        }
-
-        @keyframes borderSpin {
+        @keyframes fadeUp {
             0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
+                opacity: 0;
+                transform: translateY(16px);
             }
             100% {
-                background-position: 0% 50%;
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        /* ----- BRAND HEADER ----- */
-        .brand-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
+        /* ----- WHITE CARD ----- */
+        .login-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02), 0 1px 4px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.02);
         }
 
-        .brand-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: var(--radius-sm);
-            background: linear-gradient(135deg, var(--violet), var(--cyan));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px var(--violet-glow);
-            flex-shrink: 0;
-        }
-
-        .brand-icon svg {
-            width: 24px;
-            height: 24px;
-            stroke: #fff;
-            stroke-width: 2.2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .brand-name {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .brand-name .pc {
-            color: var(--gold);
-            -webkit-text-fill-color: var(--gold);
-            font-weight: 900;
-        }
-
-        .brand-tag {
-            font-size: 10px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.3);
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 2px 12px;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        /* ----- HEADING & SUBTEXT ----- */
-        .admin-header {
+        /* ----- HEADER WITH ICON ----- */
+        .login-header {
             text-align: center;
-            margin: 0.8rem 0 1.2rem 0;
+            margin-bottom: 1.8rem;
         }
 
-        .admin-header .icon-wrapper {
+        .login-header .icon-wrapper {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 64px;
             height: 64px;
             border-radius: 50%;
-            background: rgba(124, 109, 240, 0.10);
-            border: 1.5px solid rgba(124, 109, 240, 0.15);
-            margin-bottom: 0.5rem;
-            box-shadow: 0 0 40px rgba(124, 109, 240, 0.05);
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            margin-bottom: 0.8rem;
         }
 
-        .admin-header .icon-wrapper svg {
+        .login-header .icon-wrapper svg {
             width: 32px;
             height: 32px;
-            stroke: var(--violet);
+            stroke: #3b82f6;
             stroke-width: 1.8;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
 
-        .admin-header h2 {
-            font-size: 26px;
+        .login-header h1 {
+            font-size: 1.8rem;
             font-weight: 700;
-            letter-spacing: -0.5px;
-            color: #fff;
-            line-height: 1.2;
+            color: #0f172a;
+            letter-spacing: -0.4px;
         }
 
-        .admin-header h2 span {
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .login-header h1 span {
+            color: #3b82f6;
         }
 
-        .admin-header p {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.45);
+        .login-header p {
+            color: #64748b;
+            font-size: 0.95rem;
             margin-top: 4px;
-            font-weight: 400;
         }
 
-        /* ----- FORM ----- */
+        /* ----- FORM FIELDS ----- */
         form {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
         }
 
         .input-group {
             position: relative;
+            display: flex;
+            align-items: center;
         }
 
         .input-group .input-icon {
             position: absolute;
-            left: 16px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
             width: 18px;
             height: 18px;
-            stroke: rgba(255, 255, 255, 0.2);
+            stroke: #94a3b8;
             stroke-width: 1.8;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
             pointer-events: none;
-            transition: stroke 0.3s ease;
+            transition: stroke 0.2s;
+            z-index: 2;
         }
 
         .input-group:focus-within .input-icon {
-            stroke: var(--cyan);
+            stroke: #3b82f6;
         }
 
         .input-group input {
             width: 100%;
-            padding: 0.85rem 1rem 0.85rem 46px;
-            border-radius: var(--radius-sm);
-            background: rgba(255, 255, 255, 0.04);
-            border: 1.5px solid rgba(255, 255, 255, 0.06);
-            color: #fff;
+            padding: 0.8rem 1rem 0.8rem 44px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            color: #0f172a;
             font-size: 0.95rem;
             font-family: inherit;
-            transition: all 0.3s ease;
+            transition: all 0.15s;
             outline: none;
         }
 
         .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.25);
-            font-weight: 400;
+            color: #94a3b8;
         }
 
         .input-group input:focus {
-            border-color: rgba(93, 217, 242, 0.3);
-            background: rgba(255, 255, 255, 0.06);
-            box-shadow: 0 0 30px rgba(93, 217, 242, 0.04);
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.04);
         }
 
         .input-group input:hover {
-            background: rgba(255, 255, 255, 0.06);
+            background: #f1f5f9;
         }
 
         /* ----- SUBMIT BUTTON ----- */
         .btn-submit {
             width: 100%;
-            padding: 0.95rem;
+            padding: 0.9rem;
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: 12px;
             font-family: inherit;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 1rem;
-            color: #0a0815;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
+            color: #fff;
+            background: #0f172a;
             cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 30px var(--gold-glow);
-            position: relative;
-            overflow: hidden;
-            margin-top: 4px;
-            letter-spacing: 0.3px;
-        }
-
-        .btn-submit::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-        }
-
-        .btn-submit:hover::after {
-            opacity: 1;
+            transition: all 0.2s;
+            letter-spacing: 0.2px;
+            margin-top: 6px;
         }
 
         .btn-submit:hover {
+            background: #1e293b;
             transform: translateY(-2px);
-            box-shadow: 0 8px 40px var(--gold-glow);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
         }
 
         .btn-submit:active {
-            transform: scale(0.97);
+            transform: scale(0.98);
         }
 
         .btn-submit:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             transform: none;
             cursor: not-allowed;
-            box-shadow: none;
+            box-shadow: none !important;
         }
 
         /* ----- MESSAGE BOX ----- */
         .message-box {
             padding: 0.8rem 1rem;
-            border-radius: var(--radius-sm);
+            border-radius: 12px;
             text-align: center;
             font-weight: 500;
             font-size: 0.9rem;
-            margin-top: 4px;
+            margin-top: 12px;
             display: none;
-            border: 1.5px solid transparent;
+            border: 1px solid transparent;
         }
 
         .message-box.error {
             display: block;
-            background: rgba(239, 68, 68, 0.08);
-            border-color: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #dc2626;
         }
 
         .message-box.success {
             display: block;
-            background: rgba(74, 222, 128, 0.08);
-            border-color: rgba(74, 222, 128, 0.2);
-            color: #6ee7b7;
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #16a34a;
         }
 
         .message-box svg {
@@ -450,8 +347,6 @@
             stroke: currentColor;
             stroke-width: 2;
             fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
             vertical-align: middle;
             margin-right: 8px;
         }
@@ -465,12 +360,12 @@
         .back-link {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            color: rgba(255, 255, 255, 0.3);
+            gap: 6px;
+            color: #94a3b8;
             text-decoration: none;
             font-weight: 500;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
+            font-size: 0.85rem;
+            transition: color 0.2s;
         }
 
         .back-link svg {
@@ -481,106 +376,102 @@
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
-            transition: stroke 0.3s ease;
+            transition: stroke 0.2s;
         }
 
         .back-link:hover {
-            color: var(--cyan);
+            color: #3b82f6;
         }
-
         .back-link:hover svg {
-            stroke: var(--cyan);
+            stroke: #3b82f6;
         }
 
         /* ----- RESPONSIVE ----- */
         @media (max-width: 480px) {
-            .auth-card {
-                padding: 1.5rem 1.2rem 1.5rem;
+            .header {
+                padding: 0.6rem 1rem;
             }
-            .admin-header h2 {
-                font-size: 22px;
+            .logo-text {
+                font-size: 1.2rem;
             }
-            .brand-name {
-                font-size: 17px;
+            .hamburger span {
+                width: 22px;
+                height: 2px;
             }
-            .brand-icon {
-                width: 36px;
-                height: 36px;
+            .menu-panel {
+                width: 280px;
+                right: -300px;
+                padding: 1.5rem;
             }
-            .brand-icon svg {
-                width: 20px;
-                height: 20px;
+            .container {
+                padding: 0 0.8rem;
+                margin-top: 1rem;
             }
-            .brand-tag {
-                font-size: 8px;
-                padding: 1px 8px;
+            .login-card {
+                padding: 1.8rem 1.2rem;
+            }
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+            .login-header .icon-wrapper {
+                width: 54px;
+                height: 54px;
+            }
+            .login-header .icon-wrapper svg {
+                width: 26px;
+                height: 26px;
             }
             .input-group input {
-                padding: 0.75rem 1rem 0.75rem 40px;
+                padding: 0.7rem 1rem 0.7rem 38px;
                 font-size: 0.88rem;
             }
             .input-group .input-icon {
-                left: 13px;
+                left: 12px;
                 width: 16px;
                 height: 16px;
             }
             .btn-submit {
                 font-size: 0.92rem;
-                padding: 0.85rem;
-            }
-            .admin-header .icon-wrapper {
-                width: 54px;
-                height: 54px;
-            }
-            .admin-header .icon-wrapper svg {
-                width: 26px;
-                height: 26px;
-            }
-        }
-
-        @media (max-width: 380px) {
-            .auth-card {
-                padding: 1.2rem 0.9rem 1.2rem;
-            }
-            .admin-header h2 {
-                font-size: 19px;
+                padding: 0.8rem;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== DECORATIVE ORBS ===== -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-
-    <div class="admin-container">
-        <div class="auth-card">
-
-            <!-- ===== BRAND HEADER ===== -->
-            <div class="brand-header">
-                <div class="brand-logo">
-                    <div class="brand-icon">
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="6 6 18 6 6 18 18 18" />
-                        </svg>
-                    </div>
-                    <span class="brand-name">Pureore<span class="pc">·PC</span></span>
-                </div>
-                <span class="brand-tag">admin</span>
+    <!-- ===== HEADER (logo + hamburger only, no social icons) ===== -->
+    <header class="header">
+        <a href="index.html" class="logo-text">Pureore<span class="pc">·PC</span></a>
+        <div class="header-right">
+            <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
+                <span></span><span></span><span></span>
             </div>
+        </div>
+    </header>
 
-            <!-- ===== HEADER WITH ICON ===== -->
-            <div class="admin-header">
+    <!-- ===== SLIDE MENU ===== -->
+    <div class="menu-panel" id="menuPanel">
+        <button class="close-btn" id="closeMenu">✕</button>
+        <h2>About Pureore Capital</h2>
+        <p><span class="highlight">Pureore Capital</span> is an African-focused investment platform connecting visionary entrepreneurs with global capital. We empower growth through transparency, innovation, and sustainable partnerships.</p>
+        <p>Our mission is to unlock Africa's economic potential by providing <span class="highlight">secure, high‑yield investment opportunities</span> in mining, energy, and technology sectors.</p>
+        <p style="font-size:0.85rem; opacity:0.6; margin-top:1rem;">© 2026 Pureore Capital — Invest with confidence.</p>
+    </div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="container">
+
+        <div class="login-card">
+
+            <!-- ===== HEADER ===== -->
+            <div class="login-header">
                 <div class="icon-wrapper">
-                    <!-- Shield / key icon -->
                     <svg viewBox="0 0 24 24">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                         <polyline points="9 12 11 14 15 10" />
                     </svg>
                 </div>
-                <h2><span>Admin</span> Access</h2>
+                <h1><span>Admin</span> Access</h1>
                 <p>Login with your admin credentials</p>
             </div>
 
@@ -622,11 +513,12 @@
             </div>
 
         </div>
-    </div>
+
+    </main>
 
     <script>
         // ============================================================
-        // FIREBASE CONFIG – untouched
+        // FIREBASE CONFIG
         // ============================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -655,6 +547,24 @@
                 console.log("Pre-admin-login cleanup (non-critical):", e);
             }
         })();
+
+        // ============================================================
+        // HAMBURGER
+        // ============================================================
+        var hamburger = document.getElementById('hamburger');
+        var menuPanel = document.getElementById('menuPanel');
+        var closeMenu = document.getElementById('closeMenu');
+
+        function toggleMenu() {
+            var open = menuPanel.classList.toggle('open');
+            hamburger.classList.toggle('active', open);
+            document.body.style.overflow = open ? 'hidden' : '';
+        }
+        hamburger.addEventListener('click', toggleMenu);
+        closeMenu.addEventListener('click', toggleMenu);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && menuPanel.classList.contains('open')) toggleMenu();
+        });
 
         // ============================================================
         // DOM REFS
@@ -770,10 +680,8 @@
             }
         });
 
-        console.log('✨ Pureore Capital · Admin Login (unique design)');
-        console.log('📱 No emojis — pure SVG icons');
-        console.log('🔐 Firebase config untouched');
+        console.log('✅ Admin Login · New clean white design');
+        console.log('📱 Matches marketplace and dashboard themes');
     </script>
-
 </body>
 </html>
