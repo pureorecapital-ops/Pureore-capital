@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Dashboard – VisionCore Capital</title>
+    <title>Dashboard – Sajvera Capital</title>
     <link rel="preconnect" href="https://www.gstatic.com" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
+        /* ----- RESET & BASE (BLUE THEME) ----- */
         * {
             margin: 0;
             padding: 0;
@@ -22,16 +22,17 @@
         body {
             font-family: 'Inter', -apple-system, system-ui, sans-serif;
             min-height: 100vh;
-            padding-top: 80px;
-            padding-bottom: 80px;
+            padding-top: 76px;
+            padding-bottom: 76px;
             display: flex;
             flex-direction: column;
             color: #ffffff;
-            position: relative;
-            background: #000;
+            background: #0a1628;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
+        /* ----- FULL SCREEN BLURRED BACKGROUND (lighter blur) ----- */
         .hero-bg {
             position: fixed;
             top: 0;
@@ -52,8 +53,8 @@
             background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
             background-size: cover;
             background-position: center;
-            filter: blur(14px) brightness(0.25) saturate(0.7);
-            transform: scale(1.1);
+            filter: blur(8px) brightness(0.3) saturate(0.6);
+            transform: scale(1.05);
         }
 
         .hero-bg::after {
@@ -63,23 +64,23 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(10, 22, 40, 0.60);
         }
 
-        /* ----- HEADER (DARK GLASS) ----- */
+        /* ----- HEADER (lighter glass) ----- */
         .header {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            padding: 0.8rem 1.5rem;
+            padding: 0.6rem 1.2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.50);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(10, 22, 40, 0.60);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
@@ -90,45 +91,42 @@
         }
 
         .logo-text {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: #ffffff;
             text-decoration: none;
-            letter-spacing: -0.4px;
+            letter-spacing: -0.3px;
         }
         .logo-text .vc {
             color: #60a5fa;
         }
 
         .logo-sub {
-            font-size: 0.55rem;
+            font-size: 0.5rem;
             color: rgba(255, 255, 255, 0.15);
             letter-spacing: 0.3px;
             font-weight: 400;
-            margin-top: -2px;
-        }
-        .logo-sub .highlight {
-            color: rgba(255, 255, 255, 0.3);
+            margin-top: -1px;
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 0.6rem;
         }
 
         .header-social {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         .header-social a {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.3);
@@ -138,76 +136,76 @@
         }
 
         .header-social a svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             fill: currentColor;
         }
 
         .header-social a.whatsapp:hover {
             color: #25D366;
             border-color: #25D366;
-            background: rgba(37, 211, 102, 0.08);
+            background: rgba(37, 211, 102, 0.06);
         }
 
         .header-social a.telegram:hover {
             color: #29A9E1;
             border-color: #29A9E1;
-            background: rgba(41, 169, 225, 0.08);
+            background: rgba(41, 169, 225, 0.06);
         }
 
         .hamburger {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
             cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 8px;
+            padding: 4px 8px;
+            border-radius: 6px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid transparent;
             transition: 0.2s;
         }
 
         .hamburger:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.06);
         }
 
         .hamburger span {
             display: block;
-            width: 24px;
+            width: 22px;
             height: 2px;
             background: #f1f5f9;
-            border-radius: 4px;
+            border-radius: 3px;
             transition: 0.3s;
         }
 
         .hamburger.active span:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
+            transform: rotate(45deg) translate(4px, 4px);
         }
         .hamburger.active span:nth-child(2) {
             opacity: 0;
         }
         .hamburger.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(5px, -5px);
+            transform: rotate(-45deg) translate(4px, -4px);
         }
 
-        /* ----- SLIDE MENU PANEL (GLASS) ----- */
+        /* ----- SLIDE MENU (lighter glass) ----- */
         .menu-panel {
             position: fixed;
             top: 0;
-            right: -380px;
-            width: 340px;
+            right: -340px;
+            width: 300px;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
-            padding: 2rem 1.8rem;
-            transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            background: rgba(10, 22, 40, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.4);
+            padding: 1.5rem 1.2rem;
+            transition: right 0.3s cubic-bezier(0.22, 1, 0.36, 1);
             z-index: 200;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 0.3rem;
+            gap: 0.2rem;
             color: #f1f5f9;
             border-left: 1px solid rgba(255, 255, 255, 0.04);
         }
@@ -221,9 +219,9 @@
             background: none;
             border: none;
             color: rgba(255, 255, 255, 0.3);
-            font-size: 2rem;
+            font-size: 1.6rem;
             cursor: pointer;
-            padding: 0 0.5rem;
+            padding: 0 0.3rem;
             transition: 0.2s;
         }
         .menu-panel .close-btn:hover {
@@ -232,47 +230,47 @@
 
         .menu-panel .panel-header {
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            padding-bottom: 0.8rem;
-            margin-bottom: 0.5rem;
+            padding-bottom: 0.6rem;
+            margin-bottom: 0.4rem;
         }
 
         .menu-panel .panel-header .panel-name {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
             color: #ffffff;
         }
 
         .menu-panel .panel-header .panel-email {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: rgba(255, 255, 255, 0.15);
         }
 
         .menu-item {
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 0.7rem 0.8rem;
-            border-radius: 12px;
+            gap: 12px;
+            padding: 0.5rem 0.6rem;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
             text-decoration: none;
             color: rgba(255, 255, 255, 0.5);
             border: none;
             background: transparent;
             width: 100%;
             font-family: inherit;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
         }
 
         .menu-item:hover {
             background: rgba(255, 255, 255, 0.06);
             color: #ffffff;
-            transform: translateX(4px);
+            transform: translateX(3px);
         }
 
         .menu-item .mi-icon {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -280,8 +278,8 @@
         }
 
         .menu-item .mi-icon svg {
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             stroke: currentColor;
             stroke-width: 1.8;
             fill: none;
@@ -294,11 +292,11 @@
         }
 
         .menu-item .mi-arrow {
-            color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.12);
         }
         .menu-item .mi-arrow svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             stroke: currentColor;
             stroke-width: 2;
             fill: none;
@@ -309,29 +307,29 @@
         .menu-divider {
             height: 1px;
             background: rgba(255, 255, 255, 0.04);
-            margin: 0.2rem 0.8rem;
+            margin: 0.2rem 0.6rem;
         }
 
         /* ----- CONTAINER ----- */
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 1rem 1.2rem;
+            padding: 0.8rem 1rem;
             flex: 1;
             width: 100%;
         }
 
         /* ----- GREETING ----- */
         .greeting-area {
-            margin-bottom: 1.8rem;
+            margin-bottom: 1.2rem;
             text-align: center;
         }
 
         .greeting-text {
-            font-size: 2rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: #ffffff;
-            letter-spacing: -0.3px;
+            letter-spacing: -0.2px;
         }
 
         .greeting-text span {
@@ -339,23 +337,21 @@
         }
 
         .greeting-sub {
-            font-size: 1rem;
+            font-size: 0.85rem;
             color: rgba(255, 255, 255, 0.25);
             margin-top: 2px;
         }
 
-        /* ----- SLIDESHOW (glass) ----- */
+        /* ----- SLIDESHOW (lighter glass, no heavy backdrop) ----- */
         .hero-slideshow {
             position: relative;
             width: 100%;
-            border-radius: 28px;
+            border-radius: 20px;
             overflow: hidden;
-            margin-bottom: 2rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
             aspect-ratio: 16 / 9;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            background: rgba(10, 22, 40, 0.30);
             border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
@@ -372,7 +368,7 @@
             width: 100%;
             height: 100%;
             opacity: 0;
-            transition: opacity 0.9s ease;
+            transition: opacity 0.8s ease;
             background-size: cover;
             background-position: center;
         }
@@ -384,45 +380,45 @@
         .hero-slideshow .slide-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.2) 60%);
+            background: linear-gradient(135deg, rgba(10, 22, 40, 0.50) 0%, rgba(10, 22, 40, 0.10) 60%);
             z-index: 1;
         }
 
         .hero-slideshow .slide-content {
             position: absolute;
-            bottom: 20%;
-            left: 8%;
+            bottom: 18%;
+            left: 6%;
             z-index: 2;
             max-width: 70%;
             color: #fff;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
         }
 
         .hero-slideshow .slide-content h2 {
-            font-size: clamp(1.4rem, 3.5vw, 2.6rem);
+            font-size: clamp(1.2rem, 3vw, 2.2rem);
             font-weight: 700;
             line-height: 1.2;
         }
 
         .hero-slideshow .slide-content p {
-            font-size: clamp(0.8rem, 1.2vw, 1.1rem);
-            opacity: 0.85;
-            margin-top: 4px;
+            font-size: clamp(0.7rem, 1vw, 1rem);
+            opacity: 0.8;
+            margin-top: 2px;
         }
 
         .hero-slideshow .indicators {
             position: absolute;
-            bottom: 16px;
+            bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 3;
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .hero-slideshow .indicators .dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.15);
             border: none;
@@ -434,66 +430,50 @@
         .hero-slideshow .indicators .dot.active {
             background: #60a5fa;
             transform: scale(1.2);
-            box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+            box-shadow: 0 0 16px rgba(96, 165, 250, 0.15);
         }
 
-        /* ----- QUICK ACCESS ROW (GLASS) ----- */
+        /* ----- QUICK ACCESS (no blur, only semi-transparent) ----- */
         .quick-row {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
         }
 
         @media (max-width: 500px) {
             .quick-row {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 0.6rem;
+                gap: 0.5rem;
             }
         }
 
         .quick-item {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            background: rgba(10, 22, 40, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 1.2rem 0.5rem;
+            border-radius: 20px;
+            padding: 1rem 0.5rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .quick-item::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
-            pointer-events: none;
+            transition: all 0.25s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         }
 
         .quick-item:hover {
-            transform: translateY(-6px);
-            border-color: rgba(96, 165, 250, 0.15);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+            transform: translateY(-4px);
+            border-color: rgba(96, 165, 250, 0.10);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
 
         .quick-item .qi-icon {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto 6px;
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 4px;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: 0.2s;
             border: 1px solid rgba(255, 255, 255, 0.02);
         }
 
@@ -503,8 +483,8 @@
         }
 
         .quick-item .qi-icon svg {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             stroke: rgba(255, 255, 255, 0.15);
             stroke-width: 1.8;
             fill: none;
@@ -518,60 +498,45 @@
         }
 
         .quick-item .qi-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.3);
         }
 
-        /* ----- MARKETPLACE CARD (GLASS) ----- */
+        /* ----- MARKETPLACE CARD (no blur, only semi-transparent) ----- */
         .marketplace-card {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            background: rgba(10, 22, 40, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            margin-bottom: 2rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1.5rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .marketplace-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
-            pointer-events: none;
+            transition: all 0.25s ease;
         }
 
         .marketplace-card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(96, 165, 250, 0.15);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+            transform: translateY(-4px);
+            border-color: rgba(96, 165, 250, 0.10);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
 
         .marketplace-card .marketplace-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 0.8rem;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 0.6rem;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 8px 30px rgba(37, 99, 235, 0.15);
+            box-shadow: 0 6px 24px rgba(37, 99, 235, 0.12);
         }
 
         .marketplace-card .marketplace-icon svg {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             stroke: #fff;
             stroke-width: 2;
             fill: none;
@@ -580,43 +545,43 @@
         }
 
         .marketplace-card h3 {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: #ffffff;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.2rem;
         }
 
         .marketplace-card p {
             color: rgba(255, 255, 255, 0.15);
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
         .marketplace-card .badge-new {
             display: inline-block;
-            background: rgba(74, 222, 128, 0.06);
-            color: #4ade80;
-            font-size: 0.7rem;
+            background: rgba(96, 165, 250, 0.06);
+            color: #60a5fa;
+            font-size: 0.65rem;
             font-weight: 600;
-            padding: 0.2rem 0.8rem;
+            padding: 0.15rem 0.7rem;
             border-radius: 30px;
-            margin-top: 0.5rem;
-            border: 1px solid rgba(74, 222, 128, 0.06);
+            margin-top: 0.4rem;
+            border: 1px solid rgba(96, 165, 250, 0.06);
         }
 
         /* ----- FOOTER LINKS ----- */
         .footer-links {
             text-align: center;
-            margin-top: 1.5rem;
-            padding-top: 1.2rem;
+            margin-top: 1.2rem;
+            padding-top: 1rem;
             border-top: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 1rem 2rem;
+            gap: 0.8rem 1.5rem;
         }
 
         .footer-links a {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: rgba(255, 255, 255, 0.08);
             text-decoration: none;
             transition: 0.2s;
@@ -627,42 +592,42 @@
         }
 
         .footer-links .copyright {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: rgba(255, 255, 255, 0.04);
             width: 100%;
             text-align: center;
-            margin-top: 0.2rem;
+            margin-top: 0.1rem;
         }
 
-        /* ----- BOTTOM NAV (DARK GLASS) ----- */
+        /* ----- BOTTOM NAV (lighter glass) ----- */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(0, 0, 0, 0.50);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(10, 22, 40, 0.60);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border-top: 1px solid rgba(255, 255, 255, 0.03);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 6px 4px 14px;
+            padding: 4px 4px 10px;
             z-index: 30;
-            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
         }
 
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            gap: 1px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.25s;
             flex: 1;
             text-align: center;
-            padding: 4px 2px;
-            border-radius: 16px;
+            padding: 3px 2px;
+            border-radius: 12px;
             border: none;
             background: transparent;
             font-family: inherit;
@@ -670,14 +635,14 @@
         }
 
         .nav-item .nav-icon {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             stroke: currentColor;
             stroke-width: 1.8;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
-            transition: all 0.3s;
+            transition: all 0.25s;
         }
 
         .nav-item.active .nav-icon {
@@ -686,11 +651,11 @@
         }
 
         .nav-item .nav-label {
-            font-size: 0.45rem;
+            font-size: 0.4rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.15);
-            transition: 0.3s;
-            letter-spacing: 0.3px;
+            color: rgba(255, 255, 255, 0.12);
+            transition: 0.25s;
+            letter-spacing: 0.2px;
         }
 
         .nav-item.active .nav-label {
@@ -702,19 +667,19 @@
         }
 
         .nav-item.marketplace .nav-icon {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             stroke-width: 2;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             border-radius: 50%;
             padding: 4px;
             stroke: #fff;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         .nav-item.marketplace.active .nav-icon {
-            transform: scale(1.1);
-            box-shadow: 0 0 30px rgba(37, 99, 235, 0.15);
+            transform: scale(1.08);
+            box-shadow: 0 0 24px rgba(37, 99, 235, 0.10);
         }
 
         .nav-item.marketplace .nav-label {
@@ -725,69 +690,69 @@
         /* ----- RESPONSIVE ----- */
         @media (max-width: 500px) {
             .header {
-                padding: 0.6rem 1rem;
+                padding: 0.5rem 0.8rem;
             }
             .logo-text {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
             }
             .logo-sub {
-                font-size: 0.5rem;
+                font-size: 0.45rem;
             }
             .header-social a {
-                width: 32px;
-                height: 32px;
+                width: 30px;
+                height: 30px;
             }
             .header-social a svg {
-                width: 16px;
-                height: 16px;
+                width: 14px;
+                height: 14px;
             }
             .hamburger span {
-                width: 22px;
+                width: 20px;
                 height: 2px;
             }
             .menu-panel {
-                width: 280px;
-                right: -300px;
-                padding: 1.5rem;
+                width: 260px;
+                right: -280px;
+                padding: 1.2rem;
             }
             .container {
-                padding: 0.8rem;
+                padding: 0.6rem;
             }
             .greeting-text {
-                font-size: 1.6rem;
+                font-size: 1.3rem;
             }
             .marketplace-card {
-                padding: 1.8rem 1.2rem;
+                padding: 1.5rem 1rem;
             }
             .marketplace-card .marketplace-icon {
-                width: 64px;
-                height: 64px;
+                width: 58px;
+                height: 58px;
             }
             .marketplace-card .marketplace-icon svg {
-                width: 32px;
-                height: 32px;
+                width: 28px;
+                height: 28px;
             }
             .quick-row {
-                gap: 0.6rem;
+                gap: 0.5rem;
             }
             .quick-item {
-                padding: 1rem 0.3rem;
+                padding: 0.8rem 0.3rem;
             }
             .quick-item .qi-icon {
-                width: 40px;
-                height: 40px;
+                width: 36px;
+                height: 36px;
             }
             .quick-item .qi-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+            .nav-item .nav-icon {
                 width: 20px;
                 height: 20px;
             }
-            .nav-item .nav-icon {
-                width: 22px;
-                height: 22px;
-            }
             .nav-item.marketplace .nav-icon {
-                width: 30px;
-                height: 30px;
+                width: 26px;
+                height: 26px;
             }
         }
     </style>
@@ -800,8 +765,8 @@
     <!-- ===== HEADER ===== -->
     <header class="header">
         <div class="header-left">
-            <a href="index.html" class="logo-text">Vision<span class="vc">Core</span></a>
-            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
+            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
+            <span class="logo-sub">powered by Pureore Capital</span>
         </div>
         <div class="header-right">
             <div class="header-social">
@@ -818,7 +783,7 @@
         </div>
     </header>
 
-    <!-- ===== SLIDE MENU (GLASS) ===== -->
+    <!-- ===== SLIDE MENU ===== -->
     <div class="menu-panel" id="menuPanel">
         <button class="close-btn" id="closeMenu">✕</button>
         <div class="panel-header">
@@ -880,13 +845,14 @@
             <div class="greeting-sub" id="greetingSub">Let's grow your portfolio today</div>
         </div>
 
-        <!-- SLIDESHOW (4 images) -->
+        <!-- SLIDESHOW: 4 old + 3 new = 7 slides -->
         <div class="hero-slideshow" id="heroSlideshow">
-            <div class="slides-wrapper" id="slidesWrapper">
+            <div class="slides-wrapper">
+                <!-- Old slides -->
                 <div class="slide active" style="background-image: url('https://i.ibb.co/BKQJsR4L/file-00000000d73881f482171aab413d03c3.png');">
                     <div class="slide-overlay"></div>
                     <div class="slide-content">
-                        <h2>Welcome to VisionCore</h2>
+                        <h2>Welcome to Sajvera Capital</h2>
                         <p>Your journey to financial freedom starts here</p>
                     </div>
                 </div>
@@ -911,39 +877,60 @@
                         <p>Join thousands of satisfied investors</p>
                     </div>
                 </div>
+                <!-- New slides (your images) -->
+                <div class="slide" style="background-image: url('https://i.ibb.co/1GLg2KDM/IMG-20260805-071201.jpg');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2>Growing Together</h2>
+                        <p>Building wealth through smart partnerships</p>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://i.ibb.co/V0KGbh4k/IMG-20260805-071146.jpg');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2>Vision in Action</h2>
+                        <p>Turning opportunities into reality</p>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://i.ibb.co/rKvztVZg/IMG-20260805-071126.jpg');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <h2>Your Future Starts Now</h2>
+                        <p>Invest with confidence, grow with purpose</p>
+                    </div>
+                </div>
             </div>
             <div class="indicators" id="slideIndicators">
                 <button class="dot active" data-index="0"></button>
                 <button class="dot" data-index="1"></button>
                 <button class="dot" data-index="2"></button>
                 <button class="dot" data-index="3"></button>
+                <button class="dot" data-index="4"></button>
+                <button class="dot" data-index="5"></button>
+                <button class="dot" data-index="6"></button>
             </div>
         </div>
 
-        <!-- QUICK ACCESS ROW: Loan | Voucher | Treasure | Daily Check -->
+        <!-- QUICK ACCESS -->
         <div class="quick-row">
-            <!-- Loan -->
             <div class="quick-item" onclick="location.href='loan.html';">
                 <div class="qi-icon">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                 </div>
                 <div class="qi-label">Loan</div>
             </div>
-            <!-- Voucher -->
             <div class="quick-item" onclick="location.href='voucher.html';">
                 <div class="qi-icon">
                     <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
                 </div>
                 <div class="qi-label">Voucher</div>
             </div>
-            <!-- Treasure -->
             <div class="quick-item" onclick="location.href='treasure.html';">
                 <div class="qi-icon">
                     <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                 </div>
                 <div class="qi-label">Treasure</div>
             </div>
-            <!-- Daily Check -->
             <div class="quick-item" onclick="location.href='daily-check.html';">
                 <div class="qi-icon">
                     <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="12 14 12 18 16 18"/></svg>
@@ -952,7 +939,7 @@
             </div>
         </div>
 
-        <!-- BIG MARKETPLACE CARD -->
+        <!-- MARKETPLACE CARD -->
         <div class="marketplace-card" id="marketplaceCard">
             <div class="marketplace-icon">
                 <svg viewBox="0 0 24 24">
@@ -966,17 +953,17 @@
             <span class="badge-new">🔥 New plans available</span>
         </div>
 
-        <!-- Footer links -->
+        <!-- Footer -->
         <div class="footer-links">
             <a href="term.html">Terms of Service</a>
             <a href="privacy.html">Privacy Policy</a>
             <a href="risk-disclaimer.html">Risk Disclaimer</a>
-            <div class="copyright">© VisionCore Capital 2026</div>
+            <div class="copyright">© Sajvera Capital 2026</div>
         </div>
 
     </main>
 
-    <!-- ===== BOTTOM NAV (DARK GLASS) ===== -->
+    <!-- ===== BOTTOM NAV ===== -->
     <div class="bottom-nav">
         <button class="nav-item active" data-page="dashboard.html">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
@@ -986,7 +973,6 @@
             <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
             <span class="nav-label">Income</span>
         </button>
-        <!-- Marketplace in center -->
         <button class="nav-item marketplace" data-page="marketplace.html">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <span class="nav-label">Market</span>
@@ -1014,11 +1000,35 @@
             appId: "1:78967797858:web:379b9692951429c345793b",
             measurementId: "G-FQKC29NYE9"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         var auth = firebase.auth();
         var db = firebase.firestore();
         db.settings({ persistence: true });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e) {
+            console.warn('Persistence error:', e);
+        });
+
+        // ================================================================
+        // DOM REFS
+        // ================================================================
+        function getEl(id) {
+            var el = document.getElementById(id);
+            if (!el) console.warn('Element not found:', id);
+            return el;
+        }
+
+        var hamburger = getEl('hamburger');
+        var menuPanel = getEl('menuPanel');
+        var closeMenu = getEl('closeMenu');
+        var logoutBtn = getEl('logoutBtn');
+        var userNameDisplay = getEl('userNameDisplay');
+        var panelName = getEl('panelName');
+        var panelEmail = getEl('panelEmail');
+        var greetingSub = getEl('greetingSub');
+        var marketplaceCard = getEl('marketplaceCard');
 
         // ================================================================
         // AUTH STATE
@@ -1029,50 +1039,63 @@
                 return;
             }
             var uid = user.uid;
+            if (!uid) {
+                window.location.href = 'login.html';
+                return;
+            }
+
             db.collection('users').doc(uid).get()
                 .then(function(doc) {
-                    if (doc.exists) {
-                        var data = doc.data();
-                        var name = data.fullName || data.displayName || 'Investor';
-                        document.getElementById('userNameDisplay').textContent = name;
-                        document.getElementById('panelName').textContent = name;
-                        document.getElementById('panelEmail').textContent = data.email || user.email || '';
-                    } else {
-                        auth.signOut();
+                    if (!doc.exists) {
+                        auth.signOut().catch(function() {});
                         window.location.href = 'login.html';
+                        return;
                     }
+                    var data = doc.data();
+                    var name = data.fullName || data.displayName || 'Investor';
+                    if (userNameDisplay) userNameDisplay.textContent = name;
+                    if (panelName) panelName.textContent = name;
+                    if (panelEmail) panelEmail.textContent = data.email || user.email || '';
                 })
-                .catch(function(e) { console.warn('User load error:', e); });
+                .catch(function(e) {
+                    console.warn('User load error:', e);
+                });
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
         // HAMBURGER
         // ================================================================
-        var hamburger = document.getElementById('hamburger');
-        var menuPanel = document.getElementById('menuPanel');
-        var closeMenu = document.getElementById('closeMenu');
-
         function toggleMenu() {
+            if (!menuPanel) return;
             var open = menuPanel.classList.toggle('open');
-            hamburger.classList.toggle('active', open);
+            if (hamburger) hamburger.classList.toggle('active', open);
             document.body.style.overflow = open ? 'hidden' : '';
         }
-        hamburger.addEventListener('click', toggleMenu);
-        closeMenu.addEventListener('click', toggleMenu);
+
+        if (hamburger) hamburger.addEventListener('click', toggleMenu);
+        if (closeMenu) closeMenu.addEventListener('click', toggleMenu);
+
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && menuPanel.classList.contains('open')) toggleMenu();
+            if (e.key === 'Escape' && menuPanel && menuPanel.classList.contains('open')) {
+                toggleMenu();
+            }
         });
 
         // ================================================================
-        // SLIDESHOW
+        // SLIDESHOW (7 slides)
         // ================================================================
         var slides = document.querySelectorAll('.slide');
         var dots = document.querySelectorAll('.dot');
         var currentSlide = 0;
         var totalSlides = slides.length;
-        var slideInterval;
+        var slideInterval = null;
 
         function goToSlide(index) {
+            if (!slides.length || !dots.length) return;
+            index = (index + totalSlides) % totalSlides;
             slides.forEach(function(s) { s.classList.remove('active'); });
             dots.forEach(function(d) { d.classList.remove('active'); });
             slides[index].classList.add('active');
@@ -1081,51 +1104,65 @@
         }
 
         function nextSlide() {
-            var next = (currentSlide + 1) % totalSlides;
-            goToSlide(next);
+            goToSlide(currentSlide + 1);
         }
 
         function startSlideshow() {
+            if (!slides.length) return;
             goToSlide(0);
             if (slideInterval) clearInterval(slideInterval);
             slideInterval = setInterval(nextSlide, 4000);
         }
+
         dots.forEach(function(dot) {
             dot.addEventListener('click', function() {
-                var index = parseInt(this.getAttribute('data-index'));
-                goToSlide(index);
+                var idx = parseInt(this.getAttribute('data-index'), 10);
+                if (isNaN(idx)) return;
+                goToSlide(idx);
                 if (slideInterval) {
                     clearInterval(slideInterval);
                     slideInterval = setInterval(nextSlide, 4000);
                 }
             });
         });
+
         var hero = document.getElementById('heroSlideshow');
-        hero.addEventListener('mouseenter', function() { if (slideInterval) clearInterval(slideInterval); });
-        hero.addEventListener('mouseleave', function() {
-            if (slideInterval) clearInterval(slideInterval);
-            slideInterval = setInterval(nextSlide, 4000);
-        });
+        if (hero) {
+            hero.addEventListener('mouseenter', function() {
+                if (slideInterval) clearInterval(slideInterval);
+            });
+            hero.addEventListener('mouseleave', function() {
+                if (slideInterval) clearInterval(slideInterval);
+                slideInterval = setInterval(nextSlide, 4000);
+            });
+        }
+
         startSlideshow();
 
         // ================================================================
         // MARKETPLACE CARD CLICK
         // ================================================================
-        document.getElementById('marketplaceCard').addEventListener('click', function() {
-            window.location.href = 'marketplace.html';
-        });
+        if (marketplaceCard) {
+            marketplaceCard.addEventListener('click', function() {
+                window.location.href = 'marketplace.html';
+            });
+        }
 
         // ================================================================
         // BOTTOM NAV
         // ================================================================
         var navItems = document.querySelectorAll('.nav-item');
-        var current = window.location.pathname.split('/').pop() || 'dashboard.html';
+        var currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
+
         navItems.forEach(function(item) {
             var target = item.getAttribute('data-page');
-            if (current === target) item.classList.add('active');
+            if (target && currentPage === target) {
+                item.classList.add('active');
+            }
             item.addEventListener('click', function() {
-                if (target && !window.location.pathname.includes(target)) {
-                    window.location.href = target;
+                var t = this.getAttribute('data-page');
+                if (t && !window.location.pathname.includes(t)) {
+                    window.location.href = t;
                 }
             });
         });
@@ -1133,31 +1170,40 @@
         // ================================================================
         // DYNAMIC GREETING
         // ================================================================
-        (function() {
-            var sub = document.getElementById('greetingSub');
-            if (!sub) return;
+        if (greetingSub) {
             var hour = new Date().getHours();
-            var msg = '';
-            if (hour < 12) msg = 'Start your day with smart investing';
-            else if (hour < 17) msg = 'Keep growing your portfolio';
-            else if (hour < 21) msg = 'Evening is a great time to review your earnings';
-            else msg = 'Rest well, tomorrow is another opportunity';
-            sub.textContent = msg;
-        })();
+            var msgs = [
+                'Start your day with smart investing',
+                'Keep growing your portfolio',
+                'Evening is a great time to review your earnings',
+                'Rest well, tomorrow is another opportunity'
+            ];
+            var msg = hour < 12 ? msgs[0] :
+                hour < 17 ? msgs[1] :
+                hour < 21 ? msgs[2] : msgs[3];
+            greetingSub.textContent = msg;
+        }
 
         // ================================================================
         // LOGOUT
         // ================================================================
-        document.getElementById('logoutBtn')?.addEventListener('click', function() {
-            auth.signOut().then(function() {
-                window.location.href = 'login.html';
-            }).catch(function(err) {
-                console.warn('Logout error:', err);
-                window.location.href = 'login.html';
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                auth.signOut()
+                    .then(function() {
+                        window.location.href = 'login.html';
+                    })
+                    .catch(function(err) {
+                        console.warn('Logout error:', err);
+                        window.location.href = 'login.html';
+                    });
             });
-        });
+        }
 
-        console.log('✅ Dashboard · VisionCore Capital · Blue glassmorphism design');
+        console.log('✅ Sajvera Capital · Lightweight dashboard (smooth scroll)');
+        console.log('🔄 7 slides (4 old + 3 new)');
+        console.log('🌾 Full‑screen background with light blur (8px)');
+        console.log('🔵 Blue glass theme — performance optimized');
     </script>
 </body>
 </html>

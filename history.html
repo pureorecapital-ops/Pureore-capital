@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>History – VisionCore Capital</title>
+    <title>History – Sajvera Capital</title>
     <link rel="preconnect" href="https://www.gstatic.com" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
@@ -789,7 +789,7 @@
     <!-- ===== HEADER ===== -->
     <header class="header">
         <div class="header-left">
-            <a href="index.html" class="logo-text">Vision<span class="vc">Core</span></a>
+            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
             <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
         </div>
         <div class="header-right">
@@ -858,7 +858,7 @@
         <!-- Page Header -->
         <div class="page-header">
             <h1>📜 <span>History</span></h1>
-            <p>View all your deposits, withdrawals and loans</p>
+            <p>View all your transactions</p>
         </div>
 
         <!-- Tabs -->
@@ -867,6 +867,7 @@
             <button class="tab-btn" data-tab="deposits">Deposits <span class="badge" id="depositsBadge">0</span></button>
             <button class="tab-btn" data-tab="withdrawals">Withdrawals <span class="badge" id="withdrawalsBadge">0</span></button>
             <button class="tab-btn" data-tab="loans">Loans <span class="badge" id="loansBadge">0</span></button>
+            <button class="tab-btn" data-tab="bonuses">Bonuses <span class="badge" id="bonusesBadge">0</span></button>
         </div>
 
         <!-- Tab Content -->
@@ -881,6 +882,9 @@
         </div>
         <div id="loansTab" class="tab-content">
             <div id="loansList"></div>
+        </div>
+        <div id="bonusesTab" class="tab-content">
+            <div id="bonusesList"></div>
         </div>
 
     </main>
@@ -954,6 +958,8 @@
                 return `<svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`;
             } else if (type === 'loan') {
                 return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
+            } else if (type === 'bonus') {
+                return `<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
             }
             return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
         }
@@ -972,13 +978,14 @@
             var map = {
                 deposit: 'Deposit',
                 withdrawal: 'Withdrawal',
-                loan: 'Loan'
+                loan: 'Loan',
+                bonus: 'Bonus'
             };
             return map[type] || type;
         }
 
         function renderTransaction(item, type) {
-            var isPositive = (type === 'deposit');
+            var isPositive = (type === 'deposit' || type === 'bonus');
             var amountClass = isPositive ? 'positive' : 'negative';
             var sign = isPositive ? '+' : '-';
             var statusClass = getStatusClass(item.status);
@@ -1006,6 +1013,11 @@
                     <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Due: ${formatDate(item.dueDate)}</span>
                     <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt)}</span>
                 `;
+            } else if (type === 'bonus') {
+                detailsHtml = `
+                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${item.description || 'Bonus'}</span>
+                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt)}</span>
+                `;
             }
 
             return `
@@ -1014,7 +1026,7 @@
                         <div class="tx-left">
                             <div class="tx-icon">${iconSvg}</div>
                             <span class="tx-amount ${amountClass}">${sign}${formatMoney(item.amount)}</span>
-                            <span class="tx-status ${statusClass}">${(item.status || 'pending').toUpperCase()}</span>
+                            <span class="tx-status ${statusClass}">${(item.status || 'completed').toUpperCase()}</span>
                         </div>
                         <span class="tx-type-badge">${getTypeBadge(type)}</span>
                     </div>
@@ -1041,13 +1053,15 @@
         var allData = {
             deposits: [],
             withdrawals: [],
-            loans: []
+            loans: [],
+            bonuses: []
         };
 
         var unsubs = {
             deposits: null,
             withdrawals: null,
-            loans: null
+            loans: null,
+            bonuses: null
         };
 
         // ================================================================
@@ -1090,6 +1104,7 @@
             allData.deposits.forEach(function(d) { items.push({ ...d, _type: 'deposit' }); });
             allData.withdrawals.forEach(function(w) { items.push({ ...w, _type: 'withdrawal' }); });
             allData.loans.forEach(function(l) { items.push({ ...l, _type: 'loan' }); });
+            allData.bonuses.forEach(function(b) { items.push({ ...b, _type: 'bonus' }); });
             items.sort(function(a, b) {
                 return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
             });
@@ -1154,12 +1169,29 @@
             container.innerHTML = html;
         }
 
+        function renderBonuses() {
+            var container = document.getElementById('bonusesList');
+            if (!allData.bonuses.length) {
+                container.innerHTML = renderEmpty('No bonuses');
+                return;
+            }
+            var html = '';
+            var sorted = allData.bonuses.slice().sort(function(a, b) {
+                return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
+            });
+            for (var i = 0; i < sorted.length; i++) {
+                html += renderTransaction(sorted[i], 'bonus');
+            }
+            container.innerHTML = html;
+        }
+
         function updateBadges() {
-            document.getElementById('allBadge').textContent = allData.deposits.length + allData.withdrawals.length + allData
-            .loans.length;
+            var total = allData.deposits.length + allData.withdrawals.length + allData.loans.length + allData.bonuses.length;
+            document.getElementById('allBadge').textContent = total;
             document.getElementById('depositsBadge').textContent = allData.deposits.length;
             document.getElementById('withdrawalsBadge').textContent = allData.withdrawals.length;
             document.getElementById('loansBadge').textContent = allData.loans.length;
+            document.getElementById('bonusesBadge').textContent = allData.bonuses.length;
         }
 
         // ================================================================
@@ -1213,6 +1245,30 @@
             });
         }
 
+        function listenBonuses(userId) {
+            if (unsubs.bonuses) unsubs.bonuses();
+            var q = db.collection('transactions')
+                .where('userId', '==', userId)
+                .where('type', '==', 'bonus');
+            unsubs.bonuses = q.onSnapshot(function(snapshot) {
+                var docs = [];
+                snapshot.forEach(function(doc) {
+                    var data = doc.data();
+                    data.id = doc.id;
+                    // Ensure status field exists
+                    if (!data.status) data.status = 'completed';
+                    docs.push(data);
+                });
+                allData.bonuses = docs;
+                renderBonuses();
+                renderAll();
+                updateBadges();
+            }, function(err) {
+                console.error('Bonus listener error:', err);
+                document.getElementById('bonusesList').innerHTML = renderEmpty('Error loading bonuses');
+            });
+        }
+
         // ================================================================
         // TABS
         // ================================================================
@@ -1221,7 +1277,8 @@
             all: document.getElementById('allTab'),
             deposits: document.getElementById('depositsTab'),
             withdrawals: document.getElementById('withdrawalsTab'),
-            loans: document.getElementById('loansTab')
+            loans: document.getElementById('loansTab'),
+            bonuses: document.getElementById('bonusesTab')
         };
 
         tabBtns.forEach(function(btn) {
@@ -1266,6 +1323,7 @@
             listenDeposits(user.uid);
             listenWithdrawals(user.uid);
             listenLoans(user.uid);
+            listenBonuses(user.uid);
 
             // Update panel name
             db.collection('users').doc(user.uid).get().then(function(doc) {
@@ -1307,8 +1365,8 @@
             });
         });
 
-        console.log('✅ history.html · VisionCore Capital · Blue glassmorphism design');
-        console.log('📜 All transactions with glass cards');
+        console.log('✅ history.html · Sajvera Capital · Blue glassmorphism design');
+        console.log('📜 All transactions including registration bonuses');
         console.log('📱 Bottom Nav: Home | Market | Team | History | Me');
     </script>
 </body>
