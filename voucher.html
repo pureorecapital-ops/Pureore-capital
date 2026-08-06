@@ -995,20 +995,41 @@
         });
 
         // ================================================================
-        // AUTH STATE
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
+        let authResolved = false;
+        let redirectTimeout = null;
+
         auth.onAuthStateChanged(async function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                watchBlockStatus(user.uid);
+                await loadUserBalance(user.uid);
+                var userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    var fullName = userDoc.data().fullName;
+                    if (fullName) userNameInput.value = fullName;
+                }
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
             }
-            watchBlockStatus(user.uid);
-            await loadUserBalance(user.uid);
-            var userDoc = await db.collection('users').doc(user.uid).get();
-            if (userDoc.exists) {
-                var fullName = userDoc.data().fullName;
-                if (fullName) userNameInput.value = fullName;
-            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -1181,6 +1202,7 @@
 
         console.log('✅ Voucher page · VisionCore Capital · Blue glassmorphism design');
         console.log('🎫 Bottom nav has 5 icons only (NO Voucher icon)');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>

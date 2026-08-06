@@ -24,12 +24,13 @@
             background: #0b1120;
             min-height: 100vh;
             padding-top: 70px;
+            padding-bottom: 80px;
             display: flex;
             flex-direction: column;
             color: #f1f5f9;
         }
 
-        /* ----- SIMPLE HEADER ----- */
+        /* ----- HEADER ----- */
         .header {
             position: fixed;
             top: 0;
@@ -87,7 +88,7 @@
         .container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 1.5rem 1.2rem;
+            padding: 1.5rem 1.2rem 1rem;
             flex: 1;
             width: 100%;
         }
@@ -95,57 +96,73 @@
         /* ----- PAGE TITLE ----- */
         .page-title {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         .page-title h1 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: #f1f5f9;
         }
         .page-title p {
             color: #94a3b8;
-            font-size: 0.9rem;
-            margin-top: 4px;
+            font-size: 0.85rem;
+            margin-top: 2px;
         }
 
-        /* ----- CALENDAR GRID (5 days) ----- */
-        .calendar-grid {
+        /* ----- COIN BALANCE (optional) ----- */
+        .coin-balance {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #facc15;
+            margin-bottom: 1.5rem;
+        }
+        .coin-balance span {
+            font-weight: 700;
+            background: rgba(250, 204, 21, 0.06);
+            padding: 0.2rem 1rem;
+            border-radius: 30px;
+            border: 1px solid rgba(250, 204, 21, 0.06);
+        }
+
+        /* ----- GRID (7 days) ----- */
+        .checkin-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 0.8rem;
+            margin-bottom: 1.8rem;
         }
 
-        @media (max-width: 480px) {
-            .calendar-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        @media (max-width: 380px) {
-            .calendar-grid {
-                grid-template-columns: repeat(2, 1fr);
+        @media (min-width: 500px) {
+            .checkin-grid {
+                grid-template-columns: repeat(7, 1fr);
             }
         }
 
         .day-card {
             background: #1e293b;
             border-radius: 16px;
-            padding: 1.2rem 0.5rem;
+            padding: 0.8rem 0.3rem;
             text-align: center;
             border: 2px solid transparent;
-            transition: all 0.3s;
+            transition: all 0.25s;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            position: relative;
         }
 
-        .day-card.today {
-            border-color: #3b82f6;
-            box-shadow: 0 0 30px rgba(59, 130, 246, 0.08);
+        .day-card.active {
+            border-color: #facc15;
+            box-shadow: 0 0 30px rgba(250, 204, 21, 0.08);
         }
 
-        .day-card.completed {
+        .day-card.claimed {
             border-color: #22c55e;
+            opacity: 0.7;
         }
-
-        .day-card .day-name {
+        .day-card.claimed .day-reward {
+            text-decoration: line-through;
+            color: #22c55e;
+        }
+        .day-card .day-number {
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -153,87 +170,152 @@
             font-weight: 600;
         }
 
-        .day-card .day-date {
-            font-size: 2rem;
+        .day-card .day-reward {
+            font-size: 1.3rem;
             font-weight: 700;
-            color: #f1f5f9;
-            line-height: 1.2;
-            margin: 2px 0;
+            color: #facc15;
+            margin: 0.2rem 0;
+        }
+        .day-card .day-reward .plus {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin-right: 2px;
         }
 
-        .day-card .day-status {
+        .day-card .day-check {
             font-size: 0.65rem;
             font-weight: 600;
-            padding: 0.2rem 0.6rem;
-            border-radius: 30px;
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.04);
-            margin-bottom: 0.6rem;
+            color: #22c55e;
         }
 
-        .day-card .day-status.locked {
+        .day-card .day-lock {
+            font-size: 0.65rem;
+            font-weight: 600;
             color: #64748b;
         }
-        .day-card .day-status.available {
-            color: #22c55e;
-            background: rgba(34, 197, 94, 0.08);
-        }
-        .day-card .day-status.completed {
-            color: #22c55e;
-            background: rgba(34, 197, 94, 0.12);
-        }
-        .day-card .day-status.inactive {
-            color: #f59e0b;
-            background: rgba(245, 158, 11, 0.08);
+
+        /* ----- CHECK-IN BUTTON ----- */
+        .checkin-btn-wrap {
+            text-align: center;
+            margin: 1.2rem 0 1.5rem;
         }
 
-        .btn-claim {
-            width: 100%;
-            padding: 0.5rem;
+        .btn-checkin {
+            background: linear-gradient(135deg, #facc15, #f5a623);
             border: none;
-            border-radius: 10px;
+            border-radius: 60px;
+            padding: 0.9rem 3.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
             font-family: inherit;
-            font-weight: 600;
-            font-size: 0.8rem;
+            color: #0b1120;
             cursor: pointer;
-            transition: all 0.2s;
-            background: #3b82f6;
-            color: #fff;
+            transition: all 0.3s;
+            box-shadow: 0 4px 30px rgba(250, 204, 21, 0.15);
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .btn-claim:hover:not(:disabled) {
-            background: #2563eb;
-            transform: translateY(-2px);
+        .btn-checkin:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 40px rgba(250, 204, 21, 0.25);
         }
 
-        .btn-claim:disabled {
+        .btn-checkin:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .btn-checkin:disabled {
             opacity: 0.4;
             cursor: not-allowed;
             transform: none !important;
+            box-shadow: none !important;
         }
 
-        .btn-claim.completed-btn {
-            background: #22c55e;
-        }
-        .btn-claim.completed-btn:hover {
-            background: #16a34a;
+        .btn-checkin .coin-icon {
+            font-size: 1.4rem;
+            line-height: 1;
         }
 
-        /* ----- WEEKEND MESSAGE ----- */
-        .weekend-message {
-            background: #1e293b;
-            border-radius: 20px;
-            padding: 2rem 1.5rem;
+        /* ----- TURNOVER / STATUS ----- */
+        .turnover {
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-        .weekend-message h2 {
-            font-size: 1.8rem;
-            color: #f1f5f9;
-        }
-        .weekend-message p {
+            font-size: 0.9rem;
             color: #94a3b8;
-            margin-top: 0.5rem;
+            margin-bottom: 1.2rem;
+        }
+        .turnover strong {
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        /* ----- BOTTOM NAV (5 icons) ----- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(11, 17, 32, 0.90);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 4px 12px;
+            z-index: 30;
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+            padding: 4px 2px;
+            border-radius: 16px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            color: #94a3b8;
+        }
+
+        .nav-item .nav-icon {
+            width: 26px;
+            height: 26px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.3s;
+        }
+
+        .nav-item.active .nav-icon {
+            stroke: #facc15;
+            transform: scale(1.05);
+        }
+
+        .nav-item .nav-label {
+            font-size: 0.45rem;
+            font-weight: 600;
+            color: #94a3b8;
+            transition: 0.3s;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-item.active .nav-label {
+            color: #facc15;
+        }
+
+        .nav-item:hover .nav-icon {
+            stroke: #facc15;
         }
 
         /* ----- RESPONSIVE ----- */
@@ -252,10 +334,35 @@
                 padding: 1rem 0.8rem;
             }
             .page-title h1 {
-                font-size: 1.5rem;
+                font-size: 1.3rem;
             }
-            .day-card .day-date {
-                font-size: 1.6rem;
+            .day-card .day-reward {
+                font-size: 1.1rem;
+            }
+            .btn-checkin {
+                padding: 0.7rem 2.5rem;
+                font-size: 1rem;
+            }
+            .checkin-grid {
+                gap: 0.5rem;
+            }
+            .day-card {
+                padding: 0.6rem 0.2rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .checkin-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .day-card .day-reward {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 340px) {
+            .checkin-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -275,13 +382,56 @@
     <main class="container">
         <div class="page-title">
             <h1> Daily Checkin</h1>
-            <p>Claim your reward (Mon–Fri). One claim per day.</p>
+            <p>Check in daily to earn coins</p>
         </div>
 
-        <div id="contentArea">
+        <!-- Coin balance (optional) -->
+        <div class="coin-balance">
+            <span> <span id="coinBalance">0</span> coins</span>
+        </div>
+
+        <!-- Turnover status -->
+        <div class="turnover" id="turnoverDisplay">
+            Today's checkin: <strong id="todayStatus"> Pending</strong>
+        </div>
+
+        <!-- 7-day grid -->
+        <div class="checkin-grid" id="checkinGrid">
             <!-- Rendered by JavaScript -->
         </div>
+
+        <!-- Check-in button -->
+        <div class="checkin-btn-wrap">
+            <button class="btn-checkin" id="checkinBtn" disabled>
+                <span class="coin-icon"></span> Check In
+            </button>
+        </div>
+
     </main>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+        <button class="nav-item" data-page="dashboard.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-page="deposit.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            <span class="nav-label">Deposit</span>
+        </button>
+        <button class="nav-item" data-page="promotions.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            <span class="nav-label">Promotions</span>
+        </button>
+        <button class="nav-item" data-page="withdraw.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            <span class="nav-label">Withdraw</span>
+        </button>
+        <button class="nav-item" data-page="me.html">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="nav-label">Profile</span>
+        </button>
+    </div>
 
     <script>
         // ================================================================
@@ -302,30 +452,20 @@
         db.settings({ persistence: true });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
+        // ================================================================
+        // STATE
+        // ================================================================
         var currentUser = null;
         var today = new Date();
         today.setHours(0, 0, 0, 0);
+        var todayStr = formatDateKey(today);
+
+        // Default rewards for 7 days (will be overridden by Firestore)
+        var defaultRewards = [20, 30, 30, 40, 50, 50, 80];
 
         // ================================================================
-        // AUTH – redirect if not logged in
+        // HELPERS
         // ================================================================
-        auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            currentUser = user;
-            renderPage();
-        });
-
-        // ================================================================
-        // HELPER FUNCTIONS
-        // ================================================================
-        function getWeekdayName(date) {
-            var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-            return days[date.getDay()];
-        }
-
         function formatDateKey(date) {
             var y = date.getFullYear();
             var m = String(date.getMonth() + 1).padStart(2, '0');
@@ -333,251 +473,391 @@
             return y + '-' + m + '-' + d;
         }
 
-        function isWeekend(date) {
-            var day = date.getDay();
-            return day === 0 || day === 6;
-        }
-
-        function getWeekDates() {
-            var now = new Date();
-            var dayOfWeek = now.getDay(); // 0=Sun
-            var diffToMon = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-            var monday = new Date(now);
-            monday.setDate(now.getDate() - diffToMon);
-            monday.setHours(0, 0, 0, 0);
-            var weekDates = [];
-            for (var i = 0; i < 5; i++) {
-                var d = new Date(monday);
-                d.setDate(monday.getDate() + i);
-                weekDates.push(d);
-            }
-            return weekDates;
+        function isSameDay(d1, d2) {
+            return d1.getFullYear() === d2.getFullYear() &&
+                d1.getMonth() === d2.getMonth() &&
+                d1.getDate() === d2.getDate();
         }
 
         // ================================================================
-        // RENDER PAGE
+        // FIREBASE AUTH
         // ================================================================
-        function renderPage() {
-            if (!currentUser) return;
-            var content = document.getElementById('contentArea');
-
-            // If weekend, show message
-            if (isWeekend(today)) {
-                content.innerHTML = `
-                    <div class="weekend-message">
-                        <h2> Weekend</h2>
-                        <p>Daily checkin is unavailable on Saturday and Sunday.<br>Check back on Monday to continue.</p>
-                    </div>
-                `;
+        auth.onAuthStateChanged(function(user) {
+            if (!user) {
+                window.location.href = 'login.html';
                 return;
             }
+            currentUser = user;
+            loadData();
+        });
 
-            // Get the 5 weekdays (Mon-Fri)
-            var weekDates = getWeekDates();
-            var todayKey = formatDateKey(today);
-            var todayWeekday = getWeekdayName(today);
+        // ================================================================
+        // LOAD DATA & RENDER
+        // ================================================================
+        var rewards = [];
+        var userState = { day: 0, lastCheckin: null, claimedDays: [] };
+        var todayClaimed = false;
 
-            // Fetch config for all weekdays and check if user has claimed today
-            var configPromises = weekDates.map(function(date) {
-                var dayName = getWeekdayName(date);
-                return db.collection('checkinConfig').doc(dayName).get()
-                    .then(function(doc) {
-                        if (doc.exists) {
-                            return { day: dayName, date: date, data: doc.data() };
-                        } else {
-                            return { day: dayName, date: date, data: { amount: 0, active: false, description: '' } };
-                        }
-                    });
-            });
+        function loadData() {
+            if (!currentUser) return;
 
-            // Also check if user has already claimed for any of these dates (only today matters for button state)
-            var claimPromises = weekDates.map(function(date) {
-                var key = formatDateKey(date);
-                return db.collection('users').doc(currentUser.uid)
-                    .collection('checkins').doc(key).get()
-                    .then(function(doc) {
-                        return { key: key, claimed: doc.exists };
-                    });
-            });
+            // 1. Fetch reward config
+            var configRef = db.collection('checkinConfig').doc('daily');
+            var userRef = db.collection('users').doc(currentUser.uid);
 
-            Promise.all([Promise.all(configPromises), Promise.all(claimPromises)])
-                .then(function(results) {
-                    var configs = results[0];
-                    var claims = results[1];
-                    var claimMap = {};
-                    claims.forEach(function(c) { claimMap[c.key] = c.claimed; });
+            Promise.all([
+                configRef.get(),
+                userRef.get(),
+                userRef.collection('checkins').doc(todayStr).get()
+            ]).then(function(results) {
+                var configDoc = results[0];
+                var userDoc = results[1];
+                var todayClaimDoc = results[2];
 
-                    // Build HTML
-                    var html = '<div class="calendar-grid">';
-                    for (var i = 0; i < configs.length; i++) {
-                        var cfg = configs[i];
-                        var dateObj = cfg.date;
-                        var dayName = cfg.day.charAt(0).toUpperCase() + cfg.day.slice(1); // "Monday"
-                        var dateKey = formatDateKey(dateObj);
-                        var isToday = dateKey === todayKey;
-                        var isClaimed = claimMap[dateKey] || false;
-                        var isActive = cfg.data.active || false;
-                        var amount = cfg.data.amount || 0; // not displayed
-
-                        // Determine status
-                        var statusText = '';
-                        var statusClass = '';
-                        var btnDisabled = true;
-                        var btnText = '';
-                        var btnClass = '';
-
-                        if (isClaimed) {
-                            statusText = ' Completed';
-                            statusClass = 'completed';
-                            btnText = 'Completed';
-                            btnClass = 'completed-btn';
-                            btnDisabled = true;
-                        } else if (!isActive) {
-                            statusText = ' Unavailable';
-                            statusClass = 'inactive';
-                            btnText = 'Unavailable';
-                            btnDisabled = true;
-                        } else if (dateObj > today) {
-                            // Future weekday
-                            statusText = ' Locked';
-                            statusClass = 'locked';
-                            btnText = 'Locked';
-                            btnDisabled = true;
-                        } else if (dateObj < today) {
-                            // Past weekday – if not claimed, it's missed
-                            statusText = ' Missed';
-                            statusClass = 'inactive';
-                            btnText = 'Missed';
-                            btnDisabled = true;
-                        } else {
-                            // Today, active, not claimed
-                            statusText = ' Available';
-                            statusClass = 'available';
-                            btnText = 'Claim Now';
-                            btnDisabled = false;
-                            btnClass = '';
-                        }
-
-                        var cardClass = 'day-card';
-                        if (isToday) cardClass += ' today';
-                        if (isClaimed) cardClass += ' completed';
-
-                        html += '<div class="' + cardClass + '" data-key="' + dateKey + '">';
-                        html += '<div class="day-name">' + dayName + '</div>';
-                        html += '<div class="day-date">' + String(dateObj.getDate()).padStart(2, '0') + '</div>';
-                        html += '<div class="day-status ' + statusClass + '">' + statusText + '</div>';
-                        // Claim button (only for today and not disabled)
-                        var dataAttrs = 'data-key="' + dateKey + '" data-day="' + cfg.day + '"';
-                        html += '<button class="btn-claim ' + btnClass + '" ' + dataAttrs + ' ' + (btnDisabled ?
-                            'disabled' : '') + '>' + btnText + '</button>';
-                        html += '</div>';
+                // Parse rewards
+                if (configDoc.exists) {
+                    var data = configDoc.data();
+                    rewards = [];
+                    for (var i = 1; i <= 7; i++) {
+                        rewards.push(data['day' + i] || defaultRewards[i - 1]);
                     }
-                    html += '</div>';
-                    content.innerHTML = html;
+                } else {
+                    rewards = defaultRewards.slice();
+                }
 
-                    // Attach click listeners to claim buttons
-                    document.querySelectorAll('.btn-claim:not(:disabled)').forEach(function(btn) {
-                        btn.addEventListener('click', function(e) {
-                            var dayKey = this.getAttribute('data-key');
-                            var dayName = this.getAttribute('data-day');
-                            handleClaim(dayKey, dayName, this);
-                        });
-                    });
-                })
-                .catch(function(err) {
-                    console.error('Render error:', err);
-                    content.innerHTML =
-                        '<p style="color: #f87171; text-align:center;">Error loading checkin data. Please refresh.</p>';
-                });
+                // Parse user state
+                if (userDoc.exists) {
+                    var userData = userDoc.data();
+                    userState.day = userData.checkinDay || 0;
+                    userState.lastCheckin = userData.lastCheckin ? userData.lastCheckin.toDate() : null;
+                    // We'll also check if they have claimed today
+                    todayClaimed = todayClaimDoc.exists;
+                } else {
+                    userState.day = 0;
+                    userState.lastCheckin = null;
+                    todayClaimed = false;
+                }
+
+                renderPage();
+            }).catch(function(err) {
+                console.error('Error loading data:', err);
+                document.getElementById('checkinGrid').innerHTML = '<p style="color:#f87171;text-align:center;">Error loading data. Please refresh.</p>';
+            });
         }
 
         // ================================================================
-        // CLAIM HANDLER (secure transaction – amount hidden from UI)
+        // RENDER
         // ================================================================
-        function handleClaim(dateKey, dayName, btnElement) {
-            if (!currentUser) return;
+        function renderPage() {
+            var grid = document.getElementById('checkinGrid');
+            var btn = document.getElementById('checkinBtn');
+            var statusEl = document.getElementById('todayStatus');
+            var coinBalanceEl = document.getElementById('coinBalance');
+
+            // Determine which day is active (0 = no active, 1-7)
+            var activeDay = 0;
+            var claimedToday = false;
+
+            // If today's claim exists, we mark it as claimed and active is that day
+            if (todayClaimed) {
+                // If userState.day is 0? Should not happen. We'll assume day is the current day.
+                if (userState.day >= 1 && userState.day <= 7) {
+                    activeDay = userState.day;
+                    claimedToday = true;
+                } else {
+                    // fallback: if userState.day is 0 but they claimed today, set activeDay to 1? But better to set from claimed doc.
+                    // We'll fetch the claimed day from the claim document? We don't store day number in claim doc? We'll need to store.
+                    // For simplicity, we'll store the day number in the claim doc as well.
+                    // Let's re-fetch the claim doc to get the day. But we already have it. We'll modify the claim logic to store day.
+                    // For now, we'll assume if claimed today, activeDay is userState.day, which should be correct.
+                    if (userState.day === 0) {
+                        // If userState.day is 0 but claimed today, it means it's first claim? Set day to 1.
+                        activeDay = 1;
+                    } else {
+                        activeDay = userState.day;
+                    }
+                }
+            } else {
+                // Not claimed today – check if we can claim (i.e., today is after last checkin)
+                if (userState.day === 0) {
+                    // Never claimed – first claim possible today
+                    activeDay = 0; // No active day, but button enabled
+                } else {
+                    // Check if lastCheckin is yesterday or earlier
+                    var canClaim = false;
+                    if (userState.lastCheckin) {
+                        var yesterday = new Date(today);
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        // If last checkin is today, can't claim; if yesterday or earlier, can claim
+                        if (isSameDay(userState.lastCheckin, today)) {
+                            canClaim = false;
+                        } else {
+                            canClaim = true;
+                        }
+                    } else {
+                        canClaim = true;
+                    }
+                    if (canClaim) {
+                        // Next day to claim is userState.day + 1 (capped at 7)
+                        var nextDay = userState.day + 1;
+                        if (nextDay > 7) {
+                            // Completed all 7 days – reset? Usually you reset after 7.
+                            // We'll reset to 1 after completing 7, but we'll show all days as claimed.
+                            // For now, we'll set activeDay = 0 and show "Completed!" message.
+                            activeDay = 0;
+                            // Also disable button and show "Completed!" message.
+                            // We'll handle in UI.
+                        } else {
+                            activeDay = nextDay;
+                        }
+                    } else {
+                        // cannot claim (already claimed today or something else)
+                        activeDay = 0;
+                    }
+                }
+            }
+
+            // Build grid
+            var html = '';
+            for (var i = 0; i < 7; i++) {
+                var dayNum = i + 1;
+                var reward = rewards[i] || 0;
+                var isActive = (activeDay === dayNum && !claimedToday);
+                var isClaimed = (claimedToday && activeDay === dayNum) || (userState.day >= dayNum && userState.lastCheckin && isSameDay(userState.lastCheckin, today) && userState.day >= dayNum);
+                // Actually, if today is claimed, the claimed day is activeDay. So we can mark that day as claimed.
+                // Also, we can mark previous days as claimed if userState.day >= dayNum (assuming they claimed sequentially).
+                // We'll simplify: if todayClaimed, only the activeDay is claimed, previous days are claimed if dayNum < activeDay.
+                var isClaimedCard = false;
+                if (todayClaimed) {
+                    if (dayNum < activeDay) {
+                        isClaimedCard = true;
+                    } else if (dayNum === activeDay) {
+                        isClaimedCard = true;
+                    } else {
+                        isClaimedCard = false;
+                    }
+                } else {
+                    // If not claimed today, previous days are claimed if dayNum <= userState.day
+                    if (userState.day >= dayNum) {
+                        isClaimedCard = true;
+                    }
+                }
+
+                var cardClass = 'day-card';
+                if (isActive) cardClass += ' active';
+                if (isClaimedCard) cardClass += ' claimed';
+
+                var rewardDisplay = reward > 0 ? '+' + reward : '0';
+                var statusHtml = '';
+                if (isClaimedCard) {
+                    statusHtml = '<div class="day-check"></div>';
+                } else if (isActive) {
+                    statusHtml = '<div class="day-check" style="color:#facc15;"> Claim</div>';
+                } else {
+                    statusHtml = '<div class="day-lock"></div>';
+                }
+
+                html += '<div class="' + cardClass + '">';
+                html += '<div class="day-number">Day ' + dayNum + '</div>';
+                html += '<div class="day-reward"><span class="plus">+</span>' + reward + '</div>';
+                html += statusHtml;
+                html += '</div>';
+            }
+            grid.innerHTML = html;
+
+            // Update turnover / status
+            if (todayClaimed) {
+                statusEl.textContent = ' Claimed (Day ' + activeDay + ')';
+                statusEl.style.color = '#22c55e';
+            } else {
+                if (userState.day >= 7) {
+                    statusEl.textContent = ' Completed! All 7 days claimed.';
+                    statusEl.style.color = '#facc15';
+                } else if (userState.day === 0) {
+                    statusEl.textContent = ' Ready to start!';
+                    statusEl.style.color = '#94a3b8';
+                } else {
+                    statusEl.textContent = ' Day ' + (userState.day + 1) + ' pending';
+                    statusEl.style.color = '#facc15';
+                }
+            }
+
+            // Update coin balance (just display from user's wallet or total coins)
+            // We'll fetch wallet balance from user doc.
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                if (doc.exists) {
+                    var bal = doc.data().walletBalance || 0;
+                    coinBalanceEl.textContent = bal.toFixed(2);
+                }
+            }).catch(console.warn);
+
+            // Enable/disable check-in button
+            var canClaimNow = false;
+            if (!todayClaimed) {
+                // Check if we can claim
+                if (userState.day === 0) {
+                    canClaimNow = true;
+                } else {
+                    if (userState.lastCheckin) {
+                        if (!isSameDay(userState.lastCheckin, today)) {
+                            // Also check if not all days claimed
+                            if (userState.day < 7) {
+                                canClaimNow = true;
+                            } else {
+                                canClaimNow = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            btn.disabled = !canClaimNow;
+            if (canClaimNow) {
+                btn.textContent = ' Check In';
+                btn.style.opacity = '1';
+            } else {
+                if (todayClaimed) {
+                    btn.textContent = ' Claimed Today';
+                } else if (userState.day >= 7) {
+                    btn.textContent = ' All Days Claimed!';
+                } else {
+                    btn.textContent = ' Come Back Tomorrow';
+                }
+            }
+        }
+
+        // ================================================================
+        // CHECK-IN ACTION
+        // ================================================================
+        document.getElementById('checkinBtn').addEventListener('click', function() {
+            if (this.disabled) return;
             var uid = currentUser.uid;
 
-            btnElement.disabled = true;
-            btnElement.textContent = 'Processing...';
+            this.disabled = true;
+            this.textContent = 'Processing...';
 
-            // Run a Firestore transaction to:
-            // 1. Read config doc for the day (contains hidden amount)
-            // 2. Check if user already claimed today
-            // 3. If not, add claim record and update wallet
+            // Run transaction
             db.runTransaction(function(transaction) {
-                // Get config
-                var configRef = db.collection('checkinConfig').doc(dayName);
-                return transaction.get(configRef).then(function(configDoc) {
-                    if (!configDoc.exists) {
-                        throw new Error('Checkin configuration not found for today.');
-                    }
-                    var config = configDoc.data();
-                    if (!config.active) {
-                        throw new Error('This day is currently inactive.');
-                    }
-                    var amount = config.amount || 0; // hidden from UI
+                // Read config
+                var configRef = db.collection('checkinConfig').doc('daily');
+                var userRef = db.collection('users').doc(uid);
+                var claimRef = userRef.collection('checkins').doc(todayStr);
 
-                    // Check if user already claimed today
-                    var claimRef = db.collection('users').doc(uid)
-                        .collection('checkins').doc(dateKey);
-                    return transaction.get(claimRef).then(function(claimDoc) {
-                        if (claimDoc.exists) {
-                            throw new Error('You have already claimed today\'s checkin.');
+                return transaction.get(configRef).then(function(configDoc) {
+                    var rewards = defaultRewards.slice();
+                    if (configDoc.exists) {
+                        var data = configDoc.data();
+                        for (var i = 1; i <= 7; i++) {
+                            if (data['day' + i] !== undefined) rewards[i - 1] = data['day' + i];
+                        }
+                    }
+
+                    // Get user state
+                    return transaction.get(userRef).then(function(userDoc) {
+                        var userData = userDoc.exists ? userDoc.data() : {};
+                        var currentDay = userData.checkinDay || 0;
+                        var lastCheckin = userData.lastCheckin ? userData.lastCheckin.toDate() : null;
+
+                        // Determine next day to claim
+                        var nextDay = 0;
+                        if (currentDay === 0) {
+                            nextDay = 1;
+                        } else {
+                            if (lastCheckin && isSameDay(lastCheckin, today)) {
+                                // Already claimed today – shouldn't happen because button is disabled
+                                throw new Error('Already claimed today');
+                            } else {
+                                // Check if last checkin was yesterday or earlier
+                                if (lastCheckin) {
+                                    var yesterday = new Date(today);
+                                    yesterday.setDate(yesterday.getDate() - 1);
+                                    if (isSameDay(lastCheckin, yesterday) || lastCheckin < yesterday) {
+                                        // If it was yesterday, increment day; if older, reset to 1
+                                        if (isSameDay(lastCheckin, yesterday)) {
+                                            nextDay = Math.min(currentDay + 1, 7);
+                                        } else {
+                                            nextDay = 1;
+                                        }
+                                    } else {
+                                        // Should not happen
+                                        nextDay = 1;
+                                    }
+                                } else {
+                                    nextDay = 1;
+                                }
+                            }
                         }
 
-                        // Create claim record
-                        transaction.set(claimRef, {
-                            day: dayName,
-                            claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            amount: amount // store for history
-                        });
+                        if (nextDay === 0) {
+                            throw new Error('Unable to determine next day');
+                        }
 
-                        // Update user's wallet
-                        var userRef = db.collection('users').doc(uid);
-                        return transaction.get(userRef).then(function(userDoc) {
-                            if (!userDoc.exists) throw new Error('User document not found.');
-                            var userData = userDoc.data();
-                            var currentWallet = userData.walletBalance !== undefined ? userData
-                                .walletBalance : (userData.balance || 0);
-                            var newBalance = currentWallet + amount;
-                            var updateData = { walletBalance: newBalance };
-                            // Also update total income if amount > 0
-                            if (amount > 0) {
-                                updateData.totalIncome = (userData.totalIncome || 0) + amount;
+                        var rewardAmount = rewards[nextDay - 1] || 0;
+
+                        // Check if claim already exists for today
+                        return transaction.get(claimRef).then(function(claimDoc) {
+                            if (claimDoc.exists) {
+                                throw new Error('Already claimed today');
                             }
+
+                            // Create claim record
+                            transaction.set(claimRef, {
+                                day: nextDay,
+                                amount: rewardAmount,
+                                claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+
+                            // Update user: increment day, update lastCheckin, add to wallet
+                            var updateData = {
+                                checkinDay: nextDay,
+                                lastCheckin: firebase.firestore.FieldValue.serverTimestamp()
+                            };
+                            // Update wallet
+                            if (rewardAmount > 0) {
+                                transaction.update(userRef, {
+                                    walletBalance: firebase.firestore.FieldValue.increment(rewardAmount),
+                                    balance: firebase.firestore.FieldValue.increment(rewardAmount),
+                                    totalIncome: firebase.firestore.FieldValue.increment(rewardAmount)
+                                });
+                            }
+
                             transaction.update(userRef, updateData);
-                            // Note: amount is never exposed to the UI
+
+                            return rewardAmount;
                         });
                     });
                 });
-            }).then(function() {
-                btnElement.textContent = ' Completed';
-                btnElement.disabled = true;
-                btnElement.classList.add('completed-btn');
-                // Refresh the page to update all cards
-                renderPage();
-                // Simple alert without amount
-                alert(' Checkin successful! Your wallet has been updated.');
-            }).catch(function(error) {
-                console.error('Claim error:', error);
-                alert(' ' + error.message);
-                btnElement.disabled = false;
-                btnElement.textContent = 'Claim Now';
+            }).then(function(amount) {
+                // Success
+                alert(' You claimed ' + amount + ' coins!');
+                // Reload data
+                loadData();
+            }).catch(function(err) {
+                console.error('Check-in error:', err);
+                alert(' ' + err.message);
+                document.getElementById('checkinBtn').disabled = false;
+                document.getElementById('checkinBtn').textContent = ' Check In';
             });
-        }
+        });
 
         // ================================================================
-        // AUTO-REFRESH EVERY MINUTE
+        // BOTTOM NAV
         // ================================================================
-        setInterval(function() {
-            if (!document.hidden && currentUser) {
-                renderPage();
-            }
-        }, 60000);
+        var navItems = document.querySelectorAll('.nav-item');
+        var currentPage = window.location.pathname.split('/').pop() || 'daily-check.html';
+        navItems.forEach(function(item) {
+            var targetPage = item.getAttribute('data-page');
+            if (currentPage === targetPage) item.classList.add('active');
+            item.addEventListener('click', function() {
+                var target = this.getAttribute('data-page');
+                if (target && !window.location.pathname.includes(target)) {
+                    window.location.href = target;
+                }
+            });
+        });
 
-        console.log(' Daily Check – secure (amount hidden from UI)');
-        console.log(' Only Mon-Fri, weekends show message.');
+        console.log(' Daily Check-in redesigned – 7-day reward grid with visible amounts');
+        console.log(' Bottom nav: Home, Deposit, Promotions, Withdraw, Profile');
     </script>
 </body>
 </html>

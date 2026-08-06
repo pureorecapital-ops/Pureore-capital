@@ -1770,16 +1770,37 @@
         });
 
         // ================================================================
-        // AUTH STATE
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
+        let authResolved = false;
+        let redirectTimeout = null;
+
         auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                loadWithdrawalRules();
+                loadSavedInfo();
+                watchBlockStatus(user.uid);
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
             }
-            loadWithdrawalRules();
-            loadSavedInfo();
-            watchBlockStatus(user.uid);
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -1803,6 +1824,7 @@
         console.log('✅ withdraw.html · Sajvera Capital · Blue glassmorphism design');
         console.log('💳 Any amount above 0 is allowed, 10% fee applies');
         console.log('🔵 Blue gradient buttons and glass cards');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>

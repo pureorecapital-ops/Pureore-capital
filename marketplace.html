@@ -1832,24 +1832,46 @@
         });
 
         // ================================================================
-        // AUTH STATE & BLOCK WATCH
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
-        auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            currentUser = user;
-            loadPlans();
+        let authResolved = false;
+        let redirectTimeout = null;
 
-            db.collection('users').doc(user.uid).onSnapshot(function(doc) {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked. Redirecting...', true);
-                    setTimeout(function() {
-                        auth.signOut().then(function() { window.location.href = 'login.html'; });
-                    }, 2000);
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
                 }
-            }, function(err) { console.warn('Block listener error:', err); });
+                currentUser = user;
+                loadPlans();
+
+                // Watch for block status
+                db.collection('users').doc(user.uid).onSnapshot(function(doc) {
+                    if (doc.exists && doc.data().isBlocked === true) {
+                        showToast('⚠️ Your account has been blocked. Redirecting...', true);
+                        setTimeout(function() {
+                            auth.signOut().then(function() { window.location.href = 'login.html'; });
+                        }, 2000);
+                    }
+                }, function(err) { console.warn('Block listener error:', err); });
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -1868,6 +1890,7 @@
         console.log('🛒 Marketplace · Sajvera Capital glassmorphism design');
         console.log('📱 2‑column plan cards with green glass Invest Now button');
         console.log('💎 Full purchase flow with loading overlay → confirmation → redirect');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 </body>
 </html>

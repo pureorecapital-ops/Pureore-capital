@@ -417,6 +417,7 @@
             letter-spacing: 0.3px;
         }
 
+        .form-group select,
         .form-group input {
             width: 100%;
             padding: 0.6rem 0.8rem;
@@ -430,9 +431,15 @@
             outline: none;
         }
 
+        .form-group select:focus,
         .form-group input:focus {
             border-color: rgba(93, 217, 242, 0.15);
             background: rgba(255, 255, 255, 0.04);
+        }
+
+        .form-group select option {
+            background: #0a0815;
+            color: #fff;
         }
 
         .form-group input::placeholder {
@@ -720,7 +727,7 @@
 
         <!-- ===== PAGE TITLE ===== -->
         <div class="page-title">💰 Apply for a Loan</div>
-        <div class="page-sub">Enter the amount you wish to borrow</div>
+        <div class="page-sub">Select the amount you wish to borrow (multiples of 600 ZMW)</div>
 
         <!-- ===== LOAN APPLICATION CARD ===== -->
         <div class="glass-card" id="loanCard">
@@ -728,17 +735,22 @@
             <!-- Eligible Amount Display -->
             <div id="eligibleDisplay" style="display:none;">
                 <div class="eligible-box">
-                    <div class="label">Eligible Loan Amount</div>
-                    <div class="amount" id="eligibleAmount">6,000.00 ZMW</div>
+                    <div class="label">Your Loan Limit</div>
+                    <div class="amount" id="loanLimitDisplay">600.00 ZMW</div>
+                    <div style="font-size:0.7rem; color:rgba(255,255,255,0.2); margin-top:0.2rem;">
+                        Amount increases by 600 after each successful repayment
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Enter Amount (ZMW)</label>
-                    <input type="number" id="loanAmount" placeholder="6000.00" min="1" step="1" />
+                    <label>Select Amount (ZMW)</label>
+                    <select id="loanAmountSelect">
+                        <option value="">-- Choose an amount --</option>
+                    </select>
                     <div class="input-error" id="amountError"></div>
                 </div>
 
-                <button class="btn-primary" id="loanNowBtn">Loan Now</button>
+                <button class="btn-primary" id="loanNowBtn" disabled>Loan Now</button>
             </div>
 
             <!-- Not Eligible Display -->
@@ -822,16 +834,16 @@
         var eligibleDisplay = document.getElementById('eligibleDisplay');
         var notEligibleDisplay = document.getElementById('notEligibleDisplay');
         var loadingState = document.getElementById('loadingState');
-        var eligibleAmountEl = document.getElementById('eligibleAmount');
-        var loanAmountInput = document.getElementById('loanAmount');
+        var loanLimitDisplay = document.getElementById('loanLimitDisplay');
+        var loanAmountSelect = document.getElementById('loanAmountSelect');
         var amountError = document.getElementById('amountError');
         var loanNowBtn = document.getElementById('loanNowBtn');
         var checkAgainBtn = document.getElementById('checkAgainBtn');
 
         var currentUserId = null;
-        var maxLoanAmount = 6000;
         var userData = null;
         var isEligible = false;
+        var loanLimit = 600; // default, will be updated from Firestore
 
         // ================================================================
         // CHECK ELIGIBILITY FROM BACKEND
@@ -843,6 +855,11 @@
                     return { eligible: false, reason: 'User not found.' };
                 }
                 userData = userDoc.data();
+
+                // Get loan limit from user doc (default 600)
+                loanLimit = userData.loanLimit || 600;
+                // Ensure it's a multiple of 600
+                loanLimit = Math.max(600, Math.floor(loanLimit / 600) * 600);
 
                 // Check blocked
                 if (userData.isBlocked === true) {
@@ -889,6 +906,7 @@
                     reason = reasons.join('. ');
                 }
 
+                // Store loanLimit in result
                 return {
                     eligible: eligible,
                     reason: reason || 'You are eligible!',
@@ -896,13 +914,37 @@
                     activityBalance: activityBalance,
                     hasUnpaidLoan: hasUnpaidLoan,
                     canRequest: canRequest,
-                    maxAmount: 6000
+                    loanLimit: loanLimit
                 };
 
             } catch (err) {
                 console.error('Eligibility check error:', err);
                 return { eligible: false, reason: 'Error checking eligibility. Please refresh.' };
             }
+        }
+
+        // ================================================================
+        // POPULATE DROPDOWN WITH MULTIPLES OF 600
+        // ================================================================
+        function populateDropdown(limit) {
+            loanAmountSelect.innerHTML = '<option value="">-- Choose an amount --</option>';
+            for (var amount = 600; amount <= limit; amount += 600) {
+                var option = document.createElement('option');
+                option.value = amount;
+                option.textContent = amount.toFixed(0) + ' ZMW';
+                loanAmountSelect.appendChild(option);
+            }
+            // Enable button when a valid option is selected
+            loanAmountSelect.addEventListener('change', function() {
+                var val = parseFloat(this.value);
+                if (val > 0 && val <= limit && val % 600 === 0) {
+                    loanNowBtn.disabled = false;
+                    amountError.textContent = '';
+                } else {
+                    loanNowBtn.disabled = true;
+                    amountError.textContent = 'Please select a valid amount.';
+                }
+            });
         }
 
         // ================================================================
@@ -919,23 +961,28 @@
 
             var result = await checkEligibilityFromBackend(currentUserId);
             isEligible = result.eligible;
+            loanLimit = result.loanLimit || 600;
 
             loadingState.style.display = 'none';
 
             if (isEligible) {
                 eligibleDisplay.style.display = 'block';
                 notEligibleDisplay.style.display = 'none';
-                eligibleAmountEl.textContent = result.maxAmount.toFixed(2) + ' ZMW';
-                maxLoanAmount = result.maxAmount;
-                loanAmountInput.value = result.maxAmount.toString();
-                loanAmountInput.max = result.maxAmount;
-                loanAmountInput.placeholder = 'Max: ' + result.maxAmount.toFixed(2);
-                amountError.textContent = '';
-                loanNowBtn.disabled = false;
+                loanLimitDisplay.textContent = loanLimit.toFixed(2) + ' ZMW';
+                // Populate dropdown with multiples of 600 up to loanLimit
+                populateDropdown(loanLimit);
+                // Select the first option (600) by default
+                var firstOption = loanAmountSelect.querySelector('option[value="600"]');
+                if (firstOption) {
+                    firstOption.selected = true;
+                    loanNowBtn.disabled = false;
+                } else {
+                    loanNowBtn.disabled = true;
+                }
 
                 // Store eligibility for next step
                 localStorage.setItem('loanEligible', 'true');
-                localStorage.setItem('loanMaxAmount', result.maxAmount.toString());
+                localStorage.setItem('loanMaxAmount', loanLimit.toString());
                 localStorage.setItem('loanMemberCount', result.memberCount.toString());
                 localStorage.setItem('loanActivityBalance', result.activityBalance.toString());
 
@@ -947,37 +994,22 @@
         }
 
         // ================================================================
-        // AMOUNT VALIDATION
-        // ================================================================
-        loanAmountInput.addEventListener('input', function() {
-            var val = parseFloat(this.value);
-            if (isNaN(val) || val <= 0) {
-                amountError.textContent = 'Please enter a valid amount.';
-                loanNowBtn.disabled = true;
-                return;
-            }
-            if (val > maxLoanAmount) {
-                amountError.textContent = 'Maximum allowed is ' + maxLoanAmount.toFixed(2) + ' ZMW.';
-                loanNowBtn.disabled = true;
-                return;
-            }
-            amountError.textContent = '';
-            loanNowBtn.disabled = false;
-        });
-
-        // ================================================================
         // LOAN NOW BUTTON → VALIDATE → SHOW LOADING → GO TO loan3.html
         // ================================================================
         loanNowBtn.addEventListener('click', function() {
             if (this.disabled) return;
 
-            var amount = parseFloat(loanAmountInput.value);
+            var amount = parseFloat(loanAmountSelect.value);
             if (isNaN(amount) || amount <= 0) {
-                showLoanMessage('Please enter a valid loan amount.', true);
+                showLoanMessage('Please select a valid loan amount.', true);
                 return;
             }
-            if (amount > maxLoanAmount) {
-                showLoanMessage('Amount exceeds your eligible limit of ' + maxLoanAmount.toFixed(2) + ' ZMW.', true);
+            if (amount > loanLimit) {
+                showLoanMessage('Amount exceeds your loan limit of ' + loanLimit.toFixed(2) + ' ZMW.', true);
+                return;
+            }
+            if (amount % 600 !== 0) {
+                showLoanMessage('Amount must be a multiple of 600 ZMW.', true);
                 return;
             }
 
@@ -1009,7 +1041,7 @@
 
                             // Store loan details for next step
                             localStorage.setItem('loanAmount', amount.toString());
-                            localStorage.setItem('loanMaxAmount', maxLoanAmount.toString());
+                            localStorage.setItem('loanMaxAmount', loanLimit.toString());
                             localStorage.setItem('loanMemberCount', result.memberCount.toString());
                             localStorage.setItem('loanActivityBalance', result.activityBalance.toString());
 
@@ -1050,7 +1082,8 @@
         });
 
         console.log('✅ loan2.html · Sajvera Capital · Loan amount step 2');
-        console.log('💰 Max loan: 6,000 ZMW for first loan');
+        console.log('💰 Loan amounts are multiples of 600, based on user\'s loan limit (default 600)');
+        console.log('📈 Loan limit increases by 600 after each successful repayment');
     </script>
 
 </body>

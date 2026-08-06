@@ -1171,43 +1171,64 @@
         window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
         // ================================================================
-        // USER PROFILE & BALANCES
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
+        let authResolved = false;
+        let redirectTimeout = null;
+
         auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            watchBlockStatus(user.uid);
-
-            db.collection('users').doc(user.uid).onSnapshot(function(doc) {
-                if (doc.exists) {
-                    var data = doc.data();
-
-                    var fullName = data.fullName || 'User';
-                    var email = data.email || user.email;
-
-                    // Main profile
-                    document.getElementById('userName').textContent = escapeHtml(fullName);
-                    document.getElementById('userEmail').textContent = escapeHtml(email);
-                    document.getElementById('modalEmail').value = email;
-
-                    // Avatar letter
-                    var firstLetter = fullName.charAt(0).toUpperCase();
-                    document.getElementById('avatarLetter').textContent = firstLetter;
-
-                    // Balances
-                    var deposit = data.depositBalance || 0;
-                    var wallet = data.walletBalance || 0;
-                    var total = deposit + wallet;
-
-                    document.getElementById('depositBalance').textContent = deposit.toFixed(2);
-                    document.getElementById('walletBalance').textContent = wallet.toFixed(2);
-                    document.getElementById('totalBalance').textContent = total.toFixed(2);
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
                 }
-            }, function(err) {
-                console.warn('Profile listener error:', err);
-            });
+                watchBlockStatus(user.uid);
+
+                db.collection('users').doc(user.uid).onSnapshot(function(doc) {
+                    if (doc.exists) {
+                        var data = doc.data();
+
+                        var fullName = data.fullName || 'User';
+                        var email = data.email || user.email;
+
+                        // Main profile
+                        document.getElementById('userName').textContent = escapeHtml(fullName);
+                        document.getElementById('userEmail').textContent = escapeHtml(email);
+                        document.getElementById('modalEmail').value = email;
+
+                        // Avatar letter
+                        var firstLetter = fullName.charAt(0).toUpperCase();
+                        document.getElementById('avatarLetter').textContent = firstLetter;
+
+                        // Balances
+                        var deposit = data.depositBalance || 0;
+                        var wallet = data.walletBalance || 0;
+                        var total = deposit + wallet;
+
+                        document.getElementById('depositBalance').textContent = deposit.toFixed(2);
+                        document.getElementById('walletBalance').textContent = wallet.toFixed(2);
+                        document.getElementById('totalBalance').textContent = total.toFixed(2);
+                    }
+                }, function(err) {
+                    console.warn('Profile listener error:', err);
+                });
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -1364,6 +1385,7 @@
         console.log('🖼️ Full screen blurred background image');
         console.log('🔵 Blue theme with translucent glass cards');
         console.log('📱 Bottom nav: Home, Income, Market, Team, Me');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>

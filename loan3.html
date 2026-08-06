@@ -1005,25 +1005,46 @@
         });
 
         // ================================================================
-        // AUTH STATE
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
-        auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            currentUserId = user.uid;
-            loadLoanDetails();
+        let authResolved = false;
+        let redirectTimeout = null;
 
-            // Check if loan details exist
-            var amount = parseFloat(localStorage.getItem('loanAmount')) || 0;
-            if (amount <= 0) {
-                showConfirmMessage('No loan application in progress. Please start from the beginning.', true);
-                confirmBtn.disabled = true;
-                setTimeout(function() {
-                    window.location.href = 'loan.html';
-                }, 3000);
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                currentUserId = user.uid;
+                loadLoanDetails();
+
+                // Check if loan details exist
+                var amount = parseFloat(localStorage.getItem('loanAmount')) || 0;
+                if (amount <= 0) {
+                    showConfirmMessage('No loan application in progress. Please start from the beginning.', true);
+                    confirmBtn.disabled = true;
+                    setTimeout(function() {
+                        window.location.href = 'loan.html';
+                    }, 3000);
+                }
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
             }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -1038,6 +1059,7 @@
         console.log('✅ loan3.html · Sajvera Capital · Loan confirmation step 3');
         console.log('🔐 Password verification before submission');
         console.log('📝 Loan status: "pending" until admin approval');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>

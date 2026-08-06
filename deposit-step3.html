@@ -753,48 +753,50 @@
         paidAmountEl.textContent = 'ZMW ' + depositAmount.toFixed(2);
 
         // ================================================================
-        // LOAD AGENT DETAILS
+        // HARDCODED AGENTS (replaces Firestore fetch)
         // ================================================================
+        var hardcodedAgents = {
+            mtn: [
+                { number: '0960338304', name: 'Getrude Sompo' },
+                { number: '0963070992', name: 'John Kabwe' }
+            ],
+            zamtel: [
+                { number: '0951359357', name: 'Jeremiah Ilunga' }
+            ],
+            airtel: [] // no agents yet – will show "coming soon"
+        };
+
         function loadAgentDetails() {
-            agentNumberEl.textContent = 'Loading...';
-            accountNameEl.textContent = 'Loading...';
+            var agents = hardcodedAgents[depositNetwork] || [];
+            if (agents.length > 0) {
+                // Randomly select one agent from the list
+                var randomIdx = Math.floor(Math.random() * agents.length);
+                var agent = agents[randomIdx];
+                agentNumber = agent.number;
+                accountName = agent.name;
+                currentAgentId = ''; // not used
 
-            db.collection('systemSettings').doc('depositAgents').get()
-                .then(function(doc) {
-                    if (doc.exists) {
-                        var data = doc.data();
-                        var agents = data.agents || {};
-                        var networkAgents = agents[depositNetwork] || [];
+                agentNumberEl.textContent = agentNumber;
+                accountNameEl.textContent = accountName;
+                smsTemplate.innerHTML = 'Agent: ' + agentNumber + ' • Name: ' + accountName + ' • Amount: ZMW ' +
+                    depositAmount.toFixed(2);
 
-                        if (networkAgents.length > 0) {
-                            var randomIdx = Math.floor(Math.random() * networkAgents.length);
-                            var agent = networkAgents[randomIdx];
-                            agentNumber = agent.number || '0964379665';
-                            accountName = agent.name || 'Getrude Mwauluka Siyumbwa';
-                            currentAgentId = agent.id || '';
-                        } else {
-                            agentNumber = '0964379665';
-                            accountName = 'Getrude Mwauluka Siyumbwa';
-                        }
-                    } else {
-                        agentNumber = '0964379665';
-                        accountName = 'Getrude Mwauluka Siyumbwa';
-                    }
+                // Enable the payment confirmation button if network has agents
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '✅ I Have Made the Payment';
+            } else {
+                // No agents for this network (e.g., Airtel)
+                agentNumberEl.textContent = '⚠️ Coming Soon';
+                accountNameEl.textContent = 'Airtel agents coming soon';
+                smsTemplate.innerHTML = 'Airtel agents coming soon – please check back later.';
 
-                    agentNumberEl.textContent = agentNumber;
-                    accountNameEl.textContent = accountName;
-                    smsTemplate.innerHTML = 'Agent: ' + agentNumber + ' • Name: ' + accountName + ' • Amount: ZMW ' +
-                        depositAmount.toFixed(2);
-                })
-                .catch(function(err) {
-                    console.warn('Error loading agents:', err);
-                    agentNumber = '0964379665';
-                    accountName = 'Getrude Mwauluka Siyumbwa';
-                    agentNumberEl.textContent = agentNumber;
-                    accountNameEl.textContent = accountName;
-                    smsTemplate.innerHTML = 'Agent: ' + agentNumber + ' • Name: ' + accountName + ' • Amount: ZMW ' +
-                        depositAmount.toFixed(2);
-                });
+                // Disable the payment confirmation button and hide SMS section
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = '🚫 Unavailable';
+                smsSection.classList.remove('visible');
+                // Optionally show a toast or message
+                showToast('Airtel agents are coming soon. Please select MTN or Zamtel.', true);
+            }
         }
 
         // ================================================================
@@ -804,6 +806,10 @@
         copyNameBtn.addEventListener('click', function() { copyText(accountName, this); });
 
         function copyText(text, btn) {
+            if (text === '⚠️ Coming Soon' || text === 'Airtel agents coming soon') {
+                showToast('No agent to copy yet.', true);
+                return;
+            }
             navigator.clipboard.writeText(text).then(function() {
                 btn.textContent = '✅ Copied!';
                 btn.classList.add('copied');
@@ -827,6 +833,7 @@
         // STEP 1: CONFIRM PAYMENT → REVEAL SMS SECTION
         // ================================================================
         confirmBtn.addEventListener('click', function() {
+            if (this.disabled) return;
             smsSection.classList.add('visible');
             confirmBtn.disabled = true;
             confirmBtn.textContent = '✅ Payment Confirmed';
@@ -967,7 +974,8 @@
         console.log('✅ deposit-step3.html · Sajvera Capital · Dark glass design');
         console.log('🖼️ New background image fully visible with dark overlay');
         console.log('⏱ Zambia time zone displayed in header');
-        console.log('🔹 Powered by Pureore Capital');
+        console.log('🔹 Agents hardcoded: MTN: Getrude Sompo, John Kabwe; Zamtel: Jeremiah Ilunga');
+        console.log('🚫 Airtel agents coming soon – deposit disabled for Airtel');
     </script>
 
 </body>

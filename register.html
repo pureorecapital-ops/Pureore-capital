@@ -891,10 +891,18 @@
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ================================================================
-        // AUTO-REDIRECT if already logged in
+        // FLAG: prevent the onAuthStateChanged listener from redirecting
+        // during the registration flow.
+        // ================================================================
+        var isSubmitting = false;
+
+        // ================================================================
+        // AUTO-REDIRECT if already logged in (only when NOT submitting)
         // ================================================================
         auth.onAuthStateChanged(function(user) {
-            if (user) window.location.href = 'dashboard.html';
+            if (user && !isSubmitting) {
+                window.location.href = 'dashboard.html';
+            }
         });
 
         // ================================================================
@@ -1144,6 +1152,9 @@
             }
             captchaError.textContent = '';
 
+            // ✅ Block the onAuthStateChanged listener from redirecting during registration
+            isSubmitting = true;
+
             showLoading('Creating your account...');
 
             validateReferral(referral, function(isValid) {
@@ -1151,6 +1162,7 @@
                     hideLoading();
                     showMessage('error', 'Invalid referral code. Please check and try again.');
                     autoRefreshCaptchaOnError();
+                    isSubmitting = false; // allow listener to work again
                     return;
                 }
 
@@ -1193,12 +1205,15 @@
                         hideLoading();
                         showMessage('success', 'Registration successful! You received 15 ZMW welcome bonus.');
                         showToast('✅ Welcome ' + name + '!', false);
+                        // Allow listener to redirect if needed, but we're about to leave
+                        isSubmitting = false;
                         setTimeout(function() {
                             window.location.href = 'dashboard.html';
                         }, 1800);
                     })
                     .catch(function(err) {
                         hideLoading();
+                        isSubmitting = false; // allow listener to work again
                         var friendly = 'Registration failed. Please try again.';
                         if (err.code === 'auth/email-already-in-use') {
                             friendly = 'Email already registered. Please login.';

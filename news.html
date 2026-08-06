@@ -896,15 +896,36 @@
         marquee.innerHTML = flagHtml;
 
         // ================================================================
-        // AUTH STATE
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
+        let authResolved = false;
+        let redirectTimeout = null;
+
         auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                watchBlockStatus(user.uid);
+                loadNews();
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
             }
-            watchBlockStatus(user.uid);
-            loadNews();
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -933,6 +954,8 @@
         console.log('✅ news.html · Sajvera Capital · White theme with green accent');
         console.log('📱 Bottom Nav: Home | Income | Market | Team | Me');
         console.log('📰 Flags, read more & share preserved');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
+
 </body>
 </html>

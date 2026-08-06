@@ -937,27 +937,49 @@
         });
 
         // ================================================================
-        // AUTH STATE
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
+        let authResolved = false;
+        let redirectTimeout = null;
+
         auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                currentUserId = user.uid;
+
+                // Show loading initially
+                showLoading('Checking Loan Eligibility', 'Please wait while Sajvera Capital checks whether your account is eligible to apply for a loan.');
+
+                // Run eligibility check
+                checkEligibility(currentUserId).then(function() {
+                    // Hide loading after check completes
+                    setTimeout(hideLoading, 800);
+                });
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
             }
-            currentUserId = user.uid;
-
-            // Show loading initially
-            showLoading('Checking Loan Eligibility', 'Please wait while Sajvera Capital checks whether your account is eligible to apply for a loan.');
-
-            // Run eligibility check
-            checkEligibility(currentUserId).then(function() {
-                // Hide loading after check completes
-                setTimeout(hideLoading, 800);
-            });
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         console.log('✅ loan.html · Sajvera Capital · Loan eligibility step 1');
         console.log('🏦 Requirements: 100 members, 10,000 ZMW activity balance');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>

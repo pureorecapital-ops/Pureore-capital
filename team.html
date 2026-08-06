@@ -1030,18 +1030,39 @@
         });
 
         // ================================================================
-        // AUTH
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
+        let authResolved = false;
+        let redirectTimeout = null;
+
         auth.onAuthStateChanged(async function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                currentUserId = user.uid;
+                watchBlockStatus(currentUserId);
+                await loadUserData();
+                await loadTeamData();
+                generateQR();
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
             }
-            currentUserId = user.uid;
-            watchBlockStatus(currentUserId);
-            await loadUserData();
-            await loadTeamData();
-            generateQR();
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -1063,6 +1084,7 @@
         console.log('✅ team.html · Sajvera Capital · Blue glassmorphism design');
         console.log('📱 Bottom Nav: Home | Income | Market | Team | Me');
         console.log('👥 Referral system with QR code and team list');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>

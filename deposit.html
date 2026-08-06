@@ -684,40 +684,67 @@
         var userData = null;
 
         // ================================================================
-        // AUTH & USER DATA (with login check)
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
-        auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                // Not logged in – redirect to login
-                window.location.href = 'login.html';
-                return;
-            }
-            currentUser = user;
+        let authResolved = false;
+        let redirectTimeout = null;
 
-            db.collection('users').doc(user.uid).get().then(function(doc) {
-                if (doc.exists) {
-                    userData = doc.data();
-                    loaderName.textContent = escapeHtml(userData.fullName || 'User');
-                    loaderEmail.textContent = escapeHtml(userData.email || user.email);
-                } else {
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                // User is authenticated – clear any pending redirect timeout
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+
+                currentUser = user;
+
+                db.collection('users').doc(user.uid).get().then(function(doc) {
+                    if (doc.exists) {
+                        userData = doc.data();
+                        loaderName.textContent = escapeHtml(userData.fullName || 'User');
+                        loaderEmail.textContent = escapeHtml(userData.email || user.email);
+                    } else {
+                        loaderName.textContent = escapeHtml(user.displayName || 'User');
+                        loaderEmail.textContent = escapeHtml(user.email || '');
+                    }
+                }).catch(function(err) {
+                    console.warn('Error loading user data:', err);
                     loaderName.textContent = escapeHtml(user.displayName || 'User');
                     loaderEmail.textContent = escapeHtml(user.email || '');
-                }
-            }).catch(function(err) {
-                console.warn('Error loading user data:', err);
-                loaderName.textContent = escapeHtml(user.displayName || 'User');
-                loaderEmail.textContent = escapeHtml(user.email || '');
-            });
+                });
 
-            // Watch for block status
-            db.collection('users').doc(user.uid).onSnapshot(function(doc) {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked.', true);
-                    setTimeout(function() {
-                        auth.signOut().then(function() { window.location.href = 'login.html'; });
-                    }, 2000);
+                // Watch for block status
+                db.collection('users').doc(user.uid).onSnapshot(function(doc) {
+                    if (doc.exists && doc.data().isBlocked === true) {
+                        showToast('⚠️ Your account has been blocked.', true);
+                        setTimeout(function() {
+                            auth.signOut().then(function() { window.location.href = 'login.html'; });
+                        }, 2000);
+                    }
+                }, function(err) { console.warn('Block listener error:', err); });
+
+            } else {
+                // user is null
+                if (!authResolved) {
+                    // First callback: still initializing; set a safety timeout
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            // After 2 seconds, if still no user, redirect to login
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    // User was previously logged in and now signed out (or session lost)
+                    window.location.href = 'login.html';
                 }
-            }, function(err) { console.warn('Block listener error:', err); });
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -820,6 +847,7 @@
         console.log('💰 Deposit · Sajvera Capital · Glassmorphism design');
         console.log('👤 Loading overlay shows user name during payment processing');
         console.log('🔐 Login check and block monitoring active');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>

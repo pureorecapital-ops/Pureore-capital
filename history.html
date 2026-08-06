@@ -1312,29 +1312,50 @@
         });
 
         // ================================================================
-        // AUTH
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
-        auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            watchBlockStatus(user.uid);
-            listenDeposits(user.uid);
-            listenWithdrawals(user.uid);
-            listenLoans(user.uid);
-            listenBonuses(user.uid);
+        let authResolved = false;
+        let redirectTimeout = null;
 
-            // Update panel name
-            db.collection('users').doc(user.uid).get().then(function(doc) {
-                if (doc.exists) {
-                    var data = doc.data();
-                    var fullName = data.fullName || 'User';
-                    var email = data.email || user.email;
-                    document.getElementById('panelName').textContent = fullName;
-                    document.getElementById('panelEmail').textContent = email;
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
                 }
-            }).catch(console.warn);
+                watchBlockStatus(user.uid);
+                listenDeposits(user.uid);
+                listenWithdrawals(user.uid);
+                listenLoans(user.uid);
+                listenBonuses(user.uid);
+
+                // Update panel name
+                db.collection('users').doc(user.uid).get().then(function(doc) {
+                    if (doc.exists) {
+                        var data = doc.data();
+                        var fullName = data.fullName || 'User';
+                        var email = data.email || user.email;
+                        document.getElementById('panelName').textContent = fullName;
+                        document.getElementById('panelEmail').textContent = email;
+                    }
+                }).catch(console.warn);
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -1368,6 +1389,8 @@
         console.log('✅ history.html · Sajvera Capital · Blue glassmorphism design');
         console.log('📜 All transactions including registration bonuses');
         console.log('📱 Bottom Nav: Home | Market | Team | History | Me');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
+
 </body>
 </html>

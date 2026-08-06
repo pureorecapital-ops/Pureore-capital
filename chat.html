@@ -1201,17 +1201,38 @@
         }
 
         // ================================================================
-        // AUTH STATE
+        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
         // ================================================================
+        let authResolved = false;
+        let redirectTimeout = null;
+
         auth.onAuthStateChanged(async function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                currentUserId = user.uid;
+                watchBlockStatus(currentUserId);
+                loadChatHistory();
+                setTimeout(function() { userInput.focus(); }, 600);
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
             }
-            currentUserId = user.uid;
-            watchBlockStatus(currentUserId);
-            loadChatHistory();
-            setTimeout(function() { userInput.focus(); }, 600);
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
         });
 
         // ================================================================
@@ -1244,6 +1265,7 @@
         console.log('🤖 AI messages: white with SVG bot icon, User: blue with SVG user icon');
         console.log('🔗 Links in AI responses are blue and underlined');
         console.log('📋 Responses are structured with ordered lists (numbering)');
+        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>
