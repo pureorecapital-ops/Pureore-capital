@@ -678,7 +678,7 @@
         setInterval(updateTimeZone, 1000);
 
         // ================================================================
-        // DEPOSIT RULES
+        // DEPOSIT RULES – load from Firestore (admin dashboard)
         // ================================================================
         var depositRules = {
             requireAmountMatch: true,
@@ -753,8 +753,9 @@
         paidAmountEl.textContent = 'ZMW ' + depositAmount.toFixed(2);
 
         // ================================================================
-        // HARDCODED AGENTS (replaces Firestore fetch)
+        // LOAD AGENTS FROM FIRESTORE (systemSettings/depositAgents)
         // ================================================================
+        // Fallback hardcoded agents (if Firestore fails)
         var hardcodedAgents = {
             mtn: [
                 { number: '0960338304', name: 'Getrude Sompo' },
@@ -764,39 +765,88 @@
                 { number: '0951359357', name: 'Jeremiah Ilunga' }
             ],
             airtel: [
-                { number: '0571518417', name: 'John Kabwe' }  // ✅ Added Airtel agent
+                { number: '0571518417', name: 'John Kabwe' }
             ]
         };
 
         function loadAgentDetails() {
+            // Show loading state
+            agentNumberEl.textContent = 'Loading...';
+            accountNameEl.textContent = 'Loading...';
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = '⏳ Loading...';
+
+            // Try to fetch from Firestore
+            db.collection('systemSettings').doc('depositAgents').get()
+                .then(function(doc) {
+                    if (doc.exists) {
+                        var data = doc.data();
+                        var agents = data.agents && data.agents[depositNetwork] ? data.agents[depositNetwork] : [];
+
+                        if (agents && agents.length > 0) {
+                            // Randomly select one agent
+                            var randomIdx = Math.floor(Math.random() * agents.length);
+                            var agent = agents[randomIdx];
+                            agentNumber = agent.number;
+                            accountName = agent.name;
+                            currentAgentId = agent.id || '';
+
+                            agentNumberEl.textContent = agentNumber;
+                            accountNameEl.textContent = accountName;
+                            smsTemplate.innerHTML = 'Agent: ' + agentNumber + ' • Name: ' + accountName +
+                                ' • Amount: ZMW ' + depositAmount.toFixed(2);
+
+                            confirmBtn.disabled = false;
+                            confirmBtn.textContent = '✅ I Have Made the Payment';
+                            console.log('✅ Agent loaded from Firestore:', agent);
+                            return;
+                        } else {
+                            // No agents for this network in Firestore – try fallback
+                            console.log('⚠️ No agents in Firestore for network ' + depositNetwork +
+                                ', using fallback.');
+                            useFallbackAgents();
+                            return;
+                        }
+                    } else {
+                        // Document doesn't exist – use fallback
+                        console.log('⚠️ depositAgents doc not found, using fallback.');
+                        useFallbackAgents();
+                    }
+                })
+                .catch(function(err) {
+                    console.warn('⚠️ Error loading agents from Firestore:', err);
+                    useFallbackAgents();
+                });
+        }
+
+        function useFallbackAgents() {
             var agents = hardcodedAgents[depositNetwork] || [];
             if (agents.length > 0) {
-                // Randomly select one agent from the list
                 var randomIdx = Math.floor(Math.random() * agents.length);
                 var agent = agents[randomIdx];
                 agentNumber = agent.number;
                 accountName = agent.name;
-                currentAgentId = ''; // not used
+                currentAgentId = '';
 
                 agentNumberEl.textContent = agentNumber;
                 accountNameEl.textContent = accountName;
                 smsTemplate.innerHTML = 'Agent: ' + agentNumber + ' • Name: ' + accountName + ' • Amount: ZMW ' +
                     depositAmount.toFixed(2);
 
-                // Enable the payment confirmation button if network has agents
                 confirmBtn.disabled = false;
                 confirmBtn.textContent = '✅ I Have Made the Payment';
+                console.log('✅ Using fallback agent:', agent);
             } else {
-                // No agents for this network (should not happen now)
-                agentNumberEl.textContent = '⚠️ Coming Soon';
-                accountNameEl.textContent = 'Agents coming soon';
-                smsTemplate.innerHTML = 'No agents available for this network.';
-
-                // Disable the payment confirmation button and hide SMS section
+                // No agents at all
+                agentNumberEl.textContent = '⚠️ No Agent Available';
+                accountNameEl.textContent = 'Please try another network';
+                smsTemplate.innerHTML = 'No agents available for ' + depositNetwork.toUpperCase() +
+                    '. Please select another network.';
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = '🚫 Unavailable';
                 smsSection.classList.remove('visible');
-                showToast('No agents available for this network. Please try another.', true);
+                showToast('No agents available for ' + depositNetwork.toUpperCase() +
+                    '. Please go back and choose another network.', true);
             }
         }
 
@@ -807,7 +857,7 @@
         copyNameBtn.addEventListener('click', function() { copyText(accountName, this); });
 
         function copyText(text, btn) {
-            if (text === '⚠️ Coming Soon' || text === 'Agents coming soon') {
+            if (text === '⚠️ No Agent Available' || text === 'Loading...') {
                 showToast('No agent to copy yet.', true);
                 return;
             }
@@ -844,7 +894,7 @@
         });
 
         // ================================================================
-        // SMS VALIDATION (respects admin rules)
+        // SMS VALIDATION (respects admin rules from Firestore)
         // ================================================================
         function validateSms(sms) {
             var lowerSms = sms.toLowerCase();
@@ -973,11 +1023,10 @@
         }
 
         console.log('✅ deposit-step3.html · Sajvera Capital · Dark glass design');
-        console.log('🖼️ New background image fully visible with dark overlay');
-        console.log('⏱ Zambia time zone displayed in header');
-        console.log('🔹 Agents hardcoded: MTN: Getrude Sompo, John Kabwe; Zamtel: Jeremiah Ilunga; Airtel: John Kabwe (0571518417)');
-        console.log('✅ Airtel agents now available');
+        console.log('🔄 Agents loaded from Firestore (systemSettings/depositAgents)');
+        console.log('📋 Deposit rules loaded from Firestore (systemSettings/depositRules)');
+        console.log('🔹 Fallback hardcoded agents if Firestore fails');
+        console.log('✅ Fully integrated with admin dashboard configuration');
     </script>
-
 </body>
 </html>
