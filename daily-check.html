@@ -24,7 +24,7 @@
             background: #0b1120;
             min-height: 100vh;
             padding-top: 70px;
-            padding-bottom: 80px;
+            padding-bottom: 40px;
             display: flex;
             flex-direction: column;
             color: #f1f5f9;
@@ -109,7 +109,7 @@
             margin-top: 2px;
         }
 
-        /* ----- COIN BALANCE (optional) ----- */
+        /* ----- COIN BALANCE ----- */
         .coin-balance {
             text-align: center;
             font-size: 1.1rem;
@@ -251,71 +251,84 @@
             font-weight: 600;
         }
 
-        /* ----- BOTTOM NAV (5 icons) ----- */
-        .bottom-nav {
+        /* ----- TOAST (custom) ----- */
+        .toast-claim {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(11, 17, 32, 0.90);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: rgba(11, 17, 32, 0.95);
             backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 6px 4px 12px;
-            z-index: 30;
-            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
+            border: 1px solid rgba(250, 204, 21, 0.2);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
             text-align: center;
-            padding: 4px 2px;
-            border-radius: 16px;
-            border: none;
-            background: transparent;
-            font-family: inherit;
+            z-index: 200;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            max-width: 90%;
+            width: 400px;
+        }
+        .toast-claim.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .toast-claim .icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        .toast-claim .amount {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #facc15;
+        }
+        .toast-claim .label {
             color: #94a3b8;
+            font-size: 0.9rem;
+            margin-top: 4px;
         }
-
-        .nav-item .nav-icon {
-            width: 26px;
-            height: 26px;
-            stroke: currentColor;
-            stroke-width: 1.8;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            transition: all 0.3s;
+        .toast-claim .sub {
+            color: #64748b;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
         }
-
-        .nav-item.active .nav-icon {
-            stroke: #facc15;
+        .toast-claim .btn-ok {
+            background: linear-gradient(135deg, #facc15, #f5a623);
+            border: none;
+            border-radius: 40px;
+            padding: 0.6rem 2.5rem;
+            font-weight: 700;
+            font-family: inherit;
+            color: #0b1120;
+            cursor: pointer;
+            margin-top: 1.2rem;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        .toast-claim .btn-ok:hover {
             transform: scale(1.05);
         }
 
-        .nav-item .nav-label {
-            font-size: 0.45rem;
-            font-weight: 600;
-            color: #94a3b8;
-            transition: 0.3s;
-            letter-spacing: 0.3px;
+        /* ----- OVERLAY ----- */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 150;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
         }
-
-        .nav-item.active .nav-label {
-            color: #facc15;
-        }
-
-        .nav-item:hover .nav-icon {
-            stroke: #facc15;
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
         }
 
         /* ----- RESPONSIVE ----- */
@@ -382,10 +395,10 @@
     <main class="container">
         <div class="page-title">
             <h1> Daily Checkin</h1>
-            <p>Check in daily to earn coins</p>
+            <p>Check in each day to earn coins. If you miss a day, that reward is lost.</p>
         </div>
 
-        <!-- Coin balance (optional) -->
+        <!-- Coin balance -->
         <div class="coin-balance">
             <span> <span id="coinBalance">0</span> coins</span>
         </div>
@@ -409,30 +422,19 @@
 
     </main>
 
-    <!-- BOTTOM NAV -->
-    <div class="bottom-nav">
-        <button class="nav-item" data-page="dashboard.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            <span class="nav-label">Home</span>
-        </button>
-        <button class="nav-item" data-page="deposit.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            <span class="nav-label">Deposit</span>
-        </button>
-        <button class="nav-item" data-page="promotions.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-            <span class="nav-label">Promotions</span>
-        </button>
-        <button class="nav-item" data-page="withdraw.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-            <span class="nav-label">Withdraw</span>
-        </button>
-        <button class="nav-item" data-page="me.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span class="nav-label">Profile</span>
-        </button>
+    <!-- OVERLAY & TOAST (success message) -->
+    <div class="overlay" id="overlay"></div>
+    <div class="toast-claim" id="toastClaim">
+        <div class="icon"></div>
+        <div class="amount" id="claimAmount">+0</div>
+        <div class="label">coins earned!</div>
+        <div class="sub">You're on a roll – keep checking in daily.</div>
+        <button class="btn-ok" id="toastOkBtn">Go to Profile</button>
     </div>
 
+    <!-- ============================================================ -->
+    <!-- JAVASCRIPT -->
+    <!-- ============================================================ -->
     <script>
         // ================================================================
         // FIREBASE CONFIG
@@ -460,7 +462,7 @@
         today.setHours(0, 0, 0, 0);
         var todayStr = formatDateKey(today);
 
-        // Default rewards for 7 days (will be overridden by Firestore)
+        // Default rewards (will be overridden by Firestore)
         var defaultRewards = [20, 30, 30, 40, 50, 50, 80];
 
         // ================================================================
@@ -479,6 +481,13 @@
                 d1.getDate() === d2.getDate();
         }
 
+        function daysBetween(d1, d2) {
+            // difference in days (d2 - d1)
+            var t1 = d1.getTime();
+            var t2 = d2.getTime();
+            return Math.floor((t2 - t1) / (1000 * 60 * 60 * 24));
+        }
+
         // ================================================================
         // FIREBASE AUTH
         // ================================================================
@@ -495,24 +504,25 @@
         // LOAD DATA & RENDER
         // ================================================================
         var rewards = [];
-        var userState = { day: 0, lastCheckin: null, claimedDays: [] };
+        var userState = { day: 0, lastCheckin: null };
         var todayClaimed = false;
+        var nextDayToClaim = 0; // 1-7, 0 means none
 
         function loadData() {
             if (!currentUser) return;
 
-            // 1. Fetch reward config
             var configRef = db.collection('checkinConfig').doc('daily');
             var userRef = db.collection('users').doc(currentUser.uid);
+            var claimRef = userRef.collection('checkins').doc(todayStr);
 
             Promise.all([
                 configRef.get(),
                 userRef.get(),
-                userRef.collection('checkins').doc(todayStr).get()
+                claimRef.get()
             ]).then(function(results) {
                 var configDoc = results[0];
                 var userDoc = results[1];
-                var todayClaimDoc = results[2];
+                var claimDoc = results[2];
 
                 // Parse rewards
                 if (configDoc.exists) {
@@ -530,12 +540,48 @@
                     var userData = userDoc.data();
                     userState.day = userData.checkinDay || 0;
                     userState.lastCheckin = userData.lastCheckin ? userData.lastCheckin.toDate() : null;
-                    // We'll also check if they have claimed today
-                    todayClaimed = todayClaimDoc.exists;
                 } else {
                     userState.day = 0;
                     userState.lastCheckin = null;
-                    todayClaimed = false;
+                }
+
+                todayClaimed = claimDoc.exists;
+                if (todayClaimed) {
+                    // Claimed today – no next day to claim
+                    nextDayToClaim = 0;
+                } else {
+                    // Determine next day to claim
+                    if (userState.day === 0) {
+                        // Never claimed – can claim day 1 today
+                        nextDayToClaim = 1;
+                    } else if (userState.day >= 7) {
+                        // Already completed all 7 days – cannot claim more
+                        nextDayToClaim = 0;
+                    } else {
+                        // Check when last checkin was
+                        if (userState.lastCheckin) {
+                            var diff = daysBetween(userState.lastCheckin, today);
+                            if (diff === 0) {
+                                // Should not happen because we already checked todayClaimed, but just in case
+                                nextDayToClaim = 0;
+                            } else {
+                                // User can claim the next day after the last claimed day,
+                                // but they lose rewards for skipped days.
+                                // We advance the day count by the number of days since last checkin.
+                                // Example: lastCheckin = day 3, today is day 5 (diff=2) -> they skipped day 4,
+                                // they can claim day 5? Actually they should claim day 4 + diff? Let's think:
+                                // They claimed day 3, skipped day 4, so they lost day 4. They can claim day 5 today.
+                                // So nextDayToClaim = userState.day + diff (capped at 7)
+                                var newDay = userState.day + diff;
+                                if (newDay > 7) newDay = 0; // completed all
+                                nextDayToClaim = newDay;
+                            }
+                        } else {
+                            // lastCheckin is null but userState.day > 0? shouldn't happen
+                            nextDayToClaim = userState.day + 1;
+                            if (nextDayToClaim > 7) nextDayToClaim = 0;
+                        }
+                    }
                 }
 
                 renderPage();
@@ -554,107 +600,69 @@
             var statusEl = document.getElementById('todayStatus');
             var coinBalanceEl = document.getElementById('coinBalance');
 
-            // Determine which day is active (0 = no active, 1-7)
-            var activeDay = 0;
-            var claimedToday = false;
-
-            // If today's claim exists, we mark it as claimed and active is that day
-            if (todayClaimed) {
-                // If userState.day is 0? Should not happen. We'll assume day is the current day.
-                if (userState.day >= 1 && userState.day <= 7) {
-                    activeDay = userState.day;
-                    claimedToday = true;
-                } else {
-                    // fallback: if userState.day is 0 but they claimed today, set activeDay to 1? But better to set from claimed doc.
-                    // We'll fetch the claimed day from the claim document? We don't store day number in claim doc? We'll need to store.
-                    // For simplicity, we'll store the day number in the claim doc as well.
-                    // Let's re-fetch the claim doc to get the day. But we already have it. We'll modify the claim logic to store day.
-                    // For now, we'll assume if claimed today, activeDay is userState.day, which should be correct.
-                    if (userState.day === 0) {
-                        // If userState.day is 0 but claimed today, it means it's first claim? Set day to 1.
-                        activeDay = 1;
-                    } else {
-                        activeDay = userState.day;
-                    }
-                }
-            } else {
-                // Not claimed today – check if we can claim (i.e., today is after last checkin)
-                if (userState.day === 0) {
-                    // Never claimed – first claim possible today
-                    activeDay = 0; // No active day, but button enabled
-                } else {
-                    // Check if lastCheckin is yesterday or earlier
-                    var canClaim = false;
-                    if (userState.lastCheckin) {
-                        var yesterday = new Date(today);
-                        yesterday.setDate(yesterday.getDate() - 1);
-                        // If last checkin is today, can't claim; if yesterday or earlier, can claim
-                        if (isSameDay(userState.lastCheckin, today)) {
-                            canClaim = false;
-                        } else {
-                            canClaim = true;
-                        }
-                    } else {
-                        canClaim = true;
-                    }
-                    if (canClaim) {
-                        // Next day to claim is userState.day + 1 (capped at 7)
-                        var nextDay = userState.day + 1;
-                        if (nextDay > 7) {
-                            // Completed all 7 days – reset? Usually you reset after 7.
-                            // We'll reset to 1 after completing 7, but we'll show all days as claimed.
-                            // For now, we'll set activeDay = 0 and show "Completed!" message.
-                            activeDay = 0;
-                            // Also disable button and show "Completed!" message.
-                            // We'll handle in UI.
-                        } else {
-                            activeDay = nextDay;
-                        }
-                    } else {
-                        // cannot claim (already claimed today or something else)
-                        activeDay = 0;
-                    }
-                }
-            }
-
             // Build grid
             var html = '';
             for (var i = 0; i < 7; i++) {
                 var dayNum = i + 1;
                 var reward = rewards[i] || 0;
-                var isActive = (activeDay === dayNum && !claimedToday);
-                var isClaimed = (claimedToday && activeDay === dayNum) || (userState.day >= dayNum && userState.lastCheckin && isSameDay(userState.lastCheckin, today) && userState.day >= dayNum);
-                // Actually, if today is claimed, the claimed day is activeDay. So we can mark that day as claimed.
-                // Also, we can mark previous days as claimed if userState.day >= dayNum (assuming they claimed sequentially).
-                // We'll simplify: if todayClaimed, only the activeDay is claimed, previous days are claimed if dayNum < activeDay.
-                var isClaimedCard = false;
-                if (todayClaimed) {
-                    if (dayNum < activeDay) {
-                        isClaimedCard = true;
-                    } else if (dayNum === activeDay) {
-                        isClaimedCard = true;
-                    } else {
-                        isClaimedCard = false;
-                    }
-                } else {
-                    // If not claimed today, previous days are claimed if dayNum <= userState.day
-                    if (userState.day >= dayNum) {
-                        isClaimedCard = true;
-                    }
-                }
+                var isClaimed = false;
+                var isActive = false;
+
+                // Determine if this day is claimed:
+                // If today is claimed, that day is claimed.
+                // Also, if the user's claimed day is greater than or equal to this day, and they have claimed sequentially? 
+                // But we have the nextDayToClaim and userState.day.
+                // Actually, we know that the user has claimed all days from 1 up to userState.day (if they never skipped? but they might have skipped)
+                // But with the new logic, if they skip, they lose that day's reward, so they cannot claim it later.
+                // So the claimed days are those from 1 to (userState.day + number of claims?) complicated.
+                // Simpler: we can store claimed days in a separate array? But we don't have that.
+                // We'll use a different approach: we know that if todayClaimed, the claimed day is nextDayToClaim? Actually, if todayClaimed, then the user claimed today, so today's day is the one they claimed.
+                // But we don't know which day they claimed today without storing it.
+                // We can store the day number in the claim document, which we did not.
+                // Let's modify to store day in claim doc. But for now, we'll rely on userState.day and nextDayToClaim.
+                // We'll mark as claimed if dayNum <= userState.day (but if they skipped, userState.day might be less than dayNum? Actually userState.day is the last claimed day number.
+                // If they skipped, userState.day stays the same (e.g., they claimed day 3, then skipped days, so userState.day = 3, and nextDayToClaim = 5).
+                // Then day 4 is lost, not claimed. So day 4 should be marked as lost (not claimed, not active).
+                // So we need to know which days are claimed. We can store claimed days in a subcollection or array.
+                // For simplicity, we'll store the day number in the claim document.
+                // Since we have todayClaimed, we can fetch the claim doc to get the day number.
+                // But we already have claimDoc from loadData? We didn't store it globally. We'll re-fetch.
+                // Alternatively, we can compute: if todayClaimed, then the active/claimed day is the one they claimed today, which we can get from userState.day? Actually userState.day is updated after claim, so if todayClaimed, userState.day should be the day they claimed today.
+                // So we can use that.
+                // We'll mark as claimed if dayNum < userState.day (when todayClaimed, userState.day is the claimed day) or if dayNum <= userState.day when not todayClaimed (previous claims).
+                // Actually, when not todayClaimed, userState.day is the last claimed day. So days <= userState.day are claimed.
+                // When todayClaimed, userState.day is the claimed day (today). So days <= userState.day are claimed.
+                // So claimed days = dayNum <= userState.day.
+                // However, if they skipped, userState.day might be 3, and todayClaimed false, so days 1,2,3 are claimed. Day 4 is not claimed (lost). So day 4 should be shown as locked or lost.
+                // So we can use this logic.
+
+                var claimed = (dayNum <= userState.day);
+                // Also, if todayClaimed and dayNum === userState.day, it's the one claimed today.
+                // Active day: the day they can claim today (nextDayToClaim) if not claimed today.
+                var active = (!todayClaimed && dayNum === nextDayToClaim && nextDayToClaim > 0);
 
                 var cardClass = 'day-card';
-                if (isActive) cardClass += ' active';
-                if (isClaimedCard) cardClass += ' claimed';
+                if (claimed) cardClass += ' claimed';
+                if (active) cardClass += ' active';
 
-                var rewardDisplay = reward > 0 ? '+' + reward : '0';
                 var statusHtml = '';
-                if (isClaimedCard) {
+                if (claimed) {
                     statusHtml = '<div class="day-check"></div>';
-                } else if (isActive) {
-                    statusHtml = '<div class="day-check" style="color:#facc15;"> Claim</div>';
+                } else if (active) {
+                    statusHtml = '<div class="day-check" style="color:#facc15;"> Claim</div>';
                 } else {
-                    statusHtml = '<div class="day-lock"></div>';
+                    // lost or future
+                    if (dayNum > userState.day && !active) {
+                        // This day is either lost (if dayNum <= nextDayToClaim-1?) Actually, if skipped, days between userState.day+1 and nextDayToClaim-1 are lost.
+                        // We can show a "missed" indicator.
+                        if (nextDayToClaim > 0 && dayNum < nextDayToClaim && dayNum > userState.day) {
+                            statusHtml = '<div class="day-lock" style="color:#ef4444;"> Missed</div>';
+                        } else {
+                            statusHtml = '<div class="day-lock"></div>';
+                        }
+                    } else {
+                        statusHtml = '<div class="day-lock"></div>';
+                    }
                 }
 
                 html += '<div class="' + cardClass + '">';
@@ -665,25 +673,22 @@
             }
             grid.innerHTML = html;
 
-            // Update turnover / status
+            // Update status
             if (todayClaimed) {
-                statusEl.textContent = ' Claimed (Day ' + activeDay + ')';
+                statusEl.textContent = ' Claimed (Day ' + userState.day + ')';
                 statusEl.style.color = '#22c55e';
+            } else if (userState.day >= 7) {
+                statusEl.textContent = ' Completed! All 7 days claimed.';
+                statusEl.style.color = '#facc15';
+            } else if (nextDayToClaim > 0) {
+                statusEl.textContent = ' Day ' + nextDayToClaim + ' ready to claim';
+                statusEl.style.color = '#facc15';
             } else {
-                if (userState.day >= 7) {
-                    statusEl.textContent = ' Completed! All 7 days claimed.';
-                    statusEl.style.color = '#facc15';
-                } else if (userState.day === 0) {
-                    statusEl.textContent = ' Ready to start!';
-                    statusEl.style.color = '#94a3b8';
-                } else {
-                    statusEl.textContent = ' Day ' + (userState.day + 1) + ' pending';
-                    statusEl.style.color = '#facc15';
-                }
+                statusEl.textContent = ' No check-in available';
+                statusEl.style.color = '#94a3b8';
             }
 
-            // Update coin balance (just display from user's wallet or total coins)
-            // We'll fetch wallet balance from user doc.
+            // Update balance
             db.collection('users').doc(currentUser.uid).get().then(function(doc) {
                 if (doc.exists) {
                     var bal = doc.data().walletBalance || 0;
@@ -691,35 +696,17 @@
                 }
             }).catch(console.warn);
 
-            // Enable/disable check-in button
-            var canClaimNow = false;
-            if (!todayClaimed) {
-                // Check if we can claim
-                if (userState.day === 0) {
-                    canClaimNow = true;
-                } else {
-                    if (userState.lastCheckin) {
-                        if (!isSameDay(userState.lastCheckin, today)) {
-                            // Also check if not all days claimed
-                            if (userState.day < 7) {
-                                canClaimNow = true;
-                            } else {
-                                canClaimNow = false;
-                            }
-                        }
-                    }
-                }
-            }
-
-            btn.disabled = !canClaimNow;
-            if (canClaimNow) {
+            // Enable/disable button
+            var canClaim = !todayClaimed && nextDayToClaim > 0 && nextDayToClaim <= 7;
+            btn.disabled = !canClaim;
+            if (canClaim) {
                 btn.textContent = ' Check In';
                 btn.style.opacity = '1';
             } else {
                 if (todayClaimed) {
                     btn.textContent = ' Claimed Today';
                 } else if (userState.day >= 7) {
-                    btn.textContent = ' All Days Claimed!';
+                    btn.textContent = ' All Claimed!';
                 } else {
                     btn.textContent = ' Come Back Tomorrow';
                 }
@@ -738,7 +725,6 @@
 
             // Run transaction
             db.runTransaction(function(transaction) {
-                // Read config
                 var configRef = db.collection('checkinConfig').doc('daily');
                 var userRef = db.collection('users').doc(uid);
                 var claimRef = userRef.collection('checkins').doc(todayStr);
@@ -752,7 +738,6 @@
                         }
                     }
 
-                    // Get user state
                     return transaction.get(userRef).then(function(userDoc) {
                         var userData = userDoc.exists ? userDoc.data() : {};
                         var currentDay = userData.checkinDay || 0;
@@ -763,33 +748,20 @@
                         if (currentDay === 0) {
                             nextDay = 1;
                         } else {
-                            if (lastCheckin && isSameDay(lastCheckin, today)) {
-                                // Already claimed today – shouldn't happen because button is disabled
+                            // Calculate days since last checkin
+                            var diff = lastCheckin ? daysBetween(lastCheckin, today) : 0;
+                            if (diff === 0) {
+                                // Already claimed today – shouldn't happen
                                 throw new Error('Already claimed today');
-                            } else {
-                                // Check if last checkin was yesterday or earlier
-                                if (lastCheckin) {
-                                    var yesterday = new Date(today);
-                                    yesterday.setDate(yesterday.getDate() - 1);
-                                    if (isSameDay(lastCheckin, yesterday) || lastCheckin < yesterday) {
-                                        // If it was yesterday, increment day; if older, reset to 1
-                                        if (isSameDay(lastCheckin, yesterday)) {
-                                            nextDay = Math.min(currentDay + 1, 7);
-                                        } else {
-                                            nextDay = 1;
-                                        }
-                                    } else {
-                                        // Should not happen
-                                        nextDay = 1;
-                                    }
-                                } else {
-                                    nextDay = 1;
-                                }
                             }
+                            // Next day = currentDay + diff (capped at 7)
+                            var candidate = currentDay + diff;
+                            if (candidate > 7) candidate = 0; // all done
+                            nextDay = candidate;
                         }
 
-                        if (nextDay === 0) {
-                            throw new Error('Unable to determine next day');
+                        if (nextDay === 0 || nextDay > 7) {
+                            throw new Error('All days already claimed or no claim available.');
                         }
 
                         var rewardAmount = rewards[nextDay - 1] || 0;
@@ -800,19 +772,18 @@
                                 throw new Error('Already claimed today');
                             }
 
-                            // Create claim record
+                            // Create claim record with day number
                             transaction.set(claimRef, {
                                 day: nextDay,
                                 amount: rewardAmount,
                                 claimedAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
 
-                            // Update user: increment day, update lastCheckin, add to wallet
+                            // Update user
                             var updateData = {
                                 checkinDay: nextDay,
                                 lastCheckin: firebase.firestore.FieldValue.serverTimestamp()
                             };
-                            // Update wallet
                             if (rewardAmount > 0) {
                                 transaction.update(userRef, {
                                     walletBalance: firebase.firestore.FieldValue.increment(rewardAmount),
@@ -820,7 +791,6 @@
                                     totalIncome: firebase.firestore.FieldValue.increment(rewardAmount)
                                 });
                             }
-
                             transaction.update(userRef, updateData);
 
                             return rewardAmount;
@@ -828,10 +798,8 @@
                     });
                 });
             }).then(function(amount) {
-                // Success
-                alert(' You claimed ' + amount + ' coins!');
-                // Reload data
-                loadData();
+                // Show success toast and redirect to me.html
+                showClaimSuccess(amount);
             }).catch(function(err) {
                 console.error('Check-in error:', err);
                 alert(' ' + err.message);
@@ -841,23 +809,29 @@
         });
 
         // ================================================================
-        // BOTTOM NAV
+        // SUCCESS TOAST + REDIRECT
         // ================================================================
-        var navItems = document.querySelectorAll('.nav-item');
-        var currentPage = window.location.pathname.split('/').pop() || 'daily-check.html';
-        navItems.forEach(function(item) {
-            var targetPage = item.getAttribute('data-page');
-            if (currentPage === targetPage) item.classList.add('active');
-            item.addEventListener('click', function() {
-                var target = this.getAttribute('data-page');
-                if (target && !window.location.pathname.includes(target)) {
-                    window.location.href = target;
-                }
-            });
-        });
+        function showClaimSuccess(amount) {
+            var overlay = document.getElementById('overlay');
+            var toast = document.getElementById('toastClaim');
+            var amountEl = document.getElementById('claimAmount');
 
-        console.log(' Daily Check-in redesigned – 7-day reward grid with visible amounts');
-        console.log(' Bottom nav: Home, Deposit, Promotions, Withdraw, Profile');
+            amountEl.textContent = '+' + amount;
+            overlay.classList.add('show');
+            toast.classList.add('show');
+
+            document.getElementById('toastOkBtn').addEventListener('click', function() {
+                // Redirect to me.html
+                window.location.href = 'me.html';
+            });
+
+            // Also allow clicking outside to dismiss? We'll just keep the button.
+        }
+
+        // ================================================================
+        // INIT
+        // ================================================================
+        console.log(' Daily Check-in – Skip-aware, no reset on missed days.');
     </script>
 </body>
 </html>

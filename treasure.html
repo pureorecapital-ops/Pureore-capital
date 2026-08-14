@@ -1,18 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <meta name="referrer" content="no-referrer" />
-    <title>Vouchers – Sajvera Capital</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
-    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="referrer" content="no-referrer">
+    <title>Treasure | Pureore Capital</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
-        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
+        /* ===== RESET & BASE ===== */
         * {
             margin: 0;
             padding: 0;
@@ -20,144 +17,144 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
             min-height: 100vh;
-            padding-top: 80px;
-            padding-bottom: 80px;
-            display: flex;
-            flex-direction: column;
-            color: #ffffff;
+            background: #050505;
+            color: #FFFFFF;
+            padding: 1rem;
+            padding-bottom: 30px;
             position: relative;
-            background: #000;
+            overflow-x: hidden;
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
-        .hero-bg {
+        /* ===== SUBTLE ANIMATED BACKGROUND ===== */
+        body::before {
+            content: "";
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            overflow: hidden;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0f0f0f 25%, #141414 50%, #0f0f0f 75%, #0a0a0a 100%);
+            background-size: 300% 300%;
+            animation: bgShift 15s ease-in-out infinite alternate;
+            z-index: -3;
         }
 
-        .hero-bg::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
-            background-size: cover;
-            background-position: center;
-            filter: blur(14px) brightness(0.25) saturate(0.7);
-            transform: scale(1.1);
+        @keyframes bgShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            100% {
+                background-position: 100% 50%;
+            }
         }
 
-        .hero-bg::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.65);
+        /* ===== SOFT FLOATING ORBS ===== */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: 0.05;
+            /* Very subtle */
+            z-index: -2;
+            pointer-events: none;
+            animation: floatOrb 15s ease-in-out infinite alternate;
         }
 
-        /* ----- HEADER (DARK GLASS) ----- */
+        .orb-1 {
+            width: 350px;
+            height: 350px;
+            background: #FFD700;
+            top: -15%;
+            left: -15%;
+            animation-delay: 0s;
+        }
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: #00E5FF;
+            bottom: -15%;
+            right: -15%;
+            animation-delay: 4s;
+        }
+        .orb-3 {
+            width: 250px;
+            height: 250px;
+            background: #00C853;
+            top: 50%;
+            left: 70%;
+            animation-delay: 8s;
+            opacity: 0.04;
+        }
+        .orb-4 {
+            width: 200px;
+            height: 200px;
+            background: #FFD700;
+            bottom: 30%;
+            left: -10%;
+            animation-delay: 12s;
+            opacity: 0.03;
+        }
+
+        @keyframes floatOrb {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(20px, -15px) scale(1.05);
+            }
+        }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ===== HEADER ===== */
         .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0.8rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.50);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .header-left {
             display: flex;
             flex-direction: column;
-            gap: 0;
         }
 
-        .logo-text {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: -0.4px;
-        }
-        .logo-text .vc {
-            color: #60a5fa;
-        }
-
-        .logo-sub {
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 0.3px;
-            font-weight: 400;
-            margin-top: -2px;
-        }
-        .logo-sub .highlight {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-
-        /* ----- CONTAINER ----- */
-        .container {
-            max-width: 560px;
-            margin: 0 auto;
-            padding: 0 1.2rem;
-            flex: 1;
-            width: 100%;
-        }
-
-        /* ----- BACK BUTTON (GLASS) ----- */
-        .back-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 0.8rem;
-        }
-
-        .back-btn {
+        .back-arrow {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(4px);
             border-radius: 40px;
             padding: 8px 16px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.5);
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
+            transition: 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.04);
             text-decoration: none;
+            margin-bottom: 0.3rem;
+            width: fit-content;
         }
 
-        .back-btn:hover {
+        .back-arrow:hover {
             background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
             transform: translateX(-3px);
         }
 
-        .back-btn svg {
+        .back-arrow svg {
             width: 18px;
             height: 18px;
             stroke: currentColor;
@@ -167,251 +164,131 @@
             stroke-linejoin: round;
         }
 
-        /* ----- PAGE HEADER ----- */
-        .page-header {
-            margin-bottom: 1.2rem;
-            text-align: center;
-        }
-
-        .page-header h1 {
-            font-size: 1.8rem;
+        .page-title {
+            font-size: 1.6rem;
             font-weight: 700;
             color: #ffffff;
-        }
-        .page-header h1 span {
-            color: #60a5fa;
-        }
-        .page-header p {
-            color: rgba(255, 255, 255, 0.25);
-            font-size: 0.85rem;
-            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* ----- GLASS CARD ----- */
-        .glass-card {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 1.8rem 1.5rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            animation: fadeUp 0.5s ease forwards;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 1.2rem;
-            text-align: center;
+        .page-title .icon {
+            font-size: 1.6rem;
         }
 
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
-            pointer-events: none;
+        .page-title span {
+            color: #FFD700;
         }
 
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .glass-card .card-icon {
-            display: inline-flex;
+        /* ===== TREASURE AVATAR ===== */
+        .treasure-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 215, 0, 0.08);
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background: rgba(96, 165, 250, 0.04);
-            border: 1px solid rgba(96, 165, 250, 0.06);
-            margin-bottom: 0.6rem;
+            border: 1px solid rgba(255, 215, 0, 0.06);
+            flex-shrink: 0;
         }
 
-        .glass-card .card-icon svg {
-            width: 36px;
-            height: 36px;
-            stroke: #60a5fa;
-            stroke-width: 1.8;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+        .treasure-avatar svg {
+            width: 24px;
+            height: 24px;
+            fill: #FFD700;
+            opacity: 0.6;
         }
 
-        .glass-card .card-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.2rem;
-        }
-
-        .glass-card .card-subtitle {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.15);
-            margin-bottom: 1.2rem;
-            line-height: 1.5;
-        }
-
-        /* ----- BALANCE DISPLAY (GLASS) ----- */
-        .balance-display {
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 14px;
-            padding: 0.8rem 1rem;
-            margin-bottom: 1.2rem;
+        /* ===== MAIN CARD ===== */
+        .treasure-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 24px;
+            padding: 1.8rem 1.5rem;
+            text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.04);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
         }
 
-        .balance-display .label {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.15);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
+        .treasure-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 215, 0, 0.06);
         }
 
-        .balance-display .amount {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #facc15;
-        }
-
-        /* ----- FORM ELEMENTS (GLASS) ----- */
-        .form-group {
-            margin-bottom: 0.8rem;
-            text-align: left;
-        }
-
-        .form-group label {
+        .treasure-icon {
+            font-size: 3rem;
+            margin-bottom: 0.4rem;
             display: block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.15);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.3rem;
         }
 
-        .form-group .input-wrap {
-            position: relative;
+        .treasure-subtitle {
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.9rem;
+            margin-bottom: 1.2rem;
         }
 
-        .form-group .input-wrap .input-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 18px;
-            height: 18px;
-            stroke: rgba(255, 255, 255, 0.06);
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            pointer-events: none;
-            transition: stroke 0.3s ease;
-        }
-
-        .form-group .input-wrap:focus-within .input-icon {
-            stroke: #60a5fa;
-        }
-
-        .form-group .input-wrap input {
+        /* ===== CODE INPUT ===== */
+        .code-input {
             width: 100%;
-            padding: 0.75rem 1rem 0.75rem 44px;
-            border-radius: 14px;
-            border: 1.5px solid rgba(255, 255, 255, 0.04);
-            background: rgba(0, 0, 0, 0.25);
-            color: #ffffff;
-            font-size: 0.95rem;
-            font-family: inherit;
-            transition: all 0.3s;
+            padding: 0.9rem 1rem;
+            font-size: 1.1rem;
+            text-align: center;
+            letter-spacing: 3px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 40px;
+            color: white;
+            font-family: monospace;
+            text-transform: uppercase;
+            transition: 0.3s;
             outline: none;
         }
 
-        .form-group .input-wrap input:focus {
-            border-color: rgba(96, 165, 250, 0.15);
-            background: rgba(0, 0, 0, 0.35);
-            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.02);
+        .code-input:focus {
+            border-color: rgba(255, 215, 0, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.02);
         }
 
-        .form-group .input-wrap input::placeholder {
-            color: rgba(255, 255, 255, 0.06);
+        .code-input::placeholder {
+            color: rgba(255, 255, 255, 0.08);
+            font-weight: 300;
+            letter-spacing: 1px;
         }
 
-        .form-group .input-wrap input[readonly] {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .input-error {
-            font-size: 0.7rem;
-            color: #f87171;
-            margin-top: 0.2rem;
-            min-height: 1.2rem;
-            text-align: left;
-        }
-
-        /* ----- CLAIM BUTTON (BLUE GRADIENT) ----- */
-        .btn-claim {
+        /* ===== BUTTON ===== */
+        .claim-btn {
             width: 100%;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             padding: 0.9rem;
             border: none;
-            border-radius: 14px;
-            font-family: inherit;
-            font-weight: 700;
+            border-radius: 40px;
+            font-weight: 600;
             font-size: 1rem;
             color: #fff;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 0.3px;
-            margin-top: 0.5rem;
-            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            margin-top: 1rem;
+            transition: 0.3s;
+            box-shadow: 0 2px 20px rgba(37, 99, 235, 0.10);
         }
 
-        .btn-claim:hover:not(:disabled) {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        .claim-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 4px 30px rgba(37, 99, 235, 0.20);
         }
 
-        .btn-claim:active:not(:disabled) {
-            transform: scale(0.97);
-        }
-
-        .btn-claim:disabled {
-            opacity: 0.3;
+        .claim-btn:disabled {
+            opacity: 0.4;
             transform: none;
             cursor: not-allowed;
             box-shadow: none;
         }
 
-        .btn-claim svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* ----- SPINNER ----- */
+        /* ===== SPINNER ===== */
         .spinner {
             display: inline-block;
             width: 18px;
@@ -421,434 +298,209 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             vertical-align: middle;
+            margin-right: 8px;
         }
+
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
         }
 
-        /* ----- MESSAGE BOX (GLASS) ----- */
-        .msg-box {
-            padding: 0.8rem 1rem;
-            border-radius: 14px;
+        /* ===== MESSAGE ===== */
+        .message {
+            margin-top: 1rem;
+            padding: 0.7rem 1rem;
+            border-radius: 30px;
             text-align: center;
             font-weight: 500;
             font-size: 0.9rem;
-            margin-top: 0.8rem;
-            display: none;
-            border: 1.5px solid transparent;
+            border: 1px solid transparent;
         }
 
-        .msg-box.success {
-            display: block;
-            background: rgba(74, 222, 128, 0.06);
-            border-color: rgba(74, 222, 128, 0.08);
+        .message.success {
+            background: rgba(74, 222, 128, 0.04);
+            border-color: rgba(74, 222, 128, 0.06);
             color: #4ade80;
         }
 
-        .msg-box.error {
-            display: block;
-            background: rgba(239, 68, 68, 0.06);
-            border-color: rgba(239, 68, 68, 0.08);
+        .message.error {
+            background: rgba(239, 68, 68, 0.04);
+            border-color: rgba(239, 68, 68, 0.06);
             color: #f87171;
         }
 
-        .msg-box svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            vertical-align: middle;
-            margin-right: 8px;
+        /* ===== INFO CARD ===== */
+        .info-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 20px;
+            padding: 1rem 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 1rem;
         }
 
-        /* ----- TOAST ----- */
+        .info-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .info-text {
+            color: rgba(255, 255, 255, 0.2);
+            line-height: 1.5;
+            font-size: 0.8rem;
+        }
+
+        .info-note {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.12);
+            margin-top: 0.4rem;
+        }
+
+        .info-note strong {
+            color: rgba(255, 215, 0, 0.4);
+        }
+
+        /* ===== TOAST ===== */
         .toast {
             position: fixed;
-            bottom: 100px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(16px);
-            color: #f1f5f9;
-            padding: 12px 24px;
+            padding: 10px 22px;
             border-radius: 40px;
-            font-weight: 600;
+            font-weight: 500;
             font-size: 0.85rem;
-            z-index: 1001;
-            animation: toastFade 4.5s ease forwards;
+            z-index: 9999;
+            animation: toastIn 0.4s ease;
             max-width: 90%;
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
-        .toast.error {
-            border-color: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-        }
         .toast.success {
-            border-color: rgba(74, 222, 128, 0.15);
-            color: #6ee7b7;
+            background: rgba(74, 222, 128, 0.08);
+            color: #4ade80;
+            border: 1px solid rgba(74, 222, 128, 0.06);
+        }
+        .toast.error {
+            background: rgba(239, 68, 68, 0.08);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.06);
         }
 
-        @keyframes toastFade {
+        @keyframes toastIn {
             0% {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px) scale(0.95);
+                transform: translateX(-50%) translateY(15px) scale(0.95);
             }
-            15% {
+            100% {
                 opacity: 1;
                 transform: translateX(-50%) translateY(0) scale(1);
             }
-            80% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px) scale(0.95);
-            }
-        }
-
-        /* ===== BOTTOM NAV (5 icons – NO Voucher) ===== */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.50);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.03);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 6px 4px 14px;
-            z-index: 30;
-            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            text-align: center;
-            padding: 4px 2px;
-            border-radius: 16px;
-            border: none;
-            background: transparent;
-            font-family: inherit;
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .nav-item .nav-icon {
-            width: 24px;
-            height: 24px;
-            stroke: currentColor;
-            stroke-width: 1.8;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            transition: all 0.3s;
-        }
-
-        .nav-item.active .nav-icon {
-            stroke: #60a5fa;
-            transform: scale(1.05);
-        }
-
-        .nav-item .nav-label {
-            font-size: 0.45rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.15);
-            transition: 0.3s;
-            letter-spacing: 0.3px;
-        }
-
-        .nav-item.active .nav-label {
-            color: #60a5fa;
-        }
-
-        .nav-item:hover .nav-icon {
-            stroke: #60a5fa;
-        }
-
-        .nav-item.marketplace .nav-icon {
-            width: 32px;
-            height: 32px;
-            stroke-width: 2;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
-            border-radius: 50%;
-            padding: 4px;
-            stroke: #fff;
-            margin-bottom: 2px;
-        }
-
-        .nav-item.marketplace.active .nav-icon {
-            transform: scale(1.1);
-            box-shadow: 0 0 30px rgba(37, 99, 235, 0.15);
-        }
-
-        .nav-item.marketplace .nav-label {
-            color: #60a5fa;
-            font-weight: 700;
         }
 
         /* ===== RESPONSIVE ===== */
-        @media (max-width: 500px) {
-            .header {
-                padding: 0.6rem 1rem;
+        @media (max-width: 600px) {
+            .page-title {
+                font-size: 1.3rem;
             }
-            .logo-text {
-                font-size: 1.2rem;
-            }
-            .logo-sub {
-                font-size: 0.5rem;
-            }
-            .container {
-                padding: 0 0.8rem;
-            }
-            .page-header h1 {
-                font-size: 1.4rem;
-            }
-            .glass-card {
+            .treasure-card {
                 padding: 1.2rem 1rem;
-                border-radius: 24px;
             }
-            .glass-card .card-icon {
-                width: 60px;
-                height: 60px;
+            .treasure-icon {
+                font-size: 2.5rem;
             }
-            .glass-card .card-icon svg {
-                width: 30px;
-                height: 30px;
+            .code-input {
+                font-size: 0.95rem;
+                padding: 0.8rem;
             }
-            .glass-card .card-title {
-                font-size: 1rem;
-            }
-            .glass-card .card-subtitle {
-                font-size: 0.8rem;
-            }
-            .form-group .input-wrap input {
-                font-size: 0.9rem;
-                padding: 0.65rem 1rem 0.65rem 40px;
-            }
-            .form-group .input-wrap .input-icon {
-                left: 12px;
-                width: 16px;
-                height: 16px;
-            }
-            .btn-claim {
+            .claim-btn {
                 font-size: 0.9rem;
                 padding: 0.8rem;
             }
-            .balance-display {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0.3rem;
-                text-align: center;
+            .treasure-avatar {
+                width: 40px;
+                height: 40px;
             }
-            .nav-item .nav-icon {
-                width: 22px;
-                height: 22px;
-            }
-            .nav-item.marketplace .nav-icon {
-                width: 30px;
-                height: 30px;
-            }
-            .back-btn {
-                font-size: 0.65rem;
-                padding: 6px 12px;
+            .treasure-avatar svg {
+                width: 20px;
+                height: 20px;
             }
         }
 
-        @media (max-width: 400px) {
-            .glass-card .card-icon {
-                width: 52px;
-                height: 52px;
-            }
-            .glass-card .card-icon svg {
-                width: 26px;
-                height: 26px;
-            }
+        ::-webkit-scrollbar {
+            width: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.15);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
-    <div class="hero-bg"></div>
+    <!-- ===== SOFT FLOATING ORBS ===== -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
 
-    <!-- ===== HEADER ===== -->
-    <header class="header">
-        <div class="header-left">
-            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
-            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
-        </div>
-        <div class="header-right">
-            <!-- No hamburger menu -->
-        </div>
-    </header>
+    <div class="container">
 
-    <!-- ===== MAIN CONTENT ===== -->
-    <main class="container">
-
-        <!-- Back Row -->
-        <div class="back-row">
-            <button class="back-btn" id="backBtn">
-                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
-                Back
-            </button>
-        </div>
-
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1>🎫 <span>Voucher</span></h1>
-            <p>Redeem your voucher code to add funds</p>
-        </div>
-
-        <!-- Main Glass Card -->
-        <div class="glass-card">
-            <div class="card-icon">
-                <svg viewBox="0 0 24 24">
-                    <rect x="3" y="7" width="18" height="14" rx="2" ry="2" />
-                    <line x1="3" y1="11" x2="21" y2="11" />
-                    <line x1="3" y1="15" x2="21" y2="15" />
-                    <line x1="8" y1="7" x2="8" y2="21" />
+        <!-- ===== HEADER ===== -->
+        <div class="header">
+            <div class="header-left">
+                <a href="dashboard.html" class="back-arrow">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    Back
+                </a>
+                <div class="page-title">
+                    <span class="icon">🎁</span> <span>Treasure</span> Hunt
+                </div>
+            </div>
+            <div class="treasure-avatar" title="Treasure Hunt">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 6h-2v2h-2V6h-2V4h2V2h2v2h2v2zm-10 3c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 4c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    <path d="M5 2v2h2V2H5z"/>
                 </svg>
             </div>
-            <div class="card-title">Enter Voucher Code</div>
-            <div class="card-subtitle">Use the code from your agent</div>
-
-            <!-- Balance Display -->
-            <div class="balance-display">
-                <span class="label">💰 Current Balance</span>
-                <span class="amount" id="userBalance">0.00 ZMW</span>
-            </div>
-
-            <!-- Form -->
-            <div class="form-group">
-                <label>👤 Your Name</label>
-                <div class="input-wrap">
-                    <svg class="input-icon" viewBox="0 0 24 24">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    <input type="text" id="userName" placeholder="Full name" autocomplete="off" readonly />
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>🔒 Your Password</label>
-                <div class="input-wrap">
-                    <svg class="input-icon" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    <input type="password" id="userPassword" placeholder="Enter your password" autocomplete="current-password" />
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>📞 Agent Number</label>
-                <div class="input-wrap">
-                    <svg class="input-icon" viewBox="0 0 24 24">
-                        <rect x="2" y="2" width="20" height="20" rx="2.5" />
-                        <path d="M8 2v20" />
-                        <path d="M16 2v20" />
-                        <path d="M2 8h20" />
-                        <path d="M2 16h20" />
-                    </svg>
-                    <input type="tel" id="agentNumber" placeholder="Agent phone number" />
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>📛 Agent Name</label>
-                <div class="input-wrap">
-                    <svg class="input-icon" viewBox="0 0 24 24">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    <input type="text" id="agentName" placeholder="Agent full name" />
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>🎟️ Voucher Code</label>
-                <div class="input-wrap">
-                    <svg class="input-icon" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    <input type="text" id="voucherCode" placeholder="Enter voucher code (10 characters)" maxlength="10" autocomplete="off" />
-                </div>
-                <div class="input-error" id="codeError"></div>
-            </div>
-
-            <button class="btn-claim" id="claimBtn">
-                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
-                Redeem Voucher
-            </button>
-
-            <div class="msg-box" id="messageArea"></div>
         </div>
 
-    </main>
+        <!-- ===== MAIN CARD ===== -->
+        <div class="treasure-card">
+            <span class="treasure-icon">💎</span>
+            <p class="treasure-subtitle">Enter the secret code to claim your reward</p>
+            <input type="text" id="treasureCode" class="code-input" placeholder="e.g., GOLD7XP" maxlength="7" autocomplete="off">
+            <button id="claimBtn" class="claim-btn">🔓 Claim Treasure</button>
+            <div id="messageArea"></div>
+        </div>
 
-    <!-- ===== BOTTOM NAV (5 icons – NO Voucher) ===== -->
-    <div class="bottom-nav">
-        <button class="nav-item" data-page="dashboard.html">
-            <svg class="nav-icon" viewBox="0 0 24 24">
-                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-            </svg>
-            <span class="nav-label">Home</span>
-        </button>
-        <button class="nav-item" data-page="income.html">
-            <svg class="nav-icon" viewBox="0 0 24 24">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-            </svg>
-            <span class="nav-label">Income</span>
-        </button>
-        <button class="nav-item marketplace" data-page="marketplace.html">
-            <svg class="nav-icon" viewBox="0 0 24 24">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
-            <span class="nav-label">Market</span>
-        </button>
-        <button class="nav-item" data-page="team.html">
-            <svg class="nav-icon" viewBox="0 0 24 24">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <span class="nav-label">Team</span>
-        </button>
-        <button class="nav-item" data-page="me.html">
-            <svg class="nav-icon" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-            </svg>
-            <span class="nav-label">Me</span>
-        </button>
+        <!-- ===== INFO CARD ===== -->
+        <div class="info-card">
+            <div class="info-title">📢 How to get Treasure Codes?</div>
+            <div class="info-text">
+                Join our official WhatsApp group and channel. We post exclusive treasure codes there daily! Missing out means losing free ZMW.
+            </div>
+            <div class="info-note">🔑 Codes are <strong>7 characters</strong> (letters &amp; numbers). Each code can be used only once – be fast!</div>
+        </div>
+
     </div>
 
     <script>
         // ================================================================
         // FIREBASE CONFIG
         // ================================================================
-        var firebaseConfig = {
+        const firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
             authDomain: "pureore-capital-zambia.firebaseapp.com",
             projectId: "pureore-capital-zambia",
@@ -858,351 +510,204 @@
             measurementId: "G-FQKC29NYE9"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        var auth = firebase.auth();
-        var db = firebase.firestore();
+        const auth = firebase.auth();
+        const db = firebase.firestore();
         db.settings({ persistence: false });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ================================================================
-        // HELPERS
+        // TOAST
         // ================================================================
-        function showToast(msg, isError) {
-            var existing = document.querySelector('.toast');
+        function showToast(msg, type = 'success') {
+            const existing = document.querySelector('.toast');
             if (existing) existing.remove();
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (isError ? ' error' : ' success');
-            toast.textContent = msg;
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.innerText = msg;
             document.body.appendChild(toast);
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
+            setTimeout(() => toast.remove(), 4000);
         }
 
         // ================================================================
         // BLOCK LISTENER
         // ================================================================
-        var blockUnsub = null;
+        let userBlockListener = null;
 
         function watchBlockStatus(userId) {
-            if (blockUnsub) blockUnsub();
-            blockUnsub = db.collection('users').doc(userId).onSnapshot(function(doc) {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked. Redirecting...', true);
-                    setTimeout(function() {
-                        auth.signOut().then(function() { window.location.href = 'login.html'; });
-                    }, 2000);
-                }
-            }, function(err) { console.warn('Block listener error:', err); });
+            if (userBlockListener) userBlockListener();
+            userBlockListener = db.collection('users').doc(userId)
+                .onSnapshot((doc) => {
+                    if (doc.exists && doc.data().isBlocked === true) {
+                        showToast('⚠️ Your account has been blocked. Redirecting...', 'error');
+                        setTimeout(async () => {
+                            await auth.signOut();
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    }
+                }, (err) => console.warn('Block listener error:', err));
         }
-        window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
+
+        window.addEventListener('beforeunload', () => {
+            if (userBlockListener) userBlockListener();
+        });
 
         // ================================================================
         // DOM REFS
         // ================================================================
-        var claimBtn = document.getElementById('claimBtn');
-        var messageArea = document.getElementById('messageArea');
-        var userBalanceSpan = document.getElementById('userBalance');
-        var userNameInput = document.getElementById('userName');
-        var userPasswordInput = document.getElementById('userPassword');
-        var agentNumberInput = document.getElementById('agentNumber');
-        var agentNameInput = document.getElementById('agentName');
-        var voucherCodeInput = document.getElementById('voucherCode');
-        var codeError = document.getElementById('codeError');
-
-        // ================================================================
-        // LOAD USER BALANCE
-        // ================================================================
-        async function loadUserBalance(uid) {
-            try {
-                var userDoc = await db.collection('users').doc(uid).get();
-                if (userDoc.exists) {
-                    var balance = userDoc.data().balance || 0;
-                    userBalanceSpan.textContent = balance.toFixed(2) + ' ZMW';
-                }
-            } catch (err) {
-                console.warn("Could not load balance:", err);
-            }
-        }
-
-        // ================================================================
-        // VALIDATE AGENT
-        // ================================================================
-        async function validateAgent(agentNumber, agentName) {
-            var trimmedNumber = agentNumber.trim();
-            var trimmedName = agentName.trim();
-
-            var numberQuery = await db.collection('agents')
-                .where('number', '==', trimmedNumber)
-                .get();
-
-            if (!numberQuery.empty) {
-                for (var doc of numberQuery.docs) {
-                    var agent = doc.data();
-                    if (agent.name && agent.name.toLowerCase() === trimmedName.toLowerCase()) {
-                        return true;
-                    }
-                }
-            }
-
-            var nameQuery = await db.collection('agents')
-                .where('name', '==', trimmedName)
-                .get();
-            if (!nameQuery.empty) {
-                for (var doc of nameQuery.docs) {
-                    var agent = doc.data();
-                    if (agent.number && agent.number === trimmedNumber) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
+        const claimBtn = document.getElementById('claimBtn');
+        const codeInput = document.getElementById('treasureCode');
+        const messageArea = document.getElementById('messageArea');
 
         // ================================================================
         // SHOW MESSAGE
         // ================================================================
         function showMessage(msg, type) {
-            messageArea.className = 'msg-box ' + type;
-            var icon = type === 'error' ?
-                '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' :
-                '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
-            messageArea.innerHTML = icon + ' ' + msg;
-            messageArea.style.display = 'block';
-            setTimeout(function() {
-                messageArea.style.display = 'none';
+            messageArea.innerHTML = `<div class="message ${type}">${msg}</div>`;
+            setTimeout(() => {
+                if (messageArea.innerHTML.includes(msg)) messageArea.innerHTML = '';
             }, 5000);
         }
 
-        function hideMessage() {
-            messageArea.style.display = 'none';
-            messageArea.className = 'msg-box';
-        }
-
         // ================================================================
-        // VOUCHER CODE VALIDATION
+        // AUTH STATE
         // ================================================================
-        voucherCodeInput.addEventListener('input', function() {
-            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
-            codeError.textContent = '';
-            if (this.value.length === 10) {
-                var amountPart = this.value.substring(0, 6);
-                var suffix = this.value.substring(6, 10);
-                if (!/^\d{6}$/.test(amountPart)) {
-                    codeError.textContent = 'First 6 characters must be numbers.';
-                } else if (!/^[A-Z]{4}$/.test(suffix)) {
-                    codeError.textContent = 'Last 4 characters must be letters (A-Z).';
-                }
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
             }
+            watchBlockStatus(user.uid);
         });
 
         // ================================================================
-        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
+        // CLAIM TREASURE CODE
         // ================================================================
-        let authResolved = false;
-        let redirectTimeout = null;
-
-        auth.onAuthStateChanged(async function(user) {
-            if (user) {
-                authResolved = true;
-                if (redirectTimeout) {
-                    clearTimeout(redirectTimeout);
-                    redirectTimeout = null;
-                }
-                watchBlockStatus(user.uid);
-                await loadUserBalance(user.uid);
-                var userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists) {
-                    var fullName = userDoc.data().fullName;
-                    if (fullName) userNameInput.value = fullName;
-                }
-            } else {
-                if (!authResolved) {
-                    if (!redirectTimeout) {
-                        redirectTimeout = setTimeout(function() {
-                            if (!auth.currentUser) {
-                                window.location.href = 'login.html';
-                            }
-                        }, 2000);
-                    }
-                } else {
-                    window.location.href = 'login.html';
-                }
+        claimBtn.addEventListener('click', async () => {
+            let code = codeInput.value.trim().toUpperCase();
+            if (code.length !== 7) {
+                showMessage('Code must be exactly 7 characters (letters & numbers).', 'error');
+                return;
             }
-        }, function(error) {
-            console.error('Auth state error:', error);
-            window.location.href = 'login.html';
-        });
-
-        // ================================================================
-        // CLAIM VOUCHER
-        // ================================================================
-        claimBtn.addEventListener('click', async function() {
-            hideMessage();
-            codeError.textContent = '';
-
-            var userName = userNameInput.value.trim();
-            var userPassword = userPasswordInput.value;
-            var agentNumber = agentNumberInput.value.trim();
-            var agentName = agentNameInput.value.trim();
-            var voucherCodeRaw = voucherCodeInput.value.trim();
-            var voucherCode = voucherCodeRaw.toUpperCase();
-
-            // Validation
-            if (!userName || !userPassword || !agentNumber || !agentName || !voucherCode) {
-                showMessage('Please fill in all fields.', 'error');
+            if (!/^[A-Z0-9]{7}$/.test(code)) {
+                showMessage('Use only letters A-Z and numbers 0-9.', 'error');
                 return;
             }
 
-            if (voucherCode.length !== 10) {
-                showMessage('Voucher code must be exactly 10 characters.', 'error');
-                return;
-            }
+            claimBtn.disabled = true;
+            claimBtn.innerHTML = '<span class="spinner"></span> Checking...';
 
-            var amountPart = voucherCode.substring(0, 6);
-            var suffix = voucherCode.substring(6, 10);
-            var amountValue = parseFloat(amountPart);
-            if (isNaN(amountValue) || amountValue <= 0) {
-                showMessage('Invalid amount in voucher code (first 6 characters must be digits).', 'error');
-                return;
-            }
-            if (!/^[A-Z]{4}$/.test(suffix)) {
-                showMessage('Last 4 characters must be letters (A-Z).', 'error');
-                return;
-            }
-
-            var user = auth.currentUser;
+            const user = auth.currentUser;
             if (!user) {
                 window.location.href = 'login.html';
                 return;
             }
 
-            // Verify user name matches
-            var userDoc = await db.collection('users').doc(user.uid).get();
-            if (!userDoc.exists) {
-                showMessage('User profile not found.', 'error');
-                return;
-            }
-            var userData = userDoc.data();
-            if (userData.fullName !== userName) {
-                showMessage('Name does not match your registered name.', 'error');
-                return;
-            }
-
-            // Re-authenticate
-            var credential = firebase.auth.EmailAuthProvider.credential(user.email, userPassword);
             try {
-                await user.reauthenticateWithCredential(credential);
-            } catch (err) {
-                showMessage('Incorrect password.', 'error');
-                return;
-            }
+                const codeQuery = await db.collection('treasureCodes')
+                    .where('code', '==', code)
+                    .limit(1)
+                    .get();
 
-            // Validate agent
-            var agentValid = await validateAgent(agentNumber, agentName);
-            if (!agentValid) {
-                showMessage('Agent not found. Please check the number and name exactly as registered.', 'error');
-                return;
-            }
+                if (codeQuery.empty) {
+                    showMessage('❌ Invalid treasure code. No such code exists.', 'error');
+                    claimBtn.disabled = false;
+                    claimBtn.innerHTML = '🔓 Claim Treasure';
+                    return;
+                }
 
-            // Check voucher code
-            var codeQuery = await db.collection('vouchers')
-                .where('code', '==', voucherCode)
-                .limit(1)
-                .get();
-            if (codeQuery.empty) {
-                showMessage('Invalid voucher code. No such code exists.', 'error');
-                return;
-            }
-            var voucherDoc = codeQuery.docs[0];
-            var voucherData = voucherDoc.data();
-            if (voucherData.used) {
-                showMessage('This voucher code has already been used.', 'error');
-                return;
-            }
-            if (Math.abs(voucherData.amount - amountValue) > 0.01) {
-                showMessage('Voucher amount mismatch. Please contact support.', 'error');
-                return;
-            }
+                const codeDoc = codeQuery.docs[0];
+                const codeData = codeDoc.data();
 
-            claimBtn.disabled = true;
-            claimBtn.innerHTML = '<span class="spinner"></span> Processing...';
+                if (codeData.used === true) {
+                    showMessage('⚠️ This treasure code has already been used.', 'error');
+                    claimBtn.disabled = false;
+                    claimBtn.innerHTML = '🔓 Claim Treasure';
+                    return;
+                }
 
-            try {
-                await db.runTransaction(async function(transaction) {
-                    var userRef = db.collection('users').doc(user.uid);
-                    var userSnap = await transaction.get(userRef);
-                    var newBalance = (userSnap.data().balance || 0) + amountValue;
-                    transaction.update(userRef, { balance: newBalance });
-                    transaction.update(voucherDoc.ref, {
+                const amount = codeData.amount;
+                if (!amount || amount <= 0) {
+                    showMessage('❌ Invalid amount for this code.', 'error');
+                    claimBtn.disabled = false;
+                    claimBtn.innerHTML = '🔓 Claim Treasure';
+                    return;
+                }
+
+                // ✅ ONLY update walletBalance – ADD to existing, never replace
+                await db.runTransaction(async (transaction) => {
+                    const userRef = db.collection('users').doc(user.uid);
+                    const userSnap = await transaction.get(userRef);
+                    if (!userSnap.exists) {
+                        throw new Error('User document not found. Please contact support.');
+                    }
+
+                    const currentWallet = userSnap.data().walletBalance || 0;
+                    const newWallet = currentWallet + amount;
+
+                    transaction.update(userRef, {
+                        walletBalance: newWallet
+                    });
+
+                    transaction.update(codeDoc.ref, {
                         used: true,
                         usedBy: user.uid,
                         usedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 });
 
+                // Record transaction
                 await db.collection('transactions').add({
                     userId: user.uid,
-                    type: 'voucher',
-                    amount: amountValue,
-                    description: 'Voucher code: ' + voucherCode + ' (Agent: ' + agentName + ' ' + agentNumber + ')',
+                    type: 'treasure',
+                    amount: amount,
+                    description: `Treasure code: ${code}`,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                await loadUserBalance(user.uid);
-                showMessage('✅ Success! K' + amountValue.toFixed(2) + ' added to your balance. Redirecting...', 'success');
-                voucherCodeInput.value = '';
+                showMessage(`🎉 SUCCESS! You earned ${amount} ZMW! Wallet balance updated. 🎉`, 'success');
+                codeInput.value = '';
 
-                setTimeout(function() {
+                setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 2000);
 
             } catch (err) {
-                console.error('Voucher claim error:', err);
-                showMessage('Error: ' + err.message, 'error');
+                console.error('Treasure claim error:', err);
+                if (err.message === 'User document not found. Please contact support.') {
+                    showMessage('Your user profile is missing. Please contact support.', 'error');
+                } else if (err.code === 'permission-denied') {
+                    showMessage('Permission denied. Please check your network and try again.', 'error');
+                } else if (err.code === 'unavailable') {
+                    showMessage('Network error. Please check your internet connection.', 'error');
+                } else {
+                    showMessage('Server error. Please try again later.', 'error');
+                }
                 claimBtn.disabled = false;
-                claimBtn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg> Redeem Voucher';
+                claimBtn.innerHTML = '🔓 Claim Treasure';
             }
         });
 
         // ================================================================
         // ENTER KEY SUPPORT
         // ================================================================
-        voucherCodeInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                claimBtn.click();
-            }
-        });
-        userPasswordInput.addEventListener('keydown', function(e) {
+        codeInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 claimBtn.click();
             }
         });
 
         // ================================================================
-        // BACK BUTTON
+        // BACK BUTTON (safety fallback)
         // ================================================================
-        document.getElementById('backBtn').addEventListener('click', function() {
+        document.querySelector('.back-arrow').addEventListener('click', (e) => {
+            e.preventDefault();
             window.location.href = 'dashboard.html';
         });
 
-        // ================================================================
-        // BOTTOM NAV
-        // ================================================================
-        var navItems = document.querySelectorAll('.nav-item');
-        var currentPage = window.location.pathname.split('/').pop() || 'voucher.html';
-        navItems.forEach(function(item) {
-            var targetPage = item.getAttribute('data-page');
-            if (currentPage === targetPage) item.classList.add('active');
-            item.addEventListener('click', function() {
-                var target = this.getAttribute('data-page');
-                if (target && !window.location.pathname.includes(target)) {
-                    window.location.href = target;
-                }
-            });
-        });
-
-        console.log('✅ Voucher page · Sajvera Capital · Blue glassmorphism design');
-        console.log('🎫 Bottom nav has 5 icons only (NO Voucher icon)');
-        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
+        console.log('✅ Treasure page · Clean, subtle design · No bottom navigation');
+        console.log('💎 Only back button present');
+        console.log('🔑 Codes: 7 characters (A-Z, 0-9)');
+        console.log('💰 Adds to walletBalance only');
     </script>
 
 </body>

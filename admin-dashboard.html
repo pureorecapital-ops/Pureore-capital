@@ -742,7 +742,7 @@
             color: rgba(255, 255, 255, 0.08);
         }
 
-        /* ----- PLAN TYPE BADGE ----- */
+        /* ----- PLAN TYPE BADGE (kept for possible future use) ----- */
         .plan-type-badge {
             display: inline-block;
             padding: 0.05rem 0.5rem;
@@ -1092,6 +1092,142 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        /* Additional styles for the Marketplace tab */
+        .toggle-wrap {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.2rem 0;
+        }
+        .toggle-wrap label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 40px;
+            transition: 0.3s;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .toggle-switch input:checked+.toggle-slider {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        }
+        .toggle-switch input:checked+.toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        .image-preview-wrap {
+            margin-top: 0.4rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.01);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .image-preview-wrap img {
+            max-width: 100%;
+            max-height: 120px;
+            object-fit: contain;
+            border-radius: 8px;
+            display: block;
+        }
+        .image-preview-wrap .placeholder {
+            color: rgba(255, 255, 255, 0.08);
+            font-size: 0.8rem;
+        }
+        .visibility-badge {
+            display: inline-block;
+            padding: 0.05rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.55rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .vis-visible {
+            background: rgba(34, 197, 94, 0.06);
+            color: #4ade80;
+        }
+        .vis-hidden {
+            background: rgba(239, 68, 68, 0.06);
+            color: #f87171;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.05rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .status-live {
+            background: rgba(34, 197, 94, 0.08);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.06);
+        }
+        .status-scheduled {
+            background: rgba(245, 158, 11, 0.08);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.06);
+        }
+        .status-expired {
+            background: rgba(148, 163, 184, 0.06);
+            color: #64748b;
+            border: 1px solid rgba(148, 163, 184, 0.06);
+        }
+        .status-hidden {
+            background: rgba(255, 255, 255, 0.02);
+            color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+        .btn-sm {
+            padding: 0.15rem 0.6rem;
+            font-size: 0.65rem;
+        }
+        .marketplace-form {
+            display: none;
+        }
+        .marketplace-form.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -1145,7 +1281,6 @@
             <button class="tab-btn" data-tab="users">👥 Users</button>
             <button class="tab-btn" data-tab="deposits">💳 Deposits</button>
             <button class="tab-btn" data-tab="withdrawals">💸 Withdrawals</button>
-            <button class="tab-btn" data-tab="plans">📈 Plans</button>
             <button class="tab-btn" data-tab="dailycheck">📅 Daily Check</button>
             <button class="tab-btn" data-tab="transactions">📋 Transactions</button>
             <button class="tab-btn" data-tab="news">📰 News</button>
@@ -1154,6 +1289,8 @@
             <button class="tab-btn" data-tab="agents">👤 Agents</button>
             <button class="tab-btn" data-tab="admins">🔐 Admins</button>
             <button class="tab-btn" data-tab="ads">📢 Ads</button>
+            <!-- NEW: Marketplace Tab -->
+            <button class="tab-btn" data-tab="marketplace">📦 Marketplace</button>
             <button class="tab-btn" data-tab="settings">⚙ Settings</button>
         </div>
 
@@ -1221,21 +1358,7 @@
             </div>
         </div>
 
-        <!-- ===== PLANS (With Plan Type selector) ===== -->
-        <div id="plansTab" class="tab-content">
-            <div class="glass-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    Marketplace Plans
-                </div>
-                <div class="card-actions">
-                    <button class="btn-small success" onclick="openAddPlanModal()">+ Add Plan</button>
-                </div>
-                <div class="table-wrap"><div id="marketplacePlansList">Loading...</div></div>
-            </div>
-        </div>
-
-        <!-- ===== DAILY CHECK (DEDICATED TAB) ===== -->
+        <!-- ===== DAILY CHECK ===== -->
         <div id="dailycheckTab" class="tab-content">
             <div class="glass-card">
                 <div class="card-title">
@@ -1246,34 +1369,13 @@
                     Set the amount users earn for each day of the 7-day check-in cycle.
                 </p>
                 <div class="daily-rewards-grid" id="dailyRewardsGrid">
-                    <div class="form-group">
-                        <label>Day 1</label>
-                        <input type="number" id="rewardDay1" value="20" min="0" step="1" />
-                    </div>
-                    <div class="form-group">
-                        <label>Day 2</label>
-                        <input type="number" id="rewardDay2" value="30" min="0" step="1" />
-                    </div>
-                    <div class="form-group">
-                        <label>Day 3</label>
-                        <input type="number" id="rewardDay3" value="30" min="0" step="1" />
-                    </div>
-                    <div class="form-group">
-                        <label>Day 4</label>
-                        <input type="number" id="rewardDay4" value="40" min="0" step="1" />
-                    </div>
-                    <div class="form-group">
-                        <label>Day 5</label>
-                        <input type="number" id="rewardDay5" value="50" min="0" step="1" />
-                    </div>
-                    <div class="form-group">
-                        <label>Day 6</label>
-                        <input type="number" id="rewardDay6" value="50" min="0" step="1" />
-                    </div>
-                    <div class="form-group">
-                        <label>Day 7</label>
-                        <input type="number" id="rewardDay7" value="80" min="0" step="1" />
-                    </div>
+                    <div class="form-group"><label>Day 1</label><input type="number" id="rewardDay1" value="20" min="0" step="1" /></div>
+                    <div class="form-group"><label>Day 2</label><input type="number" id="rewardDay2" value="30" min="0" step="1" /></div>
+                    <div class="form-group"><label>Day 3</label><input type="number" id="rewardDay3" value="30" min="0" step="1" /></div>
+                    <div class="form-group"><label>Day 4</label><input type="number" id="rewardDay4" value="40" min="0" step="1" /></div>
+                    <div class="form-group"><label>Day 5</label><input type="number" id="rewardDay5" value="50" min="0" step="1" /></div>
+                    <div class="form-group"><label>Day 6</label><input type="number" id="rewardDay6" value="50" min="0" step="1" /></div>
+                    <div class="form-group"><label>Day 7</label><input type="number" id="rewardDay7" value="80" min="0" step="1" /></div>
                 </div>
                 <button class="btn-small success" id="saveDailyRewardsBtn">💾 Save Daily Rewards</button>
                 <div id="dailyRewardsMsg" style="margin-top:0.5rem;"></div>
@@ -1329,26 +1431,11 @@
                     <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
                     Create Voucher
                 </div>
-                <div class="form-group">
-                    <label>User Name</label>
-                    <input type="text" id="voucherUserName" placeholder="Full name as registered" />
-                </div>
-                <div class="form-group">
-                    <label>User Password</label>
-                    <input type="password" id="voucherUserPassword" placeholder="User's password" />
-                </div>
-                <div class="form-group">
-                    <label>Agent Number</label>
-                    <input type="text" id="voucherAgentNumber" placeholder="Agent phone number" />
-                </div>
-                <div class="form-group">
-                    <label>Agent Name</label>
-                    <input type="text" id="voucherAgentName" placeholder="Agent full name" />
-                </div>
-                <div class="form-group">
-                    <label>Amount (ZMW)</label>
-                    <input type="number" id="voucherAmountManual" placeholder="Enter amount" />
-                </div>
+                <div class="form-group"><label>User Name</label><input type="text" id="voucherUserName" placeholder="Full name as registered" /></div>
+                <div class="form-group"><label>User Password</label><input type="password" id="voucherUserPassword" placeholder="User's password" /></div>
+                <div class="form-group"><label>Agent Number</label><input type="text" id="voucherAgentNumber" placeholder="Agent phone number" /></div>
+                <div class="form-group"><label>Agent Name</label><input type="text" id="voucherAgentName" placeholder="Agent full name" /></div>
+                <div class="form-group"><label>Amount (ZMW)</label><input type="number" id="voucherAmountManual" placeholder="Enter amount" /></div>
                 <button class="btn-small success" id="generateManualVoucherBtn">Generate Voucher</button>
                 <div id="manualVoucherResult" style="margin-top:0.6rem; display:none;"></div>
             </div>
@@ -1369,23 +1456,9 @@
                     ⚡ Quick Add Agent
                     <span style="font-size:0.5rem; color:var(--theme-text-muted); margin-left:auto;">Name • Phone • Network</span>
                 </div>
-                <div class="form-group">
-                    <label>Full Name *</label>
-                    <input type="text" id="quickAgentName" placeholder="e.g. John Mwansa" />
-                </div>
-                <div class="form-group">
-                    <label>Phone Number *</label>
-                    <input type="tel" id="quickAgentPhone" placeholder="260961234567" maxlength="12" />
-                    <small style="color:var(--theme-text-muted); font-size:0.55rem;">Format: 260XXXXXXXXX</small>
-                </div>
-                <div class="form-group">
-                    <label>Network *</label>
-                    <select id="quickAgentNetwork">
-                        <option value="mtn">📶 MTN</option>
-                        <option value="airtel">📶 Airtel</option>
-                        <option value="zamtel">📶 Zamtel</option>
-                    </select>
-                </div>
+                <div class="form-group"><label>Full Name *</label><input type="text" id="quickAgentName" placeholder="e.g. John Mwansa" /></div>
+                <div class="form-group"><label>Phone Number *</label><input type="tel" id="quickAgentPhone" placeholder="260961234567" maxlength="12" /><small style="color:var(--theme-text-muted); font-size:0.55rem;">Format: 260XXXXXXXXX</small></div>
+                <div class="form-group"><label>Network *</label><select id="quickAgentNetwork"><option value="mtn">📶 MTN</option><option value="airtel">📶 Airtel</option><option value="zamtel">📶 Zamtel</option></select></div>
                 <button class="btn-small success" id="quickSaveAgentBtn" style="width:100%; justify-content:center; padding:0.6rem;">💾 Save Agent</button>
                 <div id="quickAgentMessage" style="margin-top:0.6rem; font-size:0.8rem;"></div>
             </div>
@@ -1446,7 +1519,7 @@
             </div>
         </div>
 
-        <!-- ===== ADS TAB ===== -->
+        <!-- ===== ADS ===== -->
         <div id="adsTab" class="tab-content">
             <div class="glass-card">
                 <div class="card-title">
@@ -1460,9 +1533,109 @@
             </div>
         </div>
 
+        <!-- ===== MARKETPLACE TAB ===== -->
+        <div id="marketplaceTab" class="tab-content">
+            <div class="glass-card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    Marketplace Plans
+                    <span class="badge-count" id="marketplacePlanCount" style="margin-left:auto; background:rgba(59,130,246,0.12); color:#60a5fa; padding:0.05rem 0.6rem; border-radius:30px; font-size:0.65rem;">0</span>
+                </div>
+                <button class="btn-small success" id="createMarketplacePlanBtn">+ Create New Plan</button>
+                <div id="marketplacePlanList" class="table-wrap" style="margin-top:0.8rem;">
+                    <div id="marketplacePlansContainer">Loading plans...</div>
+                </div>
+            </div>
+
+            <!-- Create/Edit Form (hidden by default) -->
+            <div class="glass-card marketplace-form" id="marketplaceFormCard">
+                <div class="card-title">
+                    <span id="marketplaceFormTitle">Create New Plan</span>
+                    <span style="margin-left:auto; font-size:0.65rem; color:rgba(255,255,255,0.15);" id="marketplaceFormStatus"></span>
+                </div>
+                <form id="marketplacePlanForm" autocomplete="off">
+                    <input type="hidden" id="marketplaceEditId" value="" />
+
+                    <div class="form-group"><label>Plan Name *</label><input type="text" id="mpPlanName" placeholder="e.g. 10W Solar Plan" required /></div>
+                    <div class="form-group"><label>Plan Type *</label>
+                        <select id="mpPlanType" required>
+                            <option value="daily">💚 Daily Return</option>
+                            <option value="buy">💛 One-Time Payout</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Plan Image URL</label>
+                        <input type="url" id="mpImageUrl" placeholder="https://i.ibb.co/...jpg" />
+                        <div class="image-preview-wrap" id="mpImagePreview"><span class="placeholder">Image preview will appear here</span></div>
+                    </div>
+                    <div class="form-group"><label>Investment Price (ZMW) *</label><input type="number" id="mpInvestmentPrice" placeholder="100.00" step="0.01" min="0" required /></div>
+
+                    <!-- Daily fields -->
+                    <div id="mpDailyFields">
+                        <div class="form-row">
+                            <div class="form-group"><label>Daily Return (ZMW) *</label><input type="number" id="mpDailyReturn" placeholder="7.00" step="0.01" min="0" /></div>
+                            <div class="form-group"><label>Earning Days *</label><input type="number" id="mpEarningDays" placeholder="28" step="1" min="1" /></div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.01); border-radius:12px; padding:0.6rem; margin-bottom:0.8rem; border:1px solid rgba(255,255,255,0.02);">
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; font-size:0.75rem;">
+                                <div><span style="color:rgba(255,255,255,0.2);">Daily Return</span><br/><span id="mpCalcDailyReturn" style="font-weight:700; color:#4ade80;">0.00 ZMW</span></div>
+                                <div><span style="color:rgba(255,255,255,0.2);">Earning Days</span><br/><span id="mpCalcEarningDays" style="font-weight:700; color:#60a5fa;">0</span></div>
+                                <div><span style="color:rgba(255,255,255,0.2);">Total Profit</span><br/><span id="mpCalcTotalProfit" style="font-weight:700; color:#facc15;">0.00 ZMW</span></div>
+                            </div>
+                            <div style="margin-top:0.3rem; text-align:right; font-size:0.7rem; color:rgba(255,255,255,0.15);">
+                                Total Payout: <strong id="mpCalcTotalPayout" style="color:#facc15;">0.00 ZMW</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Buy fields -->
+                    <div id="mpBuyFields" style="display:none;">
+                        <div class="form-row">
+                            <div class="form-group"><label>Total Profit (ZMW) *</label><input type="number" id="mpTotalProfitBuy" placeholder="196.00" step="0.01" min="0" /></div>
+                            <div class="form-group"><label>Total Payout (ZMW) *</label><input type="number" id="mpTotalPayoutBuy" placeholder="296.00" step="0.01" min="0" /></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Payout Date *</label><input type="date" id="mpPayoutDate" /></div>
+                            <div class="form-group"><label>Payout Time *</label><input type="time" id="mpPayoutTime" step="60" /></div>
+                        </div>
+                        <div style="background:rgba(251,191,36,0.04); border-radius:12px; padding:0.5rem; margin-bottom:0.8rem; border:1px solid rgba(251,191,36,0.04);">
+                            <span style="font-size:0.7rem; color:rgba(255,255,255,0.2);">📌 One-time payout plan – user claims the total amount on the payout date.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group"><label>Release Date *</label><input type="date" id="mpReleaseDate" required /></div>
+                        <div class="form-group"><label>Release Time *</label><input type="time" id="mpReleaseTime" required /></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Expiry Date *</label><input type="date" id="mpExpiryDate" required /></div>
+                        <div class="form-group"><label>Expiry Time *</label><input type="time" id="mpExpiryTime" required /></div>
+                    </div>
+
+                    <div class="form-group" style="border-top:1px solid rgba(255,255,255,0.04); padding-top:0.8rem; margin-top:0.8rem;">
+                        <div class="toggle-wrap">
+                            <label>Show on Marketplace</label>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="mpShowOnMarketplace" checked />
+                                <span class="toggle-slider"></span>
+                            </div>
+                            <span id="mpVisibilityLabel" style="font-size:0.7rem; color:rgba(255,255,255,0.2);">ON</span>
+                        </div>
+                        <div class="hint" style="font-size:0.55rem; color:rgba(255,255,255,0.1);">When ON, the plan will appear on marketplace.html according to release/expiry dates.</div>
+                    </div>
+
+                    <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:1rem; border-top:1px solid rgba(255,255,255,0.04); padding-top:1rem;">
+                        <button type="button" class="btn-small success" id="mpPublishBtn">🚀 Publish to Marketplace</button>
+                        <button type="button" class="btn-small outline" id="mpSaveDraftBtn">💾 Save Draft</button>
+                        <button type="button" class="btn-small danger" id="mpCancelFormBtn">Cancel</button>
+                        <button type="button" class="btn-small danger" id="mpDeletePlanBtn" style="display:none; margin-left:auto;">🗑️ Delete</button>
+                    </div>
+                    <div id="mpFormMessage" style="margin-top:0.5rem; font-size:0.8rem;"></div>
+                </form>
+            </div>
+        </div>
+
         <!-- ===== SETTINGS ===== -->
         <div id="settingsTab" class="tab-content">
-
             <!-- Theme Selector -->
             <div class="glass-card">
                 <div class="card-title">
@@ -1485,9 +1658,7 @@
                     <span class="theme-preview" id="themePreview" style="display:inline-block; width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.1); background:var(--theme-primary);"></span>
                     <span style="font-size:0.65rem; color:var(--theme-text-muted);" id="themeNameDisplay">Gold</span>
                 </div>
-                <div style="margin-top:0.3rem; font-size:0.65rem; color:var(--theme-text-muted);">
-                    💡 Auto-rotates every 30 seconds when enabled.
-                </div>
+                <div style="margin-top:0.3rem; font-size:0.65rem; color:var(--theme-text-muted);">💡 Auto-rotates every 30 seconds when enabled.</div>
             </div>
 
             <!-- General Settings -->
@@ -1509,12 +1680,8 @@
                     <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     Withdrawal Rules
                 </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="withdrawRequireDeposit" checked /> Require completed deposit</label>
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="withdrawRequireInvestment" checked /> Require active investment</label>
-                </div>
+                <div class="form-group"><label><input type="checkbox" id="withdrawRequireDeposit" checked /> Require completed deposit</label></div>
+                <div class="form-group"><label><input type="checkbox" id="withdrawRequireInvestment" checked /> Require active investment</label></div>
                 <button class="btn-small success" id="saveWithdrawRulesBtn">Save Rules</button>
                 <div id="withdrawRulesMsg" style="margin-top:0.4rem;"></div>
             </div>
@@ -1569,63 +1736,6 @@
     MODALS
     ============================================================ -->
 
-    <!-- Add Plan Modal (with Plan Type selector) -->
-    <div class="modal-overlay" id="addPlanModal">
-        <div class="modal-card">
-            <button class="modal-close" onclick="closeModal('addPlanModal')">✕</button>
-            <h3><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Add Plan</h3>
-            <input type="hidden" id="planType" value="marketplacePlans" />
-            <div class="form-group"><label>Plan Name *</label><input type="text" id="planName" placeholder="e.g. Starter" /></div>
-            <div class="form-group">
-                <label>Plan Type *</label>
-                <select id="planPlanType">
-                    <option value="invest">💚 Invest (Daily Claiming)</option>
-                    <option value="buy">💛 Buy (Lump Sum After Days)</option>
-                </select>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Min Amount</label><input type="number" id="planMin" placeholder="0.00" /></div>
-                <div class="form-group"><label>Max Amount</label><input type="number" id="planMax" placeholder="0.00" /></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Days</label><input type="number" id="planDays" placeholder="5" /></div>
-                <div class="form-group"><label>Daily Return</label><input type="number" id="planDailyReturn" step="0.01" placeholder="0.00" /></div>
-            </div>
-            <div class="form-group">
-                <label>Currency</label>
-                <select id="planCurrency">
-                    <option value="ZMW">🇿🇲 ZMW (Zambian Kwacha)</option>
-                    <option value="TZS">🇹🇿 TZS (Tanzanian Shilling)</option>
-                    <option value="GHS">🇬🇭 GHS (Ghanaian Cedi)</option>
-                    <option value="ZWL">🇿🇼 ZWL (Zimbabwean Dollar)</option>
-                    <option value="CDF">🇨🇩 CDF (Congolese Franc)</option>
-                    <option value="GBP">🇬🇧 GBP (British Pound)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Available Countries</label>
-                <div class="country-group" id="planCountries">
-                    <label><input type="checkbox" value="Zambia" checked /> 🇿🇲 Zambia</label>
-                    <label><input type="checkbox" value="Tanzania" /> 🇹🇿 Tanzania</label>
-                    <label><input type="checkbox" value="Ghana" /> 🇬🇭 Ghana</label>
-                    <label><input type="checkbox" value="Zimbabwe" /> 🇿🇼 Zimbabwe</label>
-                    <label><input type="checkbox" value="Congo" /> 🇨🇩 Congo</label>
-                    <label><input type="checkbox" value="UK" /> 🇬🇧 UK</label>
-                </div>
-            </div>
-            <div class="form-group"><label>Image URL</label><input type="text" id="planImage" placeholder="https://..." /></div>
-            <div class="form-group"><label>Purchase Limit (0 = unlimited)</label><input type="number" id="planPurchaseLimit" value="0" /></div>
-            <div class="form-group"><label>Lock Text</label><input type="text" id="planLock" placeholder="e.g. Purchased 1 time and locked" /></div>
-            <div class="form-group"><label>Expiry</label><input type="text" id="planExpiry" placeholder="Auto or date" /></div>
-            <div class="form-group"><label>Status</label><select id="planStatus"><option value="active">Active</option><option value="coming_soon">Coming Soon</option></select></div>
-            <div class="form-group"><label>Available From (Date & Time)</label><input type="datetime-local" id="planReleaseDate" /></div>
-            <div class="modal-actions">
-                <button class="btn-small success" id="savePlanBtn">Save</button>
-                <button class="btn-small outline" onclick="closeModal('addPlanModal')">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Add News Modal -->
     <div class="modal-overlay" id="addNewsModal">
         <div class="modal-card">
@@ -1646,9 +1756,7 @@
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal('addTreasureModal')">✕</button>
             <h3><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Create Treasure Code</h3>
-            <div style="font-size:0.7rem; color:var(--theme-text-muted); margin-bottom:0.6rem;">
-                ⚠️ Codes are <strong>read-only</strong> after creation. You can delete them if needed.
-            </div>
+            <div style="font-size:0.7rem; color:var(--theme-text-muted); margin-bottom:0.6rem;">⚠️ Codes are <strong>read-only</strong> after creation. You can delete them if needed.</div>
             <div class="form-group"><label>Code (7 chars, A-Z or 0-9)</label><input type="text" id="treasureCode" maxlength="7" placeholder="e.g. GOLD7XP" /></div>
             <div class="form-group"><label>Amount (ZMW)</label><input type="number" id="treasureAmount" /></div>
             <div class="modal-actions">
@@ -1672,7 +1780,7 @@
         </div>
     </div>
 
-    <!-- Add/Edit Ad Modal -->
+    <!-- Add Ad Modal -->
     <div class="modal-overlay" id="addAdModal">
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal('addAdModal')">✕</button>
@@ -1998,6 +2106,416 @@
         }
 
         // ================================================================
+        // MARKETPLACE PLAN MANAGEMENT FUNCTIONS
+        // ================================================================
+        var marketplacePlans = [];
+        var editingMarketplacePlanId = null;
+
+        function loadMarketplacePlans() {
+            var container = document.getElementById('marketplacePlansContainer');
+            container.innerHTML = 'Loading plans...';
+            db.collection('marketplacePlans')
+                .orderBy('createdAt', 'desc')
+                .get()
+                .then(function(snapshot) {
+                    marketplacePlans = [];
+                    snapshot.forEach(function(doc) {
+                        var data = doc.data();
+                        data.id = doc.id;
+                        marketplacePlans.push(data);
+                    });
+                    renderMarketplacePlans();
+                    document.getElementById('marketplacePlanCount').textContent = marketplacePlans.length;
+                })
+                .catch(function(err) {
+                    console.error('Load marketplace plans error:', err);
+                    container.innerHTML = '<div class="empty-msg">Failed to load plans. Please refresh.</div>';
+                });
+        }
+
+        function renderMarketplacePlans() {
+            var container = document.getElementById('marketplacePlansContainer');
+            if (marketplacePlans.length === 0) {
+                container.innerHTML = '<div class="empty-msg">No plans created yet. Click "Create New Plan" to get started.</div>';
+                return;
+            }
+
+            var html = '<table><thead><tr><th>Plan</th><th>Price</th><th>Type</th><th>Status</th><th>Visibility</th><th>Actions</th></tr></thead><tbody>';
+            marketplacePlans.forEach(function(plan) {
+                var status = getPlanStatus(plan);
+                var statusClass = getStatusBadgeClass(status);
+                var statusLabel = getStatusLabel(status);
+                var visClass = plan.showOnMarketplace ? 'vis-visible' : 'vis-hidden';
+                var visLabel = plan.showOnMarketplace ? 'Visible' : 'Hidden';
+                var typeLabel = plan.planType === 'buy' ? '💛 One-Time' : '💚 Daily';
+                var price = (plan.investmentPrice || 0).toFixed(2);
+
+                html += '<tr>';
+                html += '<td><strong>' + escapeHtml(plan.planName || 'Unnamed') + '</strong></td>';
+                html += '<td>K' + price + '</td>';
+                html += '<td>' + typeLabel + '</td>';
+                html += '<td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td>';
+                html += '<td><span class="visibility-badge ' + visClass + '">' + visLabel + '</span></td>';
+                html += '<td><div class="actions-cell" style="display:flex; flex-wrap:wrap; gap:0.2rem;">';
+                html += '<button class="btn-small btn-sm success" onclick="editMarketplacePlan(\'' + plan.id + '\')">Edit</button>';
+                if (status === 'hidden' || !plan.showOnMarketplace) {
+                    html += '<button class="btn-small btn-sm warning" onclick="publishMarketplacePlan(\'' + plan.id + '\')">Publish</button>';
+                } else {
+                    html += '<button class="btn-small btn-sm outline" onclick="hideMarketplacePlan(\'' + plan.id + '\')">Hide</button>';
+                }
+                html += '<button class="btn-small btn-sm danger" onclick="deleteMarketplacePlan(\'' + plan.id + '\')">Delete</button>';
+                html += '</div></td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function getPlanStatus(plan) {
+            if (!plan.showOnMarketplace) return 'hidden';
+            var now = new Date();
+            var release = plan.releaseDate ? new Date(plan.releaseDate + 'T' + (plan.releaseTime || '00:00')) : null;
+            var expiry = plan.expiryDate ? new Date(plan.expiryDate + 'T' + (plan.expiryTime || '23:59')) : null;
+            if (release && now < release) return 'scheduled';
+            if (expiry && now > expiry) return 'expired';
+            if (release && now >= release && expiry && now <= expiry) return 'live';
+            if (!release && !expiry) return 'live';
+            if (release && now >= release && !expiry) return 'live';
+            return 'live';
+        }
+
+        function getStatusBadgeClass(status) {
+            var map = { 'live': 'status-live', 'scheduled': 'status-scheduled', 'expired': 'status-expired',
+                'hidden': 'status-hidden' };
+            return map[status] || 'status-hidden';
+        }
+
+        function getStatusLabel(status) {
+            var map = { 'live': 'LIVE', 'scheduled': 'SCHEDULED', 'expired': 'EXPIRED', 'hidden': 'HIDDEN' };
+            return map[status] || status;
+        }
+
+        // ---------------------------------------------------------------
+        // Form logic
+        // ---------------------------------------------------------------
+        var mpFormCard = document.getElementById('marketplaceFormCard');
+        var mpFormTitle = document.getElementById('marketplaceFormTitle');
+        var mpFormStatus = document.getElementById('marketplaceFormStatus');
+        var mpEditId = document.getElementById('marketplaceEditId');
+
+        function resetMarketplaceForm() {
+            mpEditId.value = '';
+            editingMarketplacePlanId = null;
+            mpFormTitle.textContent = 'Create New Plan';
+            mpFormStatus.textContent = '';
+            document.getElementById('mpPlanName').value = '';
+            document.getElementById('mpPlanType').value = 'daily';
+            document.getElementById('mpImageUrl').value = '';
+            document.getElementById('mpImagePreview').innerHTML = '<span class="placeholder">Image preview will appear here</span>';
+            document.getElementById('mpInvestmentPrice').value = '';
+            document.getElementById('mpDailyReturn').value = '';
+            document.getElementById('mpEarningDays').value = '';
+            document.getElementById('mpTotalProfitBuy').value = '';
+            document.getElementById('mpTotalPayoutBuy').value = '';
+            document.getElementById('mpPayoutDate').value = '';
+            document.getElementById('mpPayoutTime').value = '';
+            document.getElementById('mpShowOnMarketplace').checked = true;
+            document.getElementById('mpVisibilityLabel').textContent = 'ON';
+            // Set default dates
+            var now = new Date();
+            var release = new Date(now);
+            release.setDate(release.getDate() + 7);
+            var expiry = new Date(now);
+            expiry.setDate(expiry.getDate() + 21);
+            document.getElementById('mpReleaseDate').value = release.toISOString().split('T')[0];
+            document.getElementById('mpReleaseTime').value = '12:00';
+            document.getElementById('mpExpiryDate').value = expiry.toISOString().split('T')[0];
+            document.getElementById('mpExpiryTime').value = '18:00';
+            var payout = new Date(release);
+            payout.setDate(payout.getDate() + 30);
+            document.getElementById('mpPayoutDate').value = payout.toISOString().split('T')[0];
+            document.getElementById('mpPayoutTime').value = '12:00';
+            document.getElementById('mpDeletePlanBtn').style.display = 'none';
+            document.getElementById('mpFormMessage').innerHTML = '';
+            mpFormCard.classList.remove('active');
+            mpFormCard.style.display = 'none';
+            // Re-trigger type change
+            document.getElementById('mpPlanType').dispatchEvent(new Event('change'));
+            updateMarketplaceCalculations();
+        }
+
+        function openMarketplaceForm() {
+            resetMarketplaceForm();
+            mpFormCard.style.display = 'block';
+            setTimeout(function() { mpFormCard.classList.add('active'); }, 50);
+            mpFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        window.editMarketplacePlan = function(planId) {
+            var plan = marketplacePlans.find(function(p) { return p.id === planId; });
+            if (!plan) { showToast('Plan not found.', true); return; }
+            editingMarketplacePlanId = planId;
+            mpEditId.value = planId;
+            mpFormTitle.textContent = 'Edit Plan';
+            mpFormStatus.textContent = 'Editing: ' + (plan.planName || '');
+
+            document.getElementById('mpPlanName').value = plan.planName || '';
+            document.getElementById('mpPlanType').value = plan.planType || 'daily';
+            document.getElementById('mpImageUrl').value = plan.imageUrl || '';
+            if (plan.imageUrl) {
+                document.getElementById('mpImagePreview').innerHTML = '<img src="' + escapeHtml(plan.imageUrl) + '" alt="Plan Image" onerror="this.parentElement.innerHTML=\'<span class=\\'placeholder\\'>Invalid image URL</span>\'" />';
+            } else {
+                document.getElementById('mpImagePreview').innerHTML = '<span class="placeholder">Image preview will appear here</span>';
+            }
+            document.getElementById('mpInvestmentPrice').value = plan.investmentPrice || '';
+            document.getElementById('mpDailyReturn').value = plan.dailyReturn || '';
+            document.getElementById('mpEarningDays').value = plan.earningDays || '';
+            document.getElementById('mpTotalProfitBuy').value = plan.totalProfit || '';
+            document.getElementById('mpTotalPayoutBuy').value = plan.totalPayout || '';
+            document.getElementById('mpPayoutDate').value = formatDateInput(plan.payoutDate || '');
+            document.getElementById('mpPayoutTime').value = plan.payoutTime || '';
+            document.getElementById('mpReleaseDate').value = formatDateInput(plan.releaseDate || '');
+            document.getElementById('mpReleaseTime').value = plan.releaseTime || '';
+            document.getElementById('mpExpiryDate').value = formatDateInput(plan.expiryDate || '');
+            document.getElementById('mpExpiryTime').value = plan.expiryTime || '';
+            document.getElementById('mpShowOnMarketplace').checked = plan.showOnMarketplace !== false;
+            document.getElementById('mpVisibilityLabel').textContent = plan.showOnMarketplace !== false ? 'ON' : 'OFF';
+            document.getElementById('mpDeletePlanBtn').style.display = 'inline-block';
+            document.getElementById('mpFormMessage').innerHTML = '';
+
+            document.getElementById('mpPlanType').dispatchEvent(new Event('change'));
+            updateMarketplaceCalculations();
+
+            mpFormCard.style.display = 'block';
+            setTimeout(function() { mpFormCard.classList.add('active'); }, 50);
+            mpFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        function formatDateInput(dateStr) {
+            if (!dateStr) return '';
+            var parts = dateStr.split('/');
+            if (parts.length === 3) {
+                return parts[2] + '-' + parts[1] + '-' + parts[0];
+            }
+            return dateStr;
+        }
+
+        // Toggle visibility label
+        document.getElementById('mpShowOnMarketplace').addEventListener('change', function() {
+            document.getElementById('mpVisibilityLabel').textContent = this.checked ? 'ON' : 'OFF';
+        });
+
+        // Plan type toggle
+        document.getElementById('mpPlanType').addEventListener('change', function() {
+            var type = this.value;
+            if (type === 'daily') {
+                document.getElementById('mpDailyFields').style.display = 'block';
+                document.getElementById('mpBuyFields').style.display = 'none';
+            } else {
+                document.getElementById('mpDailyFields').style.display = 'none';
+                document.getElementById('mpBuyFields').style.display = 'block';
+            }
+            updateMarketplaceCalculations();
+        });
+
+        // Image preview
+        document.getElementById('mpImageUrl').addEventListener('input', function() {
+            var url = this.value.trim();
+            if (url) {
+                document.getElementById('mpImagePreview').innerHTML = '<img src="' + escapeHtml(url) + '" alt="Plan Image" onerror="this.parentElement.innerHTML=\'<span class=\\'placeholder\\'>Invalid image URL</span>\'" />';
+            } else {
+                document.getElementById('mpImagePreview').innerHTML = '<span class="placeholder">Image preview will appear here</span>';
+            }
+        });
+
+        // Calculations
+        function updateMarketplaceCalculations() {
+            var daily = parseFloat(document.getElementById('mpDailyReturn').value) || 0;
+            var days = parseInt(document.getElementById('mpEarningDays').value) || 0;
+            var invest = parseFloat(document.getElementById('mpInvestmentPrice').value) || 0;
+            document.getElementById('mpCalcDailyReturn').textContent = daily.toFixed(2) + ' ZMW';
+            document.getElementById('mpCalcEarningDays').textContent = days;
+            var profit = daily * days;
+            document.getElementById('mpCalcTotalProfit').textContent = profit.toFixed(2) + ' ZMW';
+            document.getElementById('mpCalcTotalPayout').textContent = (invest + profit).toFixed(2) + ' ZMW';
+        }
+        document.getElementById('mpDailyReturn').addEventListener('input', updateMarketplaceCalculations);
+        document.getElementById('mpEarningDays').addEventListener('input', updateMarketplaceCalculations);
+        document.getElementById('mpInvestmentPrice').addEventListener('input', updateMarketplaceCalculations);
+
+        // ---------------------------------------------------------------
+        // Save Plan
+        // ---------------------------------------------------------------
+        function saveMarketplacePlan(publish) {
+            var name = document.getElementById('mpPlanName').value.trim();
+            var type = document.getElementById('mpPlanType').value;
+            var image = document.getElementById('mpImageUrl').value.trim();
+            var invest = parseFloat(document.getElementById('mpInvestmentPrice').value);
+            var release = document.getElementById('mpReleaseDate').value;
+            var releaseTm = document.getElementById('mpReleaseTime').value;
+            var expiry = document.getElementById('mpExpiryDate').value;
+            var expiryTm = document.getElementById('mpExpiryTime').value;
+            var show = document.getElementById('mpShowOnMarketplace').checked;
+
+            if (!name) { showToast('Please enter a plan name.', true); return; }
+            if (isNaN(invest) || invest <= 0) { showToast('Please enter a valid investment price.', true); return; }
+            if (!release || !releaseTm) { showToast('Please set release date and time.', true); return; }
+            if (!expiry || !expiryTm) { showToast('Please set expiry date and time.', true); return; }
+
+            var releaseDateObj = new Date(release + 'T' + releaseTm);
+            var expiryDateObj = new Date(expiry + 'T' + expiryTm);
+            if (releaseDateObj >= expiryDateObj) {
+                showToast('Release date/time must be before expiry date/time.', true);
+                return;
+            }
+
+            var data = {
+                planName: name,
+                planType: type,
+                imageUrl: image,
+                investmentPrice: invest,
+                releaseDate: release,
+                releaseTime: releaseTm,
+                expiryDate: expiry,
+                expiryTime: expiryTm,
+                showOnMarketplace: show,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (type === 'daily') {
+                var daily = parseFloat(document.getElementById('mpDailyReturn').value);
+                var days = parseInt(document.getElementById('mpEarningDays').value);
+                if (isNaN(daily) || daily <= 0) { showToast('Please enter a valid daily return.', true); return; }
+                if (isNaN(days) || days <= 0) { showToast('Please enter valid earning days.', true); return; }
+                data.dailyReturn = daily;
+                data.earningDays = days;
+                data.totalProfit = daily * days;
+                data.totalPayout = invest + (daily * days);
+                data.payoutDate = null;
+                data.payoutTime = null;
+            } else {
+                var profit = parseFloat(document.getElementById('mpTotalProfitBuy').value);
+                var payout = parseFloat(document.getElementById('mpTotalPayoutBuy').value);
+                var pDate = document.getElementById('mpPayoutDate').value;
+                var pTime = document.getElementById('mpPayoutTime').value;
+                if (isNaN(profit) || profit <= 0) { showToast('Please enter a valid total profit.', true); return; }
+                if (isNaN(payout) || payout <= 0) { showToast('Please enter a valid total payout.', true); return; }
+                if (!pDate || !pTime) { showToast('Please set payout date and time.', true); return; }
+                data.totalProfit = profit;
+                data.totalPayout = payout;
+                data.payoutDate = pDate;
+                data.payoutTime = pTime;
+                data.dailyReturn = null;
+                data.earningDays = null;
+            }
+
+            if (publish) {
+                data.showOnMarketplace = true;
+                data.status = 'published';
+            }
+
+            var ref = editingMarketplacePlanId ?
+                db.collection('marketplacePlans').doc(editingMarketplacePlanId) :
+                db.collection('marketplacePlans').doc();
+
+            if (!editingMarketplacePlanId) {
+                data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
+
+            var method = editingMarketplacePlanId ? 'update' : 'set';
+
+            ref[method](data, { merge: true })
+                .then(function() {
+                    var msg = publish ? '🚀 Plan published to Marketplace!' : '💾 Plan saved as draft.';
+                    showToast(msg, false);
+                    loadMarketplacePlans();
+                    if (publish) {
+                        resetMarketplaceForm();
+                        mpFormCard.style.display = 'none';
+                        mpFormCard.classList.remove('active');
+                    } else {
+                        document.getElementById('mpFormMessage').innerHTML = '<span style="color:#4ade80;">✅ ' + msg +
+                            '</span>';
+                        setTimeout(function() { document.getElementById('mpFormMessage').innerHTML = ''; }, 3000);
+                    }
+                })
+                .catch(function(err) {
+                    showToast('❌ ' + err.message, true);
+                });
+        }
+
+        document.getElementById('mpPublishBtn').addEventListener('click', function() { saveMarketplacePlan(true); });
+        document.getElementById('mpSaveDraftBtn').addEventListener('click', function() { saveMarketplacePlan(false); });
+
+        // ---------------------------------------------------------------
+        // Delete, Publish, Hide
+        // ---------------------------------------------------------------
+        window.deleteMarketplacePlan = function(planId) {
+            if (!confirm('⚠️ Permanently delete this plan? This cannot be undone.\n\nUser investments will NOT be affected.'))
+                return;
+            db.collection('marketplacePlans').doc(planId).delete()
+                .then(function() {
+                    showToast('🗑️ Plan deleted.', false);
+                    if (editingMarketplacePlanId === planId) {
+                        resetMarketplaceForm();
+                        mpFormCard.style.display = 'none';
+                        mpFormCard.classList.remove('active');
+                    }
+                    loadMarketplacePlans();
+                })
+                .catch(function(err) {
+                    showToast('❌ ' + err.message, true);
+                });
+        };
+
+        window.publishMarketplacePlan = function(planId) {
+            if (!confirm('Publish this plan to the Marketplace?')) return;
+            db.collection('marketplacePlans').doc(planId).update({
+                showOnMarketplace: true,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function() {
+                showToast('✅ Plan published.', false);
+                loadMarketplacePlans();
+            }).catch(function(err) {
+                showToast('❌ ' + err.message, true);
+            });
+        };
+
+        window.hideMarketplacePlan = function(planId) {
+            if (!confirm('Hide this plan from the Marketplace?')) return;
+            db.collection('marketplacePlans').doc(planId).update({
+                showOnMarketplace: false,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function() {
+                showToast('✅ Plan hidden.', false);
+                loadMarketplacePlans();
+            }).catch(function(err) {
+                showToast('❌ ' + err.message, true);
+            });
+        };
+
+        // Cancel form
+        document.getElementById('mpCancelFormBtn').addEventListener('click', function() {
+            resetMarketplaceForm();
+            mpFormCard.style.display = 'none';
+            mpFormCard.classList.remove('active');
+        });
+
+        // Delete from edit form
+        document.getElementById('mpDeletePlanBtn').addEventListener('click', function() {
+            var id = mpEditId.value;
+            if (!id) return;
+            deleteMarketplacePlan(id);
+        });
+
+        // Create new plan button
+        document.getElementById('createMarketplacePlanBtn').addEventListener('click', openMarketplaceForm);
+
+        // ================================================================
+        // END MARKETPLACE FUNCTIONS
+        // ================================================================
+
+        // ================================================================
         // FIXED: AUTH STATE + MAIN INIT
         // ================================================================
         let authResolved = false;
@@ -2032,7 +2550,6 @@
                 loadDepositsHistory();
                 loadPendingWithdrawals();
                 loadWithdrawalsHistory();
-                loadPlans('marketplacePlans', 'marketplacePlansList');
                 loadTransactions();
                 loadNews();
                 loadTreasureCodes();
@@ -2047,6 +2564,9 @@
                 setupPendingListeners();
                 setupVoucherManualCreation();
                 setupDailyRewardsSave();
+
+                // Load marketplace plans
+                loadMarketplacePlans();
 
                 document.getElementById('agentPhone').addEventListener('input', generateAgentEmail);
                 document.getElementById('saveAgentBtn').addEventListener('click', saveAgent);
@@ -2086,7 +2606,6 @@
                 document.getElementById('blockAllUsersBtn').addEventListener('click', function() { blockAllNonAdminUsers(true); });
                 document.getElementById('unblockAllUsersBtn').addEventListener('click', function() { blockAllNonAdminUsers(false); });
 
-                document.getElementById('savePlanBtn').onclick = function() { savePlan(); };
                 document.getElementById('saveNewsBtn').onclick = function() { saveNews(); };
                 document.getElementById('saveTreasureBtn').onclick = function() { saveTreasure(); };
                 document.getElementById('createAdminBtn').onclick = function() { createAdmin(); };
@@ -2209,7 +2728,7 @@
         });
 
         // ================================================================
-        // ALL ORIGINAL FUNCTIONS
+        // ALL ORIGINAL FUNCTIONS (with deposit/withdrawal rule enforcement)
         // ================================================================
 
         function setupPendingListeners() {
@@ -2450,6 +2969,69 @@
             loadUsers(getSearchQuery());
         }
 
+        // ---------------------------------------------------------------
+        // DEPOSIT ENFORCEMENT WITH RULES
+        // ---------------------------------------------------------------
+        async function validateDepositRules(depositAmount, smsText, userId) {
+            var errors = [];
+            var rulesDoc = await db.collection('systemSettings').doc('depositRules').get();
+            var rules = rulesDoc.exists ? rulesDoc.data() : {};
+            var requireAmountMatch = rules.requireAmountMatch !== false;
+            var requireAgentName = rules.requireAgentName !== false;
+            var requireNetworkKeyword = rules.requireNetworkKeyword !== false;
+            var requireTxKeyword = rules.requireTxKeyword !== false;
+
+            if (!smsText) {
+                errors.push('No SMS text provided for verification.');
+                return errors;
+            }
+
+            var text = smsText.toLowerCase();
+
+            if (requireAmountMatch) {
+                var amountMatch = text.match(/(?:K|ZMW|R|ZAR|USD|EUR|GBP|NGN|GHS|TZS|ZWL|CDF)\s*(\d+\.?\d*)/i);
+                var smsAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+                if (Math.abs(smsAmount - depositAmount) > 0.01) {
+                    errors.push('SMS amount (' + formatMoney(smsAmount) + ') does not match deposit (' + formatMoney(
+                        depositAmount) + ')');
+                }
+            }
+
+            if (requireAgentName) {
+                var agentsSnap = await db.collection('agents').where('status', '==', 'active').get();
+                var foundAgent = false;
+                for (var doc of agentsSnap.docs) {
+                    var agent = doc.data();
+                    var agentName = agent.name.toLowerCase();
+                    if (text.includes(agentName)) {
+                        foundAgent = true;
+                        break;
+                    }
+                }
+                if (!foundAgent) {
+                    errors.push('No registered agent name found in SMS.');
+                }
+            }
+
+            if (requireNetworkKeyword) {
+                var networks = ['mtn', 'airtel', 'zamtel'];
+                var foundNetwork = networks.some(function(n) { return text.includes(n); });
+                if (!foundNetwork) {
+                    errors.push('No network keyword (MTN/Airtel/Zamtel) found in SMS.');
+                }
+            }
+
+            if (requireTxKeyword) {
+                var keywords = ['send', 'sent', 'received', 'paid', 'transfer', 'successful', 'payment'];
+                var foundTx = keywords.some(function(k) { return text.includes(k); });
+                if (!foundTx) {
+                    errors.push('No transaction keyword found in SMS.');
+                }
+            }
+
+            return errors;
+        }
+
         async function loadPendingDeposits() {
             var snap = await db.collection('deposits').where('status', '==', 'pending').get();
             var html =
@@ -2474,7 +3056,18 @@
             document.getElementById('pendingDepositsList').innerHTML = html;
         }
 
-        window.approveDeposit = function(id, uid, amount) {
+        window.approveDeposit = async function(id, uid, amount) {
+            var depositSnap = await db.collection('deposits').doc(id).get();
+            if (!depositSnap.exists) { showToast('Deposit not found', true); return; }
+            var deposit = depositSnap.data();
+            if (deposit.status === 'completed') { showToast('Deposit already approved', true); return; }
+
+            var errors = await validateDepositRules(amount, deposit.smsText || '', uid);
+            if (errors.length > 0) {
+                showToast('❌ Deposit verification failed: ' + errors.join('; '), true);
+                return;
+            }
+
             if (!confirm('Approve deposit of ' + formatMoney(amount) + '?')) return;
             var batch = db.batch();
             var depositRef = db.collection('deposits').doc(id);
@@ -2520,6 +3113,42 @@
             document.getElementById('depositsHistory').innerHTML = html;
         }
 
+        // ---------------------------------------------------------------
+        // WITHDRAWAL ENFORCEMENT WITH RULES
+        // ---------------------------------------------------------------
+        async function validateWithdrawalRules(uid) {
+            var rulesDoc = await db.collection('systemSettings').doc('withdrawalRules').get();
+            var rules = rulesDoc.exists ? rulesDoc.data() : {};
+            var requireDeposit = rules.requireDeposit !== false;
+            var requireInvestment = rules.requireInvestment !== false;
+
+            var errors = [];
+
+            if (requireDeposit) {
+                var depositsSnap = await db.collection('deposits')
+                    .where('userId', '==', uid)
+                    .where('status', '==', 'completed')
+                    .limit(1)
+                    .get();
+                if (depositsSnap.empty) {
+                    errors.push('User must have at least one completed deposit.');
+                }
+            }
+
+            if (requireInvestment) {
+                var investmentsSnap = await db.collection('investments')
+                    .where('userId', '==', uid)
+                    .where('status', '==', 'active')
+                    .limit(1)
+                    .get();
+                if (investmentsSnap.empty) {
+                    errors.push('User must have at least one active investment plan.');
+                }
+            }
+
+            return errors;
+        }
+
         async function loadPendingWithdrawals() {
             var snap = await db.collection('withdrawals').where('status', '==', 'pending').get();
             var html =
@@ -2547,7 +3176,13 @@
             document.getElementById('pendingWithdrawalsList').innerHTML = html;
         }
 
-        window.approveWithdrawal = function(id, uid, amount) {
+        window.approveWithdrawal = async function(id, uid, amount) {
+            var errors = await validateWithdrawalRules(uid);
+            if (errors.length > 0) {
+                showToast('❌ Withdrawal not allowed: ' + errors.join('; '), true);
+                return;
+            }
+
             if (!confirm('Approve withdrawal of ' + formatMoney(amount) + '?')) return;
             var batch = db.batch();
             var ref = db.collection('withdrawals').doc(id);
@@ -2613,301 +3248,6 @@
             html += '</tbody>';
             document.getElementById('withdrawalsHistory').innerHTML = html;
         }
-
-        // ================================================================
-        // PLAN FUNCTIONS – marketplacePlans only (with Plan Type)
-        // ================================================================
-
-        async function loadPlans(collection, elementId) {
-            try {
-                var snap = await db.collection(collection).orderBy('createdAt', 'desc').get();
-            } catch (err) {
-                console.warn('Order by createdAt failed, falling back.', err);
-                snap = await db.collection(collection).get();
-            }
-            var html =
-                '<thead><tr><th>Name</th><th>Type</th><th>Min/Max</th><th>Days</th><th>Daily</th><th>Currency</th><th>Countries</th><th>Available From</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-            if (snap.empty) {
-                html += '<tr><td colspan="10" style="text-align:center;padding:0.8rem;color:var(--theme-text-muted);">No plans</td></tr>';
-            } else {
-                var plans = [];
-                snap.forEach(function(doc) {
-                    plans.push({ id: doc.id, data: doc.data() });
-                });
-                if (plans.length > 0 && plans[0].data.createdAt !== undefined) {
-                    plans.sort(function(a, b) {
-                        var timeA = a.data.createdAt?.toMillis?.() || 0;
-                        var timeB = b.data.createdAt?.toMillis?.() || 0;
-                        return timeB - timeA;
-                    });
-                }
-                for (var i = 0; i < plans.length; i++) {
-                    var p = plans[i].data;
-                    var docId = plans[i].id;
-                    var status = p.status || 'active';
-                    var statusBadge = status === 'coming_soon' ?
-                        '<span class="plan-status-badge coming-soon">🚀 Coming Soon</span>' :
-                        '<span class="plan-status-badge active">Active</span>';
-
-                    // Plan type badge
-                    var type = p.type || 'invest';
-                    var typeBadge = type === 'invest' ?
-                        '<span class="plan-type-badge invest">💚 Invest</span>' :
-                        '<span class="plan-type-badge buy">💛 Buy</span>';
-
-                    var countries = p.countries || [];
-                    var countriesDisplay = countries.length > 0 ? countries.join(', ') : '🌍 All';
-                    var currency = p.currency || 'ZMW';
-
-                    var releaseDateDisplay = 'Immediate';
-                    if (p.releaseDate) {
-                        var rd = p.releaseDate.toDate ? p.releaseDate.toDate() : new Date(p.releaseDate);
-                        releaseDateDisplay = rd.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit', hour12: false });
-                    }
-
-                    html += '<tr><td>' + escapeHtml(p.name) + '</td><td>' + typeBadge +
-                        '</td><td>' + p.minAmount + ' - ' + p.maxAmount +
-                        '</td><td>' + p.days + '</td><td>' + p.dailyReturn + ' ' + currency + '</td><td><strong>' +
-                        currency + '</strong></td><td style="font-size:0.6rem;">' + escapeHtml(countriesDisplay) +
-                        '</td><td style="font-size:0.65rem; white-space:nowrap;">' + releaseDateDisplay +
-                        '</td><td>' + statusBadge +
-                        '</td><td><button class="btn-small" onclick="openEditPlanModal(\'' + docId + '\',\'' +
-                        collection + '\')">Edit</button> <button class="btn-small danger" onclick="deletePlan(\'' +
-                        docId + '\',\'' + collection + '\')">Delete</button></td></tr>';
-                }
-            }
-            html += '</tbody>';
-            document.getElementById(elementId).innerHTML = html;
-        }
-
-        window.openAddPlanModal = function() {
-            document.getElementById('planType').value = 'marketplacePlans';
-            document.getElementById('planName').value = '';
-            document.getElementById('planPlanType').value = 'invest';
-            document.getElementById('planMin').value = '';
-            document.getElementById('planMax').value = '';
-            document.getElementById('planDays').value = '';
-            document.getElementById('planDailyReturn').value = '';
-            document.getElementById('planImage').value = '';
-            document.getElementById('planPurchaseLimit').value = '0';
-            document.getElementById('planLock').value = '';
-            document.getElementById('planExpiry').value = '';
-            document.getElementById('planStatus').value = 'active';
-            document.getElementById('planCurrency').value = 'ZMW';
-            document.getElementById('planReleaseDate').value = '';
-            var countryChecks = document.querySelectorAll('#planCountries input[type="checkbox"]');
-            countryChecks.forEach(function(cb) {
-                cb.checked = (cb.value === 'Zambia');
-            });
-            openModal('addPlanModal');
-        };
-
-        function savePlan() {
-            var collection = document.getElementById('planType').value;
-            var name = document.getElementById('planName').value.trim();
-            var type = document.getElementById('planPlanType').value;
-            var minAmount = parseFloat(document.getElementById('planMin').value);
-            var maxAmount = parseFloat(document.getElementById('planMax').value);
-            var days = parseInt(document.getElementById('planDays').value);
-            var dailyReturn = parseFloat(document.getElementById('planDailyReturn').value);
-            var image = document.getElementById('planImage').value.trim();
-            var purchaseLimit = parseInt(document.getElementById('planPurchaseLimit').value) || 0;
-            var lock = document.getElementById('planLock').value;
-            var expiry = document.getElementById('planExpiry').value;
-            var status = document.getElementById('planStatus').value;
-            var currency = document.getElementById('planCurrency').value;
-            var countryChecks = document.querySelectorAll('#planCountries input[type="checkbox"]:checked');
-            var countries = [];
-            countryChecks.forEach(function(cb) { countries.push(cb.value); });
-
-            var releaseDateVal = document.getElementById('planReleaseDate').value;
-            var releaseDate = null;
-            if (releaseDateVal) {
-                releaseDate = firebase.firestore.Timestamp.fromDate(new Date(releaseDateVal));
-            }
-
-            if (!name || isNaN(minAmount) || isNaN(days) || isNaN(dailyReturn)) {
-                showToast('Please fill all required fields', true);
-                return;
-            }
-            if (countries.length === 0) {
-                showToast('Please select at least one country', true);
-                return;
-            }
-            var data = {
-                name: name,
-                type: type,
-                minAmount: minAmount,
-                maxAmount: maxAmount,
-                days: days,
-                dailyReturn: dailyReturn,
-                image: image,
-                purchaseLimit: purchaseLimit,
-                lock: lock,
-                expiry: expiry,
-                status: status,
-                currency: currency,
-                countries: countries,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            if (releaseDate) { data.releaseDate = releaseDate; }
-
-            db.collection(collection).add(data).then(function() {
-                closeModal('addPlanModal');
-                loadPlans('marketplacePlans', 'marketplacePlansList');
-                showToast('Plan added', false);
-            }).catch(function(err) { showToast(err.message, true); });
-        }
-
-        var editPlanModalExists = false;
-
-        window.openEditPlanModal = function(id, collection) {
-            var existing = document.getElementById('editPlanModal');
-            if (existing) existing.remove();
-            db.collection(collection).doc(id).get().then(function(doc) {
-                var p = doc.data();
-                var modal = document.createElement('div');
-                modal.className = 'modal-overlay active';
-                modal.id = 'editPlanModal';
-                var countries = p.countries || [];
-                var currencyOptions = ['ZMW', 'TZS', 'GHS', 'ZWL', 'CDF', 'GBP'];
-                var currencyOptionsHtml = currencyOptions.map(function(c) {
-                    var label = { ZMW: '🇿🇲 ZMW (Zambian Kwacha)', TZS: '🇹🇿 TZS (Tanzanian Shilling)',
-                        GHS: '🇬🇭 GHS (Ghanaian Cedi)', ZWL: '🇿🇼 ZWL (Zimbabwean Dollar)',
-                        CDF: '🇨🇩 CDF (Congolese Franc)', GBP: '🇬🇧 GBP (British Pound)' };
-                    return '<option value="' + c + '" ' + (p.currency === c ? 'selected' : '') + '>' + label[
-                        c] + '</option>';
-                }).join('');
-                var countryList = ['Zambia', 'Tanzania', 'Ghana', 'Zimbabwe', 'Congo', 'UK'];
-                var countryCheckboxes = countryList.map(function(c) {
-                    var checked = countries.indexOf(c) !== -1 ? 'checked' : '';
-                    var emoji = { Zambia: '🇿🇲', Tanzania: '🇹🇿', Ghana: '🇬🇭', Zimbabwe: '🇿🇼', Congo: '🇨🇩',
-                        UK: '🇬🇧' };
-                    return '<label><input type="checkbox" value="' + c + '" ' + checked + ' /> ' + emoji[c] +
-                        ' ' + c + '</label>';
-                }).join('');
-
-                var releaseDateStr = '';
-                if (p.releaseDate) {
-                    var rd = p.releaseDate.toDate ? p.releaseDate.toDate() : new Date(p.releaseDate);
-                    var year = rd.getFullYear();
-                    var month = String(rd.getMonth() + 1).padStart(2, '0');
-                    var day = String(rd.getDate()).padStart(2, '0');
-                    var hours = String(rd.getHours()).padStart(2, '0');
-                    var minutes = String(rd.getMinutes()).padStart(2, '0');
-                    releaseDateStr = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
-                }
-
-                var planType = p.type || 'invest';
-
-                modal.innerHTML =
-                    '<div class="modal-card"><button class="modal-close" onclick="closeEditPlanModal()">✕</button><h3>Edit Plan</h3>' +
-                    '<div class="form-group"><label>Name</label><input type="text" id="editPlanName" value="' +
-                    escapeHtml(p.name) + '" /></div>' +
-                    '<div class="form-group"><label>Plan Type</label><select id="editPlanPlanType"><option value="invest"' +
-                    (planType === 'invest' ? ' selected' : '') + '>💚 Invest (Daily Claiming)</option><option value="buy"' +
-                    (planType === 'buy' ? ' selected' : '') + '>💛 Buy (Lump Sum After Days)</option></select></div>' +
-                    '<div class="form-row"><div class="form-group"><label>Min</label><input type="number" id="editPlanMin" value="' +
-                    p.minAmount + '" /></div>' +
-                    '<div class="form-group"><label>Max</label><input type="number" id="editPlanMax" value="' + p
-                    .maxAmount + '" /></div></div>' +
-                    '<div class="form-row"><div class="form-group"><label>Days</label><input type="number" id="editPlanDays" value="' +
-                    p.days + '" /></div>' +
-                    '<div class="form-group"><label>Daily Return</label><input type="number" id="editPlanDailyReturn" value="' +
-                    p.dailyReturn + '" step="0.01" /></div></div>' +
-                    '<div class="form-group"><label>Currency</label><select id="editPlanCurrency">' +
-                    currencyOptionsHtml + '</select></div>' +
-                    '<div class="form-group"><label>Available Countries</label><div class="country-group" id="editPlanCountries">' +
-                    countryCheckboxes + '</div></div>' +
-                    '<div class="form-group"><label>Image URL</label><input type="text" id="editPlanImage" value="' +
-                    escapeHtml(p.image || '') + '" /></div>' +
-                    '<div class="form-group"><label>Purchase Limit</label><input type="number" id="editPlanPurchaseLimit" value="' +
-                    (p.purchaseLimit || 0) + '" /></div>' +
-                    '<div class="form-group"><label>Lock Text</label><input type="text" id="editPlanLock" value="' +
-                    escapeHtml(p.lock || '') + '" /></div>' +
-                    '<div class="form-group"><label>Expiry</label><input type="text" id="editPlanExpiry" value="' +
-                    escapeHtml(p.expiry || '') + '" /></div>' +
-                    '<div class="form-group"><label>Status</label><select id="editPlanStatus"><option value="active"' +
-                    (p.status === 'active' ? ' selected' : '') + '>Active</option><option value="coming_soon"' +
-                    (p.status === 'coming_soon' ? ' selected' : '') + '>Coming Soon</option></select></div>' +
-                    '<div class="form-group"><label>Available From (Date & Time)</label><input type="datetime-local" id="editPlanReleaseDate" value="' +
-                    releaseDateStr + '" /></div>' +
-                    '<div class="modal-actions"><button class="btn-small success" onclick="updatePlan(\'' + id +
-                    '\',\'' + collection + '\')">Update</button><button class="btn-small outline" onclick="closeEditPlanModal()">Cancel</button></div></div>';
-                document.body.appendChild(modal);
-                editPlanModalExists = true;
-            });
-        };
-
-        function closeEditPlanModal() {
-            var existing = document.getElementById('editPlanModal');
-            if (existing) existing.remove();
-            editPlanModalExists = false;
-        }
-
-        window.updatePlan = function(id, collection) {
-            var name = document.getElementById('editPlanName').value.trim();
-            var type = document.getElementById('editPlanPlanType').value;
-            var minAmount = parseFloat(document.getElementById('editPlanMin').value);
-            var maxAmount = parseFloat(document.getElementById('editPlanMax').value);
-            var days = parseInt(document.getElementById('editPlanDays').value);
-            var dailyReturn = parseFloat(document.getElementById('editPlanDailyReturn').value);
-            var image = document.getElementById('editPlanImage').value.trim();
-            var purchaseLimit = parseInt(document.getElementById('editPlanPurchaseLimit').value) || 0;
-            var lock = document.getElementById('editPlanLock').value;
-            var expiry = document.getElementById('editPlanExpiry').value;
-            var status = document.getElementById('editPlanStatus').value;
-            var currency = document.getElementById('editPlanCurrency').value;
-            var countryChecks = document.querySelectorAll('#editPlanCountries input[type="checkbox"]:checked');
-            var countries = [];
-            countryChecks.forEach(function(cb) { countries.push(cb.value); });
-
-            var releaseDateVal = document.getElementById('editPlanReleaseDate').value;
-            var releaseDate = null;
-            if (releaseDateVal) {
-                releaseDate = firebase.firestore.Timestamp.fromDate(new Date(releaseDateVal));
-            }
-
-            if (!name || isNaN(minAmount) || isNaN(days) || isNaN(dailyReturn)) {
-                showToast('Please fill all required fields', true);
-                return;
-            }
-            if (countries.length === 0) {
-                showToast('Please select at least one country', true);
-                return;
-            }
-            var data = {
-                name: name,
-                type: type,
-                minAmount: minAmount,
-                maxAmount: maxAmount,
-                days: days,
-                dailyReturn: dailyReturn,
-                image: image,
-                purchaseLimit: purchaseLimit,
-                lock: lock,
-                expiry: expiry,
-                status: status,
-                currency: currency,
-                countries: countries
-            };
-            if (releaseDate) { data.releaseDate = releaseDate; } else { data.releaseDate = null; }
-
-            db.collection(collection).doc(id).update(data).then(function() {
-                closeEditPlanModal();
-                loadPlans('marketplacePlans', 'marketplacePlansList');
-                showToast('Plan updated', false);
-            }).catch(function(err) { showToast(err.message, true); });
-        };
-
-        window.deletePlan = function(id, collection) {
-            if (!confirm('Delete this plan?')) return;
-            db.collection(collection).doc(id).delete().then(function() {
-                loadPlans('marketplacePlans', 'marketplacePlansList');
-                showToast('Plan deleted', false);
-            }).catch(function(err) { showToast(err.message, true); });
-        };
 
         // ================================================================
         // TRANSACTIONS
@@ -2994,7 +3334,7 @@
             const imageUrl = document.getElementById('newsImage').value.trim();
             if (!title || !content) { showToast('Title and content required', true); return; }
             db.collection('news').add({ title, content, imageUrl,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() })
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() })
                 .then(() => {
                     closeModal('addNewsModal');
                     loadNews();
@@ -3021,7 +3361,8 @@
                             <td><strong>${escapeHtml(c.code)}</strong></td>
                             <td>${formatMoney(c.amount)}</td>
                             <td>${c.used ? '✅ Yes' : '❌ No'}</td>
-                            <td><button class="btn-small danger" onclick="deleteTreasure('${doc.id}')">Delete</button></td>
+                            <td><button class="btn-small danger" onclick="deleteTreasure('${doc.id}')" ${c.used ? 'disabled' : ''}>Delete</button>
+                            ${c.used ? '<span style="font-size:0.6rem;color:var(--theme-text-muted);margin-left:4px;">(Used, cannot delete)</span>' : ''}</td>
                         </tr>`;
                     }
                 }
@@ -3034,6 +3375,12 @@
             }
         }
         window.deleteTreasure = async function(id) {
+            const doc = await db.collection('treasureCodes').doc(id).get();
+            if (!doc.exists) { showToast('Code not found', true); return; }
+            if (doc.data().used === true) {
+                showToast('Cannot delete a used treasure code.', true);
+                return;
+            }
             if (!confirm('Delete this code? (Cannot be undone)')) return;
             try {
                 await db.collection('treasureCodes').doc(id).delete();
@@ -3046,14 +3393,18 @@
             const amount = parseFloat(document.getElementById('treasureAmount').value);
             if (code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 chars (A-Z,0-9)', true); return; }
             if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount', true); return; }
-            db.collection('treasureCodes').add({ code, amount, used: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() })
-                .then(() => {
+            db.collection('treasureCodes').where('code', '==', code).get()
+                .then(function(snap) {
+                    if (!snap.empty) { showToast('This code already exists!', true); return; }
+                    return db.collection('treasureCodes').add({ code, amount, used: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                })
+                .then(function() {
                     closeModal('addTreasureModal');
                     loadTreasureCodes();
                     showToast('Treasure code created', false);
                 })
-                .catch(err => showToast(err.message, true));
+                .catch(function(err) { showToast(err.message, true); });
         };
 
         // ================================================================
@@ -3268,7 +3619,7 @@
         };
 
         // ================================================================
-        // SETTINGS AGENTS (duplicate)
+        // SETTINGS AGENTS
         // ================================================================
         function clearSettingsAgentForm() {
             document.getElementById('settingsEditingAgentId').value = '';
@@ -3399,10 +3750,8 @@
                             <td>${imagePreview}</td>
                             <td><span class="${statusClass}">${activeStatus}</span></td>
                             <td>${ad.timeout || 5}s</td>
-                            <td>
-                                <button class="btn-small" onclick="editAd('${doc.id}')">Edit</button>
-                                <button class="btn-small danger" onclick="deleteAd('${doc.id}')">Delete</button>
-                            </td>
+                            <td><button class="btn-small" onclick="editAd('${doc.id}')">Edit</button>
+                                <button class="btn-small danger" onclick="deleteAd('${doc.id}')">Delete</button></td>
                         </tr>`;
                     }
                 }
@@ -3656,11 +4005,9 @@
             }
         }
 
-        console.log('✨ Pureore Admin – Clean Professional Version');
-        console.log('📦 Plans: marketplacePlans (with Invest/Buy types)');
-        console.log('💰 Daily rewards: checkinConfig/daily (dedicated tab)');
-        console.log('💎 Treasure codes: CREATE + DELETE only');
-        console.log('✅ All functions working');
+        console.log('✨ Admin Dashboard with Marketplace Plans tab – Pureore');
+        console.log('📦 Marketplace Plans: create, edit, publish, hide, delete');
+        console.log('✅ All other admin functions are intact.');
     </script>
 </body>
 </html>
