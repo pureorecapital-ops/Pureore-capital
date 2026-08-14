@@ -1838,7 +1838,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT – FIXED: TABS WORK, DATA LOADS, ERRORS HANDLED
+    JAVASCRIPT – COMPLETE FIX: one auth, one data loader, no duplicates
     ============================================================ -->
     <script>
         // ================================================================
@@ -2064,45 +2064,18 @@
         updateTimeOnly();
 
         // ================================================================
-        // IMAGE URL CONVERTER
+        // IMAGE URL CONVERTER – simplified, uses direct URL as‑is
         // ================================================================
         function getSafeImageUrl(url) {
             if (!url || typeof url !== 'string' || url.trim() === '') {
                 return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
             }
-            let safeUrl = url.trim();
-            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
-                const match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
-                if (match && match[1]) {
-                    let code = match[1];
-                    let filename = match[2] || '';
-                    let ext = 'jpg';
-                    if (filename) {
-                        const extMatch = filename.match(/\.([a-zA-Z0-9]+)$/);
-                        if (extMatch && extMatch[1]) ext = extMatch[1];
-                    }
-                    safeUrl = `https://i.ibb.co/${code}/image.${ext}`;
-                    if (filename) {
-                        safeUrl = `https://i.ibb.co/${code}${filename}`;
-                    }
-                }
-            }
-            if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
-                const match = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
-                if (match && match[1]) {
-                    safeUrl = `https://i.imgur.com/${match[1]}.jpg`;
-                }
-            }
-            if (safeUrl.startsWith('http://')) {
-                safeUrl = safeUrl.replace('http://', 'https://');
-            }
-            if (safeUrl.startsWith('//')) {
-                safeUrl = 'https:' + safeUrl;
-            }
-            if (!safeUrl.startsWith('https://')) {
-                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-            }
-            return safeUrl;
+            var clean = url.trim();
+            // ensure https
+            if (clean.startsWith('http://')) clean = clean.replace('http://', 'https://');
+            if (clean.startsWith('//')) clean = 'https:' + clean;
+            if (clean.startsWith('https://')) return clean;
+            return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
         }
 
         // ================================================================
@@ -2138,12 +2111,11 @@
         }
 
         // ================================================================
-        // *** CRITICAL FIX: Tab event listeners attached EARLY ***
+        // TAB LISTENERS – attached early
         // ================================================================
         function attachTabListeners() {
             var tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(function(btn) {
-                // Remove any existing listeners to avoid duplicates
                 btn.removeEventListener('click', handleTabClick);
                 btn.addEventListener('click', handleTabClick);
             });
@@ -2152,36 +2124,30 @@
 
         function handleTabClick(e) {
             var btn = e.currentTarget;
-            // Deactivate all tabs
             document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
-            // Hide all tab content
             document.querySelectorAll('.tab-content').forEach(function(tab) { tab.classList.remove('active'); });
-            // Show target
             var tabId = btn.dataset.tab + 'Tab';
             var target = document.getElementById(tabId);
-            if (target) {
-                target.classList.add('active');
-                console.log('📑 Switched to: ' + tabId);
-            } else {
-                console.warn('Tab content not found: ' + tabId);
-            }
+            if (target) target.classList.add('active');
         }
 
         // ================================================================
-        // *** FIXED: LOGOUT ***
+        // LOGOUT – single handler with confirmation
         // ================================================================
         document.getElementById('adminLogoutBtn').addEventListener('click', function() {
-            auth.signOut().then(function() {
-                window.location.href = 'admin-login.html';
-            }).catch(function(err) {
-                console.warn('Logout error:', err);
-                showToast('Logout failed. Please try again.', true);
-            });
+            if (confirm('Are you sure you want to logout?')) {
+                auth.signOut().then(function() {
+                    window.location.href = 'admin-login.html';
+                }).catch(function(err) {
+                    console.warn('Logout error:', err);
+                    showToast('Logout failed. Please try again.', true);
+                });
+            }
         });
 
         // ================================================================
-        // *** FIXED: AUTH STATE with robust error handling ***
+        // SINGLE AUTH STATE – one source of truth
         // ================================================================
         let authResolved = false;
         let redirectTimeout = null;
@@ -2195,7 +2161,7 @@
                         redirectTimeout = null;
                     }
 
-                    // Verify admin role
+                    // 1. Verify admin role
                     var userDoc = await db.collection('users').doc(user.uid).get();
                     if (!userDoc.exists || userDoc.data().role !== 'admin') {
                         showToast('Access denied', true);
@@ -2209,34 +2175,16 @@
                         return;
                     }
 
-                    // --- ATTACH TAB LISTENERS IMMEDIATELY (so tabs work) ---
+                    // 2. Attach tab listeners (so tabs work immediately)
                     attachTabListeners();
 
-                    // --- NOW LOAD DATA (with individual error handling) ---
-                    await safeLoad('loadStats', loadStats);
-                    await safeLoad('loadRecentActivities', loadRecentActivities);
-                    await safeLoad('loadUsers', function() { return loadUsers(''); });
-                    await safeLoad('loadPendingDeposits', loadPendingDeposits);
-                    await safeLoad('loadDepositsHistory', loadDepositsHistory);
-                    await safeLoad('loadPendingWithdrawals', loadPendingWithdrawals);
-                    await safeLoad('loadWithdrawalsHistory', loadWithdrawalsHistory);
-                    await safeLoad('loadTransactions', loadTransactions);
-                    await safeLoad('loadNews', loadNews);
-                    await safeLoad('loadTreasureCodes', loadTreasureCodes);
-                    await safeLoad('loadVouchers', loadVouchers);
-                    await safeLoad('loadAgents', loadAgents);
-                    await safeLoad('loadAdmins', loadAdmins);
-                    await safeLoad('loadAds', loadAds);
-                    await safeLoad('loadSettings', loadSettings);
-                    await safeLoad('loadWithdrawalRules', loadWithdrawalRules);
-                    await safeLoad('loadDepositRules', loadDepositRules);
-                    await safeLoad('loadDailyRewards', loadDailyRewards);
-                    await safeLoad('loadMarketplacePlans', loadMarketplacePlans);
+                    // 3. Load all dashboard data via the central loader
+                    await loadDashboardData();
 
-                    // --- Attach all other event listeners ---
+                    // 4. Attach all event listeners (buttons, forms, etc.)
                     attachEventListeners();
 
-                    // --- Setup listeners for pending counts ---
+                    // 5. Setup pending count listeners
                     setupPendingListeners();
 
                     console.log('✅ Dashboard fully loaded and ready.');
@@ -2254,10 +2202,9 @@
                     }
                 }
             } catch (error) {
-                console.error('Error in auth.onAuthStateChanged:', error);
+                console.error('Auth state error:', error);
                 showToast('Error initialising dashboard. Please refresh.', true);
-                // Still try to attach tab listeners even on error
-                attachTabListeners();
+                attachTabListeners(); // still try to give tabs
             }
         }, function(error) {
             console.error('Auth state error:', error);
@@ -2265,18 +2212,46 @@
             window.location.href = 'admin-login.html';
         });
 
-        // Helper to safely load data
-        async function safeLoad(name, fn) {
-            try {
-                await fn();
-            } catch (err) {
-                console.warn('⚠️ ' + name + ' failed:', err.message);
-                // Don't re-throw — let other loads continue
+        // ================================================================
+        // CENTRAL DATA LOADER – all sections, each with its own try/catch
+        // ================================================================
+        async function loadDashboardData() {
+            const loaders = [
+                { name: 'loadStats', fn: loadStats },
+                { name: 'loadRecentActivities', fn: loadRecentActivities },
+                { name: 'loadUsers', fn: () => loadUsers('') },
+                { name: 'loadPendingDeposits', fn: loadPendingDeposits },
+                { name: 'loadDepositsHistory', fn: loadDepositsHistory },
+                { name: 'loadPendingWithdrawals', fn: loadPendingWithdrawals },
+                { name: 'loadWithdrawalsHistory', fn: loadWithdrawalsHistory },
+                { name: 'loadTransactions', fn: loadTransactions },
+                { name: 'loadNews', fn: loadNews },
+                { name: 'loadTreasureCodes', fn: loadTreasureCodes },
+                { name: 'loadVouchers', fn: loadVouchers },
+                { name: 'loadAgents', fn: loadAgents },
+                { name: 'loadAdmins', fn: loadAdmins },
+                { name: 'loadAds', fn: loadAds },
+                { name: 'loadSettings', fn: loadSettings },
+                { name: 'loadWithdrawalRules', fn: loadWithdrawalRules },
+                { name: 'loadDepositRules', fn: loadDepositRules },
+                { name: 'loadDailyRewards', fn: loadDailyRewards },
+                { name: 'loadMarketplacePlans', fn: loadMarketplacePlans }
+            ];
+
+            for (var task of loaders) {
+                try {
+                    await task.fn();
+                    console.log('✅ ' + task.name + ' completed');
+                } catch (err) {
+                    console.warn('⚠️ ' + task.name + ' failed:', err.message);
+                    // Continue with next loader
+                }
             }
+            console.log('📊 Dashboard data loading complete.');
         }
 
         // ================================================================
-        // EVENT LISTENERS (attached after login)
+        // EVENT LISTENERS (attached after auth)
         // ================================================================
         function attachEventListeners() {
             try {
@@ -2319,10 +2294,8 @@
                 }
 
                 // Block / Unblock all
-                document.getElementById('blockAllUsersBtn').addEventListener('click', function() { blockAllNonAdminUsers(
-                        true); });
-                document.getElementById('unblockAllUsersBtn').addEventListener('click', function() { blockAllNonAdminUsers(
-                        false); });
+                document.getElementById('blockAllUsersBtn').addEventListener('click', function() { blockAllNonAdminUsers(true); });
+                document.getElementById('unblockAllUsersBtn').addEventListener('click', function() { blockAllNonAdminUsers(false); });
 
                 // Modals
                 document.getElementById('saveNewsBtn').onclick = function() { saveNews(); };
@@ -2354,7 +2327,7 @@
         }
 
         // ================================================================
-        // QUICK AGENT (extracted for clarity)
+        // QUICK AGENT
         // ================================================================
         async function quickSaveAgent() {
             var name = document.getElementById('quickAgentName').value.trim();
@@ -2475,7 +2448,7 @@
         }
 
         // ================================================================
-        // DATA LOADING FUNCTIONS (all with try/catch)
+        // DATA LOADING FUNCTIONS – all with try/catch
         // ================================================================
 
         async function loadStats() {
@@ -2500,8 +2473,7 @@
                 }
 
                 document.getElementById('totalDeposits').textContent = Math.max(0, rawDeposits - subtractDeposits).toFixed(2);
-                document.getElementById('totalWithdrawals').textContent = Math.max(0, rawWithdrawals - subtractWithdrawals)
-                    .toFixed(2);
+                document.getElementById('totalWithdrawals').textContent = Math.max(0, rawWithdrawals - subtractWithdrawals).toFixed(2);
             } catch (e) {
                 console.error('loadStats error:', e);
                 document.getElementById('totalUsers').textContent = 'Error';
@@ -2516,21 +2488,18 @@
                 var deposits = await db.collection('deposits').orderBy('createdAt', 'desc').limit(5).get();
                 deposits.forEach(function(d) { activities.push('💳 Deposit K' + d.data().amount + ' - ' + d.data().status); });
                 var withdrawals = await db.collection('withdrawals').orderBy('createdAt', 'desc').limit(5).get();
-                withdrawals.forEach(function(w) { activities.push('💸 Withdrawal K' + w.data().amount + ' - ' + w.data()
-                        .status); });
+                withdrawals.forEach(function(w) { activities.push('💸 Withdrawal K' + w.data().amount + ' - ' + w.data().status); });
                 var users = await db.collection('users').orderBy('createdAt', 'desc').limit(5).get();
                 users.forEach(function(u) { activities.push('👤 New user: ' + (u.data().fullName || u.data().email)); });
                 var el = document.getElementById('recentActivities');
                 if (activities.length) {
-                    el.innerHTML = activities.map(function(a) { return '<div class="activity-item">' + a + '</div>'; })
-                        .join('');
+                    el.innerHTML = activities.map(function(a) { return '<div class="activity-item">' + a + '</div>'; }).join('');
                 } else {
                     el.innerHTML = '<div class="empty-msg">No recent activity</div>';
                 }
             } catch (e) {
                 console.error('loadRecentActivities error:', e);
-                document.getElementById('recentActivities').innerHTML =
-                    '<div class="empty-msg">Failed to load recent activity.</div>';
+                document.getElementById('recentActivities').innerHTML = '<div class="empty-msg">Failed to load recent activity.</div>';
             }
         }
 
@@ -2582,15 +2551,13 @@
                 renderUsers(users);
             } catch (e) {
                 console.error('loadUsers error:', e);
-                document.getElementById('usersList').innerHTML =
-                    '<div class="empty-msg">Failed to load users. Please refresh.</div>';
+                document.getElementById('usersList').innerHTML = '<div class="empty-msg">Failed to load users. Please refresh.</div>';
             }
         }
 
         function renderUsers(users) {
             try {
-                var html =
-                    '<table><thead><tr><th>Name</th><th>Email</th><th>Wallet</th><th>Deposit</th><th>Role</th><th>Blocked</th><th>Loan</th><th>Plans</th><th>Actions</th></tr></thead><tbody>';
+                var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Wallet</th><th>Deposit</th><th>Role</th><th>Blocked</th><th>Loan</th><th>Plans</th><th>Actions</th></tr></thead><tbody>';
                 if (!users.length) {
                     html += '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--theme-text-muted);">No users found</td></tr>';
                 } else {
@@ -2612,20 +2579,17 @@
                             '</td><td><select class="role-select" data-id="' + u.id +
                             '"><option ' + (u.role === 'admin' ? 'selected' : '') +
                             '>admin</option><option ' + (u.role === 'user' ? 'selected' : '') +
-                            '>user</option></select></td><td><button class="btn-small ' + (u.isBlocked ? 'warning' :
-                                'danger') + '" onclick="toggleBlock(\'' + u.id + '\',' + u.isBlocked +
+                            '>user</option></select></td><td><button class="btn-small ' + (u.isBlocked ? 'warning' : 'danger') + '" onclick="toggleBlock(\'' + u.id + '\',' + u.isBlocked +
                             ')">' + (u.isBlocked ? 'Unblock' : 'Block') +
-                            '</button></td><td><button class="btn-small ' + (u.canRequestLoan ? 'success' :
-                                'warning') + '" onclick="toggleLoan(\'' + u.id + '\',' + u.canRequestLoan +
+                            '</button></td><td><button class="btn-small ' + (u.canRequestLoan ? 'success' : 'warning') + '" onclick="toggleLoan(\'' + u.id + '\',' + u.canRequestLoan +
                             ')">' + (u.canRequestLoan ? 'Allow' : 'Disable') +
                             '</button></td><td style="font-size:0.65rem; max-width:180px; overflow-x:auto; white-space:normal; line-height:1.6;">' +
                             plansHtml +
                             '</td><td><div class="balance-edit"><input type="number" id="wallet_' + u.id +
                             '" placeholder="Wallet" step="0.01" style="width:60px;padding:0.15rem 0.3rem;border-radius:20px;border:1px solid var(--theme-input-border);background:var(--theme-input-bg);color:#fff;font-size:0.65rem;"><button class="btn-small" onclick="updateWallet(\'' +
-                            u.id + '\')">Set</button></div><div class="balance-edit"><input type="number" id="deposit_' +
-                            u.id + '" placeholder="Deposit" step="0.01" style="width:60px;padding:0.15rem 0.3rem;border-radius:20px;border:1px solid var(--theme-input-border);background:var(--theme-input-bg);color:#fff;font-size:0.65rem;"><button class="btn-small" onclick="updateDeposit(\'' +
-                            u.id + '\')">Set</button></div><button class="btn-small danger" onclick="deleteUser(\'' + u
-                            .id + '\',\'' + escapeHtml(u.email) + '\')">Delete</button></td></tr>';
+                            u.id + '\')">Set</button></div><div class="balance-edit"><input type="number" id="deposit_' + u.id +
+                            '" placeholder="Deposit" step="0.01" style="width:60px;padding:0.15rem 0.3rem;border-radius:20px;border:1px solid var(--theme-input-border);background:var(--theme-input-bg);color:#fff;font-size:0.65rem;"><button class="btn-small" onclick="updateDeposit(\'' +
+                            u.id + '\')">Set</button></div><button class="btn-small danger" onclick="deleteUser(\'' + u.id + '\',\'' + escapeHtml(u.email) + '\')">Delete</button></td></tr>';
                     }
                 }
                 html += '</tbody></table>';
@@ -2639,8 +2603,7 @@
                 });
             } catch (e) {
                 console.error('renderUsers error:', e);
-                document.getElementById('usersList').innerHTML =
-                    '<div class="empty-msg">Error rendering users.</div>';
+                document.getElementById('usersList').innerHTML = '<div class="empty-msg">Error rendering users.</div>';
             }
         }
 
@@ -2698,8 +2661,7 @@
                 var batch = db.batch();
                 var collections = ['investments', 'deposits', 'withdrawals', 'loans', 'transactions', 'referralEarnings'];
                 collections.forEach(function(c) {
-                    db.collection(c).where('userId', '==', uid).get().then(function(snap) { snap.forEach(function(
-                        d) { batch.delete(d.ref); }); });
+                    db.collection(c).where('userId', '==', uid).get().then(function(snap) { snap.forEach(function(d) { batch.delete(d.ref); }); });
                 });
                 batch.delete(db.collection('users').doc(uid));
                 batch.commit().then(function() {
@@ -2745,8 +2707,7 @@
                     var amountMatch = text.match(/(?:K|ZMW|R|ZAR|USD|EUR|GBP|NGN|GHS|TZS|ZWL|CDF)\s*(\d+\.?\d*)/i);
                     var smsAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
                     if (Math.abs(smsAmount - depositAmount) > 0.01) {
-                        errors.push('SMS amount (' + formatMoney(smsAmount) + ') does not match deposit (' + formatMoney(
-                            depositAmount) + ')');
+                        errors.push('SMS amount (' + formatMoney(smsAmount) + ') does not match deposit (' + formatMoney(depositAmount) + ')');
                     }
                 }
 
@@ -2789,30 +2750,22 @@
         async function loadPendingDeposits() {
             try {
                 var snap = await db.collection('deposits').where('status', '==', 'pending').get();
-                var html =
-                    '<thead><tr><th>User</th><th>Amount</th><th>Method</th><th>SMS</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
-                if (snap.empty) { html +=
-                        '<tr><td colspan="6" style="text-align:center;padding:0.8rem;color:var(--theme-text-muted);">No pending deposits</td></tr>'; } else {
+                var html = '<thead><tr><th>User</th><th>Amount</th><th>Method</th><th>SMS</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+                if (snap.empty) {
+                    html += '<tr><td colspan="6" style="text-align:center;padding:0.8rem;color:var(--theme-text-muted);">No pending deposits</td></tr>';
+                } else {
                     for (var doc of snap.docs) {
                         var d = doc.data();
                         var user = await db.collection('users').doc(d.userId).get();
-                        var sms = d.smsText ? (d.smsText.length > 100 ? d.smsText.substring(0, 100) + '...' : d
-                            .smsText) : 'N/A';
-                        html += '<tr><td>' + escapeHtml(user.data()?.fullName || d.userId) + '</td><td>' + formatMoney(d
-                            .amount) + '</td><td>' + d.paymentMethod + '</td><td style="font-size:0.65rem;">' +
-                            escapeHtml(sms) + '</td><td>' + (d.createdAt?.toDate().toLocaleString() || 'N/A') +
-                            '</td><td><button class="btn-small success" onclick="approveDeposit(\'' + doc.id + '\',\'' +
-                            d.userId + '\',' + d.amount +
-                            ')">Approve</button> <button class="btn-small danger" onclick="rejectDeposit(\'' + doc.id +
-                            '\')">Reject</button></td></tr>';
+                        var sms = d.smsText ? (d.smsText.length > 100 ? d.smsText.substring(0, 100) + '...' : d.smsText) : 'N/A';
+                        html += '<tr><td>' + escapeHtml(user.data()?.fullName || d.userId) + '</td><td>' + formatMoney(d.amount) + '</td><td>' + d.paymentMethod + '</td><td style="font-size:0.65rem;">' + escapeHtml(sms) + '</td><td>' + (d.createdAt?.toDate().toLocaleString() || 'N/A') + '</td><td><button class="btn-small success" onclick="approveDeposit(\'' + doc.id + '\',\'' + d.userId + '\',' + d.amount + ')">Approve</button> <button class="btn-small danger" onclick="rejectDeposit(\'' + doc.id + '\')">Reject</button></td></tr>';
                     }
                 }
                 html += '</tbody>';
                 document.getElementById('pendingDepositsList').innerHTML = html;
             } catch (e) {
                 console.error('loadPendingDeposits error:', e);
-                document.getElementById('pendingDepositsList').innerHTML =
-                    '<tr><td colspan="6" style="text-align:center;color:var(--theme-danger);">Error loading pending deposits</td></tr>';
+                document.getElementById('pendingDepositsList').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--theme-danger);">Error loading pending deposits</td></tr>';
             }
         }
 
@@ -2832,8 +2785,7 @@
                 if (!confirm('Approve deposit of ' + formatMoney(amount) + '?')) return;
                 var batch = db.batch();
                 var depositRef = db.collection('deposits').doc(id);
-                batch.update(depositRef, { status: 'completed', approvedAt: firebase.firestore.FieldValue
-                        .serverTimestamp() });
+                batch.update(depositRef, { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 var userRef = db.collection('users').doc(uid);
                 batch.update(userRef, { depositBalance: firebase.firestore.FieldValue.increment(amount) });
                 var txRef = db.collection('transactions').doc();
@@ -2862,24 +2814,21 @@
         async function loadDepositsHistory() {
             try {
                 var snap = await db.collection('deposits').orderBy('createdAt', 'desc').get();
-                var html =
-                    '<thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>';
-                if (snap.empty) { html +=
-                        '<tr><td colspan="4" style="text-align:center;padding:0.8rem;color:var(--theme-text-muted);">No deposits</td></tr>'; } else {
+                var html = '<thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+                if (snap.empty) {
+                    html += '<tr><td colspan="4" style="text-align:center;padding:0.8rem;color:var(--theme-text-muted);">No deposits</td></tr>';
+                } else {
                     for (var doc of snap.docs) {
                         var d = doc.data();
                         var user = await db.collection('users').doc(d.userId).get();
-                        html += '<tr><td>' + escapeHtml(user.data()?.fullName || d.userId) + '</td><td>' + formatMoney(d
-                            .amount) + '</td><td>' + d.status + '</td><td>' + (d.createdAt?.toDate().toLocaleString() ||
-                            'N/A') + '</td></tr>';
+                        html += '<tr><td>' + escapeHtml(user.data()?.fullName || d.userId) + '</td><td>' + formatMoney(d.amount) + '</td><td>' + d.status + '</td><td>' + (d.createdAt?.toDate().toLocaleString() || 'N/A') + '</td></tr>';
                     }
                 }
                 html += '</tbody>';
                 document.getElementById('depositsHistory').innerHTML = html;
             } catch (e) {
                 console.error('loadDepositsHistory error:', e);
-                document.getElementById('depositsHistory').innerHTML =
-                    '<tr><td colspan="4" style="text-align:center;color:var(--theme-danger);">Error loading deposit history</td></tr>';
+                document.getElementById('depositsHistory').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--theme-danger);">Error loading deposit history</td></tr>';
             }
         }
 
@@ -2923,8 +2872,7 @@
         async function loadPendingWithdrawals() {
             try {
                 var snap = await db.collection('withdrawals').where('status', '==', 'pending').get();
-                var html =
-                    '<thead><tr><th>User</th><th>Phone</th><th>Amount</th><th>Net</th><th>Network</th><th>Actions</th></tr></thead><tbody>';
+                var html = '<thead><tr><th>User</th><th>Phone</th><th>Amount</th><th>Net</th><th>Network</th><th>Actions</th></tr></thead><tbody>';
                 if (snap.empty) {
                     html += '<tr><td colspan="6" style="text-align:center;padding:0.8rem;color:var(--theme-text-muted);">No pending withdrawals</td></tr>';
                 } else {
@@ -2935,22 +2883,16 @@
                         if (!userPhone) {
                             userPhone = user.data()?.phone || 'N/A';
                         }
-                        html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + escapeHtml(
-                            userPhone) + '</td><td>' + formatMoney(w.amount) + '</td><td>' + formatMoney(w.netAmount ||
-                            w.amount) + '</td><td>' + w.network +
-                            '</td><td><button class="btn-small success" onclick="approveWithdrawal(\'' + doc.id +
-                            '\',\'' + w.userId + '\',' + w.amount +
-                            ')">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal(\'' + doc
-                            .id +
-                            '\')">Reject</button></td></tr>';
+                        html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + escapeHtml(userPhone) + '</td><td>' + formatMoney(w.amount) + '</td><td>' + formatMoney(w.netAmount || w.amount) + '</td><td>' + w.network +
+                            '</td><td><button class="btn-small success" onclick="approveWithdrawal(\'' + doc.id + '\',\'' + w.userId + '\',' + w.amount +
+                            ')">Approve</button> <button class="btn-small danger" onclick="rejectWithdrawal(\'' + doc.id + '\')">Reject</button></td></tr>';
                     }
                 }
                 html += '</tbody>';
                 document.getElementById('pendingWithdrawalsList').innerHTML = html;
             } catch (e) {
                 console.error('loadPendingWithdrawals error:', e);
-                document.getElementById('pendingWithdrawalsList').innerHTML =
-                    '<tr><td colspan="6" style="text-align:center;color:var(--theme-danger);">Error loading pending withdrawals</td></tr>';
+                document.getElementById('pendingWithdrawalsList').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--theme-danger);">Error loading pending withdrawals</td></tr>';
             }
         }
 
@@ -2967,8 +2909,7 @@
                 batch.update(ref, { status: 'completed', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 var txRef = db.collection('transactions').doc();
                 batch.set(txRef, { userId: uid, type: 'withdrawal', amount: amount,
-                    description: 'Withdrawal approved', createdAt: firebase.firestore.FieldValue
-                    .serverTimestamp() });
+                    description: 'Withdrawal approved', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
                 await batch.commit();
                 showToast('Withdrawal approved', false);
                 loadPendingWithdrawals();
@@ -2989,13 +2930,11 @@
                     var userRef = db.collection('users').doc(w.userId);
                     return transaction.get(userRef).then(function(userDoc) {
                         var bal = userDoc.data().walletBalance || 0;
-                        transaction.update(userRef, { walletBalance: bal + w.amount, balance: bal + w
-                                .amount });
+                        transaction.update(userRef, { walletBalance: bal + w.amount, balance: bal + w.amount });
                         transaction.update(db.collection('withdrawals').doc(id), { status: 'rejected' });
                         var txRef = db.collection('transactions').doc();
                         transaction.set(txRef, { userId: w.userId, type: 'refund', amount: w.amount,
-                            description: 'Withdrawal rejected - refunded', createdAt: firebase
-                                .firestore.FieldValue.serverTimestamp() });
+                            description: 'Withdrawal rejected - refunded', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
                     });
                 });
             }).then(function() {
@@ -3010,8 +2949,7 @@
         async function loadWithdrawalsHistory() {
             try {
                 var snap = await db.collection('withdrawals').orderBy('createdAt', 'desc').get();
-                var html =
-                    '<thead><tr><th>User</th><th>Phone</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+                var html = '<thead><tr><th>User</th><th>Phone</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>';
                 if (snap.empty) {
                     html += '<tr><td colspan="5" style="text-align:center;padding:0.8rem;color:var(--theme-text-muted);">No withdrawals</td></tr>';
                 } else {
@@ -3022,8 +2960,7 @@
                         if (!userPhone) {
                             userPhone = user.data()?.phone || 'N/A';
                         }
-                        html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + escapeHtml(
-                            userPhone) + '</td><td>' + formatMoney(w.amount) + '</td><td>' + w.status +
+                        html += '<tr><td>' + escapeHtml(user.data()?.fullName || w.userId) + '</td><td>' + escapeHtml(userPhone) + '</td><td>' + formatMoney(w.amount) + '</td><td>' + w.status +
                             '</td><td>' + (w.createdAt?.toDate().toLocaleString() || 'N/A') + '</td></tr>';
                     }
                 }
@@ -3031,8 +2968,7 @@
                 document.getElementById('withdrawalsHistory').innerHTML = html;
             } catch (e) {
                 console.error('loadWithdrawalsHistory error:', e);
-                document.getElementById('withdrawalsHistory').innerHTML =
-                    '<tr><td colspan="5" style="text-align:center;color:var(--theme-danger);">Error loading withdrawal history</td></tr>';
+                document.getElementById('withdrawalsHistory').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--theme-danger);">Error loading withdrawal history</td></tr>';
             }
         }
 
@@ -3064,18 +3000,24 @@
                 html += `</tbody>`;
                 document.getElementById('transactionsList').innerHTML = html;
 
-                document.getElementById('txSearchInput').addEventListener('input', function() {
-                    const term = this.value.toLowerCase();
-                    const rows = document.querySelectorAll('#transactionsList tbody tr');
-                    rows.forEach(row => {
-                        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
-                    });
-                });
+                // Attach search listener without duplication
+                const searchInput = document.getElementById('txSearchInput');
+                if (searchInput) {
+                    searchInput.removeEventListener('input', handleTxSearch);
+                    searchInput.addEventListener('input', handleTxSearch);
+                }
             } catch (err) {
                 console.error('loadTransactions error:', err);
-                document.getElementById('transactionsList').innerHTML =
-                    `<p style="color:var(--theme-danger);">Error loading transactions</p>`;
+                document.getElementById('transactionsList').innerHTML = `<p style="color:var(--theme-danger);">Error loading transactions</p>`;
             }
+        }
+
+        function handleTxSearch(e) {
+            const term = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#transactionsList tbody tr');
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+            });
         }
 
         // ================================================================
@@ -3103,8 +3045,7 @@
                 document.getElementById('newsList').innerHTML = html;
             } catch (err) {
                 console.error(err);
-                document.getElementById('newsList').innerHTML =
-                    `<p style="color:var(--theme-danger);">Error loading news</p>`;
+                document.getElementById('newsList').innerHTML = `<p style="color:var(--theme-danger);">Error loading news</p>`;
             }
         }
         window.deleteNews = async function(id) {
@@ -3159,8 +3100,7 @@
                 document.getElementById('treasureCodesList').innerHTML = html;
             } catch (err) {
                 console.error(err);
-                document.getElementById('treasureCodesList').innerHTML =
-                    `<p style="color:var(--theme-danger);">Error loading treasure codes</p>`;
+                document.getElementById('treasureCodesList').innerHTML = `<p style="color:var(--theme-danger);">Error loading treasure codes</p>`;
             }
         }
         window.deleteTreasure = async function(id) {
@@ -3179,11 +3119,9 @@
         };
         window.saveTreasure = function() {
             try {
-                const code = document.getElementById('treasureCode').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,
-                    7);
+                const code = document.getElementById('treasureCode').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
                 const amount = parseFloat(document.getElementById('treasureAmount').value);
-                if (code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 chars (A-Z,0-9)',
-                        true); return; }
+                if (code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) { showToast('Code must be 7 chars (A-Z,0-9)', true); return; }
                 if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount', true); return; }
                 db.collection('treasureCodes').where('code', '==', code).get()
                     .then(function(snap) {
@@ -3226,8 +3164,7 @@
                 document.getElementById('vouchersList').innerHTML = html;
             } catch (err) {
                 console.error(err);
-                document.getElementById('vouchersList').innerHTML =
-                    `<p style="color:var(--theme-danger);">Error loading vouchers</p>`;
+                document.getElementById('vouchersList').innerHTML = `<p style="color:var(--theme-danger);">Error loading vouchers</p>`;
             }
         }
         window.deleteVoucher = async function(id) {
@@ -3266,8 +3203,7 @@
                     }
                     const agentQuery = await db.collection('agents').where('phone', '==', agentNumber).get();
                     let agentValid = false;
-                    agentQuery.forEach(doc => { if (doc.data().name.toLowerCase() === agentName.toLowerCase())
-                            agentValid = true; });
+                    agentQuery.forEach(doc => { if (doc.data().name.toLowerCase() === agentName.toLowerCase()) agentValid = true; });
                     if (!agentValid) { showToast('Agent not found', true); return; }
                     const code = Math.random().toString(36).substring(2, 10).toLowerCase();
                     const fullCode = amount + '.' + code;
@@ -3282,8 +3218,7 @@
                     });
                     const resultDiv = document.getElementById('manualVoucherResult');
                     resultDiv.style.display = 'block';
-                    resultDiv.innerHTML = '✅ Voucher: <strong>' + escapeHtml(fullCode) + '</strong> (Amount: ' +
-                        formatMoney(amount) + ')';
+                    resultDiv.innerHTML = '✅ Voucher: <strong>' + escapeHtml(fullCode) + '</strong> (Amount: ' + formatMoney(amount) + ')';
                     showToast('Voucher created', false);
                     loadVouchers();
                 } catch (e) { showToast('Error creating voucher', true); }
@@ -3767,7 +3702,7 @@
         }
 
         // ================================================================
-        // FIX MISSING DOCS (fixed: no auth.listUsers())
+        // FIX MISSING DOCS
         // ================================================================
         async function fixMissingDocs() {
             const btn = document.getElementById('fixMissingDocsBtn');
@@ -3775,10 +3710,6 @@
             btn.disabled = true;
             btn.textContent = 'Processing...';
             try {
-                // We can't use auth.listUsers() on client side.
-                // Instead, we'll check all users in the users collection and ensure they have docs.
-                // But we can't create Auth users from client side either.
-                // So we'll just check for users with missing data and patch them.
                 const snap = await db.collection('users').get();
                 let updated = 0;
                 for (const doc of snap.docs) {
@@ -3812,7 +3743,7 @@
         }
 
         // ================================================================
-        // MARKETPLACE PLAN MANAGEMENT (fully defined, async)
+        // MARKETPLACE PLAN MANAGEMENT
         // ================================================================
         var marketplacePlans = [];
         var editingMarketplacePlanId = null;
@@ -3882,8 +3813,9 @@
         function getPlanStatus(plan) {
             if (!plan.showOnMarketplace) return 'hidden';
             var now = new Date();
-            var release = plan.releaseDate ? new Date(plan.releaseDate + 'T' + (plan.releaseTime || '00:00')) : null;
-            var expiry = plan.expiryDate ? new Date(plan.expiryDate + 'T' + (plan.expiryTime || '23:59')) : null;
+            // Zambia timezone (CAT) is UTC+2
+            var release = plan.releaseDate ? new Date(plan.releaseDate + 'T' + (plan.releaseTime || '00:00') + '+02:00') : null;
+            var expiry = plan.expiryDate ? new Date(plan.expiryDate + 'T' + (plan.expiryTime || '23:59') + '+02:00') : null;
             if (release && now < release) return 'scheduled';
             if (expiry && now > expiry) return 'expired';
             if (release && now >= release && expiry && now <= expiry) return 'live';
