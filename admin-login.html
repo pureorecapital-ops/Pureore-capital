@@ -534,19 +534,11 @@
         var auth = firebase.auth();
         var db = firebase.firestore();
         db.settings({ persistence: false });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ============================================================
-        // CLEANUP STALE SESSION
+        // STATE
         // ============================================================
-        (async function cleanupStaleSession() {
-            try {
-                await auth.signOut();
-                await new Promise(resolve => setTimeout(resolve, 300));
-            } catch (e) {
-                console.log("Pre-admin-login cleanup (non-critical):", e);
-            }
-        })();
+        var loginInProgress = false;
 
         // ============================================================
         // HAMBURGER
@@ -593,16 +585,26 @@
         }
 
         // ============================================================
-        // ADMIN LOGIN
+        // CORE LOGIN
         // ============================================================
         async function adminLogin(email, password) {
+            // Prevent multiple simultaneous logins
+            if (loginInProgress) return;
+            loginInProgress = true;
+
             loginBtn.disabled = true;
             loginBtn.textContent = 'Signing in...';
             hideMessage();
 
             try {
+                // 1. Ensure LOCAL persistence is set (required before signIn)
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+                // 2. Sign in
                 var userCred = await auth.signInWithEmailAndPassword(email, password);
                 var user = userCred.user;
+
+                // 3. Verify admin status in Firestore
                 var userDoc = await db.collection('users').doc(user.uid).get();
 
                 if (!userDoc.exists) {
@@ -620,8 +622,8 @@
                     throw new Error('Access denied. Not an admin account.');
                 }
 
-                // Redirect to admin dashboard
-                window.location.href = 'admin-dashboard.html';
+                // 4. Everything is valid – redirect (this unloads the page)
+                window.location.replace('admin-dashboard.html');
 
             } catch (error) {
                 console.error('Admin login error:', error);
@@ -647,6 +649,7 @@
                 passwordInput.value = '';
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Sign in as Admin';
+                loginInProgress = false;
             }
         }
 
@@ -665,23 +668,41 @@
         });
 
         // ============================================================
-        // AUTO-REDIRECT IF ALREADY LOGGED IN AS ADMIN
+        // AUTH STATE LISTENER (with race protection)
         // ============================================================
-        auth.onAuthStateChanged(async function(user) {
-            if (user) {
-                try {
-                    var userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists && userDoc.data().role === 'admin' && userDoc.data().isBlocked !== true) {
-                        window.location.href = 'admin-dashboard.html';
-                    }
-                } catch (err) {
-                    console.warn('Auto-redirect check failed:', err);
-                }
-            }
-        });
+        async function initAuth() {
+            // Ensure persistence is set before checking existing session
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-        console.log('✅ Admin Login · New clean white design');
-        console.log('📱 Matches marketplace and dashboard themes');
+            auth.onAuthStateChanged(async function(user) {
+                // If a login is actively happening, do not interfere
+                if (loginInProgress) return;
+
+                if (user) {
+                    try {
+                        var userDoc = await db.collection('users').doc(user.uid).get();
+                        if (userDoc.exists &&
+                            userDoc.data().role === 'admin' &&
+                            userDoc.data().isBlocked !== true) {
+                            // Valid admin session already exists – redirect
+                            window.location.replace('admin-dashboard.html');
+                        } else {
+                            // User is not a valid admin – sign them out
+                            await auth.signOut();
+                            // Remain on login page (no message needed)
+                        }
+                    } catch (err) {
+                        console.warn('Auto-redirect check failed:', err);
+                    }
+                }
+                // No user – stay on login page
+            });
+        }
+
+        // Start authentication and set up listener
+        initAuth();
+
+        console.log('✅ Admin Login · Fixed (no race, stable redirect)');
     </script>
 </body>
 </html>
