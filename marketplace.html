@@ -30,7 +30,6 @@
             color: #ffffff;
             position: relative;
             overflow-x: hidden;
-            /* prevent horizontal scroll */;
         }
 
         /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
@@ -248,7 +247,6 @@
             width: 100%;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
-            /* smoother scroll on iOS */;
         }
 
         /* ----- PAGE HEADER ----- */
@@ -389,7 +387,6 @@
             animation: shimmer 3s ease-in-out infinite;
             opacity: 0.5;
             will-change: transform;
-            /* helps GPU performance */;
         }
 
         @keyframes shimmer {
@@ -473,14 +470,12 @@
             width: 100%;
             height: 0;
             padding-bottom: 30%;
-            /* ~30% of card width -> ~25-35% of card height */
             position: relative;
             overflow: hidden;
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.02);
             margin-bottom: 0.4rem;
             will-change: transform;
-            /* prevent layout jitter */;
         }
         .plan-image-wrap img {
             position: absolute;
@@ -489,7 +484,6 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            /* never crops, keeps aspect ratio */
             display: block;
         }
         .plan-image-placeholder {
@@ -1449,6 +1443,19 @@
         }
 
         // ================================================================
+        // PARSE DATE from admin format (string or Timestamp)
+        // ================================================================
+        function parseAdminDate(dateStr, timeStr) {
+            if (!dateStr) return null;
+            var datePart = dateStr; // already string 'YYYY-MM-DD'
+            var timePart = timeStr || '00:00';
+            // Use Zambia timezone (UTC+2)
+            var isoStr = datePart + 'T' + timePart + '+02:00';
+            var d = new Date(isoStr);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        // ================================================================
         // HAMBURGER
         // ================================================================
         var hamburger = document.getElementById('hamburger');
@@ -1482,7 +1489,7 @@
         });
 
         // ================================================================
-        // LOAD & RENDER PLANS
+        // LOAD PLANS (admin-compatible)
         // ================================================================
         function loadPlans() {
             var loading = document.getElementById('loadingIndicator');
@@ -1493,8 +1500,8 @@
             grid.innerHTML = '';
             empty.style.display = 'none';
 
+            // Load all plans – we filter by showOnMarketplace and computed status later
             db.collection('marketplacePlans')
-                .where('status', '!=', 'hidden')
                 .orderBy('createdAt', 'desc')
                 .get()
                 .then(function(snapshot) {
@@ -1507,9 +1514,21 @@
                     snapshot.forEach(function(doc) {
                         var data = doc.data();
                         data.id = doc.id;
-                        if (!data.type) data.type = 'invest';
-                        // --- FIX: map planName to name ---
+
+                        // --- FIELD MAPPING (admin → marketplace) ---
                         data.name = data.planName || data.name || 'Unnamed Plan';
+                        data.minAmount = data.investmentPrice || data.minAmount || 0;
+                        data.days = data.earningDays || data.days || 0;
+                        data.type = data.planType || data.type || 'invest';
+                        data.dailyReturn = data.dailyReturn || 0;
+                        data.imageUrl = data.imageUrl || '';
+                        data.purchasedBy = data.purchasedBy || [];
+                        data.showOnMarketplace = data.showOnMarketplace !== false; // default true
+
+                        // Dates: admin stores date and time separately as strings
+                        data.releaseDateObj = parseAdminDate(data.releaseDate, data.releaseTime);
+                        data.expiryDateObj = parseAdminDate(data.expiryDate, data.expiryTime);
+
                         allPlans.push(data);
                     });
                     applyFilters();
@@ -1522,16 +1541,21 @@
                 });
         }
 
+        // ================================================================
+        // APPLY FILTERS & COMPUTE STATUS (Zambia time)
+        // ================================================================
         function applyFilters() {
             var searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            var now = new Date();
+            var now = new Date(); // client time, but we'll use Zambia offset for display
 
             filteredPlans = allPlans.filter(function(plan) {
-                var status = plan.status;
-                var releaseDate = plan.releaseDate ? (plan.releaseDate.toDate ? plan.releaseDate.toDate() :
-                    new Date(plan.releaseDate)) : null;
-                var expiryDate = plan.expiryDate ? (plan.expiryDate.toDate ? plan.expiryDate.toDate() :
-                    new Date(plan.expiryDate)) : null;
+                // 1. Visibility: must be shown on marketplace
+                if (plan.showOnMarketplace !== true) return false;
+
+                // 2. Compute status based on release/expiry (Zambia time)
+                var releaseDate = plan.releaseDateObj;
+                var expiryDate = plan.expiryDateObj;
+                var status = 'available';
 
                 if (releaseDate && now < releaseDate) {
                     status = 'coming_soon';
@@ -1549,13 +1573,16 @@
 
                 plan._computedStatus = status;
 
+                // 3. Filter by type
                 if (currentFilter === 'invest' && plan.type !== 'invest') return false;
                 if (currentFilter === 'buy' && plan.type !== 'buy') return false;
                 if (currentFilter !== 'all' && currentFilter !== 'invest' && currentFilter !== 'buy' && status !==
                     currentFilter) return false;
 
+                // 4. Search
                 if (searchTerm && !plan.name.toLowerCase().includes(searchTerm)) return false;
 
+                // 5. Check if user already purchased
                 if (currentUser) {
                     var purchasedBy = plan.purchasedBy || [];
                     plan._userPurchased = purchasedBy.includes(currentUser.uid);
@@ -1570,6 +1597,9 @@
             startCountdowns();
         }
 
+        // ================================================================
+        // RENDER PLANS
+        // ================================================================
         function renderPlans(plans) {
             var grid = document.getElementById('plansGrid');
             var empty = document.getElementById('emptyMessage');
@@ -1585,7 +1615,7 @@
             var now = new Date();
 
             plans.forEach(function(plan) {
-                var status = plan._computedStatus || plan.status;
+                var status = plan._computedStatus || 'available';
                 var statusClass = getStatusBadgeClass(status);
                 var statusLabel = getStatusLabel(status);
                 var isAvailable = status === 'available' && !plan._userPurchased;
@@ -1604,8 +1634,7 @@
                     btnText = 'Coming Soon';
                     btnDisabled = true;
                     showCountdown = true;
-                    var releaseDate = plan.releaseDate ? (plan.releaseDate.toDate ? plan.releaseDate.toDate() :
-                        new Date(plan.releaseDate)) : null;
+                    var releaseDate = plan.releaseDateObj;
                     if (releaseDate && releaseDate > now) {
                         countdownText = getCountdownText(releaseDate, now);
                     } else {
@@ -1643,13 +1672,12 @@
                 var totalCapital = plan.minAmount || 0;
                 var totalCapitalIncome = totalCapital + totalIncome;
 
-                var releaseDateStr = plan.releaseDate ? formatDate(plan.releaseDate) : 'N/A';
-                var expiryDateStr = plan.expiryDate ? formatDate(plan.expiryDate) : 'N/A';
+                var releaseDateStr = plan.releaseDateObj ? formatDate(plan.releaseDateObj) : 'N/A';
+                var expiryDateStr = plan.expiryDateObj ? formatDate(plan.expiryDateObj) : 'N/A';
 
                 var typeBadgeClass = planType === 'invest' ? 'type-invest' : 'type-buy';
                 var typeBadgeText = planType === 'invest' ? '💚 Invest' : '💛 Buy';
 
-                // IMAGE: use the imageUrl field from Firestore
                 var imageUrl = plan.imageUrl || '';
                 var imageHtml = '';
                 if (imageUrl) {
@@ -1700,6 +1728,7 @@
 
             grid.innerHTML = html;
 
+            // Attach click events
             document.querySelectorAll('.invest-btn:not(:disabled)').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     var planData = {
@@ -1763,14 +1792,12 @@
 
             var now = new Date();
             var plansWithCountdown = filteredPlans.filter(function(p) {
-                var status = p._computedStatus || p.status;
-                return status === 'coming_soon' && p.releaseDate;
+                return p._computedStatus === 'coming_soon' && p.releaseDateObj;
             });
 
             plansWithCountdown.forEach(function(plan) {
-                var releaseDate = plan.releaseDate.toDate ? plan.releaseDate.toDate() : new Date(plan
-                .releaseDate);
-                if (releaseDate <= now) return;
+                var releaseDate = plan.releaseDateObj;
+                if (!releaseDate || releaseDate <= now) return;
 
                 var el = document.getElementById('countdown-' + plan.id);
                 if (!el) return;
@@ -1889,10 +1916,8 @@
                     var planData = planDoc.data();
 
                     var now = new Date();
-                    var releaseDate = planData.releaseDate ? (planData.releaseDate.toDate ? planData
-                        .releaseDate.toDate() : new Date(planData.releaseDate)) : null;
-                    var expiryDate = planData.expiryDate ? (planData.expiryDate.toDate ? planData.expiryDate
-                        .toDate() : new Date(planData.expiryDate)) : null;
+                    var releaseDate = planData.releaseDateObj || null;
+                    var expiryDate = planData.expiryDateObj || null;
 
                     if (releaseDate && now < releaseDate) {
                         throw new Error('This plan is not yet released.');
@@ -1927,12 +1952,13 @@
                         if (!userDoc.exists) throw new Error('User not found.');
                         var userData = userDoc.data();
                         var depositBalance = userData.depositBalance || 0;
-                        if (depositBalance < planData.minAmount) {
-                            throw new Error('Insufficient deposit balance. You need ' + planData
-                                .minAmount.toFixed(2) + ' ZMW.');
+                        var investAmount = planData.investmentPrice || plan.minAmount || 0;
+                        if (depositBalance < investAmount) {
+                            throw new Error('Insufficient deposit balance. You need ' + investAmount
+                                .toFixed(2) + ' ZMW.');
                         }
 
-                        var newBalance = depositBalance - planData.minAmount;
+                        var newBalance = depositBalance - investAmount;
                         transaction.update(userRef, { depositBalance: newBalance });
 
                         if (planData.availableSlots !== undefined && planData.availableSlots !== null) {
@@ -1946,6 +1972,9 @@
                             });
                         }
 
+                        var earningDays = planData.earningDays || plan.days || 0;
+                        var dailyReturn = planData.dailyReturn || 0;
+
                         if (isInvest) {
                             var investmentRef = db.collection('investments').doc();
                             var startDate = new Date();
@@ -1955,16 +1984,16 @@
                                 var addDays = (dayOffset === 0) ? 7 : dayOffset;
                                 startDate.setDate(startDate.getDate() + addDays);
                             }
-                            var businessEndDate = addWeekdays(startDate, planData.days);
+                            var businessEndDate = addWeekdays(startDate, earningDays);
 
                             transaction.set(investmentRef, {
                                 userId: uid,
-                                planName: planData.name,
+                                planName: planData.planName || plan.name,
                                 planId: plan.id,
-                                investAmount: planData.minAmount,
-                                dailyReturn: planData.dailyReturn,
-                                days: planData.days,
-                                businessDays: planData.days,
+                                investAmount: investAmount,
+                                dailyReturn: dailyReturn,
+                                days: earningDays,
+                                businessDays: earningDays,
                                 startDate: firebase.firestore.Timestamp.fromDate(startDate),
                                 businessEndDate: firebase.firestore.Timestamp.fromDate(
                                 businessEndDate),
@@ -1980,17 +2009,17 @@
                             var purchaseRef = db.collection('marketplacePurchases').doc();
                             var purchaseDate = new Date();
                             var expiryDate2 = new Date(purchaseDate);
-                            expiryDate2.setDate(expiryDate2.getDate() + planData.days);
+                            expiryDate2.setDate(expiryDate2.getDate() + earningDays);
 
                             transaction.set(purchaseRef, {
                                 userId: uid,
                                 planId: plan.id,
-                                planName: planData.name,
+                                planName: planData.planName || plan.name,
                                 type: 'buy',
-                                amount: planData.minAmount,
-                                dailyIncome: planData.dailyReturn,
-                                days: planData.days,
-                                totalIncome: planData.dailyReturn * planData.days,
+                                amount: investAmount,
+                                dailyIncome: dailyReturn,
+                                days: earningDays,
+                                totalIncome: dailyReturn * earningDays,
                                 purchasedAt: firebase.firestore.FieldValue.serverTimestamp(),
                                 expiresAt: firebase.firestore.Timestamp.fromDate(expiryDate2),
                                 status: 'active',
@@ -2004,12 +2033,12 @@
 
                         var txRef = db.collection('transactions').doc();
                         var txType = isInvest ? 'investment' : 'purchase';
-                        var txDesc = isInvest ? 'Invested in ' + planData.name : 'Bought ' + planData.name +
-                            ' from Marketplace';
+                        var txDesc = isInvest ? 'Invested in ' + (planData.planName || plan.name) :
+                            'Bought ' + (planData.planName || plan.name) + ' from Marketplace';
                         transaction.set(txRef, {
                             userId: uid,
                             type: txType,
-                            amount: planData.minAmount,
+                            amount: investAmount,
                             description: txDesc,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
@@ -2109,7 +2138,8 @@
         console.log('🛒 Marketplace · Sajvera Capital glassmorphism design');
         console.log('📱 2‑column plan cards with images + Invest/Buy buttons');
         console.log('💎 Full purchase flow: Invest (daily) | Buy (lump-sum)');
-        console.log('✅ Release dates, expiry dates, and countdown timers working');
+        console.log('✅ Fully compatible with admin dashboard data structure');
+        console.log('✅ Uses showOnMarketplace, releaseDate/Time, expiryDate/Time');
     </script>
 </body>
 </html>

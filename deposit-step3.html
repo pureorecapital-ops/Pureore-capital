@@ -64,7 +64,6 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.65);
-            /* Dark overlay only */
         }
 
         /* ----- HEADER (DARK GLASS) ----- */
@@ -319,6 +318,51 @@
             color: #facc15;
         }
 
+        /* ----- RULES SUMMARY ----- */
+        .rules-summary {
+            background: rgba(96, 165, 250, 0.03);
+            border: 1px solid rgba(96, 165, 250, 0.05);
+            border-radius: 12px;
+            padding: 0.5rem 0.8rem;
+            margin-bottom: 0.8rem;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.2);
+            line-height: 1.6;
+        }
+
+        .rules-summary .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.05rem 0;
+        }
+
+        .rules-summary .rule-item .rule-icon {
+            font-size: 0.6rem;
+        }
+
+        .rules-summary .rule-item .rule-on {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .rules-summary .rule-item .rule-off {
+            color: rgba(255, 255, 255, 0.08);
+        }
+
+        .rules-summary .rule-item .rule-label {
+            font-size: 0.6rem;
+        }
+
+        .rules-summary .rules-title {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.12);
+            margin-bottom: 0.2rem;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
         /* ----- BUTTONS ----- */
         .btn-primary {
             width: 100%;
@@ -428,6 +472,25 @@
             color: #f87171;
             min-height: 1.2rem;
             margin-top: 0.2rem;
+        }
+
+        .input-error.rules-error {
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.06);
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin-top: 0.4rem;
+            min-height: auto;
+        }
+
+        .input-error.rules-error .rule-violation {
+            padding: 0.1rem 0;
+            font-size: 0.7rem;
+        }
+
+        .input-error.rules-error .rule-violation::before {
+            content: '• ';
+            color: #f87171;
         }
 
         .sms-template-hint {
@@ -540,6 +603,13 @@
                 font-size: 0.65rem;
                 padding: 0.3rem 0.8rem;
             }
+            .rules-summary {
+                font-size: 0.55rem;
+                padding: 0.4rem 0.6rem;
+            }
+            .rules-summary .rule-item .rule-label {
+                font-size: 0.55rem;
+            }
         }
     </style>
 </head>
@@ -599,6 +669,15 @@
                 Payment Confirmation
             </div>
             <div class="card-content">
+
+                <!-- Rules Summary -->
+                <div class="rules-summary" id="rulesSummary">
+                    <div class="rules-title">🔒 Deposit Verification Rules</div>
+                    <div id="rulesSummaryList">
+                        <span style="color:rgba(255,255,255,0.06);font-size:0.6rem;">Loading rules...</span>
+                    </div>
+                </div>
+
                 <div class="amount-display">
                     <span class="label">Amount to Deposit</span>
                     <span class="value" id="paidAmount">ZMW 0.00</span>
@@ -631,6 +710,9 @@
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                         Entering an incorrect SMS may delay verification.
                     </div>
+
+                    <!-- Rules validation error display -->
+                    <div class="input-error rules-error" id="rulesValidationError" style="display:none;"></div>
                     <div class="input-error" id="smsError"></div>
 
                     <button class="btn-primary" id="submitBtn">Submit Deposit</button>
@@ -684,7 +766,8 @@
             requireAmountMatch: true,
             requireAgentName: true,
             requireNetworkKeyword: true,
-            requireTxKeyword: true
+            requireTxKeyword: true,
+            requireFutureDate: true
         };
 
         function loadDepositRules() {
@@ -696,12 +779,46 @@
                         depositRules.requireAgentName = data.requireAgentName !== false;
                         depositRules.requireNetworkKeyword = data.requireNetworkKeyword !== false;
                         depositRules.requireTxKeyword = data.requireTxKeyword !== false;
+                        depositRules.requireFutureDate = data.requireFutureDate !== false;
                         console.log('✅ Deposit rules loaded:', depositRules);
+                    } else {
+                        // Default: all rules ON
+                        console.log('⚠️ depositRules doc not found, using defaults (all ON).');
                     }
+                    renderRulesSummary();
                 })
                 .catch(function(err) {
                     console.warn('⚠️ Failed to load deposit rules, using defaults.', err);
+                    renderRulesSummary();
                 });
+        }
+
+        // ================================================================
+        // RENDER RULES SUMMARY
+        // ================================================================
+        function renderRulesSummary() {
+            var list = document.getElementById('rulesSummaryList');
+            var rules = [
+                { key: 'requireAmountMatch', label: 'SMS amount matches deposit', icon: '💰' },
+                { key: 'requireAgentName', label: 'Agent name in SMS', icon: '👤' },
+                { key: 'requireNetworkKeyword', label: 'Network keyword (mtn/airtel/zamtel)', icon: '📶' },
+                { key: 'requireTxKeyword', label: 'Transaction keyword (send/sent/received/paid/transfer/successful/payment)',
+                    icon: '📝' },
+                { key: 'requireFutureDate', label: 'Reject future transaction date', icon: '📅' }
+            ];
+
+            var html = '';
+            rules.forEach(function(rule) {
+                var isOn = depositRules[rule.key] === true;
+                html += '<div class="rule-item">';
+                html += '<span class="rule-icon">' + rule.icon + '</span>';
+                html += '<span class="' + (isOn ? 'rule-on' : 'rule-off') + '">' + (isOn ? '✅ ON' : '⬜ OFF') +
+                    '</span>';
+                html += '<span class="rule-label">' + rule.label + '</span>';
+                html += '</div>';
+            });
+
+            list.innerHTML = html;
         }
 
         // ================================================================
@@ -738,6 +855,7 @@
         var smsSection = document.getElementById('smsSection');
         var smsInput = document.getElementById('smsInput');
         var smsError = document.getElementById('smsError');
+        var rulesValidationError = document.getElementById('rulesValidationError');
         var submitBtn = document.getElementById('submitBtn');
         var smsTemplate = document.getElementById('smsTemplate');
         var copyAgentBtn = document.getElementById('copyAgentBtn');
@@ -900,51 +1018,108 @@
             var lowerSms = sms.toLowerCase();
             var errors = [];
 
-            // Rule 1: Agent number (ALWAYS checked – no toggle)
+            // ─── ALWAYS CHECK: Agent Number (specific to this deposit) ───
             var agentNumberClean = agentNumber.replace(/\D/g, '');
-            var agentInSms = lowerSms.includes(agentNumberClean);
-            if (!agentInSms) errors.push('Agent number not found in SMS');
+            if (!lowerSms.includes(agentNumberClean)) {
+                errors.push('Agent number (' + agentNumber + ') not found in SMS.');
+            }
 
-            // Rule 2: Agent name (if enabled)
+            // ─── RULE: Agent Name (if enabled) ───
             if (depositRules.requireAgentName) {
                 var nameParts = accountName.toLowerCase().split(' ');
                 var nameInSms = nameParts.some(function(part) {
                     return part.length > 2 && lowerSms.includes(part);
                 });
-                if (!nameInSms) errors.push('Account name not found in SMS');
+                if (!nameInSms) {
+                    errors.push('Account name "' + accountName + '" not found in SMS.');
+                }
             }
 
-            // Rule 3: Amount match (if enabled)
+            // ─── RULE: Amount Match (if enabled) – uses same regex as admin dashboard ───
             if (depositRules.requireAmountMatch) {
-                var amountStr = depositAmount.toFixed(2);
-                var amountInSms = lowerSms.includes(amountStr) || lowerSms.includes(amountStr.replace('.', ''));
-                if (!amountInSms) errors.push('Amount ' + depositAmount.toFixed(2) + ' not found in SMS');
+                var amountRegex = /(?:k|zmw|r|zar|usd|eur|gbp|ngn|ghs|tzs|zwl|cdf)\s*(\d+\.?\d*)/i;
+                var amountMatch = lowerSms.match(amountRegex);
+                var smsAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+                if (Math.abs(smsAmount - depositAmount) > 0.01) {
+                    errors.push('SMS amount (' + smsAmount.toFixed(2) + ') does not match deposit (' + depositAmount
+                        .toFixed(2) + ').');
+                }
             }
 
-            // Rule 4: Network keyword (if enabled)
+            // ─── RULE: Network Keyword (if enabled) ───
             if (depositRules.requireNetworkKeyword) {
-                var networkKeywords = ['mtn', 'airtel', 'zamtel', 'mobile money', 'momo'];
-                var hasNetwork = networkKeywords.some(function(keyword) {
-                    return lowerSms.includes(keyword);
-                });
-                if (!hasNetwork) errors.push('Network keyword (MTN/Airtel/Zamtel) not found in SMS');
+                var networks = ['mtn', 'airtel', 'zamtel'];
+                if (!networks.some(function(n) { return lowerSms.includes(n); })) {
+                    errors.push('No network keyword (MTN/Airtel/Zamtel) found in SMS.');
+                }
             }
 
-            // Rule 5: Transaction keyword (if enabled)
+            // ─── RULE: Transaction Keyword (if enabled) ───
             if (depositRules.requireTxKeyword) {
-                var txKeywords = ['transaction', 'trans id', 'txn id', 'reference', 'ref', 'payment', 'sent', 'received',
-                    'success', 'confirmed'
-                ];
-                var hasTxKeyword = txKeywords.some(function(word) {
-                    return lowerSms.includes(word);
-                });
-                if (!hasTxKeyword) errors.push('No transaction keyword found in SMS');
+                var txKeywords = ['send', 'sent', 'received', 'paid', 'transfer', 'successful', 'payment'];
+                if (!txKeywords.some(function(k) { return lowerSms.includes(k); })) {
+                    errors.push('No transaction keyword found in SMS.');
+                }
+            }
+
+            // ─── RULE: Future Date (if enabled) ───
+            if (depositRules.requireFutureDate) {
+                var dateRegex = /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/;
+                var dateMatch = lowerSms.match(dateRegex);
+                if (dateMatch) {
+                    var parsed = new Date(dateMatch[1]);
+                    if (!isNaN(parsed) && parsed > new Date()) {
+                        errors.push('SMS contains a future transaction date (' + dateMatch[1] + ').');
+                    }
+                }
             }
 
             return {
                 valid: errors.length === 0,
                 errors: errors
             };
+        }
+
+        // ================================================================
+        // REAL-TIME VALIDATION ON SMS INPUT
+        // ================================================================
+        var validationTimeout = null;
+
+        smsInput.addEventListener('input', function() {
+            clearTimeout(validationTimeout);
+            validationTimeout = setTimeout(function() {
+                var sms = smsInput.value.trim();
+                if (sms.length > 0) {
+                    var validation = validateSms(sms);
+                    if (!validation.valid) {
+                        rulesValidationError.style.display = 'block';
+                        var html = '<strong>❌ Validation issues:</strong>';
+                        validation.errors.forEach(function(err) {
+                            html += '<div class="rule-violation">' + escapeHtml(err) + '</div>';
+                        });
+                        rulesValidationError.innerHTML = html;
+                        submitBtn.disabled = true;
+                    } else {
+                        rulesValidationError.style.display = 'none';
+                        rulesValidationError.innerHTML = '';
+                        submitBtn.disabled = false;
+                    }
+                } else {
+                    rulesValidationError.style.display = 'none';
+                    rulesValidationError.innerHTML = '';
+                    submitBtn.disabled = true;
+                }
+            }, 400);
+        });
+
+        // ================================================================
+        // ESCAPE HTML HELPER
+        // ================================================================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;' } [m] || m;
+            });
         }
 
         // ================================================================
@@ -961,11 +1136,18 @@
 
             var validation = validateSms(sms);
             if (!validation.valid) {
-                smsError.innerText = '❌ ' + validation.errors.join(' • ');
-                showToast('❌ Validation failed: ' + validation.errors[0], true);
+                rulesValidationError.style.display = 'block';
+                var html = '<strong>❌ Validation issues:</strong>';
+                validation.errors.forEach(function(err) {
+                    html += '<div class="rule-violation">' + escapeHtml(err) + '</div>';
+                });
+                rulesValidationError.innerHTML = html;
+                showToast('❌ Please fix the validation issues before submitting.', true);
                 return;
             }
 
+            rulesValidationError.style.display = 'none';
+            rulesValidationError.innerHTML = '';
             smsError.innerText = '';
 
             submitBtn.disabled = true;
@@ -1027,7 +1209,9 @@
         console.log('📋 Deposit rules loaded from Firestore (systemSettings/depositRules)');
         console.log('🔹 Fallback hardcoded agents if Firestore fails');
         console.log('✅ Fully integrated with admin dashboard configuration');
-        console.log('✅ Rules: AmountMatch=' + depositRules.requireAmountMatch + ', AgentName=' + depositRules.requireAgentName + ', NetworkKeyword=' + depositRules.requireNetworkKeyword + ', TxKeyword=' + depositRules.requireTxKeyword);
+        console.log('✅ Rules: AmountMatch=' + depositRules.requireAmountMatch + ', AgentName=' + depositRules
+            .requireAgentName + ', NetworkKeyword=' + depositRules.requireNetworkKeyword + ', TxKeyword=' + depositRules
+            .requireTxKeyword + ', FutureDate=' + depositRules.requireFutureDate);
     </script>
 </body>
 </html>

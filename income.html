@@ -1291,21 +1291,23 @@
         }
 
         // ================================================================
-        // FETCH PLAN IMAGE
+        // FETCH PLAN IMAGE – FIXED: use planName for marketplacePlans
         // ================================================================
         async function fetchPlanImage(planName) {
             if (planImageCache[planName]) return planImageCache[planName];
             try {
+                // First try marketplacePlans using planName (admin dashboard)
                 var snapshot = await db.collection('marketplacePlans')
-                    .where('name', '==', planName)
+                    .where('planName', '==', planName)
                     .limit(1)
                     .get();
                 if (!snapshot.empty) {
                     var data = snapshot.docs[0].data();
-                    var img = getSafeImageUrl(data.image);
+                    var img = getSafeImageUrl(data.imageUrl || data.image);
                     planImageCache[planName] = img;
                     return img;
                 }
+                // Fallback to other plan collections (legacy)
                 var collections = ['jproductPlans', 'mkvipPlans'];
                 for (var i = 0; i < collections.length; i++) {
                     var snap = await db.collection(collections[i])
@@ -1797,7 +1799,8 @@
         console.log('✅ income.html · Sajvera Capital · Blue glassmorphism design');
         console.log('💰 Blocking removed, income count displayed (total claimed, claims, days left)');
         console.log('📱 Claim All works without restrictions (except weekends)');
-        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
+        console.log('✅ Fixed: fetchPlanImage uses planName field for marketplacePlans');
+        console.log('✅ Fully compatible with admin dashboard');
     </script>
 
 </body>
