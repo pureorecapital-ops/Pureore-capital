@@ -2034,11 +2034,11 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- ================================================================
-    JAVASCRIPT – COMPLETE APPLICATION
+    JAVASCRIPT – COMPLETE APPLICATION (FIXED AUTH)
     ================================================================ -->
     <script>
         // ================================================================
-        // FIREBASE CONFIG
+        // FIREBASE CONFIG – Replace with your own credentials
         // ================================================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -2186,38 +2186,24 @@
         });
 
         // ================================================================
-        // AUTHENTICATION
+        // AUTHENTICATION – FIXED: No timeout, fast and reliable
         // ================================================================
         let currentAdmin = null;
         let currentUserDoc = null;
+        let authReady = false;
 
-        function checkAuth() {
-            return new Promise((resolve) => {
-                let resolved = false;
-                const timeoutId = setTimeout(() => {
-                    if (!resolved) {
-                        console.error('Auth check timeout.');
-                        showToast('Authentication timeout. Please login again.', 'error');
-                        window.location.href = 'admin-login.html';
-                    }
-                }, 10000);
-
-                const unsubscribe = auth.onAuthStateChanged(async (user) => {
-                    if (resolved) return;
-                    resolved = true;
-                    clearTimeout(timeoutId);
-                    unsubscribe();
-
-                    if (!user) {
-                        window.location.href = 'admin-login.html';
-                        return;
-                    }
-                    try {
-                        const doc = await db.collection('users').doc(user.uid).get();
+        function verifyUser(user) {
+            return new Promise((resolve, reject) => {
+                db.collection('users').doc(user.uid).get()
+                    .then((doc) => {
                         if (!doc.exists || doc.data().role !== 'admin') {
                             showToast('Access denied. Admin role required.', 'error');
-                            await auth.signOut();
-                            window.location.href = 'admin-login.html';
+                            auth.signOut().then(() => {
+                                window.location.href = 'admin-login.html';
+                            }).catch(() => {
+                                window.location.href = 'admin-login.html';
+                            });
+                            reject(new Error('Not admin'));
                             return;
                         }
                         currentAdmin = user;
@@ -2227,13 +2213,40 @@
                         document.getElementById('adminEmail').textContent = user.email || '';
                         document.getElementById('adminAvatar').textContent = (currentUserDoc.fullName || 'A').charAt(0)
                             .toUpperCase();
-                        resolve(true);
-                    } catch (err) {
-                        console.error('Auth check error:', err);
+                        authReady = true;
+                        resolve();
+                    })
+                    .catch((err) => {
+                        console.error('Firestore check error:', err);
                         showToast('Authentication error. Please login again.', 'error');
-                        await auth.signOut();
+                        auth.signOut().then(() => {
+                            window.location.href = 'admin-login.html';
+                        }).catch(() => {
+                            window.location.href = 'admin-login.html';
+                        });
+                        reject(err);
+                    });
+            });
+        }
+
+        function checkAuth() {
+            return new Promise((resolve, reject) => {
+                // 1. If we already have a user, verify immediately
+                const user = auth.currentUser;
+                if (user) {
+                    verifyUser(user).then(resolve).catch(reject);
+                    return;
+                }
+
+                // 2. Otherwise, wait for auth state
+                const unsubscribe = auth.onAuthStateChanged((user) => {
+                    unsubscribe();
+                    if (!user) {
                         window.location.href = 'admin-login.html';
+                        reject(new Error('No user'));
+                        return;
                     }
+                    verifyUser(user).then(resolve).catch(reject);
                 });
             });
         }
@@ -5189,7 +5202,7 @@
         };
 
         // ================================================================
-        // INITIALIZATION
+        // INITIALIZATION – FIXED: No double redirect
         // ================================================================
         async function init() {
             try {
@@ -5202,7 +5215,8 @@
                 console.log('Sajvera Capital Admin Dashboard initialized.');
             } catch (err) {
                 console.error('Initialization error:', err);
-                window.location.href = 'admin-login.html';
+                // The error already redirects inside verifyUser, so we don't redirect again.
+                // Just log it.
             }
         }
 
