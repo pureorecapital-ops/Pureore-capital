@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BASE ----- */
+        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
         * {
             margin: 0;
             padding: 0;
@@ -23,7 +23,7 @@
             font-family: 'Inter', -apple-system, system-ui, sans-serif;
             background: #060d1a;
             min-height: 100vh;
-            padding-top: 68px;
+            padding-top: 70px;
             padding-bottom: 80px;
             display: flex;
             flex-direction: column;
@@ -32,7 +32,7 @@
             overflow-x: hidden;
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND ----- */
+        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
         .hero-bg {
             position: fixed;
             top: 0;
@@ -67,13 +67,13 @@
             background: linear-gradient(180deg, rgba(10, 22, 40, 0.40) 0%, rgba(6, 13, 26, 0.85) 100%);
         }
 
-        /* ----- HEADER (NO HAMBURGER) ----- */
+        /* ----- HEADER (TRANSLUCENT GLASS) ----- */
         .header {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            padding: 0.7rem 1.5rem;
+            padding: 0.8rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -82,7 +82,6 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            height: 68px;
         }
 
         .logo-text {
@@ -102,6 +101,111 @@
             gap: 1.2rem;
         }
 
+        /* ----- SLIDE MENU PANEL (GLASS) - KEPT FOR COMPATIBILITY ----- */
+        .menu-panel {
+            position: fixed;
+            top: 0;
+            right: -380px;
+            width: 340px;
+            height: 100%;
+            background: rgba(10, 22, 40, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
+            padding: 2rem 1.8rem;
+            transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 200;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            color: #f1f5f9;
+            border-left: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .menu-panel.open {
+            right: 0;
+        }
+
+        .menu-panel .close-btn {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0 0.5rem;
+            transition: 0.2s;
+        }
+        .menu-panel .close-btn:hover {
+            color: #ffffff;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.7rem 0.8rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.5);
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+
+        .menu-item .mi-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .menu-item .mi-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .menu-item .mi-label {
+            flex: 1;
+        }
+
+        .menu-item .mi-arrow {
+            color: rgba(255, 255, 255, 0.15);
+        }
+        .menu-item .mi-arrow svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.04);
+            margin: 0.2rem 0.8rem;
+        }
+
         /* ----- CONTAINER ----- */
         .container {
             max-width: 640px;
@@ -117,7 +221,6 @@
         .page-header {
             margin-bottom: 1.2rem;
             text-align: center;
-            padding-top: 0.2rem;
         }
         .page-header h1 {
             font-size: 1.8rem;
@@ -197,7 +300,6 @@
             outline: none;
             flex: 1;
             padding: 0.3rem 0;
-            min-width: 60px;
         }
         .search-box input::placeholder {
             color: rgba(255, 255, 255, 0.10);
@@ -213,7 +315,6 @@
             font-size: 0.7rem;
             cursor: pointer;
             transition: 0.2s;
-            flex-shrink: 0;
         }
         .search-box button:hover {
             background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -223,25 +324,48 @@
         .plans-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 0.9rem;
+            gap: 0.8rem;
         }
 
-        /* ================================================================
-           PLAN CARD – VERTICAL LAYOUT (FIXED)
-        ================================================================ */
+        /* ===== PLAN CARD (GLASSMORPHISM) – VERTICAL ===== */
         .plan-card {
-            background: rgba(18, 25, 37, 0.88);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
             border-radius: 20px;
+            padding: 0;
             overflow: hidden;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
             display: flex;
             flex-direction: column;
-            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.20);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
             position: relative;
-            height: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.20);
+        }
+
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #2563eb, #7c3aed, #2563eb);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+            opacity: 0.5;
+            will-change: transform;
+            z-index: 1;
+        }
+
+        @keyframes shimmer {
+            0%,
+            100% {
+                background-position: 0% 0%;
+            }
+            50% {
+                background-position: 100% 0%;
+            }
         }
 
         .plan-card:hover {
@@ -250,247 +374,223 @@
             box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
         }
 
-        /* ── IMAGE WRAPPER (TOP) ── */
-        .plan-image-wrapper {
+        /* ---- IMAGE WRAPPER (full width, fixed height) ---- */
+        .plan-image-wrap {
             position: relative;
             width: 100%;
             height: 145px;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.02);
             flex-shrink: 0;
-            border-radius: 0;
+            background: rgba(255, 255, 255, 0.02);
         }
 
-        .plan-image-wrapper .plan-image {
+        .plan-image-wrap img {
             width: 100%;
             height: 100%;
-            display: block;
             object-fit: cover;
-            object-position: center;
+            display: block;
             transition: transform 0.4s ease;
         }
 
-        .plan-card:hover .plan-image-wrapper .plan-image {
+        .plan-card:hover .plan-image-wrap img {
             transform: scale(1.02);
         }
 
-        /* Gradient overlay for readability */
-        .plan-image-wrapper::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 30%, rgba(0, 0, 0, 0.50) 100%);
-            pointer-events: none;
-            z-index: 1;
-            border-radius: 0;
-        }
-
-        /* ── IMAGE FALLBACK ── */
-        .plan-image-fallback {
-            width: 100%;
-            height: 100%;
+        .plan-image-placeholder {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.8rem;
-            color: rgba(255, 255, 255, 0.06);
+            width: 100%;
+            height: 100%;
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.02);
         }
 
-        /* ── STATUS BADGE (top-right on image) ── */
-        .plan-status {
+        /* ---- BADGES (overlay on image) ---- */
+        .badge-available {
             position: absolute;
             top: 10px;
             right: 10px;
-            z-index: 3;
-            font-size: 0.55rem;
+            background: rgba(0, 210, 120, 0.92);
+            backdrop-filter: blur(4px);
+            color: #fff;
+            font-size: 0.6rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
-            padding: 0.15rem 0.7rem;
+            letter-spacing: 0.6px;
+            padding: 2px 12px;
             border-radius: 30px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            background: rgba(0, 0, 0, 0.55);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 12px rgba(0, 210, 120, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 2;
+            pointer-events: none;
         }
 
-        .plan-status.available {
-            color: #4ade80;
-            border-color: rgba(74, 222, 128, 0.15);
-        }
-        .plan-status.coming-soon {
-            color: #fbbf24;
-            border-color: rgba(251, 191, 36, 0.15);
-        }
-        .plan-status.expired {
-            color: #94a3b8;
-            border-color: rgba(148, 163, 184, 0.08);
-        }
-
-        /* ── PLAN TYPE BADGE (bottom-left on image) ── */
-        .plan-type-badge {
+        .badge-buy-overlay {
             position: absolute;
             bottom: 10px;
             left: 10px;
-            z-index: 3;
-            font-size: 0.5rem;
+            background: rgba(255, 200, 50, 0.92);
+            backdrop-filter: blur(4px);
+            color: #0b0e1a;
+            font-size: 0.6rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            padding: 0.1rem 0.6rem;
+            padding: 2px 12px 2px 10px;
             border-radius: 30px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            background: rgba(0, 0, 0, 0.55);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 4px 14px rgba(255, 200, 50, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 2;
+            pointer-events: none;
         }
 
-        .plan-type-badge.invest {
-            color: #4ade80;
-            border-color: rgba(74, 222, 128, 0.15);
-        }
-        .plan-type-badge.buy {
-            color: #fbbf24;
-            border-color: rgba(251, 191, 36, 0.15);
+        .badge-buy-overlay i {
+            font-size: 0.7rem;
         }
 
-        /* ── PLAN CONTENT (BELOW IMAGE) ── */
-        .plan-content {
-            padding: 0.7rem 0.8rem 0.8rem;
+        .badge-invest-overlay {
+            background: rgba(50, 200, 120, 0.92);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(50, 200, 120, 0.25);
+        }
+
+        /* ---- INFO SECTION (below image) ---- */
+        .plan-info {
+            padding: 12px 14px 8px 14px;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            flex: 1;
+            gap: 2px;
         }
 
-        .plan-content .plan-name {
+        .plan-name {
             font-size: 0.95rem;
             font-weight: 700;
             color: #f1f5f9;
-            line-height: 1.3;
-            margin-bottom: 0.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
         }
 
-        .plan-content .plan-price {
-            font-size: 1.2rem;
-            font-weight: 800;
+        .plan-price {
+            font-size: 1.1rem;
+            font-weight: 700;
             color: #facc15;
-            margin-bottom: 0.2rem;
         }
-        .plan-content .plan-price .currency {
+        .plan-price .currency {
             font-size: 0.6rem;
             color: rgba(255, 255, 255, 0.3);
             font-weight: 400;
         }
 
-        /* Detail rows */
-        .plan-content .detail-row {
+        .detail-row {
             display: flex;
             justify-content: space-between;
             font-size: 0.7rem;
-            padding: 0.1rem 0;
-            color: rgba(255, 255, 255, 0.45);
+            padding: 1px 0;
+            color: rgba(255, 255, 255, 0.5);
             border-bottom: 1px solid rgba(255, 255, 255, 0.02);
         }
-        .plan-content .detail-row:last-of-type {
+        .detail-row:last-of-type {
             border-bottom: none;
         }
-        .plan-content .detail-row .label {
-            color: rgba(255, 255, 255, 0.25);
+        .detail-row .label {
+            color: rgba(255, 255, 255, 0.3);
         }
-        .plan-content .detail-row .value {
+        .detail-row .value {
             font-weight: 600;
         }
-        .plan-content .detail-row .value.gold {
+        .detail-row .value.gold {
             color: #facc15;
         }
-        .plan-content .detail-row .value.green {
+        .detail-row .value.green {
             color: #4ade80;
         }
-        .plan-content .detail-row .value.blue {
+        .detail-row .value.blue {
             color: #60a5fa;
         }
 
-        /* Dates */
-        .plan-content .plan-dates {
-            font-size: 0.5rem;
+        .plan-dates {
+            font-size: 0.55rem;
             color: rgba(255, 255, 255, 0.15);
-            margin: 0.2rem 0 0.3rem;
-            line-height: 1.5;
+            margin: 4px 0 2px;
+            line-height: 1.4;
         }
-        .plan-content .plan-dates strong {
-            color: rgba(255, 255, 255, 0.25);
+        .plan-dates strong {
+            color: rgba(255, 255, 255, 0.3);
         }
 
-        /* Countdown */
-        .plan-content .countdown {
-            font-size: 0.6rem;
+        .countdown {
+            font-size: 0.65rem;
             font-weight: 600;
             color: #fbbf24;
             background: rgba(245, 158, 11, 0.04);
-            padding: 0.1rem 0.4rem;
+            padding: 0.15rem 0.5rem;
             border-radius: 30px;
-            margin-bottom: 0.3rem;
+            margin: 4px 0 2px;
             text-align: center;
             border: 1px solid rgba(245, 158, 11, 0.04);
         }
 
-        /* ── ACTION BUTTON ── */
-        .plan-action {
+        /* ---- BUTTON (full width, bottom) ---- */
+        .plan-card .invest-btn,
+        .plan-card .buy-btn {
             width: 100%;
-            padding: 0.55rem;
+            padding: 0.6rem;
             border: none;
-            border-radius: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
             font-family: inherit;
             font-weight: 700;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.3s ease;
             margin-top: auto;
             letter-spacing: 0.3px;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            min-height: 40px;
+            flex-shrink: 0;
         }
 
-        .plan-action.invest {
+        .plan-card .invest-btn {
             background: rgba(34, 197, 94, 0.12);
-            border: 1px solid rgba(34, 197, 94, 0.15);
+            border-top-color: rgba(34, 197, 94, 0.15);
             color: #4ade80;
         }
-        .plan-action.invest:hover:not(:disabled) {
+        .plan-card .invest-btn:hover:not(:disabled) {
             background: rgba(34, 197, 94, 0.25);
             box-shadow: 0 4px 20px rgba(34, 197, 94, 0.15);
-            transform: translateY(-2px);
         }
 
-        .plan-action.buy {
+        .plan-card .buy-btn {
             background: rgba(251, 191, 36, 0.10);
-            border: 1px solid rgba(251, 191, 36, 0.15);
+            border-top-color: rgba(251, 191, 36, 0.15);
             color: #fbbf24;
         }
-        .plan-action.buy:hover:not(:disabled) {
+        .plan-card .buy-btn:hover:not(:disabled) {
             background: rgba(251, 191, 36, 0.22);
             box-shadow: 0 4px 20px rgba(251, 191, 36, 0.12);
-            transform: translateY(-2px);
         }
 
-        .plan-action:disabled {
+        .plan-card .invest-btn:disabled,
+        .plan-card .buy-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
             transform: none !important;
             box-shadow: none !important;
         }
 
-        .plan-action.purchased {
+        .plan-card .invest-btn.purchased,
+        .plan-card .buy-btn.purchased {
             background: rgba(59, 130, 246, 0.08);
-            border-color: rgba(59, 130, 246, 0.08);
+            border-top-color: rgba(59, 130, 246, 0.08);
             color: #60a5fa;
         }
 
-        /* ================================================================
-           CONFIRMATION MODAL
-        ================================================================ */
+        /* ===== CONFIRMATION MODAL (GLASS) ===== */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -679,9 +779,7 @@
             box-shadow: none !important;
         }
 
-        /* ================================================================
-           FULL SCREEN LOADING OVERLAY
-        ================================================================ */
+        /* ===== FULL SCREEN LOADING OVERLAY ===== */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -736,7 +834,7 @@
             }
         }
 
-        /* ----- TOAST ----- */
+        /* ----- TOAST (GLASS) ----- */
         .toast {
             position: fixed;
             bottom: 100px;
@@ -891,30 +989,32 @@
             font-weight: 700;
         }
 
-        /* ================================================================
-           RESPONSIVE
-        ================================================================ */
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 500px) {
             .header {
-                padding: 0.5rem 1rem;
-                height: 62px;
+                padding: 0.6rem 1rem;
             }
             .logo-text {
                 font-size: 1.2rem;
             }
+            .menu-panel {
+                width: 280px;
+                right: -300px;
+                padding: 1.5rem;
+            }
             .container {
-                padding: 0 0.7rem;
+                padding: 0 0.8rem;
             }
             .page-header h1 {
                 font-size: 1.5rem;
             }
             .controls {
-                padding: 0.4rem 0.5rem;
+                padding: 0.5rem 0.6rem;
                 gap: 0.4rem;
             }
             .filter-btn {
-                font-size: 0.55rem;
-                padding: 0.15rem 0.5rem;
+                font-size: 0.6rem;
+                padding: 0.2rem 0.6rem;
             }
             .search-box {
                 max-width: 100%;
@@ -925,35 +1025,35 @@
                 font-size: 0.7rem;
             }
             .plans-grid {
-                gap: 0.7rem;
+                gap: 0.6rem;
             }
-            .plan-image-wrapper {
+            .plan-image-wrap {
                 height: 120px;
             }
-            .plan-content {
-                padding: 0.5rem 0.6rem 0.6rem;
+            .plan-info {
+                padding: 10px 12px 6px;
             }
-            .plan-content .plan-name {
-                font-size: 0.8rem;
+            .plan-name {
+                font-size: 0.85rem;
             }
-            .plan-content .plan-price {
+            .plan-price {
                 font-size: 1rem;
             }
-            .plan-content .detail-row {
-                font-size: 0.6rem;
-            }
-            .plan-action {
+            .detail-row {
                 font-size: 0.65rem;
-                padding: 0.45rem;
-                min-height: 34px;
+            }
+            .plan-card .invest-btn,
+            .plan-card .buy-btn {
+                font-size: 0.7rem;
+                padding: 0.5rem;
             }
             .nav-item .nav-icon {
-                width: 20px;
-                height: 20px;
+                width: 22px;
+                height: 22px;
             }
             .nav-item.marketplace .nav-icon {
-                width: 28px;
-                height: 28px;
+                width: 30px;
+                height: 30px;
             }
             .modal-card {
                 padding: 1.5rem 1.2rem;
@@ -963,101 +1063,32 @@
                 gap: 0.3rem;
                 padding: 0.5rem;
             }
-            .plan-status {
-                font-size: 0.45rem;
-                padding: 0.1rem 0.5rem;
-                top: 6px;
-                right: 6px;
-            }
-            .plan-type-badge {
-                font-size: 0.4rem;
-                padding: 0.05rem 0.5rem;
-                bottom: 6px;
-                left: 6px;
-            }
         }
 
         @media (max-width: 400px) {
             .plans-grid {
                 gap: 0.5rem;
             }
-            .plan-image-wrapper {
+            .plan-image-wrap {
                 height: 100px;
             }
-            .plan-content .plan-name {
-                font-size: 0.7rem;
+            .plan-info {
+                padding: 8px 10px 4px;
             }
-            .plan-content .plan-price {
+            .plan-name {
+                font-size: 0.75rem;
+            }
+            .plan-price {
                 font-size: 0.9rem;
             }
-            .plan-content .detail-row {
+            .detail-row {
                 font-size: 0.55rem;
             }
-            .plan-content .plan-dates {
-                font-size: 0.45rem;
+            .plan-card .invest-btn,
+            .plan-card .buy-btn {
+                font-size: 0.6rem;
+                padding: 0.4rem;
             }
-            .plan-action {
-                font-size: 0.55rem;
-                padding: 0.35rem;
-                min-height: 30px;
-            }
-        }
-
-        @media (min-width: 600px) {
-            .plans-grid {
-                gap: 1.2rem;
-            }
-            .plan-image-wrapper {
-                height: 180px;
-            }
-            .plan-content {
-                padding: 0.9rem 1rem 1rem;
-            }
-            .plan-content .plan-name {
-                font-size: 1.1rem;
-            }
-            .plan-content .plan-price {
-                font-size: 1.4rem;
-            }
-            .plan-content .detail-row {
-                font-size: 0.8rem;
-            }
-            .plan-action {
-                font-size: 0.85rem;
-                padding: 0.65rem;
-                min-height: 46px;
-            }
-        }
-
-        @media (min-width: 800px) {
-            .container {
-                max-width: 800px;
-            }
-            .plans-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1.2rem;
-            }
-            .plan-image-wrapper {
-                height: 160px;
-            }
-        }
-
-        @media (min-width: 1100px) {
-            .container {
-                max-width: 1100px;
-            }
-            .plans-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 1.4rem;
-            }
-            .plan-image-wrapper {
-                height: 170px;
-            }
-        }
-
-        /* ── Ensure bottom padding for navigation ── */
-        .container {
-            padding-bottom: 20px;
         }
     </style>
 </head>
@@ -1073,6 +1104,55 @@
             <!-- Hamburger removed -->
         </div>
     </header>
+
+    <!-- ===== SLIDE MENU (GLASS) – KEPT FOR COMPATIBILITY ===== -->
+    <div class="menu-panel" id="menuPanel">
+        <button class="close-btn" id="closeMenu">✕</button>
+
+        <button class="menu-item" onclick="window.location.href='dashboard.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
+            <span class="mi-label">Dashboard</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='income.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+            <span class="mi-label">Income</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='chat.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <span class="mi-label">Chat</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='news.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></span>
+            <span class="mi-label">News</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='me.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <span class="mi-label">Profile</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <button class="menu-item" onclick="window.location.href='support.html'">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+            <span class="mi-label">Customer Service</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+
+        <div class="menu-divider"></div>
+
+        <button class="menu-item" id="logoutBtn" style="color:#f87171;">
+            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+            <span class="mi-label">Logout</span>
+            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+        </button>
+    </div>
 
     <!-- ===== MAIN CONTENT ===== -->
     <main class="container">
@@ -1098,7 +1178,7 @@
             </div>
         </div>
 
-        <!-- Plans Grid -->
+        <!-- Plans Grid (2 columns) -->
         <div id="loadingIndicator" class="loader"></div>
         <div class="plans-grid" id="plansGrid"></div>
         <div id="emptyMessage" class="empty-msg" style="display: none;">No investment plans available. Please check back later.</div>
@@ -1154,7 +1234,7 @@
         </div>
     </div>
 
-    <!-- ===== BOTTOM NAVIGATION (FIXED, STABLE) ===== -->
+    <!-- ===== BOTTOM NAV (STABLE) ===== -->
     <nav class="bottom-nav" id="bottomNavigation">
         <a href="dashboard.html" class="nav-item" data-page="dashboard.html">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
@@ -1246,6 +1326,17 @@
             setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4500);
         }
 
+        function getStatusBadgeClass(status) {
+            var map = {
+                'available': 'badge-available',
+                'coming_soon': 'badge-coming',
+                'sold_out': 'badge-soldout',
+                'expired': 'badge-expired',
+                'hidden': 'badge-hidden'
+            };
+            return map[status] || 'badge-available';
+        }
+
         function getStatusLabel(status) {
             var map = {
                 'available': 'Available',
@@ -1255,16 +1346,6 @@
                 'hidden': 'Hidden'
             };
             return map[status] || status;
-        }
-
-        function getStatusClass(status) {
-            var map = {
-                'available': 'available',
-                'coming_soon': 'coming-soon',
-                'expired': 'expired',
-                'sold_out': 'expired'
-            };
-            return map[status] || 'available';
         }
 
         function getCurrencySymbol(currency) {
@@ -1294,9 +1375,6 @@
             return result;
         }
 
-        // ================================================================
-        // PARSE DATE from admin format
-        // ================================================================
         function parseAdminDate(dateStr, timeStr) {
             if (!dateStr) return null;
             var datePart = dateStr;
@@ -1361,7 +1439,7 @@
         }
 
         // ================================================================
-        // APPLY FILTERS
+        // APPLY FILTERS & COMPUTE STATUS
         // ================================================================
         function applyFilters() {
             var searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -1412,7 +1490,7 @@
         }
 
         // ================================================================
-        // RENDER PLANS – FIXED: VERTICAL CARDS, NO BROKEN HTML
+        // RENDER PLANS – VERTICAL CARD WITH IMAGE ON TOP
         // ================================================================
         function renderPlans(plans) {
             var grid = document.getElementById('plansGrid');
@@ -1430,8 +1508,6 @@
 
             plans.forEach(function(plan) {
                 var status = plan._computedStatus || 'available';
-                var statusLabel = getStatusLabel(status);
-                var statusClass = getStatusClass(status);
                 var isAvailable = status === 'available' && !plan._userPurchased;
                 var isComingSoon = status === 'coming_soon';
                 var isExpired = status === 'expired';
@@ -1440,7 +1516,7 @@
 
                 var btnDisabled = true;
                 var btnText = '';
-                var btnClass = 'plan-action';
+                var btnClass = '';
                 var showCountdown = false;
                 var countdownText = '';
 
@@ -1460,25 +1536,25 @@
                 } else if (isPurchased) {
                     btnText = '✅ Purchased';
                     btnDisabled = true;
-                    btnClass += ' purchased';
+                    btnClass = 'purchased';
                 } else if (isAvailable) {
                     if (planType === 'invest') {
                         btnText = '💰 Invest Now';
                         btnDisabled = false;
-                        btnClass += ' invest';
+                        btnClass = 'invest-btn';
                     } else if (planType === 'buy') {
                         btnText = '🛒 Buy Now';
                         btnDisabled = false;
-                        btnClass += ' buy';
+                        btnClass = 'buy-btn';
                     } else {
                         btnText = 'Invest Now';
                         btnDisabled = false;
-                        btnClass += ' invest';
+                        btnClass = 'invest-btn';
                     }
                 } else {
                     btnText = 'Unavailable';
                     btnDisabled = true;
-                    btnClass += ' invest';
+                    btnClass = 'invest-btn';
                 }
 
                 var currencySym = getCurrencySymbol(plan.currency || 'ZMW');
@@ -1489,33 +1565,44 @@
                 var releaseDateStr = plan.releaseDateObj ? formatDate(plan.releaseDateObj) : 'N/A';
                 var expiryDateStr = plan.expiryDateObj ? formatDate(plan.expiryDateObj) : 'N/A';
 
-                var typeBadgeClass = planType === 'invest' ? 'invest' : 'buy';
-                var typeBadgeText = planType === 'invest' ? '💚 Invest' : '💛 Buy';
-
-                var imageUrl = plan.imageUrl || '';
+                // Image HTML
                 var imageHtml = '';
-                if (imageUrl) {
-                    imageHtml = '<img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(plan.name) +
-                        '" class="plan-image" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=\\"plan-image-fallback\\">📈</div>\'" />';
-                } else {
-                    imageHtml = '<div class="plan-image-fallback">📈</div>';
+                if (plan.imageUrl) {
+                    imageHtml = '<img src="' + escapeHtml(plan.imageUrl) + '" alt="' + escapeHtml(plan.name) +
+                        '" loading="lazy" onerror="this.style.display=\'none\'; this.parentElement.querySelector(\'.plan-image-placeholder\').style.display=\'flex\';" />';
+                }
+                // Always include placeholder (hidden if image loads)
+                imageHtml += '<div class="plan-image-placeholder" style="display:none;">📈</div>';
+
+                // Badge for AVAILABLE (only if status is available)
+                var availableBadge = '';
+                if (status === 'available') {
+                    availableBadge = '<span class="badge-available">Available</span>';
                 }
 
-                // ── CARD STRUCTURE: IMAGE TOP, CONTENT BELOW ──
+                // Badge for BUY/INVEST (always show, based on type)
+                var typeBadge = '';
+                if (planType === 'buy') {
+                    typeBadge = '<span class="badge-buy-overlay">💛 BUY</span>';
+                } else {
+                    typeBadge = '<span class="badge-buy-overlay badge-invest-overlay">💚 INVEST</span>';
+                }
+
+                // Build the card
                 html += '<div class="plan-card" data-plan-id="' + plan.id + '">';
 
-                // 1. IMAGE WRAPPER (TOP)
-                html += '<div class="plan-image-wrapper">';
+                // Image wrapper with overlays
+                html += '<div class="plan-image-wrap">';
                 html += imageHtml;
-                html += '<div class="plan-status ' + statusClass + '">' + statusLabel + '</div>';
-                html += '<div class="plan-type-badge ' + typeBadgeClass + '">' + typeBadgeText + '</div>';
-                html += '</div>'; // end plan-image-wrapper
+                html += availableBadge;
+                html += typeBadge;
+                html += '</div>';
 
-                // 2. CONTENT (BELOW IMAGE)
-                html += '<div class="plan-content">';
-                html += '<div class="plan-name">' + escapeHtml(plan.name) + '</div>';
-                html += '<div class="plan-price">' + (plan.minAmount || 0).toFixed(2) + ' <span class="currency">' +
-                    currencySym + '</span></div>';
+                // Info section
+                html += '<div class="plan-info">';
+                html += '<div class="plan-name">' + escapeHtml(plan.name) +
+                    ' <span class="plan-price">' + (plan.minAmount || 0).toFixed(2) +
+                    ' <span class="currency">' + currencySym + '</span></span></div>';
 
                 html += '<div class="detail-row"><span class="label">📈 Daily Income</span><span class="value green">' +
                     (plan.dailyReturn || 0).toFixed(2) + ' ' + currencySym + '</span></div>';
@@ -1535,21 +1622,28 @@
                     html += '<div class="countdown" id="countdown-' + plan.id + '">⏳ ' + countdownText + '</div>';
                 }
 
+                html += '</div>'; // end plan-info
+
+                // Button
                 var dataAttrs = 'data-id="' + plan.id + '" data-name="' + escapeHtml(plan.name) + '" data-amount="' +
                     (plan.minAmount || 0) + '" data-daily="' + (plan.dailyReturn || 0) + '" data-days="' + (plan
                         .days || 0) + '" data-currency="' + (plan.currency || 'ZMW') + '" data-type="' + planType +
                     '" data-expiry="' + (plan.expiry || 'Auto') + '"';
 
-                html += '<button class="' + btnClass + '" ' + dataAttrs + (btnDisabled ? ' disabled' : '') +
+                var buttonClass = planType === 'buy' ? 'buy-btn' : 'invest-btn';
+                if (isPurchased) buttonClass += ' purchased';
+                if (btnDisabled) buttonClass += ' disabled';
+
+                html += '<button class="' + buttonClass + '" ' + dataAttrs + (btnDisabled ? ' disabled' : '') +
                     '>' + btnText + '</button>';
-                html += '</div>'; // end plan-content
+
                 html += '</div>'; // end plan-card
             });
 
             grid.innerHTML = html;
 
             // Attach click events
-            document.querySelectorAll('.plan-action:not(:disabled)').forEach(function(btn) {
+            document.querySelectorAll('.invest-btn:not(:disabled)').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     var planData = {
                         id: this.getAttribute('data-id'),
@@ -1562,6 +1656,26 @@
                         expiry: this.getAttribute('data-expiry')
                     };
                     showPurchaseLoading('Preparing your investment...', 'Please wait');
+                    setTimeout(function() {
+                        hidePurchaseLoading();
+                        showConfirmationModal(planData);
+                    }, 1200);
+                });
+            });
+
+            document.querySelectorAll('.buy-btn:not(:disabled)').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    var planData = {
+                        id: this.getAttribute('data-id'),
+                        name: this.getAttribute('data-name'),
+                        minAmount: parseFloat(this.getAttribute('data-amount')),
+                        dailyReturn: parseFloat(this.getAttribute('data-daily')),
+                        days: parseInt(this.getAttribute('data-days')),
+                        currency: this.getAttribute('data-currency'),
+                        type: this.getAttribute('data-type') || 'buy',
+                        expiry: this.getAttribute('data-expiry')
+                    };
+                    showPurchaseLoading('Preparing your purchase...', 'Please wait');
                     setTimeout(function() {
                         hidePurchaseLoading();
                         showConfirmationModal(planData);
@@ -1943,17 +2057,18 @@
         // ================================================================
         // LOGOUT
         // ================================================================
-        window.logoutUser = function() {
-            auth.signOut().then(function() {
-                window.location.href = 'login.html';
-            }).catch(function(err) {
-                console.warn('Logout error:', err);
-            });
-        };
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            try {
+                await auth.signOut();
+                await new Promise(function(resolve) { setTimeout(resolve, 300); });
+            } catch (err) {
+                console.warn('Sign out error:', err);
+            }
+            window.location.href = 'login.html';
+        });
 
-        console.log('🛒 Marketplace · Sajvera Capital – VERTICAL CARDS FIXED');
-        console.log('✅ Image on top, content below – no horizontal layout');
-        console.log('✅ Fixed broken "/>" HTML rendering');
+        console.log('🛒 Marketplace · Sajvera Capital – vertical card layout applied');
+        console.log('✅ Image on top, info below, button at bottom');
         console.log('📱 2‑column grid, responsive, stable bottom nav');
         console.log('❌ Hamburger menu removed');
     </script>
