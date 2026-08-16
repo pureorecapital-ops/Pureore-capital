@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Saving Money · Sajvera Capital</title>
+
+    <!-- ============================================================
+         FIREBASE SDKs – Load these in the <head>
+         ============================================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ──────────────────────────────────────────────
+                   RESET & BASE
+                   ────────────────────────────────────────────── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #0a0e14;
+            color: #fff;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation;
+        }
+
+        /* ──────────────────────────────────────────────
+                   SCREENS
+                   ────────────────────────────────────────────── */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+            transform: scale(1.02);
+            padding: 20px 18px;
+            will-change: opacity, transform;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        .screen.exit {
+            opacity: 0;
+            transform: scale(0.96);
+            pointer-events: none;
+        }
+
+        .screen::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+        .screen {
+            scrollbar-width: none;
+        }
+
+        /* ──────────────────────────────────────────────
+                   INTRO SCREEN (office background)
+                   ────────────────────────────────────────────── */
+        #introScreen {
+            justify-content: center;
+            z-index: 10;
+            padding: 0;
+            background: #0a0e14;
+        }
+
+        .intro-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://i.ibb.co/zTnm7yXC/file-000000008f9881f4ac6ff882b51ec224.png') center center / cover no-repeat;
+            transform: scale(1.08);
+            animation: introZoom 10s ease-in-out infinite alternate;
+            will-change: transform;
+        }
+
+        @keyframes introZoom {
+            0% {
+                transform: scale(1.08);
+            }
+            100% {
+                transform: scale(1.22);
+            }
+        }
+
+        .intro-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center,
+                    rgba(10, 14, 20, 0.30) 0%,
+                    rgba(10, 14, 20, 0.80) 100%);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+
+        .intro-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 400px;
+            padding: 0 24px;
+            animation: introFadeIn 1.4s ease-out forwards;
+        }
+
+        @keyframes introFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .intro-brand {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #fff;
+            text-shadow: 0 4px 40px rgba(0, 0, 0, 0.7);
+            line-height: 1.2;
+        }
+        .intro-brand span {
+            color: #d4af37;
+            font-weight: 700;
+        }
+
+        .intro-sub {
+            font-size: 13px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-top: 4px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .intro-loader-wrap {
+            margin-top: 34px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .intro-loader {
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(255, 255, 255, 0.10);
+            border-top-color: #d4af37;
+            border-radius: 50%;
+            animation: spin 0.9s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .intro-loader-text {
+            font-size: 15px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+            letter-spacing: 0.2px;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+            min-height: 28px;
+            transition: opacity 0.4s ease;
+        }
+        .intro-loader-text .fade-msg {
+            display: inline-block;
+            animation: msgPulse 0.5s ease forwards;
+        }
+        @keyframes msgPulse {
+            0% {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ──────────────────────────────────────────────
+                   WELCOME SCREEN
+                   ────────────────────────────────────────────── */
+        #welcomeScreen {
+            background: #0a0e14;
+            z-index: 20;
+            justify-content: center;
+            padding: 20px 18px;
+        }
+
+        .welcome-card {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 32px;
+            padding: 40px 26px 32px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+            animation: cardRise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            position: relative;
+        }
+
+        @keyframes cardRise {
+            0% {
+                opacity: 0;
+                transform: translateY(28px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .welcome-icon {
+            font-size: 44px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            color: #fff;
+            line-height: 1.2;
+        }
+        .welcome-title span {
+            background: linear-gradient(135deg, #d4af37, #f5d97a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-tagline {
+            font-size: 16px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.65);
+            margin: 2px 0 14px;
+            letter-spacing: 0.2px;
+        }
+
+        .welcome-desc {
+            font-size: 14px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.50);
+            margin-bottom: 28px;
+            padding: 0 2px;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #d4af37, #c49a2c);
+            color: #0a0e14;
+            font-weight: 700;
+            font-size: 17px;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.25);
+            letter-spacing: 0.3px;
+            width: 100%;
+            max-width: 280px;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .btn-primary:active {
+            transform: scale(0.96);
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.30);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ──────────────────────────────────────────────
+                   IN-PAGE BACK BUTTON
+                   ────────────────────────────────────────────── */
+        .back-btn {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            z-index: 5;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px 10px 10px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 40px;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            touch-action: manipulation;
+            user-select: none;
+            letter-spacing: 0.2px;
+            text-decoration: none;
+        }
+        .back-btn:active {
+            transform: scale(0.94);
+            background: rgba(255, 255, 255, 0.10);
+        }
+        .back-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+        #introScreen .back-btn {
+            display: none;
+        }
+
+        /* ──────────────────────────────────────────────
+                   BRANCH LOADING SCREEN (preparing branches)
+                   ────────────────────────────────────────────── */
+        #branchLoadingScreen {
+            background: #0a0e14;
+            z-index: 30;
+            justify-content: center;
+            padding: 20px 18px;
+        }
+
+        .branch-load-content {
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .branch-load-spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(255, 255, 255, 0.06);
+            border-top-color: #d4af37;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .branch-load-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .branch-load-sub {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.40);
+            margin-bottom: 24px;
+        }
+
+        .check-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+            margin-top: 4px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: all 0.5s ease;
+            opacity: 0.30;
+            transform: translateX(-6px);
+        }
+        .check-item.done {
+            opacity: 1;
+            transform: translateX(0);
+            border-color: rgba(212, 175, 55, 0.18);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .check-item .check-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            transition: all 0.4s ease;
+            color: transparent;
+        }
+        .check-item.done .check-icon {
+            border-color: #d4af37;
+            background: #d4af37;
+            color: #0a0e14;
+        }
+
+        .check-item .check-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.50);
+            transition: color 0.4s ease;
+        }
+        .check-item.done .check-label {
+            color: rgba(255, 255, 255, 0.80);
+        }
+
+        /* ──────────────────────────────────────────────
+                   BRANCHES SCREEN (three cards)
+                   ────────────────────────────────────────────── */
+        #branchesScreen {
+            background: #0a0e14;
+            z-index: 40;
+            justify-content: flex-start;
+            padding-top: 70px;
+            padding-bottom: 24px;
+            overflow-y: auto;
+        }
+
+        .branches-header {
+            text-align: center;
+            margin-bottom: 22px;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+        .branches-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .branches-header h2 span {
+            background: linear-gradient(135deg, #d4af37, #f5d97a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .branches-header p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.45);
+            margin-top: 2px;
+        }
+
+        .branches-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 420px;
+            width: 100%;
+            margin: 0 auto;
+            padding-bottom: 12px;
+            flex-shrink: 0;
+        }
+
+        .branch-card {
+            border-radius: 24px;
+            padding: 22px 20px 18px;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .branch-card:active {
+            transform: scale(0.97);
+        }
+        .branch-card .card-glow {
+            position: absolute;
+            top: -40%;
+            right: -20%;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            opacity: 0.08;
+            pointer-events: none;
+            filter: blur(60px);
+        }
+
+        .branch-card .branch-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 6px;
+        }
+        .branch-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+        .branch-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .branch-name {
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .branch-tag {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 2px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .branch-desc {
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 2px 0 6px;
+        }
+        .branch-feature {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.35);
+            line-height: 1.5;
+            margin-bottom: 14px;
+            padding-left: 2px;
+        }
+        .branch-feature strong {
+            color: rgba(255, 255, 255, 0.60);
+            font-weight: 500;
+        }
+
+        .btn-branch {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            width: 100%;
+            letter-spacing: 0.2px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .btn-branch:active {
+            transform: scale(0.96);
+        }
+
+        .branch-wealth {
+            border-color: rgba(16, 185, 129, 0.20);
+            background: linear-gradient(145deg, rgba(16, 185, 129, 0.06), rgba(212, 175, 55, 0.03));
+        }
+        .branch-wealth .card-glow {
+            background: radial-gradient(circle, #10b981, #d4af37);
+        }
+        .branch-wealth .branch-icon {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+        }
+        .branch-wealth .branch-name {
+            color: #10b981;
+        }
+        .branch-wealth .branch-tag {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+        .branch-wealth .btn-branch {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            box-shadow: 0 6px 24px rgba(16, 185, 129, 0.20);
+        }
+        .branch-wealth .btn-branch:active {
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.30);
+        }
+        .branch-wealth .branch-desc {
+            color: rgba(255, 255, 255, 0.60);
+        }
+
+        .branch-reserve {
+            border-color: rgba(59, 130, 246, 0.18);
+            background: linear-gradient(145deg, rgba(30, 58, 95, 0.12), rgba(59, 130, 246, 0.03));
+        }
+        .branch-reserve .card-glow {
+            background: radial-gradient(circle, #1e3a5f, #3b82f6);
+        }
+        .branch-reserve .branch-icon {
+            background: linear-gradient(135deg, #1e3a5f, #3b82f6);
+            color: #fff;
+        }
+        .branch-reserve .branch-name {
+            color: #60a5fa;
+        }
+        .branch-reserve .branch-tag {
+            background: rgba(59, 130, 246, 0.12);
+            color: #93bbfc;
+        }
+        .branch-reserve .btn-branch {
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            color: #fff;
+            box-shadow: 0 6px 24px rgba(37, 99, 235, 0.20);
+        }
+        .branch-reserve .btn-branch:active {
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.30);
+        }
+        .branch-reserve .branch-desc {
+            color: rgba(255, 255, 255, 0.60);
+        }
+
+        .branch-growth {
+            border-color: rgba(139, 92, 246, 0.18);
+            background: linear-gradient(145deg, rgba(88, 28, 135, 0.10), rgba(20, 184, 166, 0.03));
+        }
+        .branch-growth .card-glow {
+            background: radial-gradient(circle, #7c3aed, #14b8a6);
+        }
+        .branch-growth .branch-icon {
+            background: linear-gradient(135deg, #7c3aed, #14b8a6);
+            color: #fff;
+        }
+        .branch-growth .branch-name {
+            color: #a78bfa;
+        }
+        .branch-growth .branch-tag {
+            background: rgba(139, 92, 246, 0.12);
+            color: #c4b5fd;
+        }
+        .branch-growth .btn-branch {
+            background: linear-gradient(135deg, #7c3aed, #0d9488);
+            color: #fff;
+            box-shadow: 0 6px 24px rgba(124, 58, 237, 0.20);
+        }
+        .branch-growth .btn-branch:active {
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.30);
+        }
+        .branch-growth .branch-desc {
+            color: rgba(255, 255, 255, 0.60);
+        }
+
+        /* ──────────────────────────────────────────────
+                   BRANCH OPENING LOADING SCREEN
+                   ────────────────────────────────────────────── */
+        #branchOpenScreen {
+            background: #0a0e14;
+            z-index: 50;
+            justify-content: center;
+            padding: 20px 18px;
+        }
+
+        .branch-open-content {
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .branch-open-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255, 255, 255, 0.06);
+            border-top-color: #d4af37;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .branch-open-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .branch-open-sub {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.35);
+            margin-bottom: 24px;
+        }
+
+        .branch-open-checks {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+        .branch-open-checks .check-item {
+            padding: 11px 16px;
+        }
+
+        /* ──────────────────────────────────────────────
+                   RESPONSIVE TWEAKS
+                   ────────────────────────────────────────────── */
+        @media (max-width: 480px) {
+            .welcome-card {
+                padding: 32px 20px 28px;
+            }
+            .welcome-title {
+                font-size: 24px;
+            }
+            .branch-card {
+                padding: 18px 16px 16px;
+            }
+            .branch-name {
+                font-size: 17px;
+            }
+            .branch-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            .intro-brand {
+                font-size: 26px;
+            }
+            .branches-header h2 {
+                font-size: 22px;
+            }
+            .btn-primary {
+                font-size: 15px;
+                padding: 14px 24px;
+            }
+            .back-btn {
+                top: 14px;
+                left: 14px;
+                padding: 8px 12px 8px 8px;
+                font-size: 13px;
+            }
+            .back-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+            #branchesScreen {
+                padding-top: 64px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .branch-card .branch-top {
+                flex-wrap: wrap;
+            }
+            .branch-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+            .welcome-card {
+                padding: 24px 16px 22px;
+            }
+            .branch-feature {
+                font-size: 12px;
+            }
+        }
+
+        @media (min-width: 600px) {
+            .branches-grid {
+                max-width: 460px;
+            }
+            .welcome-card {
+                padding: 48px 36px 36px;
+            }
+        }
+
+        .text-gold {
+            color: #d4af37;
+        }
+        .mt-1 {
+            margin-top: 4px;
+        }
+        .mt-2 {
+            margin-top: 10px;
+        }
+        .mt-3 {
+            margin-top: 18px;
+        }
+        .relative {
+            position: relative;
+        }
+        .w-full {
+            width: 100%;
+        }
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN 1: INTRO (Office + Loading)
+    ════════════════════════════════════════════════ -->
+    <div id="introScreen" class="screen active">
+        <div class="intro-bg"></div>
+        <div class="intro-overlay"></div>
+        <div class="intro-content">
+            <div class="intro-brand">Sajvera <span>Capital</span></div>
+            <div class="intro-sub">Wealth · Reserve · Growth</div>
+            <div class="intro-loader-wrap">
+                <div class="intro-loader"></div>
+                <div class="intro-loader-text" id="introMsg">Welcome to Sajvera Capital</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN 2: WELCOME
+    ════════════════════════════════════════════════ -->
+    <div id="welcomeScreen" class="screen">
+        <button class="back-btn" id="welcomeBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+
+        <div class="welcome-card">
+            <span class="welcome-icon">🏦</span>
+            <div class="welcome-title">Welcome to <span>Saving Money</span></div>
+            <div class="welcome-tagline">Save today, build tomorrow.</div>
+            <div class="welcome-desc">
+                Choose a savings branch that matches your financial goal.
+                Each branch has its own conditions, saving period and maturity rules.
+            </div>
+            <button class="btn-primary" id="continueBtn">
+                CONTINUE
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN 3: BRANCH LOADING (Preparing branches)
+    ════════════════════════════════════════════════ -->
+    <div id="branchLoadingScreen" class="screen">
+        <div class="branch-load-content">
+            <div class="branch-load-spinner"></div>
+            <div class="branch-load-title">Preparing your saving branches…</div>
+            <div class="branch-load-sub">Please wait while we get everything ready</div>
+            <div class="check-list" id="branchCheckList">
+                <div class="check-item" data-index="0">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Checking your account…</span>
+                </div>
+                <div class="check-item" data-index="1">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Checking your savings information…</span>
+                </div>
+                <div class="check-item" data-index="2">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Preparing available branches…</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN 4: BRANCHES (Three cards)
+    ════════════════════════════════════════════════ -->
+    <div id="branchesScreen" class="screen">
+        <button class="back-btn" id="branchesBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+
+        <div class="branches-header">
+            <h2>Choose Your <span>Savings Branch</span></h2>
+            <p>Select the product that fits your financial future</p>
+        </div>
+        <div class="branches-grid">
+
+            <div class="branch-card branch-wealth" data-branch="wealth">
+                <div class="card-glow"></div>
+                <div class="branch-top">
+                    <div class="branch-icon">🏛️</div>
+                    <div class="branch-info">
+                        <div class="branch-name">
+                            PureOre Wealth
+                            <span class="branch-tag">Long-Term</span>
+                        </div>
+                        <div class="branch-desc">Build today. Protect tomorrow.</div>
+                    </div>
+                </div>
+                <div class="branch-feature">
+                    <strong>Designed for</strong> long‑term wealth and future planning.
+                    Emerald &amp; gold vault identity.
+                </div>
+                <button class="btn-branch" data-branch="wealth">OPEN WEALTH</button>
+            </div>
+
+            <div class="branch-card branch-reserve" data-branch="reserve">
+                <div class="card-glow"></div>
+                <div class="branch-top">
+                    <div class="branch-icon">🔒</div>
+                    <div class="branch-info">
+                        <div class="branch-name">
+                            PureOre Reserve
+                            <span class="branch-tag">Secure</span>
+                        </div>
+                        <div class="branch-desc">Keep today secure for tomorrow.</div>
+                    </div>
+                </div>
+                <div class="branch-feature">
+                    <strong>Designed for</strong> keeping money aside for important future needs.
+                    Deep navy &amp; silver vault security.
+                </div>
+                <button class="btn-branch" data-branch="reserve">OPEN RESERVE</button>
+            </div>
+
+            <div class="branch-card branch-growth" data-branch="growth">
+                <div class="card-glow"></div>
+                <div class="branch-top">
+                    <div class="branch-icon">📈</div>
+                    <div class="branch-info">
+                        <div class="branch-name">
+                            PureOre Growth
+                            <span class="branch-tag">Maturity</span>
+                        </div>
+                        <div class="branch-desc">Grow your goals. Build your future.</div>
+                    </div>
+                </div>
+                <div class="branch-feature">
+                    <strong>Designed for</strong> longer saving periods with maturity interest.
+                    Deep violet &amp; teal growth progression.
+                </div>
+                <button class="btn-branch" data-branch="growth">OPEN GROWTH</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN 5: BRANCH OPENING LOADING
+    ════════════════════════════════════════════════ -->
+    <div id="branchOpenScreen" class="screen">
+        <div class="branch-open-content">
+            <div class="branch-open-spinner"></div>
+            <div class="branch-open-title" id="openTitle">Opening PureOre Wealth…</div>
+            <div class="branch-open-sub">Verifying your account details</div>
+            <div class="branch-open-checks" id="openCheckList">
+                <div class="check-item" data-index="0">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Checking your account…</span>
+                </div>
+                <div class="check-item" data-index="1">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Checking Wealth balance…</span>
+                </div>
+                <div class="check-item" data-index="2">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Checking pending savings…</span>
+                </div>
+                <div class="check-item" data-index="3">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Checking saving status…</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    JAVASCRIPT – FIREBASE CONFIG & AUTH
+    ════════════════════════════════════════════════ -->
+    <script>
+        // ================================================================
+        // FIREBASE CONFIG – Your project credentials
+        // ================================================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b",
+            measurementId: "G-FQKC29NYE9"
+        };
+
+        // ================================================================
+        // INITIALIZE FIREBASE (only once)
+        // ================================================================
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        db.settings({ persistence: true });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ================================================================
+        // AUTH STATE CHECK – Redirect if not logged in
+        // ================================================================
+        var authResolved = false;
+        var redirectTimeout = null;
+
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                console.log('✅ User logged in:', user.uid, user.email);
+                // (Optional) Firestore user data fetch can be added here.
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                console.log('❌ No user found. Redirecting to login...');
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
+        });
+
+        // ================================================================
+        // HELPER FUNCTIONS (overriding the local‑storage ones)
+        // ================================================================
+        function getLoggedInUser() {
+            var user = auth.currentUser;
+            if (user) {
+                return {
+                    id: user.uid,
+                    email: user.email,
+                    name: user.displayName || user.email
+                };
+            }
+            return null;
+        }
+
+        function getUserSavings(userId) {
+            try {
+                var key = 'sajvera_savings_' + userId;
+                var data = localStorage.getItem(key);
+                if (data) return JSON.parse(data);
+            } catch (_) { /* ignore */ }
+            return { wealth: 0, reserve: 0, growth: 0, transactions: [] };
+        }
+
+        function logoutUser() {
+            auth.signOut().then(function() {
+                window.location.href = 'login.html';
+            }).catch(function(err) {
+                console.warn('Logout error:', err);
+            });
+        }
+
+        // ================================================================
+        // PAGE LOGIC (adapted to use Firebase user)
+        // ================================================================
+        (function() {
+            'use strict';
+
+            var introScreen = document.getElementById('introScreen');
+            var welcomeScreen = document.getElementById('welcomeScreen');
+            var branchLoadingScreen = document.getElementById('branchLoadingScreen');
+            var branchesScreen = document.getElementById('branchesScreen');
+            var branchOpenScreen = document.getElementById('branchOpenScreen');
+
+            var introMsg = document.getElementById('introMsg');
+            var continueBtn = document.getElementById('continueBtn');
+            var welcomeBackBtn = document.getElementById('welcomeBackBtn');
+            var branchesBackBtn = document.getElementById('branchesBackBtn');
+
+            var branchCheckList = document.getElementById('branchCheckList');
+            var openCheckList = document.getElementById('openCheckList');
+            var openTitle = document.getElementById('openTitle');
+
+            var introTimer = null;
+            var isOpening = false;
+            var currentScreen = 'intro';
+            var branchToOpen = null;
+            var screenStack = ['intro'];
+
+            function showScreen(el, screenId) {
+                document.querySelectorAll('.screen').forEach(function(s) {
+                    s.classList.remove('active', 'exit');
+                });
+                el.classList.add('active');
+                currentScreen = screenId || el.id;
+                if (screenStack[screenStack.length - 1] !== currentScreen) {
+                    screenStack.push(currentScreen);
+                }
+                updateHistory();
+            }
+
+            function transitionTo(nextEl, nextId) {
+                var current = document.querySelector('.screen.active');
+                if (current) {
+                    current.classList.remove('active');
+                    current.classList.add('exit');
+                    setTimeout(function() {
+                        current.classList.remove('exit');
+                        showScreen(nextEl, nextId);
+                    }, 380);
+                } else {
+                    showScreen(nextEl, nextId);
+                }
+            }
+
+            function updateHistory() {
+                var state = { screen: currentScreen, stack: screenStack.slice() };
+                history.replaceState(state, '');
+            }
+
+            function goBack() {
+                if (isOpening) return;
+                if (screenStack.length <= 1) {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+                screenStack.pop();
+                var prev = screenStack[screenStack.length - 1];
+                var screenMap = {
+                    'intro': introScreen,
+                    'welcome': welcomeScreen,
+                    'branchLoading': branchLoadingScreen,
+                    'branches': branchesScreen,
+                    'branchOpen': branchOpenScreen
+                };
+                var el = screenMap[prev];
+                if (el) {
+                    document.querySelectorAll('.screen').forEach(function(s) {
+                        s.classList.remove('active', 'exit');
+                    });
+                    el.classList.add('active');
+                    currentScreen = prev;
+                    updateHistory();
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            }
+
+            window.addEventListener('popstate', function(e) {
+                if (e.state && e.state.stack) {
+                    var stack = e.state.stack;
+                    if (stack.length > 0) {
+                        var target = stack[stack.length - 1];
+                        var screenMap = {
+                            'intro': introScreen,
+                            'welcome': welcomeScreen,
+                            'branchLoading': branchLoadingScreen,
+                            'branches': branchesScreen,
+                            'branchOpen': branchOpenScreen
+                        };
+                        var el = screenMap[target];
+                        if (el) {
+                            if (screenStack.length > 0 && screenStack[screenStack.length - 1] === currentScreen) {
+                                screenStack.pop();
+                            }
+                            document.querySelectorAll('.screen').forEach(function(s) {
+                                s.classList.remove('active', 'exit');
+                            });
+                            el.classList.add('active');
+                            currentScreen = target;
+                            screenStack.length = 0;
+                            screenStack.push.apply(screenStack, stack);
+                            return;
+                        }
+                    }
+                }
+                goBack();
+            });
+
+            function delay(ms) {
+                return new Promise(function(r) { setTimeout(r, ms); });
+            }
+
+            async function runBranchChecks() {
+                var items = branchCheckList.querySelectorAll('.check-item');
+                for (var i = 0; i < items.length; i++) {
+                    await delay(400 + Math.random() * 300);
+                    items[i].classList.add('done');
+                    var icon = items[i].querySelector('.check-icon');
+                    if (icon) icon.textContent = '✓';
+                }
+                var user = getLoggedInUser();
+                if (user) {
+                    var savings = getUserSavings(user.id);
+                    if (!savings || typeof savings !== 'object') {
+                        var empty = { wealth: 0, reserve: 0, growth: 0, transactions: [] };
+                        localStorage.setItem('sajvera_savings_' + user.id, JSON.stringify(empty));
+                    }
+                }
+                await delay(300);
+            }
+
+            async function runOpenChecks(branch) {
+                var items = openCheckList.querySelectorAll('.check-item');
+                var labels = {
+                    wealth: ['Checking your account…', 'Checking Wealth balance…', 'Checking pending savings…',
+                        'Checking saving status…'
+                    ],
+                    reserve: ['Checking your account…', 'Checking Reserve balance…', 'Checking pending savings…',
+                        'Checking Reserve status…'
+                    ],
+                    growth: ['Checking your account…', 'Checking Growth balance…', 'Checking pending savings…',
+                        'Checking Growth status…'
+                    ]
+                };
+                var lbls = labels[branch] || labels.wealth;
+                items.forEach(function(el, idx) {
+                    var labelEl = el.querySelector('.check-label');
+                    if (labelEl && lbls[idx]) labelEl.textContent = lbls[idx];
+                });
+
+                for (var i = 0; i < items.length; i++) {
+                    await delay(400 + Math.random() * 300);
+                    items[i].classList.add('done');
+                    var icon = items[i].querySelector('.check-icon');
+                    if (icon) icon.textContent = '✓';
+                }
+
+                var user = getLoggedInUser();
+                if (user) {
+                    var savings = getUserSavings(user.id);
+                    if (savings && typeof savings === 'object') {
+                        if (!(branch in savings)) {
+                            savings[branch] = 0;
+                            localStorage.setItem('sajvera_savings_' + user.id, JSON.stringify(savings));
+                        }
+                    }
+                }
+                await delay(350);
+            }
+
+            function goToBranch(branch) {
+                var pages = {
+                    wealth: 'wealth.html',
+                    reserve: 'reserve.html',
+                    growth: 'growth.html'
+                };
+                var url = pages[branch] || 'wealth.html';
+                setTimeout(function() {
+                    window.location.href = url;
+                }, 400);
+            }
+
+            function startIntro() {
+                var messages = [
+                    'Welcome to Sajvera Capital',
+                    'Preparing your Saving Money experience…',
+                    'Wait well, we are taking you to Saving Branches…'
+                ];
+                var msgIndex = 0;
+                introMsg.textContent = messages[0];
+
+                var steps = [
+                    { at: 0, msg: messages[0] },
+                    { at: 1400, msg: messages[1] },
+                    { at: 3400, msg: messages[2] },
+                ];
+
+                var startTime = Date.now();
+                var interval = setInterval(function() {
+                    var elapsed = Date.now() - startTime;
+                    var currentMsg = messages[0];
+                    for (var i = 0; i < steps.length; i++) {
+                        if (elapsed >= steps[i].at) currentMsg = steps[i].msg;
+                    }
+                    if (introMsg.textContent !== currentMsg) {
+                        introMsg.textContent = currentMsg;
+                        introMsg.style.animation = 'none';
+                        void introMsg.offsetHeight;
+                        introMsg.style.animation = 'msgPulse 0.5s ease forwards';
+                    }
+                }, 100);
+
+                introTimer = setTimeout(function() {
+                    clearInterval(interval);
+                    screenStack.length = 0;
+                    screenStack.push('intro');
+                    transitionTo(welcomeScreen, 'welcome');
+                }, 5200);
+            }
+
+            async function handleContinue() {
+                continueBtn.disabled = true;
+                continueBtn.textContent = 'Loading…';
+
+                branchCheckList.querySelectorAll('.check-item').forEach(function(el) {
+                    el.classList.remove('done');
+                    var icon = el.querySelector('.check-icon');
+                    if (icon) icon.textContent = '○';
+                });
+
+                transitionTo(branchLoadingScreen, 'branchLoading');
+
+                await runBranchChecks();
+
+                transitionTo(branchesScreen, 'branches');
+
+                continueBtn.disabled = false;
+                continueBtn.innerHTML =
+                    'CONTINUE <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+            }
+
+            async function handleBranchSelect(branch) {
+                if (isOpening) return;
+                isOpening = true;
+
+                var names = {
+                    wealth: 'PureOre Wealth',
+                    reserve: 'PureOre Reserve',
+                    growth: 'PureOre Growth'
+                };
+                var displayName = names[branch] || 'Branch';
+
+                openCheckList.querySelectorAll('.check-item').forEach(function(el) {
+                    el.classList.remove('done');
+                    var icon = el.querySelector('.check-icon');
+                    if (icon) icon.textContent = '○';
+                });
+
+                openTitle.textContent = 'Opening ' + displayName + '…';
+
+                transitionTo(branchOpenScreen, 'branchOpen');
+
+                await runOpenChecks(branch);
+
+                goToBranch(branch);
+                isOpening = false;
+            }
+
+            continueBtn.addEventListener('click', handleContinue);
+
+            welcomeBackBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                goBack();
+            });
+
+            branchesBackBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                goBack();
+            });
+
+            document.querySelectorAll('.btn-branch').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var branch = this.dataset.branch;
+                    if (branch) handleBranchSelect(branch);
+                });
+            });
+
+            document.querySelectorAll('.branch-card').forEach(function(card) {
+                card.addEventListener('click', function(e) {
+                    if (e.target.closest('.btn-branch')) return;
+                    var branch = this.dataset.branch;
+                    if (branch) handleBranchSelect(branch);
+                });
+            });
+
+            function init() {
+                // No guest user creation – rely on Firebase auth.
+                // If user is not logged in, the auth check will redirect.
+                document.querySelectorAll('.screen').forEach(function(s) {
+                    s.classList.remove('active', 'exit');
+                });
+                introScreen.classList.add('active');
+                currentScreen = 'intro';
+                screenStack.length = 0;
+                screenStack.push('intro');
+                updateHistory();
+
+                startIntro();
+            }
+
+            init();
+
+            window.addEventListener('beforeunload', function() {
+                if (introTimer) clearTimeout(introTimer);
+            });
+
+        })();
+    </script>
+
+</body>
+</html>

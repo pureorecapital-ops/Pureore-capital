@@ -809,6 +809,7 @@
             <button class="tab-btn" data-tab="withdrawals">Withdrawals <span class="badge" id="withdrawalsBadge">0</span></button>
             <button class="tab-btn" data-tab="loans">Loans <span class="badge" id="loansBadge">0</span></button>
             <button class="tab-btn" data-tab="bonuses">Bonuses <span class="badge" id="bonusesBadge">0</span></button>
+            <button class="tab-btn" data-tab="savings">Savings <span class="badge" id="savingsBadge">0</span></button>
         </div>
 
         <!-- Tab Content -->
@@ -826,6 +827,9 @@
         </div>
         <div id="bonusesTab" class="tab-content">
             <div id="bonusesList"></div>
+        </div>
+        <div id="savingsTab" class="tab-content">
+            <div id="savingsList"></div>
         </div>
 
     </main>
@@ -877,13 +881,15 @@
                 return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
             } else if (type === 'bonus') {
                 return `<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+            } else if (type === 'savings') {
+                return `<svg viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/><path d="M7 12v-2"/><path d="M17 12v-2"/></svg>`;
             }
             return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
         }
 
         function getStatusClass(status) {
             var s = (status || '').toLowerCase();
-            if (s === 'pending') return 'pending';
+            if (s === 'pending' || s === 'pending_review' || s === 'under_review') return 'pending';
             if (s === 'completed' || s === 'paid' || s === 'approved') return 'completed';
             if (s === 'rejected' || s === 'failed') return 'rejected';
             if (s === 'active') return 'active';
@@ -896,13 +902,29 @@
                 deposit: 'Deposit',
                 withdrawal: 'Withdrawal',
                 loan: 'Loan',
-                bonus: 'Bonus'
+                bonus: 'Bonus',
+                savings: 'Savings'
             };
             return map[type] || type;
         }
 
+        // ── Calculate due date from createdAt + repaymentDays ──
+        function calculateDueDate(item) {
+            if (item.dueDate) return item.dueDate;
+            if (item.repaymentDays && (item.createdAt || item.submittedAt)) {
+                var date = item.createdAt?.toDate ? item.createdAt.toDate() : (item.submittedAt?.toDate ? item
+                    .submittedAt.toDate() : new Date(item.createdAt || item.submittedAt));
+                if (date && !isNaN(date)) {
+                    var due = new Date(date);
+                    due.setDate(due.getDate() + parseInt(item.repaymentDays));
+                    return due;
+                }
+            }
+            return null;
+        }
+
         function renderTransaction(item, type) {
-            var isPositive = (type === 'deposit' || type === 'bonus');
+            var isPositive = (type === 'deposit' || type === 'bonus' || type === 'savings');
             var amountClass = isPositive ? 'positive' : 'negative';
             var sign = isPositive ? '+' : '-';
             var statusClass = getStatusClass(item.status);
@@ -924,17 +946,46 @@
                     <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt)}</span>
                 `;
             } else if (type === 'loan') {
-                var repayTotal = item.repayTotal || item.amount * 1.2;
+                // Use totalRepayment from loan document, or fallback
+                var totalRepay = item.totalRepayment || item.totalRepay || item.repayTotal || (item.amount * 1.2);
+                var dueDate = calculateDueDate(item);
+                var dueDateStr = dueDate ? formatDate(dueDate) : 'N/A';
+                var branchDisplay = item.branchName || item.loanBranch || item.branch || '—';
+                var providerDisplay = item.provider || '—';
+
                 detailsHtml = `
-                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> To repay: <span class="highlight">${formatMoney(repayTotal)}</span></span>
-                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Due: ${formatDate(item.dueDate)}</span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt)}</span>
+                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Branch: <span class="highlight">${branchDisplay}</span></span>
+                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Provider: <span class="highlight">${providerDisplay}</span></span>
+                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> To repay: <span class="highlight">${formatMoney(totalRepay)}</span></span>
+                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Due: ${dueDateStr}</span>
+                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt || item.submittedAt)}</span>
                 `;
+                // Include level if available
+                if (item.loanLevel || item.level) {
+                    var levelDisplay = item.loanLevel || item.level;
+                    detailsHtml += `
+                        <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Level: <span class="highlight">${levelDisplay}</span></span>
+                    `;
+                }
             } else if (type === 'bonus') {
                 detailsHtml = `
                     <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${item.description || 'Bonus'}</span>
                     <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt)}</span>
                 `;
+            } else if (type === 'savings') {
+                var branchName = item.branch || 'Wealth';
+                var branchLabel = branchName.charAt(0).toUpperCase() + branchName.slice(1);
+                var goalLabel = item.goalName || item.savingReason || 'Savings';
+                detailsHtml = `
+                    <span><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Branch: <span class="highlight">${branchLabel}</span></span>
+                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ${goalLabel}</span>
+                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.submittedAt || item.createdAt)}</span>
+                `;
+                if (item.period) {
+                    detailsHtml += `
+                        <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${item.period} Days</span>
+                    `;
+                }
             }
 
             return `
@@ -971,14 +1022,16 @@
             deposits: [],
             withdrawals: [],
             loans: [],
-            bonuses: []
+            bonuses: [],
+            savings: []
         };
 
         var unsubs = {
             deposits: null,
             withdrawals: null,
             loans: null,
-            bonuses: null
+            bonuses: null,
+            savings: null
         };
 
         // ================================================================
@@ -1022,8 +1075,11 @@
             allData.withdrawals.forEach(function(w) { items.push({ ...w, _type: 'withdrawal' }); });
             allData.loans.forEach(function(l) { items.push({ ...l, _type: 'loan' }); });
             allData.bonuses.forEach(function(b) { items.push({ ...b, _type: 'bonus' }); });
+            allData.savings.forEach(function(s) { items.push({ ...s, _type: 'savings' }); });
             items.sort(function(a, b) {
-                return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
+                var aTime = a.createdAt?.toMillis?.() || a.submittedAt?.toMillis?.() || 0;
+                var bTime = b.createdAt?.toMillis?.() || b.submittedAt?.toMillis?.() || 0;
+                return bTime - aTime;
             });
 
             if (!items.length) {
@@ -1078,7 +1134,8 @@
             }
             var html = '';
             var sorted = allData.loans.slice().sort(function(a, b) {
-                return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
+                return (b.createdAt?.toMillis?.() || b.submittedAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || a
+                    .submittedAt?.toMillis?.() || 0);
             });
             for (var i = 0; i < sorted.length; i++) {
                 html += renderTransaction(sorted[i], 'loan');
@@ -1102,13 +1159,33 @@
             container.innerHTML = html;
         }
 
+        function renderSavings() {
+            var container = document.getElementById('savingsList');
+            if (!allData.savings.length) {
+                container.innerHTML = renderEmpty('No savings transactions');
+                return;
+            }
+            var html = '';
+            var sorted = allData.savings.slice().sort(function(a, b) {
+                var aTime = a.submittedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+                var bTime = b.submittedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+                return bTime - aTime;
+            });
+            for (var i = 0; i < sorted.length; i++) {
+                html += renderTransaction(sorted[i], 'savings');
+            }
+            container.innerHTML = html;
+        }
+
         function updateBadges() {
-            var total = allData.deposits.length + allData.withdrawals.length + allData.loans.length + allData.bonuses.length;
+            var total = allData.deposits.length + allData.withdrawals.length + allData.loans.length + allData.bonuses.length + allData
+                .savings.length;
             document.getElementById('allBadge').textContent = total;
             document.getElementById('depositsBadge').textContent = allData.deposits.length;
             document.getElementById('withdrawalsBadge').textContent = allData.withdrawals.length;
             document.getElementById('loansBadge').textContent = allData.loans.length;
             document.getElementById('bonusesBadge').textContent = allData.bonuses.length;
+            document.getElementById('savingsBadge').textContent = allData.savings.length;
         }
 
         // ================================================================
@@ -1151,7 +1228,13 @@
             var q = db.collection('loans').where('userId', '==', userId);
             unsubs.loans = q.onSnapshot(function(snapshot) {
                 var docs = [];
-                snapshot.forEach(function(doc) { docs.push({ id: doc.id, ...doc.data() }); });
+                snapshot.forEach(function(doc) {
+                    var data = doc.data();
+                    data.id = doc.id;
+                    // Ensure status is set
+                    if (!data.status) data.status = 'pending';
+                    docs.push(data);
+                });
                 allData.loans = docs;
                 renderLoans();
                 renderAll();
@@ -1185,6 +1268,26 @@
             });
         }
 
+        function listenSavings(userId) {
+            if (unsubs.savings) unsubs.savings();
+            var savingsRef = db.collection('users').doc(userId).collection('savings');
+            unsubs.savings = savingsRef.onSnapshot(function(snapshot) {
+                var docs = [];
+                snapshot.forEach(function(doc) {
+                    var data = doc.data();
+                    data.id = doc.id;
+                    docs.push(data);
+                });
+                allData.savings = docs;
+                renderSavings();
+                renderAll();
+                updateBadges();
+            }, function(err) {
+                console.error('Savings listener error:', err);
+                document.getElementById('savingsList').innerHTML = renderEmpty('Error loading savings');
+            });
+        }
+
         // ================================================================
         // TABS
         // ================================================================
@@ -1194,7 +1297,8 @@
             deposits: document.getElementById('depositsTab'),
             withdrawals: document.getElementById('withdrawalsTab'),
             loans: document.getElementById('loansTab'),
-            bonuses: document.getElementById('bonusesTab')
+            bonuses: document.getElementById('bonusesTab'),
+            savings: document.getElementById('savingsTab')
         };
 
         tabBtns.forEach(function(btn) {
@@ -1228,7 +1332,7 @@
         });
 
         // ================================================================
-        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
+        // AUTH STATE
         // ================================================================
         let authResolved = false;
         let redirectTimeout = null;
@@ -1245,8 +1349,8 @@
                 listenWithdrawals(user.uid);
                 listenLoans(user.uid);
                 listenBonuses(user.uid);
+                listenSavings(user.uid);
 
-                // Update panel name
                 db.collection('users').doc(user.uid).get().then(function(doc) {
                     if (doc.exists) {
                         var data = doc.data();
@@ -1287,9 +1391,10 @@
         });
 
         console.log('✅ history.html · Sajvera Capital · Blue glassmorphism design');
-        console.log('📜 All transactions including registration bonuses');
+        console.log('📜 All transactions including deposits, withdrawals, loans, bonuses, savings');
+        console.log('💰 Loans tab now displays: branch, provider, total repayment, due date, level');
+        console.log('✅ Loan status: pending, approved, rejected, active, paid, overdue');
         console.log('⬅️ Back button to dashboard · No bottom nav');
     </script>
-
 </body>
 </html>

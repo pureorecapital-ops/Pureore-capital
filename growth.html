@@ -1,0 +1,2490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>PureOre Growth · Sajvera Capital</title>
+
+    <!-- ============================================================
+         FIREBASE SDKs – Load these in the <head>
+         ============================================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ──────────────────────────────────────────────
+           RESET & BASE
+        ────────────────────────────────────────────── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #F5F0FF;
+            color: #111827;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            padding: 20px 16px;
+            will-change: opacity;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background: #F5F0FF;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .screen::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+        .screen {
+            scrollbar-width: none;
+        }
+
+        /* ──────────────────────────────────────────────
+           LOADING SCREEN (Deep Violet)
+        ────────────────────────────────────────────── */
+        #loadingScreen {
+            background: #4C1D95;
+            z-index: 100;
+        }
+
+        .loading-content {
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+        }
+
+        .loading-spinner {
+            width: 52px;
+            height: 52px;
+            border: 4px solid rgba(255, 255, 255, 0.10);
+            border-top-color: #14B8A6;
+            border-radius: 50%;
+            animation: spin 0.9s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+            margin: 0 auto 24px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 4px;
+            color: #fff;
+        }
+        .loading-title span {
+            color: #14B8A6;
+        }
+
+        .loading-sub {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.50);
+            margin-bottom: 28px;
+        }
+
+        .check-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+            margin-top: 4px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.5s ease;
+            opacity: 0.30;
+            transform: translateX(-6px);
+        }
+
+        .check-item.done {
+            opacity: 1;
+            transform: translateX(0);
+            border-color: rgba(20, 184, 166, 0.25);
+            background: rgba(20, 184, 166, 0.08);
+        }
+
+        .check-item .check-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.4s ease;
+            color: transparent;
+        }
+        .check-item.done .check-icon {
+            border-color: #14B8A6;
+            background: #14B8A6;
+            color: #4C1D95;
+        }
+
+        .check-item .check-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.55);
+            transition: color 0.4s ease;
+        }
+        .check-item.done .check-label {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        /* ──────────────────────────────────────────────
+           INTRO SCREEN
+        ────────────────────────────────────────────── */
+        #introScreen {
+            background: linear-gradient(160deg, #F5F0FF 0%, #EDE9FE 100%);
+            z-index: 20;
+            justify-content: center;
+            padding: 24px 20px;
+        }
+
+        .intro-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 32px 24px 28px;
+            box-shadow: 0 12px 48px rgba(76, 29, 149, 0.08);
+            border: 1px solid rgba(76, 29, 149, 0.04);
+            text-align: center;
+        }
+
+        .intro-badge {
+            display: inline-block;
+            background: #EDE9FE;
+            color: #4C1D95;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 16px;
+            border-radius: 40px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(139, 92, 246, 0.15);
+        }
+
+        .intro-icon {
+            margin: 0 auto 12px;
+            width: 64px;
+            height: 64px;
+        }
+
+        .intro-title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #4C1D95;
+            line-height: 1.1;
+        }
+        .intro-title span {
+            color: #14B8A6;
+        }
+
+        .intro-tagline {
+            font-size: 16px;
+            font-weight: 500;
+            color: #4C1D95;
+            opacity: 0.7;
+            margin-top: 2px;
+            margin-bottom: 8px;
+        }
+        .intro-sub {
+            font-size: 14px;
+            font-weight: 400;
+            color: #4C1D95;
+            opacity: 0.6;
+            margin-bottom: 16px;
+        }
+
+        .intro-desc {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #111827;
+            opacity: 0.75;
+            margin-bottom: 20px;
+            text-align: left;
+            padding: 0 4px;
+        }
+
+        .intro-min {
+            background: #EDE9FE;
+            border-radius: 16px;
+            padding: 12px 16px;
+            display: inline-block;
+            font-weight: 700;
+            font-size: 14px;
+            color: #4C1D95;
+            margin-bottom: 24px;
+            border: 1px solid rgba(139, 92, 246, 0.10);
+        }
+        .intro-min strong {
+            color: #14B8A6;
+            font-size: 18px;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #4C1D95, #7C3AED);
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 17px;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 6px 24px rgba(76, 29, 149, 0.20);
+            letter-spacing: 0.3px;
+            width: 100%;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .btn-primary:active {
+            transform: scale(0.96);
+            box-shadow: 0 4px 16px rgba(76, 29, 149, 0.25);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-teal {
+            background: linear-gradient(135deg, #0D9488, #14B8A6);
+            color: #FFFFFF;
+            box-shadow: 0 6px 24px rgba(20, 184, 166, 0.25);
+        }
+        .btn-teal:active {
+            box-shadow: 0 4px 16px rgba(20, 184, 166, 0.30);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #4C1D95;
+            border: 2px solid #4C1D95;
+            box-shadow: none;
+        }
+        .btn-outline:active {
+            background: rgba(76, 29, 149, 0.04);
+        }
+
+        /* ──────────────────────────────────────────────
+           BACK BUTTON
+        ────────────────────────────────────────────── */
+        .back-btn {
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 5;
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px 10px 10px;
+            background: rgba(255, 255, 255, 0.80);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.20);
+            border-radius: 40px;
+            color: #4C1D95;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            touch-action: manipulation;
+            user-select: none;
+            letter-spacing: 0.2px;
+            text-decoration: none;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            margin-bottom: 16px;
+        }
+        .back-btn:active {
+            transform: scale(0.94);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .back-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        /* ──────────────────────────────────────────────
+           GOAL SELECTION SCREEN
+        ────────────────────────────────────────────── */
+        #goalScreen {
+            background: #FFFFFF;
+            z-index: 30;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .screen-header {
+            width: 100%;
+            max-width: 420px;
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+        .screen-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #4C1D95;
+        }
+        .screen-header p {
+            font-size: 14px;
+            color: #111827;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+
+        .goals-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .goal-card {
+            background: #F5F0FF;
+            border-radius: 20px;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .goal-card:active {
+            transform: scale(0.94);
+        }
+        .goal-card.selected {
+            border-color: #7C3AED;
+            background: #EDE9FE;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+        }
+        .goal-card .icon {
+            width: 32px;
+            height: 32px;
+            display: block;
+            margin: 0 auto 4px;
+        }
+        .goal-card .label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4C1D95;
+            line-height: 1.3;
+        }
+
+        /* ──────────────────────────────────────────────
+           CUSTOM GOAL INPUT
+        ────────────────────────────────────────────── */
+        #customGoalScreen {
+            background: #FFFFFF;
+            z-index: 35;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .input-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 20px 16px 24px;
+            border: 1px solid rgba(76, 29, 149, 0.04);
+            box-shadow: 0 12px 48px rgba(76, 29, 149, 0.06);
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #4C1D95;
+            border: 2px solid #F5F0FF;
+            border-radius: 20px;
+            background: #F5F0FF;
+            outline: none;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+        .text-input:focus {
+            border-color: #7C3AED;
+            background: #FFFFFF;
+        }
+        .text-input.error {
+            border-color: #EF4444;
+            background: #FEF2F2;
+        }
+
+        .input-error {
+            font-size: 13px;
+            padding: 8px 12px;
+            background: #FEF2F2;
+            border-radius: 8px;
+            border: 1px solid #FCA5A5;
+            color: #991B1B;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        /* ──────────────────────────────────────────────
+           TARGET & SAVING AMOUNT SCREENS
+        ────────────────────────────────────────────── */
+        #targetScreen,
+        #amountScreen {
+            background: #FFFFFF;
+            z-index: 40;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .amount-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 20px 16px 24px;
+            border: 1px solid rgba(76, 29, 149, 0.04);
+            box-shadow: 0 12px 48px rgba(76, 29, 149, 0.06);
+        }
+
+        .amount-input-wrap {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .amount-input-wrap .currency {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 700;
+            font-size: 20px;
+            color: #4C1D95;
+            opacity: 0.5;
+        }
+
+        .amount-input {
+            width: 100%;
+            padding: 16px 16px 16px 44px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #4C1D95;
+            border: 2px solid #F5F0FF;
+            border-radius: 20px;
+            background: #F5F0FF;
+            outline: none;
+            transition: border-color 0.3s ease, background 0.3s ease;
+            font-family: inherit;
+            -moz-appearance: textfield;
+        }
+        .amount-input::-webkit-outer-spin-button,
+        .amount-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .amount-input:focus {
+            border-color: #7C3AED;
+            background: #FFFFFF;
+        }
+        .amount-input.error {
+            border-color: #EF4444;
+            background: #FEF2F2;
+        }
+
+        .amount-hint {
+            font-size: 13px;
+            color: #111827;
+            opacity: 0.5;
+            margin-top: -8px;
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+        .amount-hint strong {
+            color: #7C3AED;
+        }
+
+        .amount-error {
+            font-size: 13px;
+            padding: 8px 12px;
+            background: #FEF2F2;
+            border-radius: 8px;
+            border: 1px solid #FCA5A5;
+            color: #991B1B;
+            margin-top: -4px;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .amount-error strong {
+            color: #991B1B;
+        }
+
+        /* ──────────────────────────────────────────────
+           PROGRESS PREVIEW SCREEN
+        ────────────────────────────────────────────── */
+        #progressScreen {
+            background: #FFFFFF;
+            z-index: 45;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .progress-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 24px 20px;
+            border: 1px solid rgba(76, 29, 149, 0.04);
+            box-shadow: 0 12px 48px rgba(76, 29, 149, 0.06);
+            text-align: center;
+        }
+
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#7C3AED var(--progress-deg, 0deg), #EDE9FE var(--progress-deg, 0deg));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            position: relative;
+        }
+        .progress-ring-inner {
+            width: 90px;
+            height: 90px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .progress-ring-inner .percent {
+            font-size: 28px;
+            font-weight: 800;
+            color: #4C1D95;
+        }
+        .progress-ring-inner .label {
+            font-size: 12px;
+            color: #4C1D95;
+            opacity: 0.6;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 12px 0 16px;
+        }
+        .progress-stats .stat .num {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4C1D95;
+        }
+        .progress-stats .stat .lbl {
+            font-size: 12px;
+            color: #4C1D95;
+            opacity: 0.5;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #EDE9FE;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 8px 0 4px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7C3AED, #14B8A6);
+            border-radius: 20px;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* ──────────────────────────────────────────────
+           PERIOD SCREEN
+        ────────────────────────────────────────────── */
+        #periodScreen {
+            background: #FFFFFF;
+            z-index: 50;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .period-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .period-card {
+            background: #F5F0FF;
+            border-radius: 16px;
+            padding: 12px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .period-card:active {
+            transform: scale(0.94);
+        }
+        .period-card.selected {
+            border-color: #7C3AED;
+            background: #EDE9FE;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+        }
+        .period-card .days {
+            font-size: 16px;
+            font-weight: 800;
+            color: #4C1D95;
+        }
+        .period-card .months {
+            font-size: 11px;
+            font-weight: 500;
+            color: #111827;
+            opacity: 0.5;
+        }
+
+        /* ──────────────────────────────────────────────
+           CALCULATION / CONFIRM SCREEN
+        ────────────────────────────────────────────── */
+        #confirmScreen {
+            background: #FFFFFF;
+            z-index: 60;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .confirm-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 20px 16px 24px;
+            border: 1px solid rgba(76, 29, 149, 0.04);
+            box-shadow: 0 12px 48px rgba(76, 29, 149, 0.06);
+        }
+
+        .confirm-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4C1D95;
+            margin-bottom: 4px;
+        }
+        .confirm-card .sub {
+            font-size: 14px;
+            color: #111827;
+            opacity: 0.6;
+            margin-bottom: 16px;
+        }
+
+        .confirm-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(76, 29, 149, 0.04);
+        }
+        .confirm-item:last-child {
+            border-bottom: none;
+        }
+        .confirm-item .label {
+            font-size: 14px;
+            color: #111827;
+            opacity: 0.7;
+        }
+        .confirm-item .value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #4C1D95;
+        }
+        .confirm-item .value.teal {
+            color: #14B8A6;
+        }
+        .confirm-item .value.highlight {
+            font-size: 16px;
+        }
+
+        .fee-note {
+            background: #F5F0FF;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #111827;
+            opacity: 0.8;
+            margin: 12px 0 20px;
+            border-left: 3px solid #14B8A6;
+        }
+        .fee-note strong {
+            color: #4C1D95;
+        }
+
+        /* ──────────────────────────────────────────────
+           SUCCESS SCREEN
+        ────────────────────────────────────────────── */
+        #successScreen {
+            background: #F5F0FF;
+            z-index: 70;
+            justify-content: center;
+        }
+
+        .success-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 32px 24px 28px;
+            text-align: center;
+            box-shadow: 0 12px 48px rgba(76, 29, 149, 0.06);
+        }
+
+        .success-check {
+            width: 64px;
+            height: 64px;
+            background: #EDE9FE;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            animation: popIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .success-check svg {
+            width: 36px;
+            height: 36px;
+            stroke: #4C1D95;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        @keyframes popIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-card h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #4C1D95;
+        }
+        .success-card .sub {
+            font-size: 14px;
+            color: #111827;
+            opacity: 0.6;
+            margin-bottom: 16px;
+        }
+
+        .success-details {
+            background: #F5F0FF;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: left;
+            margin-bottom: 16px;
+        }
+        .success-details .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 14px;
+        }
+        .success-details .row .lbl {
+            color: #111827;
+            opacity: 0.6;
+        }
+        .success-details .row .val {
+            font-weight: 700;
+            color: #4C1D95;
+        }
+        .success-details .row .val.teal {
+            color: #14B8A6;
+        }
+
+        .status-pending {
+            background: #FEF3C7;
+            color: #92400E;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: inline-block;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        /* ──────────────────────────────────────────────
+           DASHBOARD SCREEN
+        ────────────────────────────────────────────── */
+        #dashboardScreen {
+            background: #F5F0FF;
+            z-index: 10;
+            justify-content: flex-start;
+            padding-top: 16px;
+            padding-bottom: 24px;
+        }
+
+        .dashboard-content {
+            max-width: 460px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: 20px;
+        }
+
+        .growth-header {
+            text-align: center;
+            padding: 0 4px;
+        }
+        .growth-header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #4C1D95;
+        }
+        .growth-header h1 span {
+            color: #14B8A6;
+        }
+        .growth-header p {
+            font-size: 15px;
+            font-weight: 400;
+            color: #4C1D95;
+            opacity: 0.7;
+            margin-top: -2px;
+            letter-spacing: 0.3px;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border-radius: 24px;
+            padding: 22px 20px;
+            box-shadow: 0 4px 20px rgba(76, 29, 149, 0.06);
+            border: 1px solid rgba(76, 29, 149, 0.04);
+            width: 100%;
+        }
+        .card-violet {
+            border: 1px solid rgba(124, 58, 237, 0.25);
+            background: linear-gradient(145deg, #FFFFFF, #EDE9FE);
+        }
+        .card-teal {
+            border: 1px solid rgba(20, 184, 166, 0.2);
+            background: #FFFFFF;
+        }
+
+        .balance-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4C1D95;
+            opacity: 0.6;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .balance-amount {
+            font-size: 42px;
+            font-weight: 800;
+            color: #4C1D95;
+            letter-spacing: -1px;
+            line-height: 1.1;
+            margin: 2px 0 4px;
+        }
+        .balance-amount .currency {
+            font-size: 28px;
+            font-weight: 600;
+            color: #14B8A6;
+            margin-right: 2px;
+        }
+        .balance-breakdown {
+            font-size: 14px;
+            color: #4C1D95;
+            opacity: 0.7;
+            font-weight: 500;
+        }
+        .balance-breakdown strong {
+            color: #4C1D95;
+            opacity: 0.9;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 4px;
+        }
+        .info-item {
+            background: #F5F0FF;
+            padding: 12px 14px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .info-item .label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #4C1D95;
+            opacity: 0.5;
+            letter-spacing: 0.3px;
+        }
+        .info-item .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4C1D95;
+            margin-top: 2px;
+        }
+        .info-item .value.teal {
+            color: #14B8A6;
+        }
+        .info-item.full {
+            grid-column: 1 / -1;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .status-badge.locked {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+        .status-badge.matured {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        .status-badge.pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .progress-section {
+            margin-top: 4px;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4C1D95;
+            opacity: 0.7;
+            margin-bottom: 6px;
+        }
+        .progress-bar-bg-dash {
+            width: 100%;
+            height: 8px;
+            background: #EDE9FE;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .progress-bar-fill-dash {
+            height: 100%;
+            background: linear-gradient(90deg, #7C3AED, #14B8A6);
+            border-radius: 20px;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #4C1D95;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 16px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 4px 16px rgba(76, 29, 149, 0.15);
+            letter-spacing: 0.3px;
+            width: 100%;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .btn-secondary:active {
+            transform: scale(0.96);
+        }
+
+        .btn-outline-dark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: transparent;
+            color: #4C1D95;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 12px 20px;
+            border: 2px solid #4C1D95;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .btn-outline-dark:active {
+            transform: scale(0.96);
+            background: rgba(76, 29, 149, 0.04);
+        }
+
+        .pending-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(76, 29, 149, 0.05);
+        }
+        .pending-item:last-child {
+            border-bottom: none;
+        }
+        .pending-item .left .title {
+            font-weight: 600;
+            color: #4C1D95;
+        }
+        .pending-item .left .sub {
+            font-size: 12px;
+            color: #4C1D95;
+            opacity: 0.5;
+        }
+        .pending-item .right {
+            text-align: right;
+        }
+        .pending-item .right .amount {
+            font-weight: 700;
+            color: #4C1D95;
+        }
+
+        .state-message {
+            text-align: center;
+            padding: 20px 10px;
+        }
+        .state-message .icon {
+            width: 48px;
+            height: 48px;
+            display: block;
+            margin: 0 auto 8px;
+        }
+        .state-message h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4C1D95;
+            margin-bottom: 2px;
+        }
+        .state-message p {
+            font-size: 14px;
+            color: #4C1D95;
+            opacity: 0.6;
+            line-height: 1.6;
+        }
+
+        /* ──────────────────────────────────────────────
+           RESPONSIVE
+        ────────────────────────────────────────────── */
+        @media (max-width: 480px) {
+            .intro-title {
+                font-size: 26px;
+            }
+            .goals-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 8px;
+            }
+            .goal-card {
+                padding: 12px 4px;
+            }
+            .goal-card .icon {
+                width: 28px;
+                height: 28px;
+            }
+            .period-grid {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                gap: 8px;
+            }
+            .period-card {
+                padding: 10px 2px;
+            }
+            .period-card .days {
+                font-size: 14px;
+            }
+            .balance-amount {
+                font-size: 34px;
+            }
+            .balance-amount .currency {
+                font-size: 22px;
+            }
+            .card {
+                padding: 18px 16px;
+            }
+            .info-grid {
+                gap: 8px;
+            }
+            .info-item {
+                padding: 10px 8px;
+            }
+            .info-item .value {
+                font-size: 16px;
+            }
+            .growth-header h1 {
+                font-size: 22px;
+            }
+            .back-btn {
+                font-size: 13px;
+                padding: 8px 12px 8px 8px;
+                margin-bottom: 12px;
+            }
+            .back-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+            .amount-input {
+                font-size: 24px;
+                padding: 14px 16px 14px 40px;
+            }
+            .amount-input-wrap .currency {
+                font-size: 18px;
+                left: 14px;
+            }
+            .success-card {
+                padding: 24px 16px;
+            }
+            .confirm-card {
+                padding: 16px 12px;
+            }
+            .progress-ring {
+                width: 100px;
+                height: 100px;
+            }
+            .progress-ring-inner {
+                width: 75px;
+                height: 75px;
+            }
+            .progress-ring-inner .percent {
+                font-size: 22px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .goals-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .period-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            .balance-amount {
+                font-size: 28px;
+            }
+            .balance-amount .currency {
+                font-size: 18px;
+            }
+        }
+
+        @media (min-width: 600px) {
+            .dashboard-content,
+            .intro-card,
+            .success-card,
+            .amount-card,
+            .confirm-card,
+            .progress-card,
+            .input-card {
+                max-width: 480px;
+            }
+            .goals-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            .period-grid {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+            }
+        }
+
+        /* ──────────────────────────────────────────────
+           UTILITIES
+        ────────────────────────────────────────────── */
+        .text-center {
+            text-align: center;
+        }
+        .w-full {
+            width: 100%;
+        }
+        .mt-1 {
+            margin-top: 4px;
+        }
+        .mt-2 {
+            margin-top: 8px;
+        }
+        .mt-3 {
+            margin-top: 14px;
+        }
+        .mb-1 {
+            margin-bottom: 4px;
+        }
+        .mb-2 {
+            margin-bottom: 8px;
+        }
+        .gap-1 {
+            gap: 8px;
+        }
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+        .items-center {
+            align-items: center;
+        }
+        .text-violet {
+            color: #7C3AED;
+        }
+        .text-teal {
+            color: #14B8A6;
+        }
+        .text-navy {
+            color: #4C1D95;
+        }
+        .op-6 {
+            opacity: 0.6;
+        }
+        .fw-7 {
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: LOADING
+    ════════════════════════════════════════════════ -->
+    <div id="loadingScreen" class="screen active">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-title">Opening <span>PureOre Growth</span>…</div>
+            <div class="loading-sub">Preparing your growth plan</div>
+            <div class="check-list" id="loadingCheckList">
+                <div class="check-item" data-index="0">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Checking your account…</span>
+                </div>
+                <div class="check-item" data-index="1">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Preparing your growth plan…</span>
+                </div>
+                <div class="check-item" data-index="2">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Loading your goal tools…</span>
+                </div>
+                <div class="check-item" data-index="3">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Preparing your saving options…</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: INTRO
+    ════════════════════════════════════════════════ -->
+    <div id="introScreen" class="screen">
+        <div class="intro-card">
+            <div class="intro-badge">📈 PureOre Growth</div>
+            <div class="intro-icon">
+                <svg viewBox="0 0 64 64" fill="none">
+                    <path d="M8 52 L20 36 L32 44 L48 24 L56 32" stroke="#14B8A6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="20" cy="36" r="3" fill="#7C3AED"/>
+                    <circle cx="32" cy="44" r="3" fill="#7C3AED"/>
+                    <circle cx="48" cy="24" r="3" fill="#7C3AED"/>
+                    <path d="M8 52 L56 52" stroke="#7C3AED" stroke-width="2" stroke-linecap="round"/>
+                    <rect x="6" y="6" width="52" height="52" rx="8" stroke="#7C3AED" stroke-width="2" stroke-dasharray="4 4"/>
+                </svg>
+            </div>
+            <div class="intro-title">PUREORE <span>GROWTH</span></div>
+            <div class="intro-tagline">Grow your goals. Build your future.</div>
+            <div class="intro-sub">Save with purpose. Reach your target.</div>
+            <div class="intro-desc">
+                <strong>PureOre Growth</strong> is designed for users who want to save toward a specific goal.
+                Choose your target, decide how much you want to save, select your saving period and track your progress until maturity.
+            </div>
+            <div class="intro-min">
+                STARTING PERIOD <strong>90 DAYS</strong> &nbsp;·&nbsp; MINIMUM <strong>K350</strong>
+            </div>
+            <button class="btn-primary" id="startGrowthBtn">CREATE MY GROWTH PLAN</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: GOAL SELECTION
+    ════════════════════════════════════════════════ -->
+    <div id="goalScreen" class="screen">
+        <button class="back-btn" id="goalBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>What are you saving for?</h2>
+            <p>Select your goal</p>
+        </div>
+        <div class="goals-grid" id="goalsGrid">
+            <div class="goal-card" data-goal="business">
+                <svg class="icon" viewBox="0 0 32 32" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12" width="24" height="16" rx="2"/><path d="M12 28 L12 8 C12 6 14 4 16 4 C18 4 20 6 20 8 L20 28"/></svg>
+                <span class="label">Business</span>
+            </div>
+            <div class="goal-card" data-goal="education">
+                <svg class="icon" viewBox="0 0 32 32" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4 L4 10 L16 16 L28 10 L16 4Z"/><path d="M4 10 L4 20 L16 26 L28 20 L28 10"/><path d="M4 20 L16 26 L28 20"/></svg>
+                <span class="label">Education</span>
+            </div>
+            <div class="goal-card" data-goal="home">
+                <svg class="icon" viewBox="0 0 32 32" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14 L16 4 L28 14"/><path d="M8 12 L8 28 L24 28 L24 12"/><rect x="12" y="20" width="8" height="8"/></svg>
+                <span class="label">Home</span>
+            </div>
+            <div class="goal-card" data-goal="vehicle">
+                <svg class="icon" viewBox="0 0 32 32" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="18" width="28" height="12" rx="3"/><circle cx="10" cy="26" r="4"/><circle cx="22" cy="26" r="4"/><path d="M6 22 L14 22"/><path d="M18 22 L26 22"/></svg>
+                <span class="label">Vehicle</span>
+            </div>
+            <div class="goal-card" data-goal="family">
+                <svg class="icon" viewBox="0 0 32 32" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><circle cx="24" cy="8" r="4"/><path d="M4 28 L4 22 C4 18 8 16 12 16 C16 16 20 18 20 22 L20 28"/><path d="M20 28 L20 22 C20 18 24 16 28 16 C32 16 36 18 36 22 L36 28"/></svg>
+                <span class="label">Family</span>
+            </div>
+            <div class="goal-card" data-goal="personal">
+                <svg class="icon" viewBox="0 0 32 32" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="2"/><line x1="16" y1="4" x2="16" y2="6"/><line x1="16" y1="26" x2="16" y2="28"/><line x1="4" y1="16" x2="6" y2="16"/><line x1="26" y1="16" x2="28" y2="16"/></svg>
+                <span class="label">Personal Goal</span>
+            </div>
+            <div class="goal-card" data-goal="emergency">
+                <svg class="icon" viewBox="0 0 32 32" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="16 4 4 10 4 22 16 28 28 22 28 10 16 4"/><line x1="16" y1="12" x2="16" y2="18"/><circle cx="16" cy="22" r="1.5"/></svg>
+                <span class="label">Emergency</span>
+            </div>
+            <div class="goal-card" data-goal="other">
+                <svg class="icon" viewBox="0 0 32 32" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12 L24 12 M8 18 L20 18 M8 24 L16 24"/><circle cx="28" cy="24" r="2"/></svg>
+                <span class="label">Other</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: CUSTOM GOAL NAME
+    ════════════════════════════════════════════════ -->
+    <div id="customGoalScreen" class="screen">
+        <button class="back-btn" id="customGoalBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>What is your goal?</h2>
+            <p>Give your goal a name</p>
+        </div>
+        <div class="input-card">
+            <input type="text" id="customGoalInput" class="text-input" placeholder="e.g. My new shop" />
+            <div class="input-error" id="customGoalError">⚠️ Please enter a goal name.</div>
+            <button class="btn-primary" id="customGoalContinue">CONTINUE →</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: TARGET AMOUNT
+    ════════════════════════════════════════════════ -->
+    <div id="targetScreen" class="screen">
+        <button class="back-btn" id="targetBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>Set Your Savings Target</h2>
+            <p>Your target helps you measure your progress</p>
+        </div>
+        <div class="amount-card">
+            <div class="amount-input-wrap">
+                <span class="currency">K</span>
+                <input type="number" id="targetInput" class="amount-input" placeholder="5000" min="1" step="1" />
+            </div>
+            <div class="amount-hint" id="targetHint">Enter your target amount</div>
+            <div class="amount-error" id="targetError">⚠️ Please enter a valid target amount greater than zero.</div>
+            <button class="btn-primary" id="targetContinueBtn" disabled>CONTINUE →</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: SAVING AMOUNT
+    ════════════════════════════════════════════════ -->
+    <div id="amountScreen" class="screen">
+        <button class="back-btn" id="amountBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>How much would you like to save?</h2>
+            <p>Minimum <strong>K350</strong></p>
+        </div>
+        <div class="amount-card">
+            <div class="amount-input-wrap">
+                <span class="currency">K</span>
+                <input type="number" id="saveAmountInput" class="amount-input" placeholder="350" min="350" step="1" />
+            </div>
+            <div class="amount-hint" id="saveAmountHint">Minimum Growth saving is <strong>K350</strong></div>
+            <div class="amount-error" id="saveAmountError">⚠️ Minimum PureOre Growth saving is <strong>K350</strong></div>
+            <button class="btn-primary" id="saveAmountContinueBtn" disabled>CONTINUE →</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: PROGRESS PREVIEW
+    ════════════════════════════════════════════════ -->
+    <div id="progressScreen" class="screen">
+        <button class="back-btn" id="progressBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>Your Goal Progress</h2>
+            <p>See how close you are to your target</p>
+        </div>
+        <div class="progress-card">
+            <div class="progress-ring" id="progressRing" style="--progress-deg: 0deg;">
+                <div class="progress-ring-inner">
+                    <span class="percent" id="progressPercent">0%</span>
+                    <span class="label">progress</span>
+                </div>
+            </div>
+            <div class="progress-stats">
+                <div class="stat">
+                    <div class="num" id="progressTarget">K0</div>
+                    <div class="lbl">Target</div>
+                </div>
+                <div class="stat">
+                    <div class="num" id="progressSaved">K0</div>
+                    <div class="lbl">Saved</div>
+                </div>
+                <div class="stat">
+                    <div class="num" id="progressRemaining">K0</div>
+                    <div class="lbl">Remaining</div>
+                </div>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressBarFill" style="width:0%;"></div>
+            </div>
+            <div style="font-size:14px; color:#4C1D95; opacity:0.6; margin-top:8px;">
+                You are <strong id="progressMessage">0%</strong> toward your target.
+            </div>
+            <button class="btn-primary btn-teal" id="progressContinueBtn" style="margin-top:16px;">CONTINUE TO PERIOD →</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: PERIOD
+    ════════════════════════════════════════════════ -->
+    <div id="periodScreen" class="screen">
+        <button class="back-btn" id="periodBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>Choose Your Saving Period</h2>
+            <p>Earn tiered interest based on your period</p>
+        </div>
+        <div class="period-grid" id="periodGrid">
+            <!-- populated by JS -->
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: CONFIRM
+    ════════════════════════════════════════════════ -->
+    <div id="confirmScreen" class="screen">
+        <button class="back-btn" id="confirmBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>Your Growth Plan</h2>
+            <p>Review your goal and savings</p>
+        </div>
+        <div class="confirm-card">
+            <div id="confirmDetails">
+                <div class="confirm-item">
+                    <span class="label">Goal</span>
+                    <span class="value" id="confirmGoal">Business</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="label">Target</span>
+                    <span class="value" id="confirmTarget">K1,000</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="label">Saving Now</span>
+                    <span class="value" id="confirmAmount">K350</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="label">Saving Period</span>
+                    <span class="value" id="confirmPeriod">90 Days</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="label">Interest</span>
+                    <span class="value teal" id="confirmInterest">15%</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="label">Interest Amount</span>
+                    <span class="value teal" id="confirmInterestAmt">K52.50</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="label">Protected Maturity Amount</span>
+                    <span class="value" id="confirmProtected">K402.50</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="label">Withdrawal Fee Reserve (10%)</span>
+                    <span class="value teal" id="confirmFee">K40.25</span>
+                </div>
+                <div class="confirm-item" style="border-top:2px solid #14B8A6; padding-top:8px; margin-top:4px;">
+                    <span class="label" style="font-weight:700;">Total Withdrawal Balance</span>
+                    <span class="value highlight teal" id="confirmTotal">K442.75</span>
+                </div>
+            </div>
+
+            <div class="fee-note">
+                <strong>📈 Your protected maturity amount includes your saving and interest.</strong>
+                The additional 10% is reserved for the withdrawal fee.
+            </div>
+
+            <div style="font-size:13px; color:#111827; opacity:0.6; margin-bottom:12px; background:#F5F0FF; padding:8px 12px; border-radius:8px;">
+                ⚠️ Your saving period begins only after your deposit is approved by the administrator.
+            </div>
+
+            <button class="btn-primary" id="payNowBtn">PAY NOW</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: DEPOSIT LOADING (redirects to saving-deposit.html)
+    ════════════════════════════════════════════════ -->
+    <div id="depositLoadingScreen" class="screen">
+        <div class="loading-content" style="color:#4C1D95;">
+            <div class="loading-spinner" style="border-top-color:#14B8A6; border-color:rgba(76,29,149,0.10);"></div>
+            <div class="loading-title" style="color:#4C1D95;">Processing your <span style="color:#14B8A6;">Growth saving</span>…</div>
+            <div class="loading-sub" style="color:#4C1D95; opacity:0.6;">Redirecting to secure deposit form</div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: SUCCESS
+    ════════════════════════════════════════════════ -->
+    <div id="successScreen" class="screen">
+        <div class="success-card">
+            <div class="success-check">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h3>GROWTH SAVING SUBMITTED</h3>
+            <div class="sub">Your Growth deposit is now pending admin approval</div>
+
+            <div class="success-details" id="successDetails">
+                <div class="row"><span class="lbl">Branch</span><span class="val">PureOre Growth</span></div>
+                <div class="row"><span class="lbl">Goal</span><span class="val" id="successGoal">Business</span></div>
+                <div class="row"><span class="lbl">Amount</span><span class="val" id="successAmount">K350</span></div>
+                <div class="row"><span class="lbl">Period</span><span class="val" id="successPeriod">90 Days</span></div>
+                <div class="row"><span class="lbl">Interest</span><span class="val teal" id="successInterest">15%</span></div>
+                <div class="row"><span class="lbl">Status</span><span class="val"><span class="status-pending">🔵 PENDING</span></span></div>
+            </div>
+
+            <p style="font-size:14px; color:#111827; opacity:0.7; margin-bottom:16px; line-height:1.6;">
+                Your saving period will begin only after the administrator approves your deposit.
+            </p>
+
+            <div class="btn-group">
+                <button class="btn-primary" id="viewHistoryBtn">VIEW SAVING HISTORY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: DASHBOARD
+    ════════════════════════════════════════════════ -->
+    <div id="dashboardScreen" class="screen">
+        <button class="back-btn" id="dashboardBackBtn" aria-label="Back to Saving">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back to Saving
+        </button>
+
+        <div class="dashboard-content" id="dashboardContent">
+            <div class="growth-header">
+                <h1>PUREORE <span>GROWTH</span></h1>
+                <p>Grow your goals. Build your future.</p>
+            </div>
+
+            <!-- Balance Card -->
+            <div class="card card-violet" id="balanceCard">
+                <div class="balance-label">Growth Balance</div>
+                <div class="balance-amount">
+                    <span class="currency">K</span><span id="balanceNumber">0.00</span>
+                </div>
+                <div class="balance-breakdown" id="balanceBreakdown">
+                    <strong>K0</strong> Protected + <strong>K0</strong> Fee Reserve
+                </div>
+            </div>
+
+            <!-- Active Saving Info -->
+            <div class="card card-teal" id="activeInfoCard" style="display:none;">
+                <div id="activeInfoContent"></div>
+            </div>
+
+            <!-- Progress -->
+            <div class="card card-teal" id="progressCard" style="display:none;">
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span id="progressPeriodLabel">0 DAY SAVING PERIOD</span>
+                        <span id="progressStatusLabel">LOCKED</span>
+                    </div>
+                    <div class="progress-bar-bg-dash">
+                        <div class="progress-bar-fill-dash" id="progressFill" style="width:0%;"></div>
+                    </div>
+                    <div class="progress-days">
+                        <span id="daysSaved">0 Days Saved</span>
+                        <span id="daysRemaining">0 Days Remaining</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending List -->
+            <div class="card card-teal" id="pendingCard" style="display:none;">
+                <h3 style="font-size:16px; font-weight:700; color:#4C1D95; margin-bottom:6px;">⏳ Pending Savings</h3>
+                <div id="pendingListContent"></div>
+                <div style="margin-top:10px; font-size:13px; color:#4C1D95; opacity:0.6; background:#F5F0FF; padding:10px 14px; border-radius:12px;">
+                    ⚠️ Your saving period will begin when the admin approves this deposit.
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
+                <button class="btn-primary" id="dashSaveMoneyBtn">＋ SAVE MONEY</button>
+                <button class="btn-secondary" id="dashHistoryBtn">VIEW GROWTH HISTORY</button>
+                <button class="btn-outline-dark" id="dashWithdrawBtn" disabled>🔒 WITHDRAW LOCKED</button>
+            </div>
+
+            <!-- Empty State -->
+            <div class="card card-teal" id="emptyState" style="display:none;">
+                <div class="state-message">
+                    <svg class="icon" viewBox="0 0 48 48" fill="none" stroke="#4C1D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="14" width="36" height="28" rx="4"/><path d="M18 14 L18 8 C18 6 20 4 24 4 C28 4 30 6 30 8 L30 14"/><circle cx="24" cy="28" r="3"/><line x1="24" y1="31" x2="24" y2="22"/></svg>
+                    <h3>Start Building Your Growth</h3>
+                    <p>You don't have an active PureOre Growth saving yet.</p>
+                    <button class="btn-primary" id="emptySaveBtn" style="margin-top:16px;">SAVE MONEY</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    JAVASCRIPT – FIREBASE CONFIG & AUTH
+    ════════════════════════════════════════════════ -->
+    <script>
+        // ================================================================
+        // FIREBASE CONFIG – Your project credentials
+        // ================================================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b",
+            measurementId: "G-FQKC29NYE9"
+        };
+
+        // ================================================================
+        // INITIALIZE FIREBASE (only once)
+        // ================================================================
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        db.settings({ persistence: true });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ================================================================
+        // AUTH STATE CHECK – Redirect if not logged in
+        // ================================================================
+        var authResolved = false;
+        var redirectTimeout = null;
+
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                console.log('✅ User logged in:', user.uid, user.email);
+                // (Optional) Firestore user data fetch can be added here.
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                console.log('❌ No user found. Redirecting to login...');
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
+        });
+
+        // ================================================================
+        // HELPER FUNCTIONS (overriding local‑storage user)
+        // ================================================================
+        function getLoggedInUser() {
+            var user = auth.currentUser;
+            if (user) {
+                return {
+                    id: user.uid,
+                    email: user.email,
+                    name: user.displayName || user.email
+                };
+            }
+            return null;
+        }
+
+        function logoutUser() {
+            auth.signOut().then(function() {
+                window.location.href = 'login.html';
+            }).catch(function(err) {
+                console.warn('Logout error:', err);
+            });
+        }
+
+        // ================================================================
+        // PAGE LOGIC (Firebase‑aware)
+        // ================================================================
+        (function() {
+            'use strict';
+
+            // ── DOM refs ──
+            var loadingScreen = document.getElementById('loadingScreen');
+            var introScreen = document.getElementById('introScreen');
+            var goalScreen = document.getElementById('goalScreen');
+            var customGoalScreen = document.getElementById('customGoalScreen');
+            var targetScreen = document.getElementById('targetScreen');
+            var amountScreen = document.getElementById('amountScreen');
+            var progressScreen = document.getElementById('progressScreen');
+            var periodScreen = document.getElementById('periodScreen');
+            var confirmScreen = document.getElementById('confirmScreen');
+            var depositLoadingScreen = document.getElementById('depositLoadingScreen');
+            var successScreen = document.getElementById('successScreen');
+            var dashboardScreen = document.getElementById('dashboardScreen');
+
+            var loadingCheckList = document.getElementById('loadingCheckList');
+            var goalsGrid = document.getElementById('goalsGrid');
+            var periodGrid = document.getElementById('periodGrid');
+            var customGoalInput = document.getElementById('customGoalInput');
+            var customGoalError = document.getElementById('customGoalError');
+            var customGoalContinue = document.getElementById('customGoalContinue');
+
+            var targetInput = document.getElementById('targetInput');
+            var targetHint = document.getElementById('targetHint');
+            var targetError = document.getElementById('targetError');
+            var targetContinueBtn = document.getElementById('targetContinueBtn');
+
+            var saveAmountInput = document.getElementById('saveAmountInput');
+            var saveAmountHint = document.getElementById('saveAmountHint');
+            var saveAmountError = document.getElementById('saveAmountError');
+            var saveAmountContinueBtn = document.getElementById('saveAmountContinueBtn');
+
+            var progressRing = document.getElementById('progressRing');
+            var progressPercent = document.getElementById('progressPercent');
+            var progressTarget = document.getElementById('progressTarget');
+            var progressSaved = document.getElementById('progressSaved');
+            var progressRemaining = document.getElementById('progressRemaining');
+            var progressBarFill = document.getElementById('progressBarFill');
+            var progressMessage = document.getElementById('progressMessage');
+            var progressContinueBtn = document.getElementById('progressContinueBtn');
+
+            var confirmGoal = document.getElementById('confirmGoal');
+            var confirmTarget = document.getElementById('confirmTarget');
+            var confirmAmount = document.getElementById('confirmAmount');
+            var confirmPeriod = document.getElementById('confirmPeriod');
+            var confirmInterest = document.getElementById('confirmInterest');
+            var confirmInterestAmt = document.getElementById('confirmInterestAmt');
+            var confirmProtected = document.getElementById('confirmProtected');
+            var confirmFee = document.getElementById('confirmFee');
+            var confirmTotal = document.getElementById('confirmTotal');
+
+            var successGoal = document.getElementById('successGoal');
+            var successAmount = document.getElementById('successAmount');
+            var successPeriod = document.getElementById('successPeriod');
+            var successInterest = document.getElementById('successInterest');
+
+            var balanceNumber = document.getElementById('balanceNumber');
+            var balanceBreakdown = document.getElementById('balanceBreakdown');
+            var activeInfoCard = document.getElementById('activeInfoCard');
+            var activeInfoContent = document.getElementById('activeInfoContent');
+            var progressCard = document.getElementById('progressCard');
+            var progressFill = document.getElementById('progressFill');
+            var progressPeriodLabel = document.getElementById('progressPeriodLabel');
+            var progressStatusLabel = document.getElementById('progressStatusLabel');
+            var daysSaved = document.getElementById('daysSaved');
+            var daysRemaining = document.getElementById('daysRemaining');
+            var pendingCard = document.getElementById('pendingCard');
+            var pendingListContent = document.getElementById('pendingListContent');
+            var emptyState = document.getElementById('emptyState');
+
+            var startGrowthBtn = document.getElementById('startGrowthBtn');
+            var payNowBtn = document.getElementById('payNowBtn');
+            var viewHistoryBtn = document.getElementById('viewHistoryBtn');
+            var dashHistoryBtn = document.getElementById('dashHistoryBtn');
+            var dashSaveMoneyBtn = document.getElementById('dashSaveMoneyBtn');
+            var dashWithdrawBtn = document.getElementById('dashWithdrawBtn');
+            var emptySaveBtn = document.getElementById('emptySaveBtn');
+
+            var goalBackBtn = document.getElementById('goalBackBtn');
+            var customGoalBackBtn = document.getElementById('customGoalBackBtn');
+            var targetBackBtn = document.getElementById('targetBackBtn');
+            var amountBackBtn = document.getElementById('amountBackBtn');
+            var progressBackBtn = document.getElementById('progressBackBtn');
+            var periodBackBtn = document.getElementById('periodBackBtn');
+            var confirmBackBtn = document.getElementById('confirmBackBtn');
+            var dashboardBackBtn = document.getElementById('dashboardBackBtn');
+
+            // ── State ──
+            var currentUser = null;
+            var growthRecords = [];
+            var selectedGoal = null;
+            var selectedGoalName = null;
+            var selectedTarget = 0;
+            var selectedAmount = 0;
+            var selectedPeriod = 0;
+            var activeApproved = [];
+            var pendingRecords = [];
+
+            // ── Constants ──
+            var MIN_AMOUNT = 350;
+            var INTEREST_RATES = {
+                90: 15,
+                120: 15,
+                150: 15,
+                180: 16,
+                210: 16,
+                240: 16,
+                270: 17,
+                300: 17,
+                330: 18,
+                360: 18
+            };
+
+            // ── Helpers ──
+            function delay(ms) {
+                return new Promise(function(r) { setTimeout(r, ms); });
+            }
+
+            function getUserSavings(userId) {
+                try {
+                    var key = 'sajvera_savings_' + userId;
+                    var data = localStorage.getItem(key);
+                    if (data) {
+                        var parsed = JSON.parse(data);
+                        if (parsed && typeof parsed === 'object') {
+                            if (!parsed.wealth) parsed.wealth = [];
+                            if (!parsed.reserve) parsed.reserve = [];
+                            if (!parsed.growth) parsed.growth = [];
+                            if (!parsed.transactions) parsed.transactions = [];
+                            return parsed;
+                        }
+                    }
+                } catch (_) { /* ignore */ }
+                return { wealth: [], reserve: [], growth: [], transactions: [] };
+            }
+
+            function saveUserSavings(userId, savingsData) {
+                localStorage.setItem('sajvera_savings_' + userId, JSON.stringify(savingsData));
+            }
+
+            function formatCurrency(amount) {
+                return amount.toFixed(2);
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return '—';
+                var d = new Date(dateString);
+                return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+
+            function calculateDays(startDate, endDate) {
+                if (!startDate || !endDate) return 0;
+                var start = new Date(startDate);
+                var end = new Date(endDate);
+                var diff = end - start;
+                return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+            }
+
+            function isMatured(record) {
+                if (!record || !record.maturityDate) return false;
+                var today = new Date();
+                var maturity = new Date(record.maturityDate);
+                return today >= maturity;
+            }
+
+            function showScreen(el) {
+                document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+                el.classList.add('active');
+            }
+
+            function navigateTo(screenId) {
+                var map = {
+                    loading: loadingScreen,
+                    intro: introScreen,
+                    goal: goalScreen,
+                    customGoal: customGoalScreen,
+                    target: targetScreen,
+                    amount: amountScreen,
+                    progress: progressScreen,
+                    period: periodScreen,
+                    confirm: confirmScreen,
+                    depositLoading: depositLoadingScreen,
+                    success: successScreen,
+                    dashboard: dashboardScreen
+                };
+                if (map[screenId]) showScreen(map[screenId]);
+            }
+
+            // ── Build Period Grid ──
+            function buildPeriodGrid() {
+                periodGrid.innerHTML = '';
+                for (var days = 90; days <= 360; days += 30) {
+                    var months = days / 30;
+                    var div = document.createElement('div');
+                    div.className = 'period-card';
+                    div.dataset.days = days;
+                    div.innerHTML =
+                        '<div class="days">' + days + '</div><div class="months">' + months + ' Month' + (months > 1 ? 's' :
+                            '') + '</div>';
+                    div.addEventListener('click', function() {
+                        document.querySelectorAll('.period-card').forEach(function(c) { c.classList.remove(
+                                'selected'); });
+                        this.classList.add('selected');
+                        selectedPeriod = parseInt(this.dataset.days);
+                        showConfirm();
+                    });
+                    periodGrid.appendChild(div);
+                }
+            }
+
+            // ── Goal Selection ──
+            goalsGrid.querySelectorAll('.goal-card').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    goalsGrid.querySelectorAll('.goal-card').forEach(function(c) { c.classList.remove('selected'); });
+                    this.classList.add('selected');
+                    var goal = this.dataset.goal;
+                    if (goal === 'other') {
+                        selectedGoal = 'other';
+                        navigateTo('customGoal');
+                        customGoalInput.focus();
+                    } else {
+                        selectedGoal = goal;
+                        selectedGoalName = goal.charAt(0).toUpperCase() + goal.slice(1);
+                        navigateTo('target');
+                        targetInput.focus();
+                    }
+                });
+            });
+
+            // ── Custom Goal ──
+            customGoalContinue.addEventListener('click', function() {
+                var val = customGoalInput.value.trim();
+                if (val === '') {
+                    customGoalError.style.display = 'block';
+                    customGoalInput.classList.add('error');
+                    return;
+                }
+                customGoalError.style.display = 'none';
+                customGoalInput.classList.remove('error');
+                selectedGoal = 'other';
+                selectedGoalName = val;
+                navigateTo('target');
+                targetInput.focus();
+            });
+
+            customGoalInput.addEventListener('input', function() {
+                if (this.value.trim() !== '') {
+                    customGoalError.style.display = 'none';
+                    this.classList.remove('error');
+                }
+            });
+
+            // ── Target Validation ──
+            function validateTarget() {
+                var raw = targetInput.value.trim();
+                var val = parseFloat(raw);
+                targetError.style.display = 'none';
+                targetInput.classList.remove('error');
+
+                if (raw === '' || isNaN(val) || val <= 0) {
+                    targetHint.textContent = 'Please enter a valid target amount greater than zero.';
+                    targetHint.style.color = '#EF4444';
+                    targetInput.classList.add('error');
+                    targetError.style.display = 'block';
+                    targetContinueBtn.disabled = true;
+                    return false;
+                }
+
+                targetHint.textContent = '✅ Valid target.';
+                targetHint.style.color = '#10B981';
+                targetContinueBtn.disabled = false;
+                selectedTarget = Math.round(val);
+                return true;
+            }
+
+            targetInput.addEventListener('input', validateTarget);
+            targetInput.addEventListener('blur', validateTarget);
+
+            targetContinueBtn.addEventListener('click', function() {
+                if (validateTarget()) {
+                    navigateTo('amount');
+                    saveAmountInput.focus();
+                }
+            });
+
+            // ── Saving Amount Validation ──
+            function validateSaveAmount() {
+                var raw = saveAmountInput.value.trim();
+                var val = parseFloat(raw);
+                saveAmountError.style.display = 'none';
+                saveAmountInput.classList.remove('error');
+
+                if (raw === '' || isNaN(val) || val <= 0) {
+                    saveAmountHint.textContent = 'Please enter a valid amount.';
+                    saveAmountHint.style.color = '#EF4444';
+                    saveAmountInput.classList.add('error');
+                    saveAmountError.style.display = 'block';
+                    saveAmountError.innerHTML = '⚠️ Please enter a valid amount greater than zero.';
+                    saveAmountContinueBtn.disabled = true;
+                    return false;
+                }
+
+                if (val < MIN_AMOUNT) {
+                    saveAmountHint.textContent = 'Minimum PureOre Growth saving is K' + MIN_AMOUNT + '.';
+                    saveAmountHint.style.color = '#EF4444';
+                    saveAmountInput.classList.add('error');
+                    saveAmountError.style.display = 'block';
+                    saveAmountError.innerHTML = '⚠️ Minimum PureOre Growth saving is <strong>K' + MIN_AMOUNT + '</strong>';
+                    saveAmountContinueBtn.disabled = true;
+                    return false;
+                }
+
+                saveAmountHint.textContent = '✅ Valid amount.';
+                saveAmountHint.style.color = '#10B981';
+                saveAmountContinueBtn.disabled = false;
+                selectedAmount = Math.round(val);
+                return true;
+            }
+
+            saveAmountInput.addEventListener('input', validateSaveAmount);
+            saveAmountInput.addEventListener('blur', validateSaveAmount);
+
+            saveAmountContinueBtn.addEventListener('click', function() {
+                if (validateSaveAmount()) {
+                    updateProgress();
+                    navigateTo('progress');
+                }
+            });
+
+            // ── Update Progress ──
+            function updateProgress() {
+                var target = selectedTarget;
+                var saved = selectedAmount;
+                var percent = Math.min(100, (saved / target) * 100);
+                var deg = (percent / 100) * 360;
+
+                progressRing.style.setProperty('--progress-deg', deg + 'deg');
+                progressPercent.textContent = Math.round(percent) + '%';
+                progressTarget.textContent = 'K' + formatCurrency(target);
+                progressSaved.textContent = 'K' + formatCurrency(saved);
+                progressRemaining.textContent = 'K' + formatCurrency(Math.max(0, target - saved));
+                progressBarFill.style.width = percent + '%';
+                progressMessage.textContent = Math.round(percent) + '%';
+            }
+
+            // ── Show Confirm Screen ──
+            function showConfirm() {
+                if (!selectedAmount || !selectedPeriod || !selectedTarget || !selectedGoal) return;
+
+                var amount = selectedAmount;
+                var period = selectedPeriod;
+                var rate = INTEREST_RATES[period] || 15;
+                var interest = amount * (rate / 100);
+                var protectedAmt = amount + interest;
+                var fee = protectedAmt * 0.10;
+                var total = protectedAmt + fee;
+
+                confirmGoal.textContent = selectedGoalName || selectedGoal;
+                confirmTarget.textContent = 'K' + formatCurrency(selectedTarget);
+                confirmAmount.textContent = 'K' + formatCurrency(amount);
+                confirmPeriod.textContent = period + ' Days';
+                confirmInterest.textContent = rate + '%';
+                confirmInterestAmt.textContent = 'K' + formatCurrency(interest);
+                confirmProtected.textContent = 'K' + formatCurrency(protectedAmt);
+                confirmFee.textContent = 'K' + formatCurrency(fee);
+                confirmTotal.textContent = 'K' + formatCurrency(total);
+
+                confirmScreen.dataset.amount = amount;
+                confirmScreen.dataset.period = period;
+                confirmScreen.dataset.rate = rate;
+                confirmScreen.dataset.interest = interest;
+                confirmScreen.dataset.protected = protectedAmt;
+                confirmScreen.dataset.fee = fee;
+                confirmScreen.dataset.total = total;
+                confirmScreen.dataset.goal = selectedGoal;
+                confirmScreen.dataset.goalName = selectedGoalName;
+                confirmScreen.dataset.target = selectedTarget;
+
+                navigateTo('confirm');
+            }
+
+            // ── Loading Sequence ──
+            async function runLoadingSequence() {
+                var items = loadingCheckList.querySelectorAll('.check-item');
+                for (var i = 0; i < items.length; i++) {
+                    await delay(500 + Math.random() * 300);
+                    items[i].classList.add('done');
+                    items[i].querySelector('.check-icon').textContent = '✓';
+                }
+                await delay(400);
+
+                currentUser = getLoggedInUser();
+                if (!currentUser) {
+                    // If no Firebase user, the auth check will redirect, so this should not happen.
+                    // But fallback: redirect to login.
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                var savings = getUserSavings(currentUser.id);
+                growthRecords = savings.growth || [];
+                pendingRecords = growthRecords.filter(function(r) { return r.status === 'pending'; });
+                activeApproved = growthRecords.filter(function(r) { return r.status === 'approved' || r.status ===
+                        'matured'; });
+
+                // Check for success param
+                var urlParams = new URLSearchParams(window.location.search);
+                var status = urlParams.get('status');
+
+                if (status === 'success') {
+                    var lastDeposit = localStorage.getItem('last_growth_deposit');
+                    if (lastDeposit) {
+                        try {
+                            var data = JSON.parse(lastDeposit);
+                            successAmount.textContent = 'K' + formatCurrency(data.amount || 0);
+                            successPeriod.textContent = data.period + ' Days';
+                            successInterest.textContent = data.rate + '%';
+                            successGoal.textContent = data.goalName || data.goal || 'Goal';
+                            localStorage.removeItem('last_growth_deposit');
+                        } catch (_) { /* ignore */ }
+                    }
+                    navigateTo('success');
+                    return;
+                }
+
+                if (activeApproved.length > 0) {
+                    navigateTo('dashboard');
+                    renderDashboard();
+                } else if (pendingRecords.length > 0) {
+                    navigateTo('dashboard');
+                    renderDashboard();
+                } else {
+                    navigateTo('intro');
+                }
+            }
+
+            // ── Render Dashboard ──
+            function renderDashboard() {
+                activeInfoCard.style.display = 'none';
+                progressCard.style.display = 'none';
+                pendingCard.style.display = 'none';
+                emptyState.style.display = 'none';
+                dashWithdrawBtn.disabled = true;
+                dashWithdrawBtn.textContent = '🔒 WITHDRAW LOCKED';
+                dashWithdrawBtn.className = 'btn-outline-dark';
+
+                var hasApproved = activeApproved.length > 0;
+                var hasPending = pendingRecords.length > 0;
+
+                var totalProtected = 0;
+                var totalFeeReserve = 0;
+                var totalBalance = 0;
+                activeApproved.forEach(function(r) {
+                    var protectedAmt = (r.amount || 0) + (r.interestAmount || 0);
+                    totalProtected += protectedAmt;
+                    totalFeeReserve += r.feeReserve || 0;
+                    totalBalance += protectedAmt + (r.feeReserve || 0);
+                });
+                balanceNumber.textContent = formatCurrency(totalBalance);
+                balanceBreakdown.innerHTML =
+                    '<strong>K' + formatCurrency(totalProtected) + '</strong> Protected + <strong>K' + formatCurrency(
+                        totalFeeReserve) + '</strong> Fee Reserve';
+
+                if (!hasApproved && !hasPending) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                if (hasPending) {
+                    pendingCard.style.display = 'block';
+                    var html = '';
+                    pendingRecords.forEach(function(r) {
+                        html +=
+                            '<div class="pending-item"><div class="left"><div class="title">' + (r.goalName || r
+                                .goal || 'Goal') + ' · K' + formatCurrency(r.amount) +
+                            '</div><div class="sub">Submitted ' + formatDate(r.submittedAt) +
+                            '</div></div><div class="right"><div class="amount">Pending</div><div style="font-size:11px; color:#D97706; font-weight:600;">🔵 Pending</div></div></div>';
+                    });
+                    pendingListContent.innerHTML = html;
+                }
+
+                if (hasApproved) {
+                    var isAllMatured = activeApproved.every(function(r) { return isMatured(r); });
+                    var totalDays = activeApproved.reduce(function(sum, r) { return sum + (r.period || 0); }, 0);
+                    var avgDays = totalDays / activeApproved.length;
+                    var totalSavedDays = activeApproved.reduce(function(sum, r) {
+                        if (r.startDate && r.maturityDate) {
+                            var days = calculateDays(r.startDate, new Date());
+                            return sum + Math.min(days, r.period || 0);
+                        }
+                        return sum;
+                    }, 0);
+                    var avgSaved = totalSavedDays / activeApproved.length;
+
+                    activeInfoCard.style.display = 'block';
+                    var statusText = isAllMatured ? 'MATURED' : 'LOCKED';
+                    var statusClass = isAllMatured ? 'matured' : 'locked';
+                    var statusIcon = isAllMatured ? '💸' : '🔒';
+
+                    var first = activeApproved[0];
+                    var goalDisplay = first.goalName || first.goal || 'Goal';
+
+                    var infoHtml =
+                        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><span style="font-weight:700; font-size:16px; color:#4C1D95;">' +
+                        goalDisplay + '</span><span class="status-badge ' + statusClass + '">' + statusIcon + ' ' +
+                        statusText + '</span></div>' +
+                        '<div class="info-grid">' +
+                        '<div class="info-item"><div class="label">Target</div><div class="value">K' + formatCurrency(
+                            first.targetAmount || 0) + '</div></div>' +
+                        '<div class="info-item"><div class="label">Saved</div><div class="value teal">K' + formatCurrency(
+                            first.amount || 0) + '</div></div>' +
+                        '<div class="info-item"><div class="label">Interest</div><div class="value teal">' + (first
+                            .interestRate || 0) + '%</div></div>' +
+                        '<div class="info-item"><div class="label">Maturity</div><div class="value">K' + formatCurrency((
+                            first.amount || 0) + (first.interestAmount || 0)) + '</div></div>';
+
+                    if (activeApproved.length === 1) {
+                        var r = activeApproved[0];
+                        infoHtml +=
+                            '<div class="info-item full"><div class="label">Start Date</div><div class="value">' +
+                            formatDate(r.startDate) + '</div></div>' +
+                            '<div class="info-item full"><div class="label">Maturity Date</div><div class="value">' +
+                            formatDate(r.maturityDate) + '</div></div>';
+                    } else {
+                        infoHtml +=
+                            '<div class="info-item full"><div class="label">Active Plans</div><div class="value">' +
+                            activeApproved.length + ' Records</div></div>';
+                    }
+                    infoHtml += '</div>';
+                    activeInfoContent.innerHTML = infoHtml;
+
+                    if (!isAllMatured) {
+                        progressCard.style.display = 'block';
+                        var totalPeriodDays = Math.round(avgDays);
+                        var daysCompleted = Math.round(avgSaved);
+                        var daysLeft = Math.max(0, totalPeriodDays - daysCompleted);
+                        var percent = totalPeriodDays > 0 ? Math.min(100, (daysCompleted / totalPeriodDays) * 100) : 0;
+                        progressFill.style.width = percent + '%';
+                        progressPeriodLabel.textContent = totalPeriodDays + ' DAY SAVING PERIOD';
+                        progressStatusLabel.textContent = statusText;
+                        daysSaved.textContent = daysCompleted + ' Days Saved';
+                        daysRemaining.textContent = daysLeft + ' Days Remaining';
+                    } else {
+                        progressCard.style.display = 'block';
+                        progressFill.style.width = '100%';
+                        progressPeriodLabel.textContent = 'MATURED';
+                        progressStatusLabel.textContent = '✅ COMPLETE';
+                        daysSaved.textContent = 'Withdrawal Available';
+                        daysRemaining.textContent = 'Ready for withdrawal';
+                    }
+
+                    if (isAllMatured) {
+                        dashWithdrawBtn.disabled = false;
+                        dashWithdrawBtn.textContent = '💸 WITHDRAW NOW';
+                        dashWithdrawBtn.className = 'btn-primary';
+                        dashWithdrawBtn.style.background = 'linear-gradient(135deg, #4C1D95, #7C3AED)';
+                        dashWithdrawBtn.style.color = '#FFFFFF';
+                        dashWithdrawBtn.style.boxShadow = '0 6px 24px rgba(76, 29, 149, 0.20)';
+                    } else {
+                        dashWithdrawBtn.disabled = true;
+                        dashWithdrawBtn.textContent = '🔒 WITHDRAW LOCKED';
+                        dashWithdrawBtn.className = 'btn-outline-dark';
+                        dashWithdrawBtn.style.background = 'transparent';
+                        dashWithdrawBtn.style.color = '#4C1D95';
+                        dashWithdrawBtn.style.boxShadow = 'none';
+                    }
+                }
+            }
+
+            // ── Pay Now ──
+            payNowBtn.addEventListener('click', function() {
+                var amount = parseFloat(confirmScreen.dataset.amount);
+                var period = parseInt(confirmScreen.dataset.period);
+                var rate = parseInt(confirmScreen.dataset.rate);
+                var goal = confirmScreen.dataset.goal;
+                var goalName = confirmScreen.dataset.goalName || goal;
+                var target = parseFloat(confirmScreen.dataset.target);
+
+                if (!amount || !period || !goal) {
+                    alert('Missing information. Please go back and complete all steps.');
+                    return;
+                }
+
+                localStorage.setItem('growth_selection', JSON.stringify({
+                    goal: goal,
+                    goalName: goalName,
+                    target: target,
+                    amount: amount,
+                    period: period,
+                    rate: rate
+                }));
+
+                navigateTo('depositLoading');
+                setTimeout(function() {
+                    window.location.href =
+                        'saving-deposit.html?branch=growth&period=' + period + '&goal=' + encodeURIComponent(
+                            goalName) + '&amount=' + amount + '&target=' + target + '&rate=' + rate;
+                }, 800);
+            });
+
+            // ── Navigation Handlers ──
+
+            startGrowthBtn.addEventListener('click', function() { navigateTo('goal'); });
+
+            goalBackBtn.addEventListener('click', function() { navigateTo('intro'); });
+            customGoalBackBtn.addEventListener('click', function() { navigateTo('goal'); });
+            targetBackBtn.addEventListener('click', function() { navigateTo('goal'); });
+            amountBackBtn.addEventListener('click', function() { navigateTo('target'); });
+            progressBackBtn.addEventListener('click', function() { navigateTo('amount'); });
+            progressContinueBtn.addEventListener('click', function() { navigateTo('period'); });
+            periodBackBtn.addEventListener('click', function() { navigateTo('progress'); });
+            confirmBackBtn.addEventListener('click', function() { navigateTo('period'); });
+
+            viewHistoryBtn.addEventListener('click', function() { window.location.href = 'history.html?branch=growth'; });
+            dashboardBackBtn.addEventListener('click', function() { window.location.href = 'saving.html'; });
+            dashSaveMoneyBtn.addEventListener('click', function() { window.location.href =
+                    'saving-deposit.html?branch=growth'; });
+            dashHistoryBtn.addEventListener('click', function() { window.location.href = 'history.html?branch=growth'; });
+            dashWithdrawBtn.addEventListener('click', function() {
+                if (dashWithdrawBtn.disabled) return;
+                window.location.href = 'withdraw.html?branch=growth';
+            });
+            emptySaveBtn.addEventListener('click', function() { window.location.href =
+                'saving-deposit.html?branch=growth'; });
+
+            // ── Android Back ──
+            window.addEventListener('popstate', function(e) {
+                var activeScreen = document.querySelector('.screen.active');
+                if (activeScreen === dashboardScreen) {
+                    window.location.href = 'saving.html';
+                } else if (activeScreen === successScreen) {
+                    window.location.href = 'history.html?branch=growth';
+                } else {
+                    navigateTo('intro');
+                }
+            });
+
+            // ── Init ──
+            function init() {
+                buildPeriodGrid();
+                targetHint.textContent = 'Enter your target amount';
+                saveAmountHint.textContent = 'Minimum Growth saving is K' + MIN_AMOUNT;
+                history.pushState({ page: 'growth' }, '');
+                runLoadingSequence();
+            }
+
+            init();
+
+        })();
+    </script>
+
+</body>
+</html>

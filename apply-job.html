@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Apply – Sajvera Capital</title>
+
+    <!-- ============================================================
+         FIREBASE SDKs – Load these in the <head>
+         ============================================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ──────────────────────────────────────────────
+           RESET & BASE
+        ────────────────────────────────────────────── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #020617;
+            color: #FFFFFF;
+            min-height: 100vh;
+            padding: 20px 16px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 480px;
+            width: 100%;
+        }
+
+        /* ── BACK BUTTON ── */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255, 255, 255, 0.30);
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 8px 0;
+            margin-bottom: 4px;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .back-link:hover {
+            color: #FFFFFF;
+        }
+        .back-link svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ── HEADER ── */
+        .app-header {
+            margin-bottom: 16px;
+        }
+        .app-header .brand {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.08);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+        .app-header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #FFFFFF;
+            letter-spacing: -0.3px;
+        }
+        .app-header h1 span {
+            color: #60A5FA;
+        }
+        .app-header .job-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #60A5FA;
+            margin-top: 2px;
+        }
+        .app-header .sub {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.20);
+            margin-top: 2px;
+            line-height: 1.5;
+        }
+        .app-header .step-info {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-top: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── PROGRESS BAR ── */
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            margin-bottom: 22px;
+            overflow: hidden;
+        }
+        .progress-track .fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2563EB, #60A5FA);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* ── STEP CARD ── */
+        .step-card {
+            background: rgba(15, 23, 42, 0.70);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 22px 18px 20px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+            animation: fadeStep 0.3s ease forwards;
+            display: none;
+        }
+        .step-card.active {
+            display: block;
+        }
+        @keyframes fadeStep {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .step-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 2px;
+        }
+        .step-card .sub {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.25);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        /* ── FORM ELEMENTS ── */
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.30);
+            margin-bottom: 4px;
+            letter-spacing: 0.2px;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            color: #FFFFFF;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: #94A3B8;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .form-group .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+        .form-group .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #2563EB;
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 0;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 4px;
+        }
+        .form-group .checkbox-group label {
+            margin-bottom: 0;
+            color: rgba(255, 255, 255, 0.30);
+            font-weight: 400;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .form-group .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .form-group .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.30);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .form-group .radio-group input[type="radio"] {
+            accent-color: #2563EB;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .form-group .hint {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.08);
+            margin-top: 2px;
+        }
+        .form-group .error-msg {
+            font-size: 0.75rem;
+            color: #f87171;
+            margin-top: 2px;
+        }
+
+        /* ── BUTTONS ── */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .btn-row .btn-back-step {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            color: rgba(255, 255, 255, 0.30);
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .btn-row .btn-back-step:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #FFFFFF;
+        }
+        .btn-row .btn-continue {
+            flex: 2;
+            padding: 12px;
+            background: linear-gradient(135deg, #2563EB, #60A5FA);
+            border: none;
+            border-radius: 14px;
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            text-align: center;
+        }
+        .btn-row .btn-continue:active {
+            transform: scale(0.97);
+            opacity: 0.8;
+        }
+        .btn-row .btn-continue:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── REVIEW ── */
+        .review-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            font-size: 0.85rem;
+        }
+        .review-item .label {
+            color: rgba(255, 255, 255, 0.15);
+        }
+        .review-item .value {
+            color: #FFFFFF;
+            font-weight: 500;
+        }
+
+        /* ── LOADING OVERLAY ── */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 6, 23, 0.90);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        #loadingOverlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #loadingOverlay .loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.06);
+            border-top-color: #60A5FA;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+        #loadingOverlay .text {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.40);
+            letter-spacing: 0.3px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── SUCCESS SCREEN ── */
+        #successScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #020617;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 998;
+            padding: 30px;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+        #successScreen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #successScreen .check {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(96, 165, 250, 0.06);
+            border: 1px solid rgba(96, 165, 250, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+        #successScreen .check svg {
+            width: 36px;
+            height: 36px;
+            stroke: #60A5FA;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        #successScreen h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #FFFFFF;
+            letter-spacing: -0.3px;
+            margin-bottom: 4px;
+        }
+        #successScreen .job-name {
+            font-size: 1rem;
+            color: #60A5FA;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        #successScreen p {
+            color: rgba(255, 255, 255, 0.30);
+            font-size: 0.9rem;
+            margin: 8px 0 12px;
+            line-height: 1.6;
+            max-width: 380px;
+        }
+        #successScreen .app-id {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        #successScreen .status-badge {
+            display: inline-block;
+            background: rgba(96, 165, 250, 0.06);
+            color: #60A5FA;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(96, 165, 250, 0.06);
+            margin-top: 4px;
+        }
+        #successScreen .contact {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.08);
+            margin-top: 6px;
+        }
+        #successScreen .contact a {
+            color: #60A5FA;
+            text-decoration: none;
+        }
+        #successScreen .btn-done {
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #2563EB, #60A5FA);
+            border: none;
+            border-radius: 14px;
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 1rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        #successScreen .btn-done:active {
+            transform: scale(0.97);
+            opacity: 0.8;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 480px) {
+            body {
+                padding: 16px 14px 24px;
+            }
+            .app-header h1 {
+                font-size: 1.2rem;
+            }
+            .step-card {
+                padding: 18px 14px 16px;
+            }
+            .form-group input,
+            .form-group textarea {
+                padding: 12px 14px;
+                font-size: 0.9rem;
+            }
+            .btn-row {
+                flex-direction: column;
+            }
+            .btn-row .btn-back-step {
+                flex: 1;
+            }
+            .btn-row .btn-continue {
+                flex: 1;
+            }
+            #successScreen h2 {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .app-header .job-title {
+                font-size: 0.95rem;
+            }
+            .step-card h3 {
+                font-size: 1rem;
+            }
+            .form-group label {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="appContainer">
+
+        <!-- Global Back button -->
+        <button class="back-link" id="globalBackBtn">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+        </button>
+
+        <!-- Header -->
+        <div class="app-header">
+            <div class="brand">Sajvera Capital</div>
+            <h1>APPLICATION</h1>
+            <div class="job-title" id="jobTitleDisplay">—</div>
+            <div class="sub" id="stepSub">Complete each section carefully. Your application will be reviewed by management.</div>
+            <div class="step-info" id="stepInfo">STEP 1 OF 8</div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-track">
+            <div class="fill" id="progressFill"></div>
+        </div>
+
+        <!-- Step container -->
+        <div id="stepContainer"></div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="text" id="loadingText">Loading...</div>
+    </div>
+
+    <!-- Success Screen -->
+    <div id="successScreen">
+        <div class="check">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>APPLICATION SUBMITTED</h2>
+        <div class="job-name" id="successJobTitle"></div>
+        <p>Your application has been successfully submitted. Management will review your application and contact you if necessary.</p>
+        <div class="app-id" id="appIdDisplay">SJ-XXXX</div>
+        <div><span class="status-badge">PENDING REVIEW</span></div>
+        <div class="contact">Management Office: <a href="mailto:Pureorecapital@gmail.com">Pureorecapital@gmail.com</a></div>
+        <button class="btn-done" onclick="window.location.href='dashboard.html'">BACK TO DASHBOARD</button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    JAVASCRIPT – FIREBASE CONFIG & AUTH
+    ════════════════════════════════════════════════ -->
+    <script>
+        // ================================================================
+        // FIREBASE CONFIG – Your project credentials
+        // ================================================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b",
+            measurementId: "G-FQKC29NYE9"
+        };
+
+        // ================================================================
+        // INITIALIZE FIREBASE (only once)
+        // ================================================================
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        db.settings({ persistence: true });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ================================================================
+        // AUTH STATE CHECK – Redirect if not logged in
+        // ================================================================
+        var authResolved = false;
+        var redirectTimeout = null;
+
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                console.log('✅ User logged in:', user.uid, user.email);
+                // (Optional) Firestore user data fetch can be added here.
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                console.log('❌ No user found. Redirecting to login...');
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
+        });
+
+        // ================================================================
+        // HELPER: get current user (for pre‑fill)
+        // ================================================================
+        function getCurrentUser() {
+            return auth.currentUser;
+        }
+
+        // ================================================================
+        // LOGOUT FUNCTION
+        // ================================================================
+        function logoutUser() {
+            auth.signOut().then(function() {
+                window.location.href = 'login.html';
+            }).catch(function(err) {
+                console.warn('Logout error:', err);
+            });
+        }
+    </script>
+
+    <!-- ════════════════════════════════════════════════
+    MAIN APPLICATION LOGIC
+    ════════════════════════════════════════════════ -->
+    <script>
+        // ──────────────────────────────────────────────────────────────
+        // 1. GET & VALIDATE JOB
+        // ──────────────────────────────────────────────────────────────
+        var urlParams = new URLSearchParams(window.location.search);
+        var jobId = urlParams.get('job');
+
+        var ALLOWED_JOBS = [
+            'platform-assistant',
+            'promoter',
+            'mobile-money-agent',
+            'community-manager'
+        ];
+
+        if (!ALLOWED_JOBS.includes(jobId)) {
+            // Show error and stop
+            document.getElementById('appContainer').innerHTML = `
+                <div style="text-align:center; padding:40px 20px;">
+                    <div style="font-size:2rem; margin-bottom:12px;">🚫</div>
+                    <h2 style="font-size:1.4rem; color:#FFFFFF;">Opportunity not found.</h2>
+                    <p style="color:rgba(255,255,255,0.20); margin:12px 0 20px;">The position you are looking for does not exist or has been removed.</p>
+                    <a href="jobs.html" style="display:inline-block; padding:12px 32px; background:linear-gradient(135deg,#2563EB,#60A5FA); border-radius:14px; color:#FFFFFF; text-decoration:none; font-weight:600;">BACK TO JOBS</a>
+                </div>
+            `;
+            document.querySelector('.back-link').style.display = 'none';
+            document.querySelector('.app-header').style.display = 'none';
+            document.querySelector('.progress-track').style.display = 'none';
+            throw new Error('Invalid job ID');
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 2. JOB DEFINITIONS
+        // ──────────────────────────────────────────────────────────────
+        var JOB_DATA = {
+            'platform-assistant': {
+                title: 'Platform Assistant',
+                sub: 'Customer Support / Platform Guidance',
+                hasSocial: false,
+                questions: [
+                    "WHY DO YOU WANT TO BECOME A PLATFORM ASSISTANT?",
+                    "WHAT DO YOU UNDERSTAND ABOUT SAJVERA CAPITAL?",
+                    "HOW WOULD YOU EXPLAIN SAJVERA CAPITAL TO A NEW MEMBER?",
+                    "A MEMBER CANNOT FIND A FEATURE ON THE WEBSITE. HOW WOULD YOU HELP?",
+                    "A MEMBER IS ANGRY ABOUT AN ACCOUNT ISSUE. HOW WOULD YOU RESPOND?",
+                    "YOU DO NOT KNOW THE ANSWER TO A MEMBER'S QUESTION. WHAT WOULD YOU DO?",
+                    "HOW COMFORTABLE ARE YOU COMMUNICATING WITH USERS THROUGH TEXT?",
+                    "HOW MANY HOURS CAN YOU BE AVAILABLE PER DAY?"
+                ],
+                questionTypes: ['textarea', 'textarea', 'textarea', 'textarea', 'textarea', 'textarea', 'select', 'select'],
+                selectOptions: [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    ['Very comfortable', 'Comfortable', 'Somewhat comfortable', 'Not comfortable'],
+                    ['Less than 1 hour', '1–2 hours', '2–4 hours', '4+ hours']
+                ],
+                scenarios: [
+                    "A member asks you to guarantee that they will make money. What would you tell them?",
+                    "A member sends you their password and asks you to log into their account. What would you do?",
+                    "A member asks you to manually change their balance. What would you do?"
+                ],
+                rules: [
+                    "Do not guarantee profits.",
+                    "Do not ask for user passwords or PINs.",
+                    "Only provide approved platform information.",
+                    "Escalate serious issues to management.",
+                    "Maintain professionalism at all times."
+                ]
+            },
+            'promoter': {
+                title: 'Promoter',
+                sub: 'Marketing / Promotion',
+                hasSocial: true,
+                questions: [
+                    "WHY DO YOU WANT TO BECOME A SAJVERA CAPITAL PROMOTER?",
+                    "HAVE YOU PROMOTED A BUSINESS, PRODUCT, SERVICE OR PLATFORM BEFORE?",
+                    "If yes, please describe your experience.",
+                    "WHAT PLATFORMS DO YOU USE FOR PROMOTION?",
+                    "HOW WOULD YOU INTRODUCE SAJVERA CAPITAL TO SOMEONE WHO HAS NEVER HEARD OF IT?",
+                    "WHAT TYPE OF PROMOTIONAL CONTENT CAN YOU CREATE?",
+                    "HOW OFTEN CAN YOU PROMOTE APPROVED CONTENT?",
+                    "WHAT WOULD YOU DO IF SOMEONE ASKED YOU WHETHER RETURNS ARE GUARANTEED?",
+                    "WHAT WOULD YOU DO IF ANOTHER PROMOTER GAVE YOU FALSE INFORMATION?"
+                ],
+                questionTypes: ['textarea', 'select', 'textarea', 'textarea', 'textarea', 'textarea', 'textarea', 'textarea',
+                    'textarea'
+                ],
+                selectOptions: [
+                    null,
+                    ['Yes', 'No'],
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                ],
+                scenarios: [
+                    "Someone asks: 'Is my money guaranteed to increase?' How would you respond?",
+                    "A promoter tells you to post a false statement because it will attract more users. What would you do?"
+                ],
+                rules: [
+                    "Do not guarantee profits.",
+                    "Do not create fake testimonials.",
+                    "Do not invent platform information.",
+                    "Do not mislead people.",
+                    "Do not pressure people to invest.",
+                    "Only use approved promotional information."
+                ]
+            },
+            'mobile-money-agent': {
+                title: 'Mobile Money Agent',
+                sub: 'Payment Support',
+                hasSocial: false,
+                questions: [
+                    "WHICH MOBILE MONEY NETWORK DO YOU OPERATE?",
+                    "AGENT / BUSINESS NAME",
+                    "MOBILE MONEY NUMBER",
+                    "LOCATION (AREA / TOWN)",
+                    "HAVE YOU WORKED AS A MOBILE MONEY AGENT BEFORE?",
+                    "If yes, how long?",
+                    "WHAT EXPERIENCE DO YOU HAVE HANDLING CUSTOMER PAYMENTS?",
+                    "WHAT HOURS ARE YOU AVAILABLE?",
+                    "HOW WOULD YOU HANDLE A PAYMENT THAT CANNOT BE VERIFIED?",
+                    "WHAT WOULD YOU DO IF A CUSTOMER SENDS THE WRONG AMOUNT?",
+                    "WHAT WOULD YOU DO IF A PAYMENT SMS LOOKS SUSPICIOUS?",
+                    "HOW WOULD YOU PROTECT CUSTOMER PAYMENT INFORMATION?",
+                    "CAN YOU PROVIDE INFORMATION REQUIRED FOR ADMINISTRATOR VERIFICATION?"
+                ],
+                questionTypes: ['select', 'text', 'text', 'text', 'select', 'text', 'textarea', 'textarea', 'textarea',
+                    'textarea', 'textarea', 'textarea', 'select'
+                ],
+                selectOptions: [
+                    ['MTN', 'Airtel', 'Zamtel'],
+                    null,
+                    null,
+                    null,
+                    ['Yes', 'No'],
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    ['Yes', 'No']
+                ],
+                scenarios: [
+                    "A customer claims they paid, but the payment cannot be verified. What would you do?",
+                    "A payment SMS appears suspicious. What steps would you take?"
+                ],
+                rules: [
+                    "Submitting this application does NOT automatically make you an agent.",
+                    "Management must verify your information before approval.",
+                    "Never ask for mobile-money PIN, OTP, or password.",
+                    "Handle customer payments with care.",
+                    "Report any suspicious activity to management."
+                ]
+            },
+            'community-manager': {
+                title: 'Community Manager',
+                sub: 'Community / Member Support',
+                hasSocial: true,
+                questions: [
+                    "WHY DO YOU WANT TO BECOME A COMMUNITY MANAGER?",
+                    "HAVE YOU MANAGED A WHATSAPP GROUP BEFORE?",
+                    "If yes, how many groups?",
+                    "How many members have you managed?",
+                    "How long have you managed them?",
+                    "ARE YOU CURRENTLY A WHATSAPP GROUP ADMIN?",
+                    "HOW WOULD YOU WELCOME NEW MEMBERS?",
+                    "HOW WOULD YOU EXPLAIN SAJVERA CAPITAL TO A NEW MEMBER?",
+                    "HOW WOULD YOU HANDLE AN ARGUMENT BETWEEN MEMBERS?",
+                    "WHAT WOULD YOU DO IF SOMEONE POSTS FALSE INFORMATION?",
+                    "WHAT WOULD YOU DO IF SOMEONE INSULTS ANOTHER MEMBER?",
+                    "WHAT WOULD YOU DO IF A MEMBER ASKS A QUESTION YOU DO NOT KNOW?",
+                    "HOW OFTEN CAN YOU BE AVAILABLE TO MANAGE THE COMMUNITY?",
+                    "HOW WOULD YOU KEEP THE GROUP ORGANIZED?",
+                    "HOW WOULD YOU EDUCATE MEMBERS WITHOUT MAKING FALSE PROMISES?"
+                ],
+                questionTypes: ['textarea', 'select', 'text', 'text', 'text', 'select', 'textarea', 'textarea', 'textarea',
+                    'textarea', 'textarea', 'textarea', 'textarea', 'textarea', 'textarea'
+                ],
+                selectOptions: [
+                    null,
+                    ['Yes', 'No'],
+                    null,
+                    null,
+                    null,
+                    ['Yes', 'No'],
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                ],
+                scenarios: [
+                    "Two members start arguing in the group. How would you handle it?",
+                    "Someone posts information that you believe is false. What would you do?",
+                    "A member asks you for their account password. How would you respond?"
+                ],
+                rules: [
+                    "Cannot promise profits.",
+                    "Cannot create false information.",
+                    "Cannot request passwords or PINs.",
+                    "Must use approved information.",
+                    "Must refer serious account issues to official management.",
+                    "Maintain respectful community standards.",
+                    "Management can revoke the role for rule violations."
+                ]
+            }
+        };
+
+        var job = JOB_DATA[jobId];
+        if (!job) {
+            // fallback error
+            document.getElementById('appContainer').innerHTML = `
+                <div style="text-align:center; padding:40px 20px;">
+                    <h2 style="color:#FFFFFF;">Invalid job</h2>
+                    <a href="jobs.html" style="display:inline-block; padding:12px 32px; background:linear-gradient(135deg,#2563EB,#60A5FA); border-radius:14px; color:#FFFFFF; text-decoration:none; font-weight:600;">BACK TO JOBS</a>
+                </div>
+            `;
+            throw new Error('Job data missing');
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 3. STATE
+        // ──────────────────────────────────────────────────────────────
+        var appState = {
+            jobId: jobId,
+            jobTitle: job.title,
+            // Personal
+            fullName: '',
+            phone: '',
+            email: '',
+            // Eligibility (checkboxes)
+            eligibility: { age: false, validNumber: false, understand: false },
+            // Job questions (array of answers)
+            jobAnswers: [],
+            // Experience
+            experience: '',
+            // Availability
+            availability: '',
+            // Social media (object per platform)
+            social: {},
+            // Scenarios (array of answers)
+            scenarios: [],
+            // Agreement
+            agreed: false
+        };
+
+        // ──────────────────────────────────────────────────────────────
+        // 4. STEPS DEFINITION (dynamic based on job)
+        // ──────────────────────────────────────────────────────────────
+        var steps = [
+            { id: 'intro', label: 'Intro' },
+            { id: 'personal', label: 'Personal' },
+            { id: 'eligibility', label: 'Eligibility' },
+            { id: 'job-questions', label: 'Questions' },
+            { id: 'experience', label: 'Experience' },
+            { id: 'availability', label: 'Availability' }
+        ];
+
+        // Add social step if job requires it
+        if (job.hasSocial) {
+            steps.push({ id: 'social', label: 'Social' });
+        }
+
+        // Add scenarios
+        steps.push({ id: 'scenarios', label: 'Scenarios' });
+
+        // Add agreement
+        steps.push({ id: 'agreement', label: 'Agreement' });
+
+        // Add review
+        steps.push({ id: 'review', label: 'Review' });
+
+        // Map step IDs to display names
+        var stepNames = {
+            intro: 'Introduction',
+            personal: 'Personal Information',
+            eligibility: 'Eligibility',
+            'job-questions': 'Job Questions',
+            experience: 'Experience',
+            availability: 'Availability',
+            social: 'Social Media',
+            scenarios: 'Scenarios',
+            agreement: 'Agreement',
+            review: 'Review'
+        };
+
+        var totalSteps = steps.length;
+        var currentStepIndex = 0;
+
+        // ──────────────────────────────────────────────────────────────
+        // 5. DOM REFS
+        // ──────────────────────────────────────────────────────────────
+        var stepContainer = document.getElementById('stepContainer');
+        var progressFill = document.getElementById('progressFill');
+        var stepInfo = document.getElementById('stepInfo');
+        var stepSub = document.getElementById('stepSub');
+        var jobTitleDisplay = document.getElementById('jobTitleDisplay');
+        var globalBackBtn = document.getElementById('globalBackBtn');
+        var loadingOverlay = document.getElementById('loadingOverlay');
+        var loadingText = document.getElementById('loadingText');
+        var successScreen = document.getElementById('successScreen');
+        var appIdDisplay = document.getElementById('appIdDisplay');
+        var successJobTitle = document.getElementById('successJobTitle');
+
+        // ──────────────────────────────────────────────────────────────
+        // 6. RENDER ENGINE
+        // ──────────────────────────────────────────────────────────────
+        function renderStep() {
+            var step = steps[currentStepIndex];
+            var progressPercent = ((currentStepIndex) / (totalSteps - 1)) * 100;
+            progressFill.style.width = progressPercent + '%';
+            stepInfo.textContent = 'STEP ' + (currentStepIndex + 1) + ' OF ' + totalSteps;
+            jobTitleDisplay.textContent = job.title;
+
+            var html = '';
+            switch (step.id) {
+                case 'intro':
+                    html = renderIntro();
+                    break;
+                case 'personal':
+                    html = renderPersonal();
+                    break;
+                case 'eligibility':
+                    html = renderEligibility();
+                    break;
+                case 'job-questions':
+                    html = renderJobQuestions();
+                    break;
+                case 'experience':
+                    html = renderExperience();
+                    break;
+                case 'availability':
+                    html = renderAvailability();
+                    break;
+                case 'social':
+                    html = renderSocial();
+                    break;
+                case 'scenarios':
+                    html = renderScenarios();
+                    break;
+                case 'agreement':
+                    html = renderAgreement();
+                    break;
+                case 'review':
+                    html = renderReview();
+                    break;
+                default:
+                    html = '<div class="step-card active"><p>Unknown step</p></div>';
+            }
+            stepContainer.innerHTML = html;
+            attachEvents(step.id);
+        }
+
+        // ─── Step Renderers ───────────────────────────────────────────
+
+        function renderIntro() {
+            return `
+                <div class="step-card active">
+                    <h3>${job.title}</h3>
+                    <div class="sub">${job.sub}</div>
+                    <p style="color:rgba(255,255,255,0.20); font-size:0.9rem; margin-bottom:16px; line-height:1.6;">
+                        Please review the position details and click Continue to start your application.
+                    </p>
+                    <div style="background:rgba(255,255,255,0.02); border-radius:14px; padding:14px; margin-bottom:16px;">
+                        <div style="font-weight:600; color:#60A5FA; margin-bottom:4px;">Purpose</div>
+                        <p style="color:rgba(255,255,255,0.20); font-size:0.85rem; line-height:1.5;">${job.sub}</p>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-back-step" onclick="window.location.href='jobs.html'">← Back</button>
+                        <button class="btn-continue" id="continueIntro">Continue →</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPersonal() {
+            // Try to pre‑fill from Firebase
+            var name = '',
+                email = '',
+                phone = '';
+            var user = getCurrentUser();
+            if (user) {
+                name = user.displayName || '';
+                email = user.email || '';
+                phone = user.phoneNumber || '';
+            }
+            // Store in state
+            appState.fullName = name;
+            appState.email = email;
+            appState.phone = phone;
+
+            return `
+                <div class="step-card active">
+                    <h3>Personal Information</h3>
+                    <div class="sub">We already have some information from your account.</div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="fullName" value="${name}" placeholder="Enter your full name" />
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phone" value="${phone}" placeholder="+260..." />
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" value="${email}" readonly />
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backPersonal">← Back</button>
+                        <button class="btn-continue" id="continuePersonal">Continue →</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderEligibility() {
+            return `
+                <div class="step-card active">
+                    <h3>Eligibility</h3>
+                    <div class="sub">Please confirm you meet the basic requirements.</div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="eligibility1" ${appState.eligibility.age ? 'checked' : ''} />
+                        <label>I am at least 18 years old.</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="eligibility2" ${appState.eligibility.validNumber ? 'checked' : ''} />
+                        <label>I have a valid mobile number and reliable internet access.</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="eligibility3" ${appState.eligibility.understand ? 'checked' : ''} />
+                        <label>I understand that this application does not guarantee selection.</label>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backEligibility">← Back</button>
+                        <button class="btn-continue" id="continueEligibility">Continue →</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderJobQuestions() {
+            var questions = job.questions || [];
+            var types = job.questionTypes || [];
+            var options = job.selectOptions || [];
+            var html = `
+                <div class="step-card active">
+                    <h3>Job-Specific Questions</h3>
+                    <div class="sub">Please answer the following questions carefully.</div>
+            `;
+            questions.forEach(function(q, idx) {
+                var type = types[idx] || 'textarea';
+                var value = appState.jobAnswers[idx] || '';
+                var fieldId = 'jobq_' + idx;
+                html += `<div class="form-group"><label>${q}</label>`;
+                if (type === 'textarea') {
+                    html += `<textarea id="${fieldId}" rows="3" placeholder="Your answer...">${value}</textarea>`;
+                } else if (type === 'select') {
+                    var opts = options[idx] || [];
+                    html += `<select id="${fieldId}">`;
+                    html += `<option value="">Select...</option>`;
+                    opts.forEach(function(opt) {
+                        var sel = (value === opt) ? 'selected' : '';
+                        html += `<option value="${opt}" ${sel}>${opt}</option>`;
+                    });
+                    html += `</select>`;
+                } else if (type === 'text') {
+                    html += `<input type="text" id="${fieldId}" value="${value}" placeholder="Your answer..." />`;
+                }
+                html += `</div>`;
+            });
+            html += `
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backJobQuestions">← Back</button>
+                        <button class="btn-continue" id="continueJobQuestions">Continue →</button>
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        function renderExperience() {
+            return `
+                <div class="step-card active">
+                    <h3>Experience</h3>
+                    <div class="sub">Tell us about your previous experience relevant to this role.</div>
+                    <div class="form-group">
+                        <label>Previous Experience</label>
+                        <textarea id="experience" rows="4" placeholder="Describe any relevant experience...">${appState.experience}</textarea>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backExperience">← Back</button>
+                        <button class="btn-continue" id="continueExperience">Continue →</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAvailability() {
+            return `
+                <div class="step-card active">
+                    <h3>Availability</h3>
+                    <div class="sub">How much time can you dedicate to this role?</div>
+                    <div class="form-group">
+                        <label>Availability</label>
+                        <textarea id="availability" rows="3" placeholder="e.g., Evenings and weekends, 5 hours per week...">${appState.availability}</textarea>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backAvailability">← Back</button>
+                        <button class="btn-continue" id="continueAvailability">Continue →</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSocial() {
+            if (!job.hasSocial) {
+                return `
+                    <div class="step-card active">
+                        <h3>Social Media</h3>
+                        <div class="sub">Not required for this position.</div>
+                        <div class="btn-row">
+                            <button class="btn-back-step" id="backSocial">← Back</button>
+                            <button class="btn-continue" id="continueSocial">Continue →</button>
+                        </div>
+                    </div>
+                `;
+            }
+            // Social fields differ per job, but we'll use a generic set for Promoter and Community Manager
+            var platforms = ['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Other'];
+            var html = `
+                <div class="step-card active">
+                    <h3>Social Media Presence</h3>
+                    <div class="sub">Please provide information about your social media reach.</div>
+            `;
+            platforms.forEach(function(plat) {
+                var pdata = appState.social[plat] || {};
+                html += `<div style="font-weight:600; color:rgba(255,255,255,0.15); margin:12px 0 4px;">${plat}</div>`;
+                // For each platform, ask relevant fields
+                var fields = [];
+                if (plat === 'Facebook') fields = ['Profile/Page name', 'Public link', 'Approximate followers/friends',
+                    'Activity level'
+                ];
+                else if (plat === 'Instagram') fields = ['Username', 'Public link', 'Approximate followers',
+                    'Activity level'
+                ];
+                else if (plat === 'TikTok') fields = ['Username', 'Public link', 'Approximate followers',
+                    'Average views'
+                ];
+                else if (plat === 'WhatsApp') fields = ['Manage groups? (Yes/No)', 'Number of groups',
+                    'Total members', 'Are you an admin?', 'How long managed?'
+                ];
+                else if (plat === 'Other') fields = ['Platform name', 'Public link', 'Approximate audience'];
+
+                fields.forEach(function(f) {
+                    var fieldId = 'social_' + plat.toLowerCase() + '_' + f.replace(/[^a-zA-Z0-9]/g, '_');
+                    var val = pdata[f] || '';
+                    html += `
+                        <div class="form-group">
+                            <label>${f}</label>
+                            <input type="text" id="${fieldId}" value="${val}" placeholder="Enter ${f.toLowerCase()}" />
+                        </div>
+                    `;
+                });
+            });
+            html += `
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backSocial">← Back</button>
+                        <button class="btn-continue" id="continueSocial">Continue →</button>
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        function renderScenarios() {
+            var scenarios = job.scenarios || [];
+            var html = `
+                <div class="step-card active">
+                    <h3>Scenario Questions</h3>
+                    <div class="sub">How would you handle these situations?</div>
+            `;
+            scenarios.forEach(function(q, idx) {
+                var val = appState.scenarios[idx] || '';
+                html += `
+                    <div class="form-group">
+                        <label>${q}</label>
+                        <textarea id="scenario_${idx}" rows="3" placeholder="Your response...">${val}</textarea>
+                    </div>
+                `;
+            });
+            html += `
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backScenarios">← Back</button>
+                        <button class="btn-continue" id="continueScenarios">Continue →</button>
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        function renderAgreement() {
+            // Show rules dynamically
+            var rules = job.rules || [];
+            var rulesHtml = rules.map(function(r) { return '<li style="margin-bottom:4px;">' + r + '</li>'; }).join('');
+            return `
+                <div class="step-card active">
+                    <h3>Rules & Agreement</h3>
+                    <div class="sub">Please read and accept the terms.</div>
+                    <div style="background:rgba(255,255,255,0.02); border-radius:14px; padding:14px; margin-bottom:16px; font-size:0.85rem; color:rgba(255,255,255,0.15); line-height:1.6;">
+                        <p style="font-weight:600; color:#60A5FA; margin-bottom:6px;">Position Rules</p>
+                        <ul style="list-style:none; padding-left:0;">${rulesHtml}</ul>
+                        <p style="margin-top:10px;"><strong>Note:</strong> Submitting this application does not guarantee selection.</p>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="agreementCheck" ${appState.agreed ? 'checked' : ''} />
+                        <label>I have read and understand the requirements and rules for this position.</label>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backAgreement">← Back</button>
+                        <button class="btn-continue" id="continueAgreement">Continue →</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderReview() {
+            // Build review content from state
+            var html = `
+                <div class="step-card active">
+                    <h3>Application Review</h3>
+                    <div class="sub">Please check your information before submitting.</div>
+                    <div id="reviewContent"></div>
+                    <div class="btn-row">
+                        <button class="btn-back-step" id="backReview">← Back</button>
+                        <button class="btn-continue" id="submitApplication">Submit Application</button>
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        // ─── Review population ─────────────────────────────────────────
+
+        function populateReview() {
+            // Gather all data from form inputs into appState first, then display
+            gatherStateFromDOM();
+
+            var html = `
+                <div class="review-item"><span class="label">Position</span><span class="value">${appState.jobTitle}</span></div>
+                <div class="review-item"><span class="label">Full Name</span><span class="value">${appState.fullName}</span></div>
+                <div class="review-item"><span class="label">Phone</span><span class="value">${appState.phone}</span></div>
+                <div class="review-item"><span class="label">Email</span><span class="value">${appState.email}</span></div>
+                <div class="review-item"><span class="label">Experience</span><span class="value">${appState.experience || '—'}</span></div>
+                <div class="review-item"><span class="label">Availability</span><span class="value">${appState.availability || '—'}</span></div>
+            `;
+
+            // Job questions
+            var questions = job.questions || [];
+            if (questions.length) {
+                html += `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.02); padding-top:8px;"></div>`;
+                questions.forEach(function(q, idx) {
+                    var ans = appState.jobAnswers[idx] || '';
+                    html += `<div class="review-item"><span class="label" style="font-size:0.7rem;">${q}</span><span class="value" style="font-size:0.8rem;">${ans}</span></div>`;
+                });
+            }
+
+            // Scenarios
+            var scenarios = job.scenarios || [];
+            if (scenarios.length) {
+                html += `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.02); padding-top:8px;"></div>`;
+                scenarios.forEach(function(q, idx) {
+                    var ans = appState.scenarios[idx] || '';
+                    html += `<div class="review-item"><span class="label" style="font-size:0.7rem;">${q}</span><span class="value" style="font-size:0.8rem;">${ans}</span></div>`;
+                });
+            }
+
+            // Social media if any
+            if (job.hasSocial) {
+                var platforms = Object.keys(appState.social);
+                if (platforms.length) {
+                    html += `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.02); padding-top:8px;"></div>`;
+                    platforms.forEach(function(plat) {
+                        var data = appState.social[plat] || {};
+                        var hasData = Object.values(data).some(function(v) { return v && v.trim() !== ''; });
+                        if (hasData) {
+                            html += `<div style="font-weight:600; color:rgba(255,255,255,0.15); font-size:0.75rem; margin-top:4px;">${plat}</div>`;
+                            Object.keys(data).forEach(function(f) {
+                                if (data[f] && data[f].trim() !== '') {
+                                    html += `<div class="review-item"><span class="label">${f}</span><span class="value">${data[f]}</span></div>`;
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Eligibility
+            var eligHtml = [];
+            if (appState.eligibility.age) eligHtml.push('18+');
+            if (appState.eligibility.validNumber) eligHtml.push('Valid mobile/internet');
+            if (appState.eligibility.understand) eligHtml.push('Understands no guarantee');
+            html += `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.02); padding-top:8px;"></div>`;
+            html += `<div class="review-item"><span class="label">Eligibility</span><span class="value">${eligHtml.join(' • ') || 'Not confirmed'}</span></div>`;
+
+            // Agreement
+            html += `<div class="review-item"><span class="label">Agreement</span><span class="value">${appState.agreed ? '✓ Accepted' : '✗ Not accepted'}</span></div>`;
+
+            document.getElementById('reviewContent').innerHTML = html;
+        }
+
+        // ─── Helper: gather state from DOM ────────────────────────────
+
+        function gatherStateFromDOM() {
+            // Personal
+            var nameEl = document.getElementById('fullName');
+            var phoneEl = document.getElementById('phone');
+            var emailEl = document.getElementById('email');
+            if (nameEl) appState.fullName = nameEl.value;
+            if (phoneEl) appState.phone = phoneEl.value;
+            if (emailEl) appState.email = emailEl.value;
+
+            // Eligibility
+            var e1 = document.getElementById('eligibility1');
+            var e2 = document.getElementById('eligibility2');
+            var e3 = document.getElementById('eligibility3');
+            if (e1) appState.eligibility.age = e1.checked;
+            if (e2) appState.eligibility.validNumber = e2.checked;
+            if (e3) appState.eligibility.understand = e3.checked;
+
+            // Job questions
+            var questions = job.questions || [];
+            questions.forEach(function(q, idx) {
+                var el = document.getElementById('jobq_' + idx);
+                if (el) {
+                    if (el.tagName === 'SELECT') {
+                        appState.jobAnswers[idx] = el.value;
+                    } else {
+                        appState.jobAnswers[idx] = el.value;
+                    }
+                }
+            });
+
+            // Experience
+            var expEl = document.getElementById('experience');
+            if (expEl) appState.experience = expEl.value;
+
+            // Availability
+            var availEl = document.getElementById('availability');
+            if (availEl) appState.availability = availEl.value;
+
+            // Social
+            if (job.hasSocial) {
+                var platforms = ['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Other'];
+                platforms.forEach(function(plat) {
+                    var fields = [];
+                    if (plat === 'Facebook') fields = ['Profile/Page name', 'Public link', 'Approximate followers/friends',
+                        'Activity level'
+                    ];
+                    else if (plat === 'Instagram') fields = ['Username', 'Public link', 'Approximate followers',
+                        'Activity level'
+                    ];
+                    else if (plat === 'TikTok') fields = ['Username', 'Public link', 'Approximate followers',
+                        'Average views'
+                    ];
+                    else if (plat === 'WhatsApp') fields = ['Manage groups? (Yes/No)', 'Number of groups',
+                        'Total members', 'Are you an admin?', 'How long managed?'
+                    ];
+                    else if (plat === 'Other') fields = ['Platform name', 'Public link', 'Approximate audience'];
+                    var obj = {};
+                    fields.forEach(function(f) {
+                        var id = 'social_' + plat.toLowerCase() + '_' + f.replace(/[^a-zA-Z0-9]/g, '_');
+                        var el = document.getElementById(id);
+                        if (el) obj[f] = el.value;
+                    });
+                    if (Object.keys(obj).length) {
+                        appState.social[plat] = obj;
+                    }
+                });
+            }
+
+            // Scenarios
+            var scenarios = job.scenarios || [];
+            scenarios.forEach(function(q, idx) {
+                var el = document.getElementById('scenario_' + idx);
+                if (el) appState.scenarios[idx] = el.value;
+            });
+
+            // Agreement
+            var agreeEl = document.getElementById('agreementCheck');
+            if (agreeEl) appState.agreed = agreeEl.checked;
+        }
+
+        // ─── Event attachment ──────────────────────────────────────────
+
+        function attachEvents(stepId) {
+            // Back buttons
+            var backMap = {
+                'personal': 'intro',
+                'eligibility': 'personal',
+                'job-questions': 'eligibility',
+                'experience': 'job-questions',
+                'availability': 'experience',
+                'social': 'availability',
+                'scenarios': 'social',
+                'agreement': 'scenarios',
+                'review': 'agreement'
+            };
+
+            var continueMap = {
+                'intro': 'continueIntro',
+                'personal': 'continuePersonal',
+                'eligibility': 'continueEligibility',
+                'job-questions': 'continueJobQuestions',
+                'experience': 'continueExperience',
+                'availability': 'continueAvailability',
+                'social': 'continueSocial',
+                'scenarios': 'continueScenarios',
+                'agreement': 'continueAgreement',
+                'review': 'submitApplication'
+            };
+
+            // Back button for current step
+            if (backMap[stepId]) {
+                var backBtn = document.getElementById('back' + stepId.charAt(0).toUpperCase() + stepId.slice(1));
+                if (backBtn) {
+                    backBtn.addEventListener('click', function() {
+                        gatherStateFromDOM(); // save current answers
+                        if (currentStepIndex > 0) {
+                            currentStepIndex--;
+                            renderStep();
+                        }
+                    });
+                }
+            }
+
+            // Continue button
+            var continueBtnId = continueMap[stepId];
+            if (continueBtnId) {
+                var btn = document.getElementById(continueBtnId);
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        gatherStateFromDOM();
+                        if (!validateStep(stepId)) return;
+                        if (stepId === 'review') {
+                            submitApplication();
+                            return;
+                        }
+                        if (currentStepIndex < steps.length - 1) {
+                            currentStepIndex++;
+                            renderStep();
+                        }
+                    });
+                }
+            }
+
+            // For review, populate content
+            if (stepId === 'review') {
+                populateReview();
+            }
+
+            // Global back button
+            globalBackBtn.onclick = function() {
+                gatherStateFromDOM();
+                if (currentStepIndex > 0) {
+                    currentStepIndex--;
+                    renderStep();
+                } else {
+                    window.location.href = 'jobs.html';
+                }
+            };
+        }
+
+        // ─── Validation ────────────────────────────────────────────────
+
+        function validateStep(stepId) {
+            gatherStateFromDOM();
+            switch (stepId) {
+                case 'personal':
+                    if (!appState.fullName || !appState.phone) {
+                        alert('Please fill in your full name and phone number.');
+                        return false;
+                    }
+                    return true;
+                case 'eligibility':
+                    if (!appState.eligibility.age || !appState.eligibility.validNumber || !appState.eligibility
+                        .understand) {
+                        alert('Please agree to all eligibility requirements.');
+                        return false;
+                    }
+                    return true;
+                case 'job-questions':
+                    var questions = job.questions || [];
+                    var empty = false;
+                    questions.forEach(function(q, idx) {
+                        if (!appState.jobAnswers[idx] || appState.jobAnswers[idx].trim() === '') {
+                            empty = true;
+                        }
+                    });
+                    if (empty) {
+                        alert('Please answer all questions.');
+                        return false;
+                    }
+                    return true;
+                case 'experience':
+                    if (!appState.experience || appState.experience.trim() === '') {
+                        alert('Please describe your experience.');
+                        return false;
+                    }
+                    return true;
+                case 'availability':
+                    if (!appState.availability || appState.availability.trim() === '') {
+                        alert('Please enter your availability.');
+                        return false;
+                    }
+                    return true;
+                case 'social':
+                    return true;
+                case 'scenarios':
+                    var scenarios = job.scenarios || [];
+                    var emptyScen = false;
+                    scenarios.forEach(function(q, idx) {
+                        if (!appState.scenarios[idx] || appState.scenarios[idx].trim() === '') {
+                            emptyScen = true;
+                        }
+                    });
+                    if (emptyScen) {
+                        alert('Please answer all scenario questions.');
+                        return false;
+                    }
+                    return true;
+                case 'agreement':
+                    if (!appState.agreed) {
+                        alert('You must agree to the terms.');
+                        return false;
+                    }
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        // ─── Submit ─────────────────────────────────────────────────────
+
+        function submitApplication() {
+            gatherStateFromDOM();
+
+            var user = getCurrentUser();
+            if (!user) {
+                alert('You must be logged in.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Build application object
+            var appData = {
+                userId: user.uid,
+                jobId: jobId,
+                jobTitle: job.title,
+                fullName: appState.fullName,
+                phone: appState.phone,
+                email: appState.email,
+                eligibility: appState.eligibility,
+                answers: appState.jobAnswers,
+                experience: appState.experience,
+                availability: appState.availability,
+                socialMedia: appState.social,
+                scenarios: appState.scenarios,
+                agreementAccepted: appState.agreed,
+                status: 'pending',
+                submittedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            // Show loading
+            loadingOverlay.classList.add('active');
+            loadingText.textContent = 'Checking your application...';
+
+            // Simulate stages
+            var stages = [
+                'Checking your application...',
+                'Preparing your application...',
+                'Sending application to management...',
+                'Finalizing...'
+            ];
+            var stageIdx = 0;
+            var interval = setInterval(function() {
+                stageIdx++;
+                if (stageIdx < stages.length) {
+                    loadingText.textContent = stages[stageIdx];
+                }
+            }, 500);
+
+            firebase.firestore().collection('jobApplications').add(appData)
+                .then(function(docRef) {
+                    clearInterval(interval);
+                    loadingText.textContent = 'Application submitted!';
+                    setTimeout(function() {
+                        loadingOverlay.classList.remove('active');
+                        var appId = 'SJ-' + docRef.id.slice(0, 6).toUpperCase();
+                        appIdDisplay.textContent = appId;
+                        successJobTitle.textContent = job.title;
+                        successScreen.classList.add('active');
+                    }, 600);
+                })
+                .catch(function(error) {
+                    clearInterval(interval);
+                    loadingOverlay.classList.remove('active');
+                    alert('Your application could not be submitted. Please check your internet connection and try again.');
+                    console.error('Submit error:', error);
+                });
+        }
+
+        // ─── Init ──────────────────────────────────────────────────────
+
+        // Handle Android back button via history
+        window.addEventListener('popstate', function(e) {
+            gatherStateFromDOM();
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                renderStep();
+            } else {
+                window.location.href = 'jobs.html';
+            }
+        });
+        history.pushState({ step: currentStepIndex }, '');
+
+        // Render first step
+        renderStep();
+    </script>
+</body>
+</html>

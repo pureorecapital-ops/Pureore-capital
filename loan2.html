@@ -2,537 +2,84 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-    <meta name="referrer" content="no-referrer" />
-    <title>Apply for Loan – Sajvera Capital</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Sajvera Capital – Loan Application</title>
+
+    <!-- ============================================================
+         FIREBASE SDKs – Load these in the <head>
+         ============================================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <style>
-        *,
-        *::before,
-        *::after {
+        /* ──────────────────────────────────────────────
+           RESET & BASE
+        ────────────────────────────────────────────── */
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --gold: #f6c96e;
-            --gold-glow: rgba(246, 201, 110, 0.25);
-            --cyan: #5dd9f2;
-            --cyan-glow: rgba(93, 217, 242, 0.20);
-            --violet: #7c6df0;
-            --violet-glow: rgba(124, 109, 240, 0.30);
-            --green: #4ade80;
-            --green-glow: rgba(74, 222, 128, 0.15);
-            --red: #ef4444;
-            --red-glow: rgba(239, 68, 68, 0.15);
-            --radius-lg: 28px;
-            --radius-md: 18px;
-            --radius-sm: 12px;
-            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
-        }
-
-        html,
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b1120;
+            color: #ffffff;
             min-height: 100vh;
-            color: #fff;
-            background: #0a0815;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px 30px;
+            align-items: center;
             overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            padding-bottom: 30px;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ibb.co/Vcg0rgNY/ravi-sharma-h-Nv5s6-NEYig-unsplash.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            filter: brightness(0.30) saturate(1.1) contrast(1.05);
-            z-index: -3;
-        }
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(ellipse at 30% 20%, rgba(124, 109, 240, 0.10) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(93, 217, 242, 0.06) 0%, transparent 50%);
-            z-index: -2;
-            pointer-events: none;
-        }
-
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(70px);
-            opacity: 0.08;
-            z-index: -1;
-            pointer-events: none;
-            animation: orbFloat 16s ease-in-out infinite alternate;
-        }
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: var(--violet);
-            top: -8%;
-            left: -10%;
-            animation-delay: 0s;
-        }
-        .orb-2 {
-            width: 350px;
-            height: 350px;
-            background: var(--cyan);
-            bottom: -8%;
-            right: -10%;
-            animation-delay: 5s;
-        }
-        .orb-3 {
-            width: 280px;
-            height: 280px;
-            background: var(--gold);
-            top: 40%;
-            left: 70%;
-            animation-delay: 10s;
-            opacity: 0.06;
-        }
-
-        @keyframes orbFloat {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-            33% {
-                transform: translate(25px, -35px) scale(1.06);
-            }
-            66% {
-                transform: translate(-15px, 25px) scale(0.94);
-            }
-            100% {
-                transform: translate(20px, -10px) scale(1.02);
-            }
         }
 
         .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 1rem 1.2rem 2rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.8rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: var(--radius-sm);
-            background: linear-gradient(135deg, var(--violet), var(--cyan));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px var(--violet-glow);
-            flex-shrink: 0;
-        }
-
-        .brand-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: #fff;
-            stroke-width: 2.2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .brand-name {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #f0edff 0%, #b8b0d6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .brand-name .pc {
-            color: var(--gold);
-            -webkit-text-fill-color: var(--gold);
-            font-weight: 900;
-        }
-
-        .brand-badge {
-            font-size: 9px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.2);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 3px 12px;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .back-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 0.8rem;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 40px;
-            padding: 8px 16px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-            text-decoration: none;
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
-            transform: translateX(-3px);
-        }
-
-        .back-btn svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .step-indicator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 1.5rem;
-            padding: 0.5rem 0.8rem;
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .step-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.06);
-            transition: all 0.4s ease;
-            border: none;
-            padding: 0;
-            cursor: default;
-        }
-
-        .step-dot.active {
-            background: var(--gold);
-            box-shadow: 0 0 20px var(--gold-glow);
-            transform: scale(1.2);
-        }
-        .step-dot.done {
-            background: var(--green);
-            box-shadow: 0 0 20px var(--green-glow);
-        }
-
-        .step-line {
-            width: 30px;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 2px;
-            transition: background 0.4s ease;
-        }
-        .step-line.done {
-            background: var(--green);
-        }
-
-        .step-label {
-            font-size: 0.5rem;
-            color: rgba(255, 255, 255, 0.10);
-            text-align: center;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-            margin-top: 4px;
-        }
-
-        .step-dots-wrapper {
+            max-width: 480px;
+            width: 100%;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            align-items: center;
         }
 
-        .page-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: -0.3px;
-            margin-bottom: 0.2rem;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .page-sub {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.3);
-            margin-bottom: 1.2rem;
-            font-weight: 400;
-        }
-
-        .glass-card {
-            background: rgba(10, 8, 21, 0.55);
-            backdrop-filter: blur(16px) saturate(1.3);
-            -webkit-backdrop-filter: blur(16px) saturate(1.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem 1.5rem 1.8rem;
-            box-shadow: var(--shadow-card);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 1.2rem;
-        }
-
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: -60%;
-            right: -30%;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(124, 109, 240, 0.04) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .glass-card .card-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 1rem;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-        }
-
-        .glass-card .card-title svg {
-            width: 18px;
-            height: 18px;
-            stroke: var(--gold);
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .eligible-box {
-            background: rgba(74, 222, 128, 0.04);
-            border: 1px solid rgba(74, 222, 128, 0.06);
-            border-radius: var(--radius-sm);
-            padding: 0.8rem;
-            text-align: center;
-            margin-bottom: 0.8rem;
-        }
-
-        .eligible-box .label {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .eligible-box .amount {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--gold);
-        }
-
-        .not-eligible {
-            text-align: center;
-            padding: 1rem 0;
-        }
-        .not-eligible .icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-        }
-        .not-eligible .title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--red);
-        }
-        .not-eligible .sub {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.3);
-            margin-top: 0.3rem;
-        }
-
-        .form-group {
-            margin-bottom: 0.8rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.3);
-            margin-bottom: 0.2rem;
-            letter-spacing: 0.3px;
-        }
-
-        .form-group select,
-        .form-group input {
-            width: 100%;
-            padding: 0.6rem 0.8rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            background: rgba(255, 255, 255, 0.02);
-            color: #fff;
-            font-size: 0.9rem;
-            font-family: inherit;
-            transition: all 0.3s ease;
-            outline: none;
-        }
-
-        .form-group select:focus,
-        .form-group input:focus {
-            border-color: rgba(93, 217, 242, 0.15);
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .form-group select option {
-            background: #0a0815;
-            color: #fff;
-        }
-
-        .form-group input::placeholder {
-            color: rgba(255, 255, 255, 0.1);
-        }
-
-        .input-error {
-            font-size: 0.7rem;
-            color: var(--red);
-            margin-top: 0.2rem;
-            min-height: 1.2rem;
-        }
-
-        .btn-primary {
-            width: 100%;
-            padding: 0.8rem;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-family: inherit;
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: #0a0815;
-            background: linear-gradient(135deg, var(--gold), #f5a623);
-            cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 30px var(--gold-glow);
-            position: relative;
-            overflow: hidden;
-            letter-spacing: 0.3px;
-            margin-top: 0.3rem;
-        }
-
-        .btn-primary::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-        }
-
-        .btn-primary:hover::after {
-            opacity: 1;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 40px var(--gold-glow);
-        }
-        .btn-primary:active {
-            transform: scale(0.97);
-        }
-        .btn-primary:disabled {
-            opacity: 0.4;
-            transform: none;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        /* ===== FULL SCREEN LOADING OVERLAY ===== */
+        /* ================================================================
+           FULL SCREEN LOADING OVERLAY
+        ================================================================ */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(10, 8, 21, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: none;
+            background: rgba(11, 17, 32, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
-            flex-direction: column;
-            gap: 1.2rem;
-            padding: 1.5rem;
+            z-index: 999;
+            padding: 30px;
             text-align: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            opacity: 1;
+            visibility: visible;
         }
 
-        .loading-overlay.active {
-            display: flex;
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
 
         .loading-spinner {
-            width: 56px;
-            height: 56px;
-            border: 4px solid rgba(246, 201, 110, 0.10);
-            border-top-color: var(--gold);
+            width: 52px;
+            height: 52px;
+            border: 3px solid rgba(255, 255, 255, 0.06);
+            border-top-color: #facc15;
             border-radius: 50%;
             animation: spin 0.9s linear infinite;
+            margin-bottom: 20px;
         }
 
         @keyframes spin {
@@ -541,241 +88,445 @@
             }
         }
 
-        .loading-text {
-            font-size: 1.2rem;
+        .loading-title {
+            font-size: 1.3rem;
             font-weight: 700;
             color: #ffffff;
+            letter-spacing: -0.3px;
+            margin-bottom: 4px;
         }
 
         .loading-sub {
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.35);
-            max-width: 400px;
-            margin-top: -0.3rem;
-            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.3);
+            max-width: 320px;
         }
 
-        .msg-box {
-            padding: 0.6rem 1rem;
-            border-radius: var(--radius-sm);
-            text-align: center;
+        /* ================================================================
+           BACK BUTTON
+        ================================================================ */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 0.8rem;
             font-weight: 500;
+            text-decoration: none;
+            padding: 8px 0;
+            margin-bottom: 4px;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-family: inherit;
+            align-self: flex-start;
+        }
+
+        .back-link:hover {
+            color: #ffffff;
+        }
+
+        .back-link svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ================================================================
+           PAGE HEADER
+        ================================================================ */
+        .page-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .page-header .branch-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.15rem 0.8rem;
+            border-radius: 30px;
+            margin-bottom: 4px;
+        }
+
+        .badge-flex {
+            background: rgba(250, 204, 21, 0.06);
+            color: #facc15;
+            border: 1px solid rgba(250, 204, 21, 0.06);
+        }
+        .badge-support {
+            background: rgba(96, 165, 250, 0.06);
+            color: #60a5fa;
+            border: 1px solid rgba(96, 165, 250, 0.06);
+        }
+        .badge-goldmine {
+            background: rgba(245, 158, 11, 0.06);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.06);
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+        }
+
+        .page-header h1 span {
+            color: #facc15;
+        }
+
+        .page-header .provider {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-top: 2px;
+        }
+
+        /* ================================================================
+           ERROR CARD
+        ================================================================ */
+        .error-card {
+            background: rgba(248, 113, 113, 0.04);
+            border: 1px solid rgba(248, 113, 113, 0.06);
+            border-radius: 20px;
+            padding: 20px 18px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .error-card .error-icon {
+            font-size: 2.4rem;
+            margin-bottom: 8px;
+        }
+
+        .error-card .error-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #f87171;
+            margin-bottom: 4px;
+        }
+
+        .error-card .error-desc {
             font-size: 0.85rem;
-            margin-top: 0.8rem;
-            display: none;
-            border: 1px solid transparent;
+            color: rgba(255, 255, 255, 0.3);
+            line-height: 1.5;
+            margin-bottom: 12px;
         }
 
-        .msg-box.error {
-            display: block;
-            background: rgba(239, 68, 68, 0.06);
-            border-color: rgba(239, 68, 68, 0.12);
-            color: #fca5a5;
-        }
-
-        .msg-box.success {
-            display: block;
-            background: rgba(74, 222, 128, 0.06);
-            border-color: rgba(74, 222, 128, 0.12);
-            color: #6ee7b7;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px;
-            border-radius: 60px;
+        .error-card .btn-retry {
+            padding: 0.6rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 30px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: inherit;
             font-weight: 600;
             font-size: 0.85rem;
-            z-index: 9999;
-            background: rgba(10, 8, 21, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: #fff;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-            animation: toastIn 0.3s ease;
-            max-width: 90%;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .error-card .btn-retry:hover {
+            background: rgba(255, 255, 255, 0.02);
+            color: #ffffff;
+        }
+
+        /* ================================================================
+           SUMMARY CARD
+        ================================================================ */
+        .summary-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 22px 18px 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            animation: fadeSlide 0.4s ease;
+        }
+
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .summary-card .summary-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.15);
+            margin-bottom: 2px;
+        }
+
+        .summary-card .summary-amount {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #facc15;
+            margin: 2px 0 2px;
+        }
+
+        .summary-card .summary-amount .currency {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 400;
+            margin-right: 2px;
+        }
+
+        .summary-card .summary-level {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-bottom: 12px;
+        }
+
+        .summary-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.04);
+            margin: 10px 0 12px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 0.85rem;
+        }
+
+        .summary-row .label {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .summary-row .value {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .summary-row .value.gold {
+            color: #facc15;
+        }
+        .summary-row .value.blue {
+            color: #60a5fa;
+        }
+        .summary-row .value.green {
+            color: #4ade80;
+        }
+
+        /* Repayment breakdown (PureOre Support) */
+        .repayment-breakdown {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin: 8px 0 4px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .repayment-breakdown .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            font-size: 0.8rem;
+        }
+
+        .repayment-breakdown .breakdown-row .label {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .repayment-breakdown .breakdown-row .value {
+            font-weight: 600;
+        }
+
+        .repayment-breakdown .breakdown-total {
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 4px;
+            padding-top: 4px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .repayment-breakdown .breakdown-note {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.1);
+            margin-top: 4px;
             text-align: center;
         }
 
-        .toast.error {
-            border-color: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-        }
-        .toast.success {
-            border-color: rgba(74, 222, 128, 0.15);
-            color: #6ee7b7;
-        }
-
-        @keyframes toastIn {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0) scale(1);
-            }
+        /* ================================================================
+           TERMS CONFIRMATION
+        ================================================================ */
+        .terms-section {
+            margin: 14px 0 10px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        @media (max-width: 600px) {
-            .container {
-                padding: 0.8rem 0.8rem 1.5rem;
+        .terms-section .terms-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.15);
+            margin-bottom: 6px;
+        }
+
+        .terms-section .term-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 3px 0;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.25);
+            line-height: 1.4;
+        }
+
+        .terms-section .term-item .check {
+            color: rgba(255, 255, 255, 0.05);
+            font-size: 0.6rem;
+            margin-top: 1px;
+        }
+
+        .terms-section .term-item .check.done {
+            color: #4ade80;
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .terms-checkbox:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .terms-checkbox input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #facc15;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .terms-checkbox label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        /* ================================================================
+           CONTINUE BUTTON
+        ================================================================ */
+        .btn-continue {
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 14px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            color: #0b1120;
+            margin-top: 4px;
+        }
+
+        .btn-continue:hover:not(:disabled) {
+            box-shadow: 0 8px 28px rgba(250, 204, 21, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-continue:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* ================================================================
+           RESPONSIVE
+        ================================================================ */
+        @media (max-width: 480px) {
+            body {
+                padding: 14px 12px 20px;
             }
-            .brand-name {
-                font-size: 17px;
-            }
-            .brand-icon {
-                width: 36px;
-                height: 36px;
-            }
-            .brand-icon svg {
-                width: 18px;
-                height: 18px;
-            }
-            .brand-badge {
-                font-size: 7px;
-                padding: 2px 8px;
-            }
-            .page-title {
-                font-size: 1.3rem;
-            }
-            .glass-card {
-                padding: 1.2rem 1rem 1.4rem;
-            }
-            .back-btn {
-                font-size: 0.75rem;
-                padding: 6px 12px;
-            }
-            .step-line {
-                width: 20px;
-            }
-            .step-indicator {
-                padding: 0.4rem 0.6rem;
-                gap: 4px;
-            }
-            .step-label {
-                font-size: 0.4rem;
-            }
-            .step-dot {
-                width: 8px;
-                height: 8px;
-            }
-            .eligible-box .amount {
+            .page-header h1 {
                 font-size: 1.4rem;
+            }
+            .summary-card .summary-amount {
+                font-size: 2.2rem;
+            }
+            .repayment-breakdown .breakdown-row {
+                font-size: 0.75rem;
+            }
+            .terms-section .term-item {
+                font-size: 0.7rem;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== FULL SCREEN LOADING OVERLAY ===== -->
+    <!-- ================================================================
+    FULL SCREEN LOADING OVERLAY
+    ================================================================ -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
-        <div class="loading-text" id="loadingTitle">Preparing Your Application</div>
-        <div class="loading-sub" id="loadingSub">Please wait while we prepare your loan application.</div>
+        <div class="loading-title" id="loadingTitle">Preparing your loan application...</div>
+        <div class="loading-sub" id="loadingSub">Please wait while we verify your loan information.</div>
     </div>
 
-    <!-- ===== ORBS ===== -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <!-- ================================================================
+    MAIN CONTENT
+    ================================================================ -->
+    <div class="container" id="mainContent" style="display:none;">
 
-    <!-- ===== MAIN CONTAINER ===== -->
-    <div class="container">
+        <!-- Back button -->
+        <button class="back-link" id="backBtn">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+        </button>
 
-        <!-- ===== HEADER ===== -->
-        <div class="header">
-            <div class="brand">
-                <div class="brand-icon">
-                    <svg viewBox="0 0 24 24">
-                        <polyline points="6 6 18 6 6 18 18 18" />
-                    </svg>
-                </div>
-                <span class="brand-name">Sajvera<span class="pc">Capital</span></span>
-                <span class="brand-badge">Loan</span>
-            </div>
+        <!-- Page header (dynamic) -->
+        <div class="page-header" id="pageHeader">
+            <div class="branch-badge" id="branchBadge">Sajvera Flex</div>
+            <h1>Loan <span>Application</span></h1>
+            <div class="provider" id="providerText">Sajvera Capital</div>
         </div>
 
-        <!-- ===== BACK ROW ===== -->
-        <div class="back-row">
-            <button class="back-btn" id="backBtn">
-                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
-                Back
-            </button>
-        </div>
-
-        <!-- ===== STEP INDICATOR ===== -->
-        <div class="step-indicator">
-            <div class="step-dots-wrapper">
-                <div class="step-dot done" id="dot1"></div>
-                <div class="step-label" id="label1">Eligibility</div>
-            </div>
-            <div class="step-line done" id="line1"></div>
-            <div class="step-dots-wrapper">
-                <div class="step-dot active" id="dot2"></div>
-                <div class="step-label" id="label2">Amount</div>
-            </div>
-            <div class="step-line" id="line2"></div>
-            <div class="step-dots-wrapper">
-                <div class="step-dot" id="dot3"></div>
-                <div class="step-label" id="label3">Confirm</div>
-            </div>
-        </div>
-
-        <!-- ===== PAGE TITLE ===== -->
-        <div class="page-title">💰 Apply for a Loan</div>
-        <div class="page-sub">Select the amount you wish to borrow (multiples of 600 ZMW)</div>
-
-        <!-- ===== LOAN APPLICATION CARD ===== -->
-        <div class="glass-card" id="loanCard">
-
-            <!-- Eligible Amount Display -->
-            <div id="eligibleDisplay" style="display:none;">
-                <div class="eligible-box">
-                    <div class="label">Your Loan Limit</div>
-                    <div class="amount" id="loanLimitDisplay">600.00 ZMW</div>
-                    <div style="font-size:0.7rem; color:rgba(255,255,255,0.2); margin-top:0.2rem;">
-                        Amount increases by 600 after each successful repayment
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Select Amount (ZMW)</label>
-                    <select id="loanAmountSelect">
-                        <option value="">-- Choose an amount --</option>
-                    </select>
-                    <div class="input-error" id="amountError"></div>
-                </div>
-
-                <button class="btn-primary" id="loanNowBtn" disabled>Loan Now</button>
-            </div>
-
-            <!-- Not Eligible Display -->
-            <div id="notEligibleDisplay" style="display:none;">
-                <div class="not-eligible">
-                    <div class="icon">⛔</div>
-                    <div class="title">You are not eligible for a Sajvera Capital loan at this time.</div>
-                    <div class="sub">Please ensure you meet all the platform's eligibility requirements before applying.</div>
-                </div>
-                <button class="btn-primary" id="checkAgainBtn" style="background:linear-gradient(135deg, var(--cyan), #3b82f6);">Check Eligibility Again</button>
-            </div>
-
-            <!-- Loading state -->
-            <div id="loadingState" style="text-align:center;padding:1rem 0;">
-                <div style="font-size:0.9rem;color:rgba(255,255,255,0.2);">Checking your eligibility...</div>
-            </div>
-
-            <div id="loanMessage" class="msg-box"></div>
+        <!-- Content area -->
+        <div id="contentArea">
+            <!-- Will be populated by JS -->
         </div>
 
     </div>
 
+    <!-- ================================================================
+    JAVASCRIPT – FIREBASE INTEGRATION
+    ================================================================ -->
     <script>
         // ================================================================
-        // FIREBASE CONFIG
+        // FIREBASE CONFIG – Your project credentials
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -786,305 +537,615 @@
             appId: "1:78967797858:web:379b9692951429c345793b",
             measurementId: "G-FQKC29NYE9"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+        // ================================================================
+        // INITIALIZE FIREBASE (only once)
+        // ================================================================
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         var auth = firebase.auth();
         var db = firebase.firestore();
-        db.settings({ persistence: false });
+        db.settings({ persistence: true });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ================================================================
-        // HELPERS
+        // AUTH STATE CHECK – Redirect if not logged in
         // ================================================================
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' } [m]; });
+        var authResolved = false;
+        var redirectTimeout = null;
+
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                authResolved = true;
+                if (redirectTimeout) {
+                    clearTimeout(redirectTimeout);
+                    redirectTimeout = null;
+                }
+                console.log('✅ User logged in:', user.uid, user.email);
+                // Firestore data fetch will be triggered inside init() after auth is ready.
+                // We'll call init() if not already started.
+                if (!window._initialized) {
+                    window._initialized = true;
+                    init();
+                }
+            } else {
+                if (!authResolved) {
+                    if (!redirectTimeout) {
+                        redirectTimeout = setTimeout(function() {
+                            if (!auth.currentUser) {
+                                console.log('❌ No user found. Redirecting to login...');
+                                window.location.href = 'login.html';
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }, function(error) {
+            console.error('Auth state error:', error);
+            window.location.href = 'login.html';
+        });
+
+        // ================================================================
+        // HELPER FUNCTIONS
+        // ================================================================
+        function getCurrentUser() {
+            return auth.currentUser;
         }
 
-        function showToast(msg, isError) {
-            var existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (isError ? ' error' : ' success');
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
+        function logoutUser() {
+            auth.signOut().then(function() {
+                window.location.href = 'login.html';
+            }).catch(function(err) {
+                console.warn('Logout error:', err);
+            });
         }
 
-        function showLoading(title, sub) {
-            document.getElementById('loadingTitle').textContent = title || 'Preparing Your Application';
-            document.getElementById('loadingSub').textContent = sub || 'Please wait while we prepare your loan application.';
-            document.getElementById('loadingOverlay').classList.add('active');
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.remove('active');
-        }
-
-        function showLoanMessage(msg, isError) {
-            var el = document.getElementById('loanMessage');
-            el.className = 'msg-box ' + (isError ? 'error' : 'success');
-            el.textContent = msg;
-            el.style.display = 'block';
-            setTimeout(function() { el.style.display = 'none'; }, 5000);
-        }
+        // ================================================================
+        // BRANCH DEFINITIONS (same as loan.html)
+        // ================================================================
+        var BRANCHES = {
+            sajvera_flex: {
+                id: 'sajvera_flex',
+                name: 'Sajvera Flex',
+                provider: 'Sajvera Capital',
+                firstAmount: 200,
+                progression: 200,
+                repaymentDays: 15,
+                tag: 'Flexible',
+                badgeClass: 'badge-flex',
+                fee: null, // no fee defined
+                check: function(data) {
+                    var result = { eligible: true, requirements: [] };
+                    var actBal = data.activityBalance || 0;
+                    result.requirements.push({
+                        label: 'Activity Balance',
+                        current: actBal,
+                        required: 3000,
+                        pass: actBal >= 3000
+                    });
+                    var invited = data.invitedMembers || 0;
+                    result.requirements.push({
+                        label: 'Invited Members',
+                        current: invited,
+                        required: 30,
+                        pass: invited >= 30
+                    });
+                    var investments = data.activeInvestments || [];
+                    var qualifying = investments.filter(function(inv) {
+                        return inv.amount >= 350 && inv.amount <= 600;
+                    });
+                    result.requirements.push({
+                        label: 'Qualifying plans (K350-K600 each)',
+                        current: qualifying.length,
+                        required: 2,
+                        pass: qualifying.length >= 2
+                    });
+                    var hasActiveLoan = data.activeLoan !== null;
+                    result.requirements.push({
+                        label: 'No outstanding loan',
+                        current: hasActiveLoan ? 'Has active loan' : 'None',
+                        required: 'No active loan',
+                        pass: !hasActiveLoan
+                    });
+                    result.eligible = result.requirements.every(function(r) { return r.pass; });
+                    return result;
+                },
+                getAmount: function(data) {
+                    var history = data.loanHistory || [];
+                    var completed = history.filter(function(h) {
+                        return h.branch === 'sajvera_flex' && h.status === 'completed';
+                    });
+                    return 200 + (completed.length * 200);
+                },
+                getLevel: function(data) {
+                    var history = data.loanHistory || [];
+                    var completed = history.filter(function(h) {
+                        return h.branch === 'sajvera_flex' && h.status === 'completed';
+                    });
+                    return completed.length + 1;
+                }
+            },
+            pureore_support: {
+                id: 'pureore_support',
+                name: 'PureOre Support',
+                provider: 'PureOre Capital',
+                firstAmount: 600,
+                progression: 300,
+                repaymentDays: 20,
+                tag: 'Short-term',
+                badgeClass: 'badge-support',
+                fee: { type: 'percentage', rate: 20 },
+                check: function(data) {
+                    var result = { eligible: true, requirements: [] };
+                    var invited = data.invitedMembers || 0;
+                    result.requirements.push({
+                        label: 'Invited Members',
+                        current: invited,
+                        required: 50,
+                        pass: invited >= 50
+                    });
+                    var investments = data.supportInvestments || [];
+                    var qualifying = investments.filter(function(inv) {
+                        return inv.amount >= 900 && inv.amount <= 1600;
+                    });
+                    result.requirements.push({
+                        label: 'Qualifying plans (K900-K1600 each)',
+                        current: qualifying.length,
+                        required: 1,
+                        pass: qualifying.length >= 1
+                    });
+                    var hasActiveLoan = data.activeLoan !== null;
+                    result.requirements.push({
+                        label: 'No outstanding loan',
+                        current: hasActiveLoan ? 'Has active loan' : 'None',
+                        required: 'No active loan',
+                        pass: !hasActiveLoan
+                    });
+                    result.eligible = result.requirements.every(function(r) { return r.pass; });
+                    return result;
+                },
+                getAmount: function(data) {
+                    var history = data.loanHistory || [];
+                    var completed = history.filter(function(h) {
+                        return h.branch === 'pureore_support' && h.status === 'completed';
+                    });
+                    return 600 + (completed.length * 300);
+                },
+                getLevel: function(data) {
+                    var history = data.loanHistory || [];
+                    var completed = history.filter(function(h) {
+                        return h.branch === 'pureore_support' && h.status === 'completed';
+                    });
+                    return completed.length + 1;
+                }
+            },
+            goldmine_advance: {
+                id: 'goldmine_advance',
+                name: 'GoldMine Advance',
+                provider: 'Gold Mining',
+                firstAmount: 3000,
+                progression: 500,
+                repaymentDays: 25,
+                tag: 'Premium',
+                badgeClass: 'badge-goldmine',
+                fee: null, // not configured yet
+                check: function(data) {
+                    var result = { eligible: true, requirements: [] };
+                    var inv = data.goldmineInvestment || {};
+                    var invAmount = inv.amount || 0;
+                    result.requirements.push({
+                        label: 'Investment amount',
+                        current: invAmount,
+                        required: 'K2,500 – K5,000',
+                        pass: invAmount >= 2500 && invAmount <= 5000
+                    });
+                    var invited = data.goldmineInvited || 0;
+                    result.requirements.push({
+                        label: 'Invited Members',
+                        current: invited,
+                        required: 100,
+                        pass: invited >= 100
+                    });
+                    var hasActiveLoan = data.activeLoan !== null;
+                    result.requirements.push({
+                        label: 'No outstanding loan',
+                        current: hasActiveLoan ? 'Has active loan' : 'None',
+                        required: 'No active loan',
+                        pass: !hasActiveLoan
+                    });
+                    result.eligible = result.requirements.every(function(r) { return r.pass; });
+                    return result;
+                },
+                getAmount: function(data) {
+                    var history = data.loanHistory || [];
+                    var completed = history.filter(function(h) {
+                        return h.branch === 'goldmine_advance' && h.status === 'completed';
+                    });
+                    return 3000 + (completed.length * 500);
+                },
+                getLevel: function(data) {
+                    var history = data.loanHistory || [];
+                    var completed = history.filter(function(h) {
+                        return h.branch === 'goldmine_advance' && h.status === 'completed';
+                    });
+                    return completed.length + 1;
+                }
+            }
+        };
 
         // ================================================================
         // DOM REFS
         // ================================================================
-        var eligibleDisplay = document.getElementById('eligibleDisplay');
-        var notEligibleDisplay = document.getElementById('notEligibleDisplay');
-        var loadingState = document.getElementById('loadingState');
-        var loanLimitDisplay = document.getElementById('loanLimitDisplay');
-        var loanAmountSelect = document.getElementById('loanAmountSelect');
-        var amountError = document.getElementById('amountError');
-        var loanNowBtn = document.getElementById('loanNowBtn');
-        var checkAgainBtn = document.getElementById('checkAgainBtn');
+        var loadingOverlay = document.getElementById('loadingOverlay');
+        var loadingTitle = document.getElementById('loadingTitle');
+        var loadingSub = document.getElementById('loadingSub');
+        var mainContent = document.getElementById('mainContent');
+        var contentArea = document.getElementById('contentArea');
+        var branchBadge = document.getElementById('branchBadge');
+        var providerText = document.getElementById('providerText');
+        var backBtn = document.getElementById('backBtn');
 
-        var currentUserId = null;
+        // ================================================================
+        // STATE
+        // ================================================================
+        var currentUser = null;
         var userData = null;
-        var isEligible = false;
-        var loanLimit = 600; // default, will be updated from Firestore
+        var selectedBranchId = null;
+        var branch = null;
+        var amount = 0;
+        var level = 0;
+        var eligibilityResult = null;
+        var isAgreed = false;
 
         // ================================================================
-        // CHECK ELIGIBILITY FROM BACKEND
+        // GET URL PARAMETERS
         // ================================================================
-        async function checkEligibilityFromBackend(userId) {
-            try {
-                var userDoc = await db.collection('users').doc(userId).get();
-                if (!userDoc.exists) {
-                    return { eligible: false, reason: 'User not found.' };
+        function getUrlParams() {
+            var params = new URLSearchParams(window.location.search);
+            return {
+                branch: params.get('branch'),
+                amount: params.get('amount'),
+                days: params.get('days')
+            };
+        }
+
+        // ================================================================
+        // FETCH USER DATA FROM FIRESTORE
+        // ================================================================
+        async function fetchUserData(uid) {
+            // Fetch user document
+            var userDoc = await db.collection('users').doc(uid).get();
+            if (!userDoc.exists) {
+                throw new Error('User data not found.');
+            }
+            var data = userDoc.data();
+
+            // Fetch loan history: all loan applications where userId == uid and status == 'completed'
+            var loanHistorySnapshot = await db.collection('loanApplications')
+                .where('userId', '==', uid)
+                .where('status', 'in', ['completed', 'approved', 'active', 'pending'])
+                .get();
+
+            var loanHistory = [];
+            var activeLoan = null;
+            var pendingLoan = null;
+
+            loanHistorySnapshot.forEach(function(doc) {
+                var loan = doc.data();
+                loan.id = doc.id;
+                loanHistory.push(loan);
+                if (loan.status === 'active' || loan.status === 'approved') {
+                    activeLoan = loan;
                 }
-                userData = userDoc.data();
-
-                // Get loan limit from user doc (default 600)
-                loanLimit = userData.loanLimit || 600;
-                // Ensure it's a multiple of 600
-                loanLimit = Math.max(600, Math.floor(loanLimit / 600) * 600);
-
-                // Check blocked
-                if (userData.isBlocked === true) {
-                    return { eligible: false, reason: 'Your account has been blocked.' };
+                if (loan.status === 'pending') {
+                    pendingLoan = loan;
                 }
+            });
 
-                // Check member count
-                var referralCode = userData.referralCode;
-                var memberCount = 0;
-                if (referralCode) {
-                    var referredUsers = await db.collection('users').where('referredBy', '==', referralCode).get();
-                    for (var doc of referredUsers.docs) {
-                        var refId = doc.id;
-                        var deposits = await db.collection('deposits').where('userId', '==', refId).where('status', '==',
-                            'completed').limit(1).get();
-                        var hasDeposit = !deposits.empty;
-                        var inv = await db.collection('investments').where('userId', '==', refId).limit(1).get();
-                        var hasInvestment = !inv.empty;
-                        if (hasDeposit && hasInvestment) memberCount++;
-                    }
+            // Also fetch active investments: we need to query savings records
+            // For simplicity, we assume the user has fields: activeInvestments, supportInvestments, goldmineInvestment
+            // that are stored as arrays/objects in the user document.
+            // If not, we can derive from savings subcollections.
+
+            // For now, we use the fields from the user document as expected.
+            // We'll also ensure we have the required fields.
+            var result = {
+                id: uid,
+                fullName: data.fullName || '',
+                email: data.email || '',
+                activityBalance: data.activityBalance || 0,
+                invitedMembers: data.invitedMembers || 0,
+                activeInvestments: data.activeInvestments || [],
+                supportInvestments: data.supportInvestments || [],
+                goldmineInvestment: data.goldmineInvestment || { amount: 0 },
+                goldmineInvited: data.goldmineInvited || 0,
+                loanHistory: loanHistory,
+                activeLoan: activeLoan,
+                pendingLoan: pendingLoan
+            };
+
+            return result;
+        }
+
+        // ================================================================
+        // PERFORM VERIFICATION (using real data)
+        // ================================================================
+        async function performVerification() {
+            var user = getCurrentUser();
+            if (!user) {
+                throw new Error('You must be logged in.');
+            }
+
+            var params = getUrlParams();
+            var branchId = params.branch;
+
+            // Validate branch
+            if (!branchId || !BRANCHES[branchId]) {
+                throw new Error('Invalid loan branch.');
+            }
+
+            // Fetch user data
+            var data = await fetchUserData(user.uid);
+
+            // Check for active or pending loan
+            if (data.activeLoan) {
+                throw new Error('You already have an active loan.');
+            }
+            if (data.pendingLoan) {
+                throw new Error('You already have a pending loan application.');
+            }
+
+            // Check branch eligibility
+            var branchObj = BRANCHES[branchId];
+            var result = branchObj.check(data);
+            if (!result.eligible) {
+                throw new Error('Your eligibility has changed. Please return to the loan page and check again.');
+            }
+
+            // Calculate amount and level
+            var amount = branchObj.getAmount(data);
+            var level = branchObj.getLevel(data);
+
+            return {
+                branchId: branchId,
+                branch: branchObj,
+                userData: data,
+                amount: amount,
+                level: level,
+                eligibility: result
+            };
+        }
+
+        // ================================================================
+        // RENDER CONTENT
+        // ================================================================
+        function renderContent(result) {
+            var branchObj = result.branch;
+            var amount = result.amount;
+            var level = result.level;
+            var data = result.userData;
+            var isFlex = branchObj.id === 'sajvera_flex';
+            var isSupport = branchObj.id === 'pureore_support';
+            var isGoldmine = branchObj.id === 'goldmine_advance';
+
+            // Update header
+            branchBadge.textContent = branchObj.name;
+            branchBadge.className = 'branch-badge ' + branchObj.badgeClass;
+            providerText.textContent = branchObj.provider;
+
+            // Build content
+            var html = '';
+
+            // Summary Card
+            html += '<div class="summary-card">';
+            html += '<div class="summary-title">Eligible Loan Amount</div>';
+            html += '<div class="summary-amount"><span class="currency">K</span>' + amount + '</div>';
+            html += '<div class="summary-level">Level ' + level + ' · ' + branchObj.tag + '</div>';
+
+            html += '<div class="summary-divider"></div>';
+
+            // Repayment period
+            html += '<div class="summary-row">';
+            html += '<span class="label">Repayment Period</span>';
+            html += '<span class="value blue">' + branchObj.repaymentDays + ' Days</span>';
+            html += '</div>';
+
+            // For PureOre Support: show fee breakdown
+            if (isSupport && branchObj.fee) {
+                var feeAmount = amount * (branchObj.fee.rate / 100);
+                var totalRepayment = amount + feeAmount;
+                html += '<div class="summary-divider"></div>';
+                html += '<div class="repayment-breakdown">';
+                html += '<div class="breakdown-row"><span class="label">Loan Amount</span><span class="value gold">K' +
+                    amount + '</span></div>';
+                html +=
+                    '<div class="breakdown-row"><span class="label">Loan Charge (' + branchObj.fee.rate + '%)</span><span class="value" style="color:#f87171;">K' +
+                    feeAmount + '</span></div>';
+                html +=
+                    '<div class="breakdown-row breakdown-total"><span class="label">Total Repayment</span><span class="value gold">K' +
+                    totalRepayment + '</span></div>';
+                html +=
+                    '<div class="breakdown-note">The ' + branchObj.fee.rate +
+                    '% charge is calculated once on the loan amount. It is not a daily charge.</div>';
+                html += '</div>';
+            }
+
+            // For Sajvera Flex: no fee yet
+            if (isFlex) {
+                html += '<div class="summary-divider"></div>';
+                html +=
+                    '<div style="font-size:0.7rem;color:rgba(255,255,255,0.1);text-align:center;padding:4px 0;">No additional charges apply.</div>';
+            }
+
+            // For GoldMine: no fee configured
+            if (isGoldmine) {
+                html += '<div class="summary-divider"></div>';
+                html +=
+                    '<div style="font-size:0.7rem;color:rgba(255,255,255,0.1);text-align:center;padding:4px 0;">Repayment charge: <span style="color:#f59e0b;">To be confirmed</span></div>';
+            }
+
+            html += '</div>'; // end summary-card
+
+            // Terms section
+            html += '<div class="terms-section">';
+            html += '<div class="terms-title">Before continuing</div>';
+            html +=
+                '<div class="term-item"><span class="check done">✓</span> I understand my eligible loan amount.</div>';
+            html +=
+                '<div class="term-item"><span class="check done">✓</span> I understand the repayment period.</div>';
+            if (isSupport) {
+                html +=
+                    '<div class="term-item"><span class="check done">✓</span> I understand the applicable repayment charge.</div>';
+            }
+            html +=
+                '<div class="term-item"><span class="check done">✓</span> I understand that the next loan level is unlocked only after full repayment.</div>';
+            html +=
+                '<div class="term-item"><span class="check done">✓</span> I understand that the loan is subject to final approval.</div>';
+            html += '</div>';
+
+            // Agreement checkbox
+            html += '<div class="terms-checkbox" id="termsCheckboxWrap">';
+            html += '<input type="checkbox" id="termsCheckbox" />';
+            html += '<label for="termsCheckbox">I agree to the loan terms.</label>';
+            html += '</div>';
+
+            // Continue button (disabled initially)
+            html += '<button class="btn-continue" id="continueBtn" disabled>Continue to Confirmation</button>';
+
+            contentArea.innerHTML = html;
+
+            // Bind events
+            var checkbox = document.getElementById('termsCheckbox');
+            var continueBtn = document.getElementById('continueBtn');
+
+            // Click on the whole checkbox area to toggle
+            var wrap = document.getElementById('termsCheckboxWrap');
+            wrap.addEventListener('click', function(e) {
+                // Don't toggle if the click is directly on the checkbox (it already toggles)
+                if (e.target.tagName === 'INPUT') return;
+                checkbox.checked = !checkbox.checked;
+                continueBtn.disabled = !checkbox.checked;
+            });
+
+            checkbox.addEventListener('change', function() {
+                continueBtn.disabled = !this.checked;
+            });
+
+            continueBtn.addEventListener('click', function() {
+                if (this.disabled) return;
+                // Proceed to loan3.html
+                showLoading('Preparing secure confirmation...', 'Please wait');
+                setTimeout(function() {
+                    var params = new URLSearchParams();
+                    params.set('branch', branchObj.id);
+                    params.set('amount', amount);
+                    params.set('days', branchObj.repaymentDays);
+                    window.location.href = 'loan3.html?' + params.toString();
+                }, 1000);
+            });
+
+            // Store selected branch for back button
+            selectedBranchId = branchObj.id;
+        }
+
+        // ================================================================
+        // SHOW ERROR
+        // ================================================================
+        function showError(title, message, showRetry) {
+            var html = '<div class="error-card">';
+            html += '<div class="error-icon">⚠️</div>';
+            html += '<div class="error-title">' + title + '</div>';
+            html += '<div class="error-desc">' + message + '</div>';
+            if (showRetry) {
+                html += '<button class="btn-retry" id="retryBtn">Try Again</button>';
+            } else {
+                html +=
+                    '<button class="btn-retry" id="backToLoansBtn" style="border-color:rgba(255,255,255,0.06);">← Back to Loans</button>';
+            }
+            html += '</div>';
+            contentArea.innerHTML = html;
+
+            if (showRetry) {
+                document.getElementById('retryBtn').addEventListener('click', function() {
+                    window.location.reload();
+                });
+            } else {
+                var btn = document.getElementById('backToLoansBtn');
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        window.location.href = 'loan.html';
+                    });
                 }
-
-                var activityBalance = userData.activityBalance || 0;
-                var canRequest = userData.canRequestLoan !== false;
-
-                // Check existing unpaid loan
-                var loanSnap = await db.collection('loans')
-                    .where('userId', '==', userId)
-                    .where('status', 'in', ['pending', 'active'])
-                    .limit(1)
-                    .get();
-                var hasUnpaidLoan = !loanSnap.empty;
-
-                var eligible = memberCount >= 100 && activityBalance >= 10000 && canRequest && !hasUnpaidLoan;
-
-                var reason = '';
-                if (!eligible) {
-                    var reasons = [];
-                    if (memberCount < 100) reasons.push('Need 100+ team members (current: ' + memberCount + ')');
-                    if (activityBalance < 10000) reasons.push('Need 10,000+ activity balance (current: ' + activityBalance
-                        .toFixed(2) + ')');
-                    if (!canRequest) reasons.push('Loan requests are restricted for your account.');
-                    if (hasUnpaidLoan) reasons.push('You have an existing pending/active loan.');
-                    reason = reasons.join('. ');
-                }
-
-                // Store loanLimit in result
-                return {
-                    eligible: eligible,
-                    reason: reason || 'You are eligible!',
-                    memberCount: memberCount,
-                    activityBalance: activityBalance,
-                    hasUnpaidLoan: hasUnpaidLoan,
-                    canRequest: canRequest,
-                    loanLimit: loanLimit
-                };
-
-            } catch (err) {
-                console.error('Eligibility check error:', err);
-                return { eligible: false, reason: 'Error checking eligibility. Please refresh.' };
             }
         }
 
         // ================================================================
-        // POPULATE DROPDOWN WITH MULTIPLES OF 600
+        // SHOW / HIDE LOADING
         // ================================================================
-        function populateDropdown(limit) {
-            loanAmountSelect.innerHTML = '<option value="">-- Choose an amount --</option>';
-            for (var amount = 600; amount <= limit; amount += 600) {
-                var option = document.createElement('option');
-                option.value = amount;
-                option.textContent = amount.toFixed(0) + ' ZMW';
-                loanAmountSelect.appendChild(option);
-            }
-            // Enable button when a valid option is selected
-            loanAmountSelect.addEventListener('change', function() {
-                var val = parseFloat(this.value);
-                if (val > 0 && val <= limit && val % 600 === 0) {
-                    loanNowBtn.disabled = false;
-                    amountError.textContent = '';
+        function showLoading(title, sub) {
+            if (title) loadingTitle.textContent = title;
+            if (sub) loadingSub.textContent = sub;
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        // ================================================================
+        // INITIALIZATION (called after auth is confirmed)
+        // ================================================================
+        function init() {
+            // Show loading overlay
+            showLoading('Preparing your loan application...', 'Please wait while we verify your loan information.');
+
+            performVerification().then(function(result) {
+                // Store for later use
+                branch = result.branch;
+                amount = result.amount;
+                level = result.level;
+                userData = result.userData;
+                eligibilityResult = result.eligibility;
+                selectedBranchId = result.branchId;
+
+                hideLoading();
+                mainContent.style.display = 'block';
+                renderContent(result);
+            }).catch(function(err) {
+                hideLoading();
+                mainContent.style.display = 'block';
+                var msg = err.message || 'An error occurred.';
+                if (msg.includes('Invalid loan branch')) {
+                    showError('Invalid Loan Branch', 'The selected branch is not valid. Please return to the loan page.',
+                        false);
+                } else if (msg.includes('active loan') || msg.includes('pending loan')) {
+                    showError('Loan Application Unavailable', 'You already have a pending or unpaid loan.', false);
+                } else if (msg.includes('eligibility has changed')) {
+                    showError('Eligibility Changed',
+                        'Your eligibility has changed. Please return to the loan page and check again.', false);
                 } else {
-                    loanNowBtn.disabled = true;
-                    amountError.textContent = 'Please select a valid amount.';
+                    showError('Unable to verify your loan information.', msg + ' Please try again.', true);
                 }
             });
         }
 
         // ================================================================
-        // LOAD PAGE
-        // ================================================================
-        async function loadPage() {
-            var user = auth.currentUser;
-            if (!user) { window.location.href = 'login.html'; return; }
-            currentUserId = user.uid;
-
-            loadingState.style.display = 'block';
-            eligibleDisplay.style.display = 'none';
-            notEligibleDisplay.style.display = 'none';
-
-            var result = await checkEligibilityFromBackend(currentUserId);
-            isEligible = result.eligible;
-            loanLimit = result.loanLimit || 600;
-
-            loadingState.style.display = 'none';
-
-            if (isEligible) {
-                eligibleDisplay.style.display = 'block';
-                notEligibleDisplay.style.display = 'none';
-                loanLimitDisplay.textContent = loanLimit.toFixed(2) + ' ZMW';
-                // Populate dropdown with multiples of 600 up to loanLimit
-                populateDropdown(loanLimit);
-                // Select the first option (600) by default
-                var firstOption = loanAmountSelect.querySelector('option[value="600"]');
-                if (firstOption) {
-                    firstOption.selected = true;
-                    loanNowBtn.disabled = false;
-                } else {
-                    loanNowBtn.disabled = true;
-                }
-
-                // Store eligibility for next step
-                localStorage.setItem('loanEligible', 'true');
-                localStorage.setItem('loanMaxAmount', loanLimit.toString());
-                localStorage.setItem('loanMemberCount', result.memberCount.toString());
-                localStorage.setItem('loanActivityBalance', result.activityBalance.toString());
-
-            } else {
-                eligibleDisplay.style.display = 'none';
-                notEligibleDisplay.style.display = 'block';
-                loanNowBtn.disabled = true;
-            }
-        }
-
-        // ================================================================
-        // LOAN NOW BUTTON → VALIDATE → SHOW LOADING → GO TO loan3.html
-        // ================================================================
-        loanNowBtn.addEventListener('click', function() {
-            if (this.disabled) return;
-
-            var amount = parseFloat(loanAmountSelect.value);
-            if (isNaN(amount) || amount <= 0) {
-                showLoanMessage('Please select a valid loan amount.', true);
-                return;
-            }
-            if (amount > loanLimit) {
-                showLoanMessage('Amount exceeds your loan limit of ' + loanLimit.toFixed(2) + ' ZMW.', true);
-                return;
-            }
-            if (amount % 600 !== 0) {
-                showLoanMessage('Amount must be a multiple of 600 ZMW.', true);
-                return;
-            }
-
-            // Validate eligibility from backend again
-            showLoading('Processing Your Request', 'Please wait while we confirm your eligibility and prepare your application.');
-
-            setTimeout(function() {
-                checkEligibilityFromBackend(currentUserId).then(function(result) {
-                    if (!result.eligible) {
-                        hideLoading();
-                        showLoanMessage('❌ ' + result.reason, true);
-                        loanNowBtn.disabled = true;
-                        return;
-                    }
-
-                    // Check for existing loan again
-                    db.collection('loans')
-                        .where('userId', '==', currentUserId)
-                        .where('status', 'in', ['pending', 'active'])
-                        .limit(1)
-                        .get()
-                        .then(function(snap) {
-                            if (!snap.empty) {
-                                hideLoading();
-                                showLoanMessage('❌ You already have a pending or active loan.', true);
-                                loanNowBtn.disabled = true;
-                                return;
-                            }
-
-                            // Store loan details for next step
-                            localStorage.setItem('loanAmount', amount.toString());
-                            localStorage.setItem('loanMaxAmount', loanLimit.toString());
-                            localStorage.setItem('loanMemberCount', result.memberCount.toString());
-                            localStorage.setItem('loanActivityBalance', result.activityBalance.toString());
-
-                            hideLoading();
-                            window.location.href = 'loan3.html';
-                        })
-                        .catch(function(err) {
-                            hideLoading();
-                            showLoanMessage('Error checking loans: ' + err.message, true);
-                        });
-                });
-            }, 800);
-        });
-
-        // ================================================================
-        // CHECK AGAIN BUTTON
-        // ================================================================
-        checkAgainBtn.addEventListener('click', function() {
-            loadPage();
-        });
-
-        // ================================================================
         // BACK BUTTON
         // ================================================================
-        document.getElementById('backBtn').addEventListener('click', function() {
+        backBtn.addEventListener('click', function() {
             window.location.href = 'loan.html';
         });
 
         // ================================================================
-        // AUTH STATE
+        // START – we wait for auth to be ready (handled by onAuthStateChanged)
         // ================================================================
-        auth.onAuthStateChanged(function(user) {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            loadPage();
-        });
-
-        console.log('✅ loan2.html · Sajvera Capital · Loan amount step 2');
-        console.log('💰 Loan amounts are multiples of 600, based on user\'s loan limit (default 600)');
-        console.log('📈 Loan limit increases by 600 after each successful repayment');
+        console.log('✅ loan2.html loaded with Firebase integration');
+        console.log('ℹ️ User data is fetched from Firestore.');
+        console.log('ℹ️ Eligibility and amount are calculated from real data.');
+        console.log('ℹ️ Continues to loan3.html after terms acceptance.');
     </script>
-
 </body>
 </html>
