@@ -31,7 +31,6 @@
             background: #000;
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
         .hero-bg {
             position: fixed;
             top: 0;
@@ -528,6 +527,9 @@
         .plan-card .claim-stats .stat-item .num.blue {
             color: #60a5fa;
         }
+        .plan-card .claim-stats .stat-item .num.green {
+            color: #4ade80;
+        }
 
         .plan-card .weekend-purchase-note {
             font-size: 0.65rem;
@@ -651,8 +653,60 @@
             text-align: right;
         }
 
-        .plan-card.expired {
-            opacity: 0.5;
+        .plan-card .buy-plan-details {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 0.6rem 0.8rem;
+            margin: 0.3rem 0 0.6rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .plan-card .buy-plan-details .detail-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            padding: 0.15rem 0;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .plan-card .buy-plan-details .detail-row .label {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        .plan-card .buy-plan-details .detail-row .value {
+            font-weight: 600;
+        }
+        .plan-card .buy-plan-details .detail-row .value.gold {
+            color: #facc15;
+        }
+
+        .plan-card .buy-plan-details .detail-row .value.green {
+            color: #4ade80;
+        }
+
+        .plan-card .claim-btn.buy-claim {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            box-shadow: 0 4px 24px rgba(16, 185, 129, 0.2);
+        }
+
+        .plan-card .claim-btn.buy-claim:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+        }
+
+        .plan-card .claim-btn.buy-claim:disabled {
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.15);
+            box-shadow: none;
+        }
+
+        .plan-card .claim-btn.buy-claim.ready {
+            background: linear-gradient(135deg, #facc15, #f5a623);
+            color: #0a0815;
+        }
+
+        .plan-card .claim-btn.buy-claim.ready:hover:not(:disabled) {
+            box-shadow: 0 8px 32px rgba(250, 204, 21, 0.3);
         }
 
         /* ----- EMPTY STATE (GLASS) ----- */
@@ -974,8 +1028,8 @@
 
         <!-- Page Header -->
         <div class="page-header">
-            <h1>💰 <span>Daily Income</span></h1>
-            <p>Claim your earnings from active investments</p>
+            <h1>💰 <span>Income</span></h1>
+            <p>Your investments and Buy plans</p>
         </div>
 
         <!-- Total Earnings Bar -->
@@ -989,18 +1043,18 @@
 
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab-btn active" data-tab="normal">📈 Active</button>
+            <button class="tab-btn active" data-tab="active">📈 Active</button>
             <button class="tab-btn" data-tab="expired">⏰ Expired</button>
         </div>
 
         <!-- Active Plans -->
-        <div id="normalTab" class="tab-content">
-            <div id="activeInvestments"></div>
+        <div id="activeTab" class="tab-content">
+            <div id="activePlansContainer"></div>
         </div>
 
         <!-- Expired Plans -->
         <div id="expiredTab" class="tab-content" style="display:none;">
-            <div id="expiredInvestments"></div>
+            <div id="expiredPlansContainer"></div>
         </div>
 
     </main>
@@ -1096,7 +1150,7 @@
         }
 
         // ================================================================
-        // IMAGE HELPER (converts short links to direct URLs)
+        // IMAGE HELPER
         // ================================================================
         function getSafeImageUrl(url) {
             if (!url || typeof url !== 'string' || url.trim() === '') {
@@ -1143,9 +1197,9 @@
         var currentUserId = null;
         var refreshInterval = null;
         var timerInterval = null;
-        var currentInvestments = [];
         var userBlockListener = null;
         var planImageCache = {};
+        var allActivePlans = []; // combined array of invest and buy plans
 
         window.addEventListener('beforeunload', function() {
             if (refreshInterval) clearInterval(refreshInterval);
@@ -1170,7 +1224,7 @@
         }
 
         // ================================================================
-        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
+        // AUTH STATE
         // ================================================================
         let authResolved = false;
         let redirectTimeout = null;
@@ -1184,18 +1238,17 @@
                 }
                 currentUserId = user.uid;
                 watchBlockStatus(currentUserId);
-                loadInvestments();
+                loadAllPlans();
                 if (refreshInterval) clearInterval(refreshInterval);
                 refreshInterval = setInterval(function() {
-                    var normalTab = document.getElementById('normalTab');
-                    if (normalTab && normalTab.style.display !== 'none') {
-                        loadInvestments();
+                    var activeTab = document.getElementById('activeTab');
+                    if (activeTab && activeTab.style.display !== 'none') {
+                        loadAllPlans();
                     }
                 }, 60000);
                 if (timerInterval) clearInterval(timerInterval);
                 timerInterval = setInterval(updateTimers, 1000);
 
-                // Load panel name
                 db.collection('users').doc(user.uid).get().then(function(doc) {
                     if (doc.exists) {
                         var data = doc.data();
@@ -1222,7 +1275,32 @@
         });
 
         // ================================================================
-        // GET CLAIM STATUS (no blocking)
+        // FETCH PLAN IMAGE
+        // ================================================================
+        async function fetchPlanImage(planName) {
+            if (planImageCache[planName]) return planImageCache[planName];
+            try {
+                var snapshot = await db.collection('marketplacePlans')
+                    .where('planName', '==', planName)
+                    .limit(1)
+                    .get();
+                if (!snapshot.empty) {
+                    var data = snapshot.docs[0].data();
+                    var img = getSafeImageUrl(data.imageUrl || data.image);
+                    planImageCache[planName] = img;
+                    return img;
+                }
+                var defaultImg = 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
+                planImageCache[planName] = defaultImg;
+                return defaultImg;
+            } catch (err) {
+                console.warn('Error fetching image for plan:', planName, err);
+                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
+            }
+        }
+
+        // ================================================================
+        // GET CLAIM STATUS (Invest Plans)
         // ================================================================
         function getClaimStatus(inv, now) {
             var start = inv.startDate;
@@ -1291,223 +1369,291 @@
         }
 
         // ================================================================
-        // FETCH PLAN IMAGE – FIXED: use planName for marketplacePlans
+        // LOAD ALL PLANS (Invest + Buy)
         // ================================================================
-        async function fetchPlanImage(planName) {
-            if (planImageCache[planName]) return planImageCache[planName];
-            try {
-                // First try marketplacePlans using planName (admin dashboard)
-                var snapshot = await db.collection('marketplacePlans')
-                    .where('planName', '==', planName)
-                    .limit(1)
-                    .get();
-                if (!snapshot.empty) {
-                    var data = snapshot.docs[0].data();
-                    var img = getSafeImageUrl(data.imageUrl || data.image);
-                    planImageCache[planName] = img;
-                    return img;
-                }
-                // Fallback to other plan collections (legacy)
-                var collections = ['jproductPlans', 'mkvipPlans'];
-                for (var i = 0; i < collections.length; i++) {
-                    var snap = await db.collection(collections[i])
-                        .where('name', '==', planName)
-                        .limit(1)
-                        .get();
-                    if (!snap.empty) {
-                        var data2 = snap.docs[0].data();
-                        var img2 = getSafeImageUrl(data2.image);
-                        planImageCache[planName] = img2;
-                        return img2;
-                    }
-                }
-                var defaultImg = 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-                planImageCache[planName] = defaultImg;
-                return defaultImg;
-            } catch (err) {
-                console.warn('Error fetching image for plan:', planName, err);
-                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-            }
-        }
-
-        // ================================================================
-        // LOAD INVESTMENTS
-        // ================================================================
-        async function loadInvestments() {
+        async function loadAllPlans() {
             if (!currentUserId) return;
             try {
-                var snapshot = await db.collection('investments')
+                // 1. Load Invest plans from "investments"
+                var invSnapshot = await db.collection('investments')
                     .where('userId', '==', currentUserId)
                     .get();
 
-                var investments = [];
-                snapshot.forEach(function(doc) {
-                    investments.push({ id: doc.id, ...doc.data() });
-                });
-                investments.sort(function(a, b) {
-                    return (b.startDate?.toMillis() || 0) - (a.startDate?.toMillis() || 0);
+                var investPlans = [];
+                invSnapshot.forEach(function(doc) {
+                    investPlans.push({ id: doc.id, ...doc.data(), planType: 'invest' });
                 });
 
+                // 2. Load Buy plans from "marketplacePurchases"
+                var buySnapshot = await db.collection('marketplacePurchases')
+                    .where('userId', '==', currentUserId)
+                    .where('type', '==', 'buy')
+                    .get();
+
+                var buyPlans = [];
+                buySnapshot.forEach(function(doc) {
+                    buyPlans.push({ id: doc.id, ...doc.data(), planType: 'buy' });
+                });
+
+                // Combine all plans
+                var allPlans = [...investPlans, ...buyPlans];
+                allPlans.sort(function(a, b) {
+                    var aTime = (a.startDate || a.purchasedAt)?.toMillis ? (a.startDate || a.purchasedAt).toMillis() :
+                        0;
+                    var bTime = (b.startDate || b.purchasedAt)?.toMillis ? (b.startDate || b.purchasedAt).toMillis() :
+                        0;
+                    return bTime - aTime;
+                });
+
+                // Separate active and expired
+                var now = new Date();
                 var active = [];
                 var expired = [];
-                var now = new Date();
 
-                for (var i = 0; i < investments.length; i++) {
-                    var inv = investments[i];
-                    var startDate = inv.startDate.toDate();
-                    var businessDays = inv.businessDays || inv.days;
-                    var endDate = inv.businessEndDate ? inv.businessEndDate.toDate() : addBusinessDays(startDate, businessDays);
-                    var today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    var isExpired = inv.status !== 'active' || today > endDate;
+                for (var i = 0; i < allPlans.length; i++) {
+                    var plan = allPlans[i];
+                    if (plan.planType === 'invest') {
+                        var startDate = plan.startDate.toDate();
+                        var businessDays = plan.businessDays || plan.days;
+                        var endDate = plan.businessEndDate ? plan.businessEndDate.toDate() : addBusinessDays(startDate,
+                            businessDays);
+                        var today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        var isExpired = plan.status !== 'active' || today > endDate;
 
-                    var investment = {
-                        id: inv.id,
-                        ...inv,
-                        startDate: startDate,
-                        businessDays: businessDays,
-                        endDate: endDate,
-                        dailyAmount: inv.dailyReturn,
-                        status: inv.status,
-                        lastClaimed: inv.lastClaimed,
-                        claimsCount: inv.claimsCount || 0,
-                        purchasedOnWeekend: inv.purchasedOnWeekend || false
-                    };
-                    if (!isExpired) {
-                        active.push(investment);
-                    } else {
-                        expired.push(investment);
+                        var investment = {
+                            id: plan.id,
+                            ...plan,
+                            startDate: startDate,
+                            businessDays: businessDays,
+                            endDate: endDate,
+                            dailyAmount: plan.dailyReturn,
+                            claimsCount: plan.claimsCount || 0,
+                            lastClaimed: plan.lastClaimed,
+                            purchasedOnWeekend: plan.purchasedOnWeekend || false,
+                            planType: 'invest',
+                            claimable: true // Invest plans have daily claims
+                        };
+                        if (!isExpired) {
+                            active.push(investment);
+                        } else {
+                            expired.push(investment);
+                        }
+                    } else { // buy plan
+                        var expiryDate = plan.expiresAt ? plan.expiresAt.toDate() : null;
+                        var isExpiredBuy = plan.status === 'claimed' || plan.status === 'expired' || (expiryDate && now >
+                            expiryDate);
+                        var buyPlan = {
+                            id: plan.id,
+                            ...plan,
+                            planType: 'buy',
+                            expiryDate: expiryDate,
+                            amount: plan.amount || plan.purchaseAmount || 0,
+                            totalIncome: plan.totalIncome || 0,
+                            finalAmount: (plan.amount || plan.purchaseAmount || 0) + (plan.totalIncome || 0),
+                            status: plan.status || 'active',
+                            claimedAt: plan.claimedAt || null,
+                            claimAmount: plan.claimAmount || null,
+                            claimable: false // Buy plans are not daily claimable
+                        };
+                        if (!isExpiredBuy) {
+                            active.push(buyPlan);
+                        } else {
+                            expired.push(buyPlan);
+                        }
                     }
                 }
 
-                currentInvestments = active;
+                allActivePlans = active;
                 await renderActive(active);
                 renderExpired(expired);
                 updateTotalPendingAndClaimAll(active);
             } catch (err) {
-                console.error("Error loading investments:", err);
-                var container = document.getElementById('activeInvestments');
+                console.error("Error loading plans:", err);
+                var container = document.getElementById('activePlansContainer');
                 if (container) container.innerHTML =
-                    '<div class="empty-state"><div class="title">Error loading investments</div><div class="sub">Please refresh the page</div></div>';
+                    '<div class="empty-state"><div class="title">Error loading plans</div><div class="sub">Please refresh the page</div></div>';
             }
         }
 
         // ================================================================
         // RENDER ACTIVE
         // ================================================================
-        async function renderActive(investments) {
-            var container = document.getElementById('activeInvestments');
+        async function renderActive(plans) {
+            var container = document.getElementById('activePlansContainer');
             if (!container) return;
-            if (!investments.length) {
+            if (!plans.length) {
                 container.innerHTML =
-                    '<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><div class="title">No active investments</div><div class="sub">Purchase a plan to start earning daily income</div></div>';
+                    '<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><div class="title">No active plans</div><div class="sub">Purchase an investment or Buy plan to start earning</div></div>';
                 return;
             }
 
-            var imagePromises = investments.map(function(inv) {
-                return fetchPlanImage(inv.planName).catch(function() { return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; });
+            // Prepare images
+            var imagePromises = plans.map(function(p) {
+                return fetchPlanImage(p.planName).catch(function() { return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; });
             });
             var images = await Promise.all(imagePromises);
 
             var now = new Date();
             var html = '';
-            for (var i = 0; i < investments.length; i++) {
-                var inv = investments[i];
+            for (var i = 0; i < plans.length; i++) {
+                var plan = plans[i];
                 var img = images[i] || 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-                var status = getClaimStatus(inv, now);
-                var canClaim = status.available && !isWeekend(now);
-                var daysLeft = inv.businessDays - (inv.claimsCount || 0);
+                if (plan.planType === 'invest') {
+                    // Render Invest Plan (existing)
+                    var status = getClaimStatus(plan, now);
+                    var canClaim = status.available && !isWeekend(now);
+                    var daysLeft = plan.businessDays - (plan.claimsCount || 0);
+                    var totalClaimed = (plan.claimsCount || 0) * plan.dailyAmount;
+                    var claimsCount = plan.claimsCount || 0;
 
-                var totalClaimed = (inv.claimsCount || 0) * inv.dailyAmount;
-                var claimsCount = inv.claimsCount || 0;
-
-                var statusText = '';
-                var countdownText = '';
-                if (canClaim) {
-                    statusText = '✅ Ready to claim';
-                } else if (status.status === 'waiting' && status.hoursRemaining !== undefined) {
-                    var hrs = Math.floor(status.hoursRemaining);
-                    var mins = Math.floor((status.hoursRemaining % 1) * 60);
-                    countdownText = hrs + 'h ' + mins + 'm';
-                    statusText = '⏳ Next claim in';
-                } else if (isWeekend(now)) {
-                    statusText = '⏳ Weekends – claims resume Monday';
-                } else if (status.status === 'done') {
-                    statusText = '✅ All claims completed';
-                } else {
-                    statusText = '⏳ Waiting for next window';
-                }
-
-                var progress = status.progress || 0;
-                var earnedDisplay = status.earnedSoFar || 0;
-                var dailyDisplay = status.dailyAmount || inv.dailyAmount;
-
-                var startDateFormatted = formatDateWithTime(inv.startDate);
-
-                var isWeekendPurchase = inv.purchasedOnWeekend === true;
-                if (!isWeekendPurchase && inv.claimsCount === 0 && inv.startDate.getDay() === 1) {
-                    var daysSinceStart = Math.floor((now - inv.startDate) / (1000 * 60 * 60 * 24));
-                    if (daysSinceStart <= 3) {
-                        isWeekendPurchase = true;
+                    var statusText = '';
+                    var countdownText = '';
+                    if (canClaim) {
+                        statusText = '✅ Ready to claim';
+                    } else if (status.status === 'waiting' && status.hoursRemaining !== undefined) {
+                        var hrs = Math.floor(status.hoursRemaining);
+                        var mins = Math.floor((status.hoursRemaining % 1) * 60);
+                        countdownText = hrs + 'h ' + mins + 'm';
+                        statusText = '⏳ Next claim in';
+                    } else if (isWeekend(now)) {
+                        statusText = '⏳ Weekends – claims resume Monday';
+                    } else if (status.status === 'done') {
+                        statusText = '✅ All claims completed';
+                    } else {
+                        statusText = '⏳ Waiting for next window';
                     }
-                }
 
-                var weekendNoteHtml = '';
-                if (isWeekendPurchase && inv.claimsCount === 0) {
-                    var claimTimeStr = inv.startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                    weekendNoteHtml = `
-                        <div class="weekend-purchase-note">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            📅 Weekend purchase – first claim available from ${claimTimeStr} on weekdays
+                    var progress = status.progress || 0;
+                    var earnedDisplay = status.earnedSoFar || 0;
+                    var dailyDisplay = status.dailyAmount || plan.dailyAmount;
+
+                    var startDateFormatted = formatDateWithTime(plan.startDate);
+
+                    var isWeekendPurchase = plan.purchasedOnWeekend === true;
+                    if (!isWeekendPurchase && plan.claimsCount === 0 && plan.startDate.getDay() === 1) {
+                        var daysSinceStart = Math.floor((now - plan.startDate) / (1000 * 60 * 60 * 24));
+                        if (daysSinceStart <= 3) {
+                            isWeekendPurchase = true;
+                        }
+                    }
+
+                    var weekendNoteHtml = '';
+                    if (isWeekendPurchase && plan.claimsCount === 0) {
+                        var claimTimeStr = plan.startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                        weekendNoteHtml = `
+                            <div class="weekend-purchase-note">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                📅 Weekend purchase – first claim available from ${claimTimeStr} on weekdays
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                        <div class="plan-card" data-id="${plan.id}" data-next-claim="${status.nextClaimTime ? status.nextClaimTime.getTime() : ''}" data-daily="${dailyDisplay}">
+                            <img class="plan-image" src="${img}" alt="${escapeHtml(plan.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
+                            <div class="plan-body">
+                                <div class="plan-name">${escapeHtml(plan.planName)}</div>
+                                <div class="plan-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
+                                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${formatMoney(dailyDisplay)}/day</span>
+                                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${daysLeft} days left</span>
+                                </div>
+                                ${weekendNoteHtml}
+
+                                <div class="claim-stats">
+                                    <span class="stat-item">💰 Total Claimed: <span class="num gold">${formatMoney(totalClaimed)}</span></span>
+                                    <span class="stat-item">📊 Claims: <span class="num blue">${claimsCount}</span></span>
+                                    <span class="stat-item">📆 Days Left: <span class="num">${daysLeft}</span></span>
+                                </div>
+
+                                <div class="claim-progress">
+                                    <div class="progress-track">
+                                        <div class="progress-fill" style="width: ${Math.min(progress, 100)}%;"></div>
+                                    </div>
+                                    <div class="progress-label">
+                                        <span class="earned">Earned: ${formatMoney(earnedDisplay)}</span>
+                                        <span>Daily target: ${formatMoney(dailyDisplay)}</span>
+                                    </div>
+                                </div>
+                                <div class="claim-action">
+                                    <div class="claim-status">
+                                        ${statusText}
+                                        ${countdownText ? `<span class="countdown" id="countdown-${plan.id}">${countdownText}</span>` : ''}
+                                        ${canClaim ? '<span class="ready-text">● Ready</span>' : ''}
+                                    </div>
+                                    <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${plan.id}" data-daily="${dailyDisplay}">
+                                        ${canClaim ? '💰 Claim' : (isWeekend(now) ? '⏳ Weekend' : '⏳ Wait')}
+                                    </button>
+                                </div>
+                                ${isWeekend(now) ? '<div class="weekend-note">⛔ Claims resume Monday</div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Render Buy Plan
+                    var expiryDate = plan.expiryDate;
+                    var isExpired = plan.status === 'claimed' || (expiryDate && now > expiryDate);
+                    var isReady = !isExpired && expiryDate && now >= expiryDate && plan.status !== 'claimed';
+
+                    var statusTextBuy = '';
+                    var claimableBuy = false;
+                    if (plan.status === 'claimed') {
+                        statusTextBuy = '✅ Claimed';
+                    } else if (isReady) {
+                        statusTextBuy = '🟢 Ready to Claim';
+                        claimableBuy = true;
+                    } else if (expiryDate) {
+                        var diff = expiryDate - now;
+                        if (diff > 0) {
+                            var daysRemaining = Math.floor(diff / (1000 * 60 * 60 * 24));
+                            var hoursRemaining = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            statusTextBuy = `⏳ Matures in ${daysRemaining}d ${hoursRemaining}h`;
+                        } else {
+                            statusTextBuy = '⏳ Processing...';
+                        }
+                    } else {
+                        statusTextBuy = '⏳ Active';
+                    }
+
+                    var startDateDisplay = plan.purchasedAt ? formatDateWithTime(plan.purchasedAt.toDate()) : '—';
+                    var expiryDisplay = expiryDate ? formatDateWithTime(expiryDate) : '—';
+
+                    html += `
+                        <div class="plan-card" data-id="${plan.id}" data-buy="true">
+                            <img class="plan-image" src="${img}" alt="${escapeHtml(plan.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
+                            <div class="plan-body">
+                                <div class="plan-name">${escapeHtml(plan.planName)} <span style="font-size:0.6rem;color:var(--accent-3);margin-left:8px;">🛒 BUY</span></div>
+                                <div class="plan-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Start: ${startDateDisplay}</span>
+                                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Expires: ${expiryDisplay}</span>
+                                </div>
+
+                                <div class="buy-plan-details">
+                                    <div class="detail-row"><span class="label">💰 Capital</span><span class="value gold">${formatMoney(plan.amount)}</span></div>
+                                    <div class="detail-row"><span class="label">📈 Profit</span><span class="value green">${formatMoney(plan.totalIncome)}</span></div>
+                                    <div class="detail-row"><span class="label">💎 Final Amount</span><span class="value gold" style="font-weight:700;">${formatMoney(plan.finalAmount)}</span></div>
+                                </div>
+
+                                <div class="claim-action">
+                                    <div class="claim-status">
+                                        ${statusTextBuy}
+                                        ${claimableBuy ? '<span class="ready-text">● Ready</span>' : ''}
+                                    </div>
+                                    <button class="claim-btn buy-claim ${claimableBuy ? 'ready' : ''}" ${claimableBuy ? '' : 'disabled'} data-id="${plan.id}" data-final="${plan.finalAmount}">
+                                        ${claimableBuy ? '💎 Claim Full Amount' : (plan.status === 'claimed' ? '✅ Claimed' : '⏳ Locked')}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     `;
                 }
-
-                html += `
-                    <div class="plan-card" data-id="${inv.id}" data-next-claim="${status.nextClaimTime ? status.nextClaimTime.getTime() : ''}" data-daily="${dailyDisplay}">
-                        <img class="plan-image" src="${img}" alt="${escapeHtml(inv.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
-                        <div class="plan-body">
-                            <div class="plan-name">${escapeHtml(inv.planName)}</div>
-                            <div class="plan-meta">
-                                <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
-                                <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${formatMoney(dailyDisplay)}/day</span>
-                                <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${daysLeft} days left</span>
-                            </div>
-                            ${weekendNoteHtml}
-
-                            <div class="claim-stats">
-                                <span class="stat-item">💰 Total Claimed: <span class="num gold">${formatMoney(totalClaimed)}</span></span>
-                                <span class="stat-item">📊 Claims: <span class="num blue">${claimsCount}</span></span>
-                                <span class="stat-item">📆 Days Left: <span class="num">${daysLeft}</span></span>
-                            </div>
-
-                            <div class="claim-progress">
-                                <div class="progress-track">
-                                    <div class="progress-fill" style="width: ${Math.min(progress, 100)}%;"></div>
-                                </div>
-                                <div class="progress-label">
-                                    <span class="earned">Earned: ${formatMoney(earnedDisplay)}</span>
-                                    <span>Daily target: ${formatMoney(dailyDisplay)}</span>
-                                </div>
-                            </div>
-                            <div class="claim-action">
-                                <div class="claim-status">
-                                    ${statusText}
-                                    ${countdownText ? `<span class="countdown" id="countdown-${inv.id}">${countdownText}</span>` : ''}
-                                    ${canClaim ? '<span class="ready-text">● Ready</span>' : ''}
-                                </div>
-                                <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${inv.id}" data-daily="${dailyDisplay}">
-                                    ${canClaim ? '💰 Claim' : (isWeekend(now) ? '⏳ Weekend' : '⏳ Wait')}
-                                </button>
-                            </div>
-                            ${isWeekend(now) ? '<div class="weekend-note">⛔ Claims resume Monday</div>' : ''}
-                        </div>
-                    </div>
-                `;
             }
+
             container.innerHTML = html;
 
-            document.querySelectorAll('.claim-btn.active').forEach(function(btn) {
+            // Attach events for Invest claims
+            document.querySelectorAll('.claim-btn.active:not(.buy-claim)').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     var invId = this.dataset.id;
@@ -1517,52 +1663,84 @@
                 });
             });
 
+            // Attach events for Buy claims
+            document.querySelectorAll('.claim-btn.buy-claim.ready').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var planId = this.dataset.id;
+                    var finalAmount = parseFloat(this.dataset.final);
+                    this.disabled = true;
+                    claimBuyPlan(planId, finalAmount, this);
+                });
+            });
+
             updateTimers();
         }
 
         // ================================================================
         // RENDER EXPIRED
         // ================================================================
-        async function renderExpired(investments) {
-            var container = document.getElementById('expiredInvestments');
+        async function renderExpired(plans) {
+            var container = document.getElementById('expiredPlansContainer');
             if (!container) return;
-            if (!investments.length) {
+            if (!plans.length) {
                 container.innerHTML =
-                    '<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="title">No expired plans</div><div class="sub">All your investments are active</div></div>';
+                    '<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="title">No expired plans</div><div class="sub">All your plans are active</div></div>';
                 return;
             }
 
-            var imagePromises = investments.map(function(inv) {
-                return fetchPlanImage(inv.planName).catch(function() { return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; });
+            var imagePromises = plans.map(function(p) {
+                return fetchPlanImage(p.planName).catch(function() { return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; });
             });
             var images = await Promise.all(imagePromises);
 
             var html = '';
-            for (var i = 0; i < investments.length; i++) {
-                var inv = investments[i];
+            for (var i = 0; i < plans.length; i++) {
+                var plan = plans[i];
                 var img = images[i] || 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-                var statusText = inv.status === 'completed' ? 'Completed' : 'Expired';
-                var startDateFormatted = formatDateWithTime(inv.startDate);
-                var totalClaimed = (inv.claimsCount || 0) * inv.dailyReturn;
-                var claimsCount = inv.claimsCount || 0;
+                var isBuy = plan.planType === 'buy';
+                var statusText = plan.status === 'completed' ? 'Completed' : plan.status === 'claimed' ? 'Claimed' : 'Expired';
+                var startDateFormatted = plan.startDate ? formatDateWithTime(plan.startDate) : '—';
 
-                html += `
-                    <div class="plan-card expired">
-                        <img class="plan-image" src="${img}" alt="${escapeHtml(inv.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
-                        <div class="plan-body">
-                            <div class="plan-name">${escapeHtml(inv.planName)}</div>
-                            <div class="plan-meta">
-                                <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
-                                <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${formatMoney(inv.dailyReturn)}/day</span>
-                                <span>⏱️ ${statusText}</span>
-                            </div>
-                            <div class="claim-stats" style="margin-top:0.3rem;">
-                                <span class="stat-item">💰 Total Claimed: <span class="num gold">${formatMoney(totalClaimed)}</span></span>
-                                <span class="stat-item">📊 Claims: <span class="num blue">${claimsCount}</span></span>
+                if (isBuy) {
+                    var finalAmount = (plan.amount || 0) + (plan.totalIncome || 0);
+                    html += `
+                        <div class="plan-card expired">
+                            <img class="plan-image" src="${img}" alt="${escapeHtml(plan.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
+                            <div class="plan-body">
+                                <div class="plan-name">${escapeHtml(plan.planName)} <span style="font-size:0.6rem;color:var(--accent-3);margin-left:8px;">🛒 BUY</span></div>
+                                <div class="plan-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
+                                    <span>⏱️ ${statusText}</span>
+                                </div>
+                                <div class="buy-plan-details">
+                                    <div class="detail-row"><span class="label">💰 Capital</span><span class="value gold">${formatMoney(plan.amount || 0)}</span></div>
+                                    <div class="detail-row"><span class="label">📈 Profit</span><span class="value green">${formatMoney(plan.totalIncome || 0)}</span></div>
+                                    <div class="detail-row"><span class="label">💎 Final Amount</span><span class="value gold" style="font-weight:700;">${formatMoney(finalAmount)}</span></div>
+                                    ${plan.claimAmount ? `<div class="detail-row"><span class="label">Claimed Amount</span><span class="value gold">${formatMoney(plan.claimAmount)}</span></div>` : ''}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    var totalClaimed = (plan.claimsCount || 0) * (plan.dailyReturn || 0);
+                    html += `
+                        <div class="plan-card expired">
+                            <img class="plan-image" src="${img}" alt="${escapeHtml(plan.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
+                            <div class="plan-body">
+                                <div class="plan-name">${escapeHtml(plan.planName)}</div>
+                                <div class="plan-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
+                                    <span>⏱️ ${statusText}</span>
+                                </div>
+                                <div class="claim-stats" style="margin-top:0.3rem;">
+                                    <span class="stat-item">💰 Total Claimed: <span class="num gold">${formatMoney(totalClaimed)}</span></span>
+                                    <span class="stat-item">📊 Claims: <span class="num blue">${plan.claimsCount || 0}</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
             }
             container.innerHTML = html;
         }
@@ -1572,7 +1750,7 @@
         // ================================================================
         function updateTimers() {
             var now = new Date();
-            var cards = document.querySelectorAll('.plan-card');
+            var cards = document.querySelectorAll('.plan-card[data-next-claim]');
             cards.forEach(function(card) {
                 var nextClaim = card.dataset.nextClaim;
                 if (!nextClaim) return;
@@ -1594,18 +1772,20 @@
         }
 
         // ================================================================
-        // UPDATE TOTALS & CLAIM ALL
+        // UPDATE TOTALS & CLAIM ALL (only for Invest plans)
         // ================================================================
-        function updateTotalPendingAndClaimAll(investments) {
+        function updateTotalPendingAndClaimAll(plans) {
             var now = new Date();
             var total = 0;
             var hasClaimable = false;
-            for (var i = 0; i < investments.length; i++) {
-                var inv = investments[i];
-                var status = getClaimStatus(inv, now);
-                if (status.available && !isWeekend(now)) {
-                    total += status.dailyAmount;
-                    hasClaimable = true;
+            for (var i = 0; i < plans.length; i++) {
+                var plan = plans[i];
+                if (plan.planType === 'invest') {
+                    var status = getClaimStatus(plan, now);
+                    if (status.available && !isWeekend(now)) {
+                        total += status.dailyAmount;
+                        hasClaimable = true;
+                    }
                 }
             }
             var totalSpan = document.getElementById('totalPending');
@@ -1618,7 +1798,7 @@
         }
 
         // ================================================================
-        // CLAIM DAILY INCOME
+        // CLAIM DAILY INCOME (Invest)
         // ================================================================
         async function claimDailyIncome(investmentId, dailyAmount, refreshAfter, btnElement) {
             var user = auth.currentUser;
@@ -1675,7 +1855,7 @@
 
                 showToast('✅ ' + formatMoney(dailyAmount) + ' claimed!', false);
                 if (refreshAfter) {
-                    await loadInvestments();
+                    await loadAllPlans();
                 }
                 return true;
             } catch (err) {
@@ -1686,7 +1866,87 @@
         }
 
         // ================================================================
-        // CLAIM ALL
+        // CLAIM BUY PLAN (Full Amount)
+        // ================================================================
+        async function claimBuyPlan(planId, finalAmount, btnElement) {
+            var user = auth.currentUser;
+            if (!user) {
+                showToast('Please log in.', true);
+                if (btnElement) btnElement.disabled = false;
+                return;
+            }
+
+            // Double-check expiry
+            try {
+                var docSnap = await db.collection('marketplacePurchases').doc(planId).get();
+                if (!docSnap.exists) {
+                    showToast('Plan not found.', true);
+                    if (btnElement) btnElement.disabled = false;
+                    return;
+                }
+                var data = docSnap.data();
+                if (data.status === 'claimed') {
+                    showToast('This plan has already been claimed.', true);
+                    if (btnElement) btnElement.disabled = false;
+                    return;
+                }
+
+                var now = new Date();
+                var expiryDate = data.expiresAt ? data.expiresAt.toDate() : null;
+                if (!expiryDate || now < expiryDate) {
+                    showToast('Plan is not yet ready for claim.', true);
+                    if (btnElement) btnElement.disabled = false;
+                    return;
+                }
+
+                // Perform claim in transaction
+                await db.runTransaction(async function(transaction) {
+                    var purchaseRef = db.collection('marketplacePurchases').doc(planId);
+                    var purchaseSnap = await transaction.get(purchaseRef);
+                    if (!purchaseSnap.exists) throw new Error('Plan not found');
+                    var purchaseData = purchaseSnap.data();
+                    if (purchaseData.status === 'claimed') throw new Error('Already claimed');
+
+                    var userRef = db.collection('users').doc(user.uid);
+                    var userSnap = await transaction.get(userRef);
+                    if (!userSnap.exists) throw new Error('User not found');
+
+                    // Add final amount to user's wallet balance
+                    transaction.update(userRef, {
+                        walletBalance: firebase.firestore.FieldValue.increment(finalAmount),
+                        balance: firebase.firestore.FieldValue.increment(finalAmount)
+                    });
+
+                    // Mark purchase as claimed
+                    transaction.update(purchaseRef, {
+                        status: 'claimed',
+                        claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        claimAmount: finalAmount
+                    });
+
+                    // Record transaction
+                    var txRef = db.collection('transactions').doc();
+                    transaction.set(txRef, {
+                        userId: user.uid,
+                        type: 'buy_plan_claim',
+                        amount: finalAmount,
+                        description: 'Buy plan claim: ' + purchaseData.planName,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+
+                showToast('✅ ' + formatMoney(finalAmount) + ' claimed successfully!', false);
+                if (btnElement) btnElement.disabled = true;
+                await loadAllPlans();
+            } catch (err) {
+                console.error('Buy plan claim error:', err);
+                showToast(err.message || 'Claim failed', true);
+                if (btnElement) btnElement.disabled = false;
+            }
+        }
+
+        // ================================================================
+        // CLAIM ALL (Invest only)
         // ================================================================
         async function claimAllAvailable() {
             var user = auth.currentUser;
@@ -1698,11 +1958,13 @@
             }
 
             var claimable = [];
-            for (var i = 0; i < currentInvestments.length; i++) {
-                var inv = currentInvestments[i];
-                var status = getClaimStatus(inv, now);
-                if (status.available && !isWeekend(now)) {
-                    claimable.push({ id: inv.id, dailyAmount: status.dailyAmount });
+            for (var i = 0; i < allActivePlans.length; i++) {
+                var plan = allActivePlans[i];
+                if (plan.planType === 'invest') {
+                    var status = getClaimStatus(plan, now);
+                    if (status.available && !isWeekend(now)) {
+                        claimable.push({ id: plan.id, dailyAmount: status.dailyAmount });
+                    }
                 }
             }
 
@@ -1726,7 +1988,7 @@
                 }
             }
 
-            await loadInvestments();
+            await loadAllPlans();
             if (successCount > 0) {
                 showToast('✅ Claimed ' + formatMoney(totalClaimed) + ' from ' + successCount + ' plan(s)!', false);
             } else {
@@ -1741,7 +2003,7 @@
         // TABS
         // ================================================================
         var tabBtns = document.querySelectorAll('.tab-btn');
-        var normalTab = document.getElementById('normalTab');
+        var activeTab = document.getElementById('activeTab');
         var expiredTab = document.getElementById('expiredTab');
 
         tabBtns.forEach(function(btn) {
@@ -1749,12 +2011,12 @@
                 var tabId = this.dataset.tab;
                 tabBtns.forEach(function(b) { b.classList.remove('active'); });
                 this.classList.add('active');
-                if (tabId === 'normal') {
-                    normalTab.style.display = 'block';
+                if (tabId === 'active') {
+                    activeTab.style.display = 'block';
                     expiredTab.style.display = 'none';
-                    loadInvestments();
+                    loadAllPlans();
                 } else {
-                    normalTab.style.display = 'none';
+                    activeTab.style.display = 'none';
                     expiredTab.style.display = 'block';
                 }
             });
@@ -1796,11 +2058,10 @@
             });
         });
 
-        console.log('✅ income.html · Sajvera Capital · Blue glassmorphism design');
-        console.log('💰 Blocking removed, income count displayed (total claimed, claims, days left)');
-        console.log('📱 Claim All works without restrictions (except weekends)');
-        console.log('✅ Fixed: fetchPlanImage uses planName field for marketplacePlans');
-        console.log('✅ Fully compatible with admin dashboard');
+        console.log('✅ income.html · Sajvera Capital · Invest + Buy Plan Support');
+        console.log('💰 Invest plans: daily claims, Buy plans: one-time full claim at maturity');
+        console.log('🛒 Buy plans display capital, profit, final amount, expiry and claim button');
+        console.log('✅ Double-claim protection via Firestore transaction');
     </script>
 
 </body>

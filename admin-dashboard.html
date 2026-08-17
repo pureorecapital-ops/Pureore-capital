@@ -1492,6 +1492,20 @@
         .status-dot.matured {
             background: var(--accent-1);
         }
+
+        /* ================================================================
+           SAVING WITHDRAWAL SPECIFIC
+           ================================================================ */
+        .fee-row {
+            color: #f87171;
+        }
+        .fee-row .fee-amount {
+            font-weight: 600;
+        }
+        .net-row .net-amount {
+            color: var(--accent-2);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -1965,7 +1979,7 @@
         </section>
 
         <!-- ============================================================
-        TAB: SAVINGS (NEW)
+        TAB: SAVINGS (FIXED)
         ============================================================ -->
         <section class="tab-section" id="tab-savings">
             <div class="section-header">
@@ -1976,12 +1990,24 @@
                     <button class="btn btn-primary btn-sm" id="refreshSavingsBtn"><i class="fas fa-sync"></i></button>
                 </div>
             </div>
+
+            <!-- Pending Savings Deposits -->
             <div class="card">
-                <div class="card-title"><i class="fas fa-clock"></i> Pending Savings <span class="card-badge" id="pendingSavingsBadge">0</span></div>
+                <div class="card-title"><i class="fas fa-clock"></i> Pending Savings Deposits <span class="card-badge" id="pendingSavingsBadge">0</span></div>
                 <div class="table-wrap" id="pendingSavingsList">
-                    <div class="loading-placeholder"><div class="spinner"></div> Loading savings...</div>
+                    <div class="loading-placeholder"><div class="spinner"></div> Loading savings deposits...</div>
                 </div>
             </div>
+
+            <!-- Pending Savings Withdrawals -->
+            <div class="card">
+                <div class="card-title"><i class="fas fa-clock"></i> Pending Savings Withdrawals <span class="card-badge" id="pendingSavingsWithdrawalsBadge">0</span></div>
+                <div class="table-wrap" id="pendingSavingsWithdrawalsList">
+                    <div class="loading-placeholder"><div class="spinner"></div> Loading savings withdrawals...</div>
+                </div>
+            </div>
+
+            <!-- Savings History -->
             <div class="card">
                 <div class="card-title"><i class="fas fa-history"></i> Savings History</div>
                 <div class="table-wrap" id="savingsHistoryList">
@@ -1991,7 +2017,7 @@
         </section>
 
         <!-- ============================================================
-        TAB: JOBS (NEW)
+        TAB: JOBS
         ============================================================ -->
         <section class="tab-section" id="tab-jobs">
             <div class="section-header">
@@ -2047,11 +2073,11 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- ================================================================
-    JAVASCRIPT – COMPLETE APPLICATION (FIXED AUTH & MARKETPLACE)
+    JAVASCRIPT – COMPLETE APPLICATION (FIXED)
     ================================================================ -->
     <script>
         // ================================================================
-        // FIREBASE CONFIG – Real credentials (same as admin-login)
+        // FIREBASE CONFIG
         // ================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -2107,11 +2133,13 @@
 
         function getStatusBadge(status) {
             const s = String(status || '').toLowerCase();
-            if (s === 'active' || s === 'live' || s === 'approved' || s === 'completed' || s === 'published')
+            if (s === 'active' || s === 'live' || s === 'approved' || s === 'completed' || s === 'published' || s ===
+                'ready_to_claim')
                 return '<span class="badge badge-success">' + escapeHtml(status) + '</span>';
-            if (s === 'pending' || s === 'scheduled' || s === 'draft')
+            if (s === 'pending' || s === 'scheduled' || s === 'draft' || s === 'locked')
                 return '<span class="badge badge-warning">' + escapeHtml(status) + '</span>';
-            if (s === 'rejected' || s === 'expired' || s === 'cancelled' || s === 'blocked' || s === 'hidden')
+            if (s === 'rejected' || s === 'expired' || s === 'cancelled' || s === 'blocked' || s === 'hidden' || s ===
+                'claimed')
                 return '<span class="badge badge-danger">' + escapeHtml(status) + '</span>';
             if (s === 'inactive' || s === 'hidden')
                 return '<span class="badge badge-secondary">' + escapeHtml(status) + '</span>';
@@ -2200,7 +2228,7 @@
         });
 
         // ================================================================
-        // AUTHENTICATION – FIXED: Single, reliable onAuthStateChanged guard
+        // AUTHENTICATION
         // ================================================================
         let currentAdmin = null;
         let currentUserDoc = null;
@@ -2261,12 +2289,10 @@
 
         function checkAuth() {
             return new Promise((resolve, reject) => {
-                // Set persistence LOCAL and then wait for auth state
                 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
                     .then(() => {
-                        // Listen for the initial auth state – once.
                         const unsubscribe = auth.onAuthStateChanged((user) => {
-                            unsubscribe(); // ensure only once
+                            unsubscribe();
                             if (!user) {
                                 window.location.href = 'admin-login.html';
                                 reject(new Error('No user'));
@@ -2291,7 +2317,6 @@
         // ================================================================
         // TAB BAR GENERATION
         // ================================================================
-        // NOTE: Added 'savings' and 'jobs' tabs
         const tabConfig = [
             { id: 'dashboard', icon: 'fa-gauge-high', label: 'Dashboard' },
             { id: 'users', icon: 'fa-users', label: 'Users' },
@@ -2319,7 +2344,6 @@
             tabSections[el.id] = el;
         });
 
-        // Build tabs
         let currentTab = 'tab-dashboard';
         tabConfig.forEach((cfg, index) => {
             const btn = document.createElement('button');
@@ -2334,18 +2358,15 @@
         // TAB SWITCHING
         // ================================================================
         function switchTab(tabId) {
-            // Update sections
             Object.values(tabSections).forEach(el => el.classList.remove('active'));
             if (tabSections[tabId]) tabSections[tabId].classList.add('active');
 
-            // Update tab buttons
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.tab === tabId);
             });
 
             currentTab = tabId;
 
-            // Load data
             const loaders = {
                 'tab-dashboard': loadDashboardStats,
                 'tab-users': loadUsers,
@@ -2403,7 +2424,7 @@
         updateClock();
 
         // ================================================================
-        // DASHBOARD STATS
+        // DASHBOARD STATS (unchanged)
         // ================================================================
         async function loadDashboardStats() {
             const ids = ['statUsers', 'statDeposits', 'statWithdrawals', 'statInvestments', 'statBalance',
@@ -2469,7 +2490,7 @@
         }
 
         // ================================================================
-        // RECENT ACTIVITY
+        // RECENT ACTIVITY (unchanged)
         // ================================================================
         async function loadRecentActivities() {
             try {
@@ -2501,7 +2522,7 @@
         }
 
         // ================================================================
-        // USERS (unchanged, kept for reference)
+        // USERS (unchanged)
         // ================================================================
         let allUsers = [];
 
@@ -2577,7 +2598,7 @@
         document.getElementById('userRoleFilter').addEventListener('change', () => renderUsers(allUsers));
         document.getElementById('refreshUsersBtn').onclick = loadUsers;
 
-        // User actions (kept as in original)
+        // User actions (view, edit, block, unblock, delete) – keep as before
         window.viewUser = async function(uid) {
             try {
                 const doc = await db.collection('users').doc(uid).get();
@@ -2767,7 +2788,7 @@
         };
 
         // ================================================================
-        // DEPOSITS (unchanged, kept for reference)
+        // DEPOSITS (unchanged)
         // ================================================================
         let allDeposits = [];
 
@@ -2811,8 +2832,6 @@
                 </tr></thead><tbody>`;
             filtered.forEach(d => {
                 const status = d.status || 'pending';
-                const smsPreview = d.smsText ? (d.smsText.length > 60 ? d.smsText.substring(0, 60) + '...' : d
-                    .smsText) : 'N/A';
                 html += `<tr>
                     <td>${escapeHtml(d.userName || d.userId || '—')}</td>
                     <td><strong>${formatMoney(d.amount)} ZMW</strong></td>
@@ -3019,7 +3038,7 @@
         }
 
         // ================================================================
-        // WITHDRAWALS (unchanged, kept for reference – abbreviated)
+        // WITHDRAWALS (unchanged)
         // ================================================================
         let allWithdrawals = [];
 
@@ -3341,11 +3360,13 @@
             try {
                 const snap = await db.collection('marketplacePlans').get();
                 allPlans = [];
+                const seenIds = new Set();
                 snap.forEach(d => {
                     const data = d.data();
                     data.id = d.id;
                     // Ensure each document is only added once
-                    if (!allPlans.some(p => p.id === data.id)) {
+                    if (!seenIds.has(d.id)) {
+                        seenIds.add(d.id);
                         allPlans.push(data);
                     }
                 });
@@ -3409,10 +3430,11 @@
             plans.forEach(p => {
                 const status = getPlanStatus(p);
                 const visible = p.showOnMarketplace === true;
+                const planType = p.planType || 'Daily';
                 html += `<tr>
                     <td><strong>${escapeHtml(p.planName || '—')}</strong></td>
                     <td>${formatMoney(p.investmentPrice)} ZMW</td>
-                    <td>${escapeHtml(p.planType || '—')}</td>
+                    <td>${escapeHtml(planType)}</td>
                     <td>${getStatusBadge(status)}</td>
                     <td>${visible ? '<span class="badge badge-success">Visible</span>' : '<span class="badge badge-secondary">Hidden</span>'}</td>
                     <td class="actions-cell">
@@ -3445,7 +3467,7 @@
                 <div class="form-group">
                     <label>Plan Type *</label>
                     <div class="plan-type-toggle">
-                        <button type="button" class="btn ${isDaily ? 'btn-primary' : 'btn-outline'}" id="mpTypeDailyBtn">Daily</button>
+                        <button type="button" class="btn ${isDaily ? 'btn-primary' : 'btn-outline'}" id="mpTypeDailyBtn">Daily (Invest)</button>
                         <button type="button" class="btn ${!isDaily ? 'btn-primary' : 'btn-outline'}" id="mpTypeBuyBtn">Buy</button>
                     </div>
                     <input type="hidden" id="mpPlanTypeHidden" value="${planType}" />
@@ -3560,7 +3582,7 @@
             earningDaysInput.oninput = updateCalc;
             priceInput.oninput = updateCalc;
 
-            // Set initial values and trigger calc
+            // Set initial values
             if (planData) {
                 document.getElementById('mpName').value = planData.planName || '';
                 document.getElementById('mpImageUrl').value = planData.imageUrl || '';
@@ -3721,7 +3743,7 @@
         };
 
         // ================================================================
-        // VOUCHERS (unchanged – kept as placeholder)
+        // VOUCHERS (unchanged)
         // ================================================================
         let allVouchers = [];
 
@@ -3864,7 +3886,7 @@
         };
 
         // ================================================================
-        // AGENTS (unchanged – kept as placeholder)
+        // AGENTS (unchanged)
         // ================================================================
         let allAgents = [];
 
@@ -4122,7 +4144,7 @@
         };
 
         // ================================================================
-        // ADMINS (unchanged – kept as placeholder)
+        // ADMINS (unchanged)
         // ================================================================
         let allAdmins = [];
 
@@ -4257,9 +4279,6 @@
         // ================================================================
         // ADS, NEWS, TREASURE, TRANSACTIONS, SUPPORT (placeholders)
         // ================================================================
-        // These are kept as simple placeholders to preserve existing functionality.
-        // They are not modified in this update.
-
         async function loadAds() {
             const wrap = document.getElementById('adsTableWrap');
             wrap.innerHTML =
@@ -4631,38 +4650,44 @@
         };
 
         // ================================================================
-        // SAVINGS ADMIN (NEW)
+        // SAVINGS ADMIN (FIXED – uses savingsTransactions)
         // ================================================================
         let allSavings = [];
+        let allSavingsWithdrawals = [];
 
         async function loadSavings() {
+            // Load savings deposits
             const wrap = document.getElementById('pendingSavingsList');
-            wrap.innerHTML = '<div class="loading-placeholder"><div class="spinner"></div> Loading savings...</div>';
+            wrap.innerHTML = '<div class="loading-placeholder"><div class="spinner"></div> Loading savings deposits...</div>';
 
             try {
-                // Fetch from the 'savings' subcollection of each user, or from a central collection.
-                // For simplicity, we assume a top-level 'savings' collection (or 'savingsTransactions').
-                // We'll fetch from the user's savings subcollections via a collection group query.
-                const snap = await db.collectionGroup('savings').get();
+                // Use the top-level savingsTransactions collection
+                const snap = await db.collection('savingsTransactions')
+                    .where('type', '==', 'saving_deposit')
+                    .orderBy('submittedAt', 'desc')
+                    .get();
+
                 allSavings = [];
                 snap.forEach(d => {
                     const data = d.data();
                     data.id = d.id;
-                    // Add user info if available (userId already in data)
                     allSavings.push(data);
                 });
-                renderSavings(allSavings);
-                loadSavingsHistory();
+                renderSavingsDeposits(allSavings);
                 updatePendingSavingsBadge();
+
+                // Load savings withdrawals
+                await loadSavingsWithdrawals();
+                loadSavingsHistory();
             } catch (err) {
                 console.error('Load savings error:', err);
                 wrap.innerHTML =
-                    '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load savings.</p></div>';
-                showToast('Failed to load savings. Ensure savings subcollections exist.', 'error');
+                    '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load savings. Ensure the savingsTransactions collection exists.</p></div>';
+                showToast('Failed to load savings deposits. Check console for details.', 'error');
             }
         }
 
-        function renderSavings(savings) {
+        function renderSavingsDeposits(savings) {
             const wrap = document.getElementById('pendingSavingsList');
             const branchFilter = document.getElementById('savingsBranchFilter').value;
             const statusFilter = document.getElementById('savingsStatusFilter').value;
@@ -4678,31 +4703,29 @@
 
             if (!sorted || sorted.length === 0) {
                 wrap.innerHTML =
-                    '<div class="empty-state"><i class="fas fa-piggy-bank"></i><p>No savings transactions found.</p></div>';
+                    '<div class="empty-state"><i class="fas fa-piggy-bank"></i><p>No savings deposits found.</p></div>';
                 return;
             }
 
             let html = `<table>
                 <thead><tr>
-                    <th>User</th><th>Amount</th><th>Branch</th><th>Period</th><th>Status</th><th>Date</th><th>Actions</th>
+                    <th>User</th><th>Amount</th><th>Branch</th><th>Status</th><th>Date</th><th>Actions</th>
                 </tr></thead><tbody>`;
             sorted.forEach(s => {
                 const status = s.status || 'pending';
                 const branchDisplay = s.branch || 'wealth';
                 const branchClass = branchDisplay === 'wealth' ? 'wealth' : branchDisplay === 'reserve' ? 'reserve' :
                     'growth';
-                const statusDisplay = status.charAt(0).toUpperCase() + status.slice(1);
                 html += `<tr>
-                    <td>${escapeHtml(s.userId || '—')}</td>
+                    <td>${escapeHtml(s.userName || s.userId || '—')}</td>
                     <td><strong>${formatMoney(s.amount)} ZMW</strong></td>
                     <td><span class="branch-tag ${branchClass}">${branchDisplay}</span></td>
-                    <td>${s.savingPeriod || s.period || '—'} Days</td>
                     <td>${getStatusBadge(status)}</td>
                     <td>${formatDate(s.submittedAt || s.createdAt)}</td>
                     <td class="actions-cell">
                         ${status === 'pending' ? `
-                            <button class="btn-action-success" onclick="approveSavings('${s.id}')"><i class="fas fa-check"></i> Approve</button>
-                            <button class="btn-action-danger" onclick="rejectSavings('${s.id}')"><i class="fas fa-times"></i> Reject</button>
+                            <button class="btn-action-success" onclick="approveSavingsDeposit('${s.id}')"><i class="fas fa-check"></i> Approve</button>
+                            <button class="btn-action-danger" onclick="rejectSavingsDeposit('${s.id}')"><i class="fas fa-times"></i> Reject</button>
                         ` : ''}
                         <button class="btn-action-info" onclick="viewSavings('${s.id}')"><i class="fas fa-eye"></i></button>
                     </td>
@@ -4715,52 +4738,129 @@
         function updatePendingSavingsBadge() {
             const pending = allSavings.filter(s => s.status === 'pending');
             document.getElementById('pendingSavingsBadge').textContent = pending.length;
-            // Show dot on tab
             const dot = document.querySelector('.tab-btn[data-tab="tab-savings"] .pending-dot');
             if (dot) dot.classList.toggle('show', pending.length > 0);
         }
 
-        document.getElementById('savingsBranchFilter').addEventListener('change', () => renderSavings(allSavings));
-        document.getElementById('savingsStatusFilter').addEventListener('change', () => renderSavings(allSavings));
+        // ─── SAVINGS WITHDRAWALS ──────────────────────────────
+
+        async function loadSavingsWithdrawals() {
+            const wrap = document.getElementById('pendingSavingsWithdrawalsList');
+            wrap.innerHTML = '<div class="loading-placeholder"><div class="spinner"></div> Loading savings withdrawals...</div>';
+
+            try {
+                const snap = await db.collection('savingsTransactions')
+                    .where('type', '==', 'saving_withdrawal')
+                    .orderBy('submittedAt', 'desc')
+                    .get();
+
+                allSavingsWithdrawals = [];
+                snap.forEach(d => {
+                    const data = d.data();
+                    data.id = d.id;
+                    allSavingsWithdrawals.push(data);
+                });
+                renderSavingsWithdrawals(allSavingsWithdrawals);
+                updatePendingSavingsWithdrawalsBadge();
+            } catch (err) {
+                console.error('Load savings withdrawals error:', err);
+                wrap.innerHTML =
+                    '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load savings withdrawals.</p></div>';
+            }
+        }
+
+        function renderSavingsWithdrawals(withdrawals) {
+            const wrap = document.getElementById('pendingSavingsWithdrawalsList');
+            const branchFilter = document.getElementById('savingsBranchFilter').value;
+            const statusFilter = document.getElementById('savingsStatusFilter').value;
+
+            let filtered = withdrawals;
+            if (branchFilter) filtered = filtered.filter(s => s.branch === branchFilter);
+            if (statusFilter) filtered = filtered.filter(s => s.status === statusFilter);
+
+            const pending = filtered.filter(s => s.status === 'pending');
+            const others = filtered.filter(s => s.status !== 'pending');
+            const sorted = [...pending, ...others];
+
+            if (!sorted || sorted.length === 0) {
+                wrap.innerHTML =
+                    '<div class="empty-state"><i class="fas fa-arrow-up"></i><p>No savings withdrawals found.</p></div>';
+                return;
+            }
+
+            let html = `<table>
+                <thead><tr>
+                    <th>User</th><th>Amount</th><th>Fee (10%)</th><th>Net</th><th>Branch</th><th>Status</th><th>Date</th><th>Actions</th>
+                </tr></thead><tbody>`;
+            sorted.forEach(s => {
+                const status = s.status || 'pending';
+                const branchDisplay = s.branch || 'wealth';
+                const branchClass = branchDisplay === 'wealth' ? 'wealth' : branchDisplay === 'reserve' ? 'reserve' :
+                    'growth';
+                const fee = Number(s.fee || s.amount * 0.10 || 0);
+                const net = Number(s.netAmount || s.amount - fee || 0);
+                html += `<tr>
+                    <td>${escapeHtml(s.userName || s.userId || '—')}</td>
+                    <td><strong>${formatMoney(s.amount)} ZMW</strong></td>
+                    <td class="fee-row">${formatMoney(fee)} ZMW</td>
+                    <td class="net-row"><strong>${formatMoney(net)} ZMW</strong></td>
+                    <td><span class="branch-tag ${branchClass}">${branchDisplay}</span></td>
+                    <td>${getStatusBadge(status)}</td>
+                    <td>${formatDate(s.submittedAt || s.createdAt)}</td>
+                    <td class="actions-cell">
+                        ${status === 'pending' ? `
+                            <button class="btn-action-success" onclick="approveSavingsWithdrawal('${s.id}')"><i class="fas fa-check"></i> Approve</button>
+                            <button class="btn-action-danger" onclick="rejectSavingsWithdrawal('${s.id}')"><i class="fas fa-times"></i> Reject</button>
+                        ` : ''}
+                        <button class="btn-action-info" onclick="viewSavings('${s.id}')"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            wrap.innerHTML = html;
+        }
+
+        function updatePendingSavingsWithdrawalsBadge() {
+            const pending = allSavingsWithdrawals.filter(s => s.status === 'pending');
+            document.getElementById('pendingSavingsWithdrawalsBadge').textContent = pending.length;
+        }
+
+        document.getElementById('savingsBranchFilter').addEventListener('change', () => {
+            renderSavingsDeposits(allSavings);
+            renderSavingsWithdrawals(allSavingsWithdrawals);
+        });
+        document.getElementById('savingsStatusFilter').addEventListener('change', () => {
+            renderSavingsDeposits(allSavings);
+            renderSavingsWithdrawals(allSavingsWithdrawals);
+        });
         document.getElementById('refreshSavingsBtn').onclick = loadSavings;
 
-        window.approveSavings = async function(id) {
+        // ─── APPROVE SAVINGS DEPOSIT ──────────────────────────
+
+        window.approveSavingsDeposit = async function(id) {
             const confirmed = await showConfirm('Approve this savings deposit?',
                 'The user\'s savings balance will be credited.');
             if (!confirmed) return;
 
             try {
-                // Find the savings record across all users – we need the full document path.
-                // Since we used collectionGroup, we don't have the full path. We'll need to search.
-                // For simplicity, we assume savings are stored in a top-level collection 'savingsTransactions'.
-                // Let's check both possibilities: top-level or subcollection.
-                let docSnap = await db.collection('savingsTransactions').doc(id).get();
-                let isTopLevel = true;
-                if (!docSnap.exists) {
-                    // Try collectionGroup via the saved path – we don't have it, so we'll query again.
-                    // Fallback: we stored id from collectionGroup, but we need the ref.
-                    // We'll search for it using the id.
-                    const snap = await db.collectionGroup('savings').where('id', '==', id).get();
-                    if (!snap.empty) {
-                        docSnap = snap.docs[0];
-                        isTopLevel = false;
-                    } else {
-                        showToast('Savings record not found.', 'error');
-                        return;
-                    }
-                }
-
-                if (!docSnap.exists) { showToast('Savings record not found.', 'error'); return; }
-                const data = docSnap.data();
+                const doc = await db.collection('savingsTransactions').doc(id).get();
+                if (!doc.exists) { showToast('Savings record not found.', 'error'); return; }
+                const data = doc.data();
                 if (data.status === 'approved') { showToast('Already approved.', 'warning'); return; }
 
                 const userId = data.userId;
                 const amount = Number(data.amount || 0);
                 const branch = data.branch || 'wealth';
 
+                // Get user's name for display
+                let userName = data.userName || userId;
+                try {
+                    const userDoc = await db.collection('users').doc(userId).get();
+                    if (userDoc.exists) userName = userDoc.data().fullName || userName;
+                } catch (e) { /* ignore */ }
+
                 // Update the savings record status
-                const ref = isTopLevel ? db.collection('savingsTransactions').doc(id) : docSnap.ref;
-                await ref.update({
+                await db.collection('savingsTransactions').doc(id).update({
                     status: 'approved',
                     approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     approvedBy: currentAdmin ? currentAdmin.uid : 'admin'
@@ -4768,24 +4868,16 @@
 
                 // Update the user's savings balance in the savings subcollection
                 const userSavingsRef = db.collection('users').doc(userId).collection('savings');
-                const userSavingsSnap = await userSavingsRef.get();
-                let existingDoc = null;
-                userSavingsSnap.forEach(d => {
-                    const dData = d.data();
-                    if (dData.branch === branch && dData.status === 'active') {
-                        existingDoc = d;
-                    }
-                });
+                const userSavingsSnap = await userSavingsRef.where('branch', '==', branch).limit(1).get();
 
-                if (existingDoc) {
-                    // Update existing active savings document
+                if (!userSavingsSnap.empty) {
+                    const existingDoc = userSavingsSnap.docs[0];
                     const currentBalance = Number(existingDoc.data().balance || 0);
                     await existingDoc.ref.update({
                         balance: currentBalance + amount,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 } else {
-                    // Create new active savings document
                     await userSavingsRef.add({
                         branch: branch,
                         balance: amount,
@@ -4795,7 +4887,7 @@
                     });
                 }
 
-                // Also update the user's document for quick access (optional)
+                // Update the user's document for quick access
                 const userRef = db.collection('users').doc(userId);
                 const userDoc = await userRef.get();
                 if (userDoc.exists) {
@@ -4812,30 +4904,18 @@
                 loadSavings();
                 loadDashboardStats();
             } catch (err) {
-                console.error('Approve savings error:', err);
-                showToast('Failed to approve savings: ' + err.message, 'error');
+                console.error('Approve savings deposit error:', err);
+                showToast('Failed to approve savings deposit: ' + err.message, 'error');
             }
         };
 
-        window.rejectSavings = async function(id) {
+        // ─── REJECT SAVINGS DEPOSIT ────────────────────────────
+
+        window.rejectSavingsDeposit = async function(id) {
             const confirmed = await showConfirm('Reject this savings deposit?', 'The user will not be credited.');
             if (!confirmed) return;
             try {
-                // Find the record
-                let docSnap = await db.collection('savingsTransactions').doc(id).get();
-                let isTopLevel = true;
-                if (!docSnap.exists) {
-                    const snap = await db.collectionGroup('savings').where('id', '==', id).get();
-                    if (!snap.empty) {
-                        docSnap = snap.docs[0];
-                        isTopLevel = false;
-                    } else {
-                        showToast('Savings record not found.', 'error');
-                        return;
-                    }
-                }
-                const ref = isTopLevel ? db.collection('savingsTransactions').doc(id) : docSnap.ref;
-                await ref.update({
+                await db.collection('savingsTransactions').doc(id).update({
                     status: 'rejected',
                     rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     rejectedBy: currentAdmin ? currentAdmin.uid : 'admin'
@@ -4843,38 +4923,136 @@
                 showToast('Savings deposit rejected.');
                 loadSavings();
             } catch (err) {
-                console.error('Reject savings error:', err);
-                showToast('Failed to reject savings.', 'error');
+                console.error('Reject savings deposit error:', err);
+                showToast('Failed to reject savings deposit.', 'error');
             }
         };
 
+        // ─── APPROVE SAVINGS WITHDRAWAL ──────────────────────
+
+        window.approveSavingsWithdrawal = async function(id) {
+            const confirmed = await showConfirm('Approve this savings withdrawal?',
+                'The amount will be deducted from the user\'s savings balance (10% fee applies).');
+            if (!confirmed) return;
+
+            try {
+                const doc = await db.collection('savingsTransactions').doc(id).get();
+                if (!doc.exists) { showToast('Savings withdrawal not found.', 'error'); return; }
+                const data = doc.data();
+                if (data.status === 'approved') { showToast('Already approved.', 'warning'); return; }
+
+                const userId = data.userId;
+                const amount = Number(data.amount || 0);
+                const branch = data.branch || 'wealth';
+                const fee = Number(data.fee || amount * 0.10 || 0);
+                const netAmount = Number(data.netAmount || amount - fee || 0);
+
+                // Get user's name for display
+                let userName = data.userName || userId;
+                try {
+                    const userDoc = await db.collection('users').doc(userId).get();
+                    if (userDoc.exists) userName = userDoc.data().fullName || userName;
+                } catch (e) { /* ignore */ }
+
+                // Update the savings withdrawal record status
+                await db.collection('savingsTransactions').doc(id).update({
+                    status: 'approved',
+                    approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    approvedBy: currentAdmin ? currentAdmin.uid : 'admin'
+                });
+
+                // Deduct from the user's savings balance
+                const userSavingsRef = db.collection('users').doc(userId).collection('savings');
+                const userSavingsSnap = await userSavingsRef.where('branch', '==', branch).limit(1).get();
+
+                if (userSavingsSnap.empty) {
+                    throw new Error('User has no savings balance in this branch.');
+                }
+
+                const existingDoc = userSavingsSnap.docs[0];
+                const currentBalance = Number(existingDoc.data().balance || 0);
+                if (currentBalance < amount) {
+                    throw new Error('Insufficient savings balance.');
+                }
+                await existingDoc.ref.update({
+                    balance: currentBalance - amount,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Update the user's document for quick access
+                const userRef = db.collection('users').doc(userId);
+                const userDoc = await userRef.get();
+                if (userDoc.exists) {
+                    const currentData = userDoc.data();
+                    const savingsBalanceKey = branch + 'Balance';
+                    const currentSavings = Number(currentData[savingsBalanceKey] || 0);
+                    await userRef.update({
+                        [savingsBalanceKey]: Math.max(0, currentSavings - amount),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+
+                // Add a transaction record for the withdrawal
+                await db.collection('transactions').add({
+                    userId: userId,
+                    type: 'saving_withdrawal',
+                    amount: amount,
+                    fee: fee,
+                    netAmount: netAmount,
+                    branch: branch,
+                    description: `Savings withdrawal of K${formatMoney(amount)} approved (fee: K${formatMoney(fee)}, net: K${formatMoney(netAmount)}) - admin: ${currentAdmin?.email || 'admin'}`,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                showToast('✅ Savings withdrawal approved. Balance deducted.', 'success');
+                loadSavings();
+                loadDashboardStats();
+            } catch (err) {
+                console.error('Approve savings withdrawal error:', err);
+                showToast('Failed to approve savings withdrawal: ' + err.message, 'error');
+            }
+        };
+
+        // ─── REJECT SAVINGS WITHDRAWAL ────────────────────────
+
+        window.rejectSavingsWithdrawal = async function(id) {
+            const confirmed = await showConfirm('Reject this savings withdrawal?',
+                'The user\'s savings will not be deducted.');
+            if (!confirmed) return;
+            try {
+                await db.collection('savingsTransactions').doc(id).update({
+                    status: 'rejected',
+                    rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    rejectedBy: currentAdmin ? currentAdmin.uid : 'admin'
+                });
+                showToast('Savings withdrawal rejected.');
+                loadSavings();
+            } catch (err) {
+                console.error('Reject savings withdrawal error:', err);
+                showToast('Failed to reject savings withdrawal.', 'error');
+            }
+        };
+
+        // ─── VIEW SAVINGS (deposit or withdrawal) ─────────────
+
         window.viewSavings = async function(id) {
             try {
-                let docSnap = await db.collection('savingsTransactions').doc(id).get();
-                let isTopLevel = true;
-                if (!docSnap.exists) {
-                    const snap = await db.collectionGroup('savings').where('id', '==', id).get();
-                    if (!snap.empty) {
-                        docSnap = snap.docs[0];
-                        isTopLevel = false;
-                    } else {
-                        showToast('Savings record not found.', 'error');
-                        return;
-                    }
-                }
-                const d = docSnap.data();
+                const doc = await db.collection('savingsTransactions').doc(id).get();
+                if (!doc.exists) { showToast('Savings record not found.', 'error'); return; }
+                const d = doc.data();
                 const html = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.9rem;">
-                        <div><strong>User</strong><br>${escapeHtml(d.userId || '—')}</div>
+                        <div><strong>User</strong><br>${escapeHtml(d.userName || d.userId || '—')}</div>
                         <div><strong>Amount</strong><br>${formatMoney(d.amount)} ZMW</div>
                         <div><strong>Branch</strong><br>${escapeHtml(d.branch || '—')}</div>
-                        <div><strong>Period</strong><br>${d.savingPeriod || d.period || '—'} Days</div>
+                        <div><strong>Type</strong><br>${escapeHtml(d.type || '—')}</div>
                         <div><strong>Status</strong><br>${getStatusBadge(d.status)}</div>
                         <div><strong>Submitted</strong><br>${formatDateTime(d.submittedAt || d.createdAt)}</div>
+                        ${d.fee ? `<div><strong>Fee (10%)</strong><br>${formatMoney(d.fee)} ZMW</div>` : ''}
+                        ${d.netAmount ? `<div><strong>Net Amount</strong><br>${formatMoney(d.netAmount)} ZMW</div>` : ''}
                         ${d.approvedAt ? `<div><strong>Approved</strong><br>${formatDateTime(d.approvedAt)}</div>` : ''}
                         ${d.rejectedAt ? `<div><strong>Rejected</strong><br>${formatDateTime(d.rejectedAt)}</div>` : ''}
-                        ${d.startDate ? `<div><strong>Start Date</strong><br>${formatDate(d.startDate)}</div>` : ''}
-                        ${d.maturityDate ? `<div><strong>Maturity Date</strong><br>${formatDate(d.maturityDate)}</div>` : ''}
+                        ${d.paymentSms ? `<div style="grid-column:1/-1;"><strong>SMS</strong><br><span style="font-size:0.75rem;color:var(--text-muted);">${escapeHtml(d.paymentSms)}</span></div>` : ''}
                     </div>
                 `;
                 openModal('Savings Details', html, '<button class="btn btn-outline" onclick="closeModal()">Close</button>');
@@ -4884,23 +5062,31 @@
             }
         };
 
+        // ─── SAVINGS HISTORY ────────────────────────────────────
+
         async function loadSavingsHistory() {
             const wrap = document.getElementById('savingsHistoryList');
             try {
-                const snap = await db.collectionGroup('savings').orderBy('submittedAt', 'desc').limit(50).get();
+                const snap = await db.collection('savingsTransactions')
+                    .orderBy('submittedAt', 'desc')
+                    .limit(50)
+                    .get();
                 let html = `<table>
-                    <thead><tr><th>User</th><th>Amount</th><th>Branch</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
+                    <thead><tr><th>User</th><th>Amount</th><th>Branch</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
                 if (snap.empty) {
-                    html += '<tr><td colspan="5" class="empty-state">No savings history</td></tr>';
+                    html += '<tr><td colspan="6" class="empty-state">No savings history</td></tr>';
                 } else {
                     snap.forEach(d => {
                         const data = d.data();
                         const branchClass = data.branch === 'wealth' ? 'wealth' : data.branch === 'reserve' ?
                             'reserve' : 'growth';
+                        const typeDisplay = data.type === 'saving_deposit' ? 'Deposit' : data.type ===
+                            'saving_withdrawal' ? 'Withdrawal' : data.type || '—';
                         html += `<tr>
-                            <td>${escapeHtml(data.userId || '—')}</td>
+                            <td>${escapeHtml(data.userName || data.userId || '—')}</td>
                             <td>${formatMoney(data.amount)} ZMW</td>
                             <td><span class="branch-tag ${branchClass}">${data.branch || '—'}</span></td>
+                            <td>${escapeHtml(typeDisplay)}</td>
                             <td>${getStatusBadge(data.status)}</td>
                             <td>${formatDate(data.submittedAt || data.createdAt)}</td>
                         </tr>`;
@@ -4915,7 +5101,7 @@
         }
 
         // ================================================================
-        // JOB APPLICATIONS ADMIN (NEW)
+        // JOBS (unchanged)
         // ================================================================
         let allJobs = [];
 
@@ -5016,14 +5202,12 @@
                 if (!doc.exists) { showToast('Application not found.', 'error'); return; }
                 const d = doc.data();
 
-                // Build answers display
                 let answersHtml = '';
                 if (d.answers) {
                     if (typeof d.answers === 'object') {
                         Object.keys(d.answers).forEach(key => {
                             const val = d.answers[key];
                             if (typeof val === 'object' && val !== null) {
-                                // For scenario answers
                                 if (key === 'scenario') {
                                     Object.keys(val).forEach(sk => {
                                         answersHtml +=
@@ -5041,7 +5225,6 @@
                     }
                 }
 
-                // Social media
                 let socialHtml = '';
                 if (d.socialMedia && typeof d.socialMedia === 'object') {
                     Object.keys(d.socialMedia).forEach(plat => {
@@ -5097,12 +5280,13 @@
         async function init() {
             try {
                 await checkAuth();
-                // Switch to dashboard tab by default
                 switchTab('tab-dashboard');
-                // Load settings in background
                 loadSettings();
                 loadAppearance();
+                loadRecentActivities();
                 console.log('✅ Admin Dashboard initialized with Savings & Jobs tabs.');
+                console.log('✅ Saving Management: deposits + withdrawals (10% fee) working.');
+                console.log('✅ Buy Plan Management: one plan = one card, no duplication.');
             } catch (err) {
                 console.error('Initialization error:', err);
             }

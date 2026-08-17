@@ -32,7 +32,6 @@
             overflow-x: hidden;
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
         .hero-bg {
             position: fixed;
             top: 0;
@@ -1490,7 +1489,7 @@
         }
 
         // ================================================================
-        // RENDER PLANS – VERTICAL CARD WITH IMAGE ON TOP
+        // RENDER PLANS – with Invest / Buy distinction
         // ================================================================
         function renderPlans(plans) {
             var grid = document.getElementById('plansGrid');
@@ -1558,59 +1557,66 @@
                 }
 
                 var currencySym = getCurrencySymbol(plan.currency || 'ZMW');
-                var totalIncome = (plan.dailyReturn || 0) * (plan.days || 0);
-                var totalCapital = plan.minAmount || 0;
-                var totalCapitalIncome = totalCapital + totalIncome;
+                var minAmount = plan.minAmount || 0;
+                var dailyReturn = plan.dailyReturn || 0;
+                var days = plan.days || 0;
+
+                // ---- Compute values based on plan type ----
+                var totalIncome, totalCapital, totalCapitalIncome;
+                var incomeLabel, daysLabel, totalLabel, capitalLabel;
+
+                if (planType === 'invest') {
+                    totalIncome = dailyReturn * days;
+                    totalCapital = minAmount;
+                    totalCapitalIncome = totalCapital + totalIncome;
+                    incomeLabel = '📈 Daily Income';
+                    daysLabel = '📅 Cycle Days';
+                    totalLabel = '💰 Total Income';
+                    capitalLabel = '💵 Capital + Income';
+                } else { // buy
+                    totalIncome = dailyReturn; // profit (not multiplied by days)
+                    totalCapital = minAmount;
+                    totalCapitalIncome = totalCapital + totalIncome;
+                    incomeLabel = '📈 Profit';
+                    daysLabel = '📅 Duration';
+                    totalLabel = '💰 Total at Maturity';
+                    capitalLabel = '💵 Total Amount';
+                }
 
                 var releaseDateStr = plan.releaseDateObj ? formatDate(plan.releaseDateObj) : 'N/A';
                 var expiryDateStr = plan.expiryDateObj ? formatDate(plan.expiryDateObj) : 'N/A';
 
-                // Image HTML
+                // ---- Image HTML ----
                 var imageHtml = '';
                 if (plan.imageUrl) {
                     imageHtml = '<img src="' + escapeHtml(plan.imageUrl) + '" alt="' + escapeHtml(plan.name) +
                         '" loading="lazy" onerror="this.style.display=\'none\'; this.parentElement.querySelector(\'.plan-image-placeholder\').style.display=\'flex\';" />';
                 }
-                // Always include placeholder (hidden if image loads)
                 imageHtml += '<div class="plan-image-placeholder" style="display:none;">📈</div>';
 
-                // Badge for AVAILABLE (only if status is available)
-                var availableBadge = '';
-                if (status === 'available') {
-                    availableBadge = '<span class="badge-available">Available</span>';
-                }
+                // ---- Badges ----
+                var availableBadge = (status === 'available') ? '<span class="badge-available">Available</span>' : '';
+                var typeBadge = (planType === 'buy') ?
+                    '<span class="badge-buy-overlay">💛 BUY</span>' :
+                    '<span class="badge-buy-overlay badge-invest-overlay">💚 INVEST</span>';
 
-                // Badge for BUY/INVEST (always show, based on type)
-                var typeBadge = '';
-                if (planType === 'buy') {
-                    typeBadge = '<span class="badge-buy-overlay">💛 BUY</span>';
-                } else {
-                    typeBadge = '<span class="badge-buy-overlay badge-invest-overlay">💚 INVEST</span>';
-                }
-
-                // Build the card
+                // ---- Build card ----
                 html += '<div class="plan-card" data-plan-id="' + plan.id + '">';
+                html += '<div class="plan-image-wrap">' + imageHtml + availableBadge + typeBadge + '</div>';
 
-                // Image wrapper with overlays
-                html += '<div class="plan-image-wrap">';
-                html += imageHtml;
-                html += availableBadge;
-                html += typeBadge;
-                html += '</div>';
-
-                // Info section
                 html += '<div class="plan-info">';
                 html += '<div class="plan-name">' + escapeHtml(plan.name) +
-                    ' <span class="plan-price">' + (plan.minAmount || 0).toFixed(2) +
+                    ' <span class="plan-price">' + minAmount.toFixed(2) +
                     ' <span class="currency">' + currencySym + '</span></span></div>';
 
-                html += '<div class="detail-row"><span class="label">📈 Daily Income</span><span class="value green">' +
-                    (plan.dailyReturn || 0).toFixed(2) + ' ' + currencySym + '</span></div>';
-                html += '<div class="detail-row"><span class="label">📅 Cycle Days</span><span class="value blue">' +
-                    (plan.days || 0) + ' Days</span></div>';
-                html += '<div class="detail-row"><span class="label">💰 Total Income</span><span class="value gold">' +
+                // Dynamic rows
+                html += '<div class="detail-row"><span class="label">' + incomeLabel + '</span><span class="value green">' +
+                    dailyReturn.toFixed(2) + ' ' + currencySym + '</span></div>';
+                html += '<div class="detail-row"><span class="label">' + daysLabel + '</span><span class="value blue">' +
+                    days + ' Days</span></div>';
+                html += '<div class="detail-row"><span class="label">' + totalLabel + '</span><span class="value gold">' +
                     totalIncome.toFixed(2) + ' ' + currencySym + '</span></div>';
-                html += '<div class="detail-row"><span class="label">💵 Capital + Income</span><span class="value">' +
+                html += '<div class="detail-row"><span class="label">' + capitalLabel + '</span><span class="value">' +
                     totalCapitalIncome.toFixed(2) + ' ' + currencySym + '</span></div>';
 
                 html += '<div class="plan-dates">';
@@ -1624,13 +1630,17 @@
 
                 html += '</div>'; // end plan-info
 
-                // Button
-                var dataAttrs = 'data-id="' + plan.id + '" data-name="' + escapeHtml(plan.name) + '" data-amount="' +
-                    (plan.minAmount || 0) + '" data-daily="' + (plan.dailyReturn || 0) + '" data-days="' + (plan
-                        .days || 0) + '" data-currency="' + (plan.currency || 'ZMW') + '" data-type="' + planType +
+                // ---- Button ----
+                var dataAttrs = 'data-id="' + plan.id + '" data-name="' + escapeHtml(plan.name) +
+                    '" data-amount="' + minAmount +
+                    '" data-daily="' + dailyReturn +
+                    '" data-days="' + days +
+                    '" data-currency="' + (plan.currency || 'ZMW') +
+                    '" data-type="' + planType +
+                    '" data-totalincome="' + totalIncome.toFixed(2) +
                     '" data-expiry="' + (plan.expiry || 'Auto') + '"';
 
-                var buttonClass = planType === 'buy' ? 'buy-btn' : 'invest-btn';
+                var buttonClass = (planType === 'buy') ? 'buy-btn' : 'invest-btn';
                 if (isPurchased) buttonClass += ' purchased';
                 if (btnDisabled) buttonClass += ' disabled';
 
@@ -1642,19 +1652,10 @@
 
             grid.innerHTML = html;
 
-            // Attach click events
+            // ---- Attach click events ----
             document.querySelectorAll('.invest-btn:not(:disabled)').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
-                    var planData = {
-                        id: this.getAttribute('data-id'),
-                        name: this.getAttribute('data-name'),
-                        minAmount: parseFloat(this.getAttribute('data-amount')),
-                        dailyReturn: parseFloat(this.getAttribute('data-daily')),
-                        days: parseInt(this.getAttribute('data-days')),
-                        currency: this.getAttribute('data-currency'),
-                        type: this.getAttribute('data-type') || 'invest',
-                        expiry: this.getAttribute('data-expiry')
-                    };
+                    var planData = extractPlanData(this);
                     showPurchaseLoading('Preparing your investment...', 'Please wait');
                     setTimeout(function() {
                         hidePurchaseLoading();
@@ -1665,16 +1666,7 @@
 
             document.querySelectorAll('.buy-btn:not(:disabled)').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
-                    var planData = {
-                        id: this.getAttribute('data-id'),
-                        name: this.getAttribute('data-name'),
-                        minAmount: parseFloat(this.getAttribute('data-amount')),
-                        dailyReturn: parseFloat(this.getAttribute('data-daily')),
-                        days: parseInt(this.getAttribute('data-days')),
-                        currency: this.getAttribute('data-currency'),
-                        type: this.getAttribute('data-type') || 'buy',
-                        expiry: this.getAttribute('data-expiry')
-                    };
+                    var planData = extractPlanData(this);
                     showPurchaseLoading('Preparing your purchase...', 'Please wait');
                     setTimeout(function() {
                         hidePurchaseLoading();
@@ -1682,6 +1674,21 @@
                     }, 1200);
                 });
             });
+        }
+
+        // Helper to extract data from button attributes
+        function extractPlanData(btn) {
+            return {
+                id: btn.getAttribute('data-id'),
+                name: btn.getAttribute('data-name'),
+                minAmount: parseFloat(btn.getAttribute('data-amount')),
+                dailyReturn: parseFloat(btn.getAttribute('data-daily')),
+                days: parseInt(btn.getAttribute('data-days')),
+                currency: btn.getAttribute('data-currency'),
+                type: btn.getAttribute('data-type') || 'invest',
+                totalIncome: parseFloat(btn.getAttribute('data-totalincome')) || 0,
+                expiry: btn.getAttribute('data-expiry')
+            };
         }
 
         // ================================================================
@@ -1752,13 +1759,13 @@
         }
 
         // ================================================================
-        // CONFIRMATION MODAL
+        // CONFIRMATION MODAL – Invest vs Buy
         // ================================================================
         function showConfirmationModal(plan) {
             selectedPlan = plan;
             selectedPlanType = plan.type || 'invest';
 
-            var isInvest = plan.type === 'invest';
+            var isInvest = (plan.type === 'invest');
             var currencySymbol = getCurrencySymbol(plan.currency || 'ZMW');
 
             modalPlanName.textContent = plan.name || 'Investment Plan';
@@ -1767,9 +1774,16 @@
             modalDuration.textContent = plan.days + ' Days';
             modalExpiry.textContent = plan.expiry || 'Auto';
 
-            var totalIncome = (plan.dailyReturn * plan.days);
+            // ---- Compute total income based on type ----
+            var totalIncome;
+            if (isInvest) {
+                totalIncome = plan.dailyReturn * plan.days;
+            } else {
+                totalIncome = plan.dailyReturn; // profit
+            }
             modalTotalIncome.textContent = totalIncome.toFixed(2) + ' ' + currencySymbol;
 
+            // ---- Set modal text ----
             if (isInvest) {
                 modalActionTitle.textContent = '💎 Confirm Investment';
                 modalActionSub.textContent = 'You will earn daily income from this plan.';
@@ -1778,10 +1792,10 @@
                 modalConfirmBtn.textContent = '✅ Confirm Investment';
             } else {
                 modalActionTitle.textContent = '🛒 Confirm Purchase';
-                modalActionSub.textContent = 'You will receive the total income after ' + plan.days + ' days.';
-                modalTotalLabel.textContent = '💰 TOTAL INCOME (Lump Sum)';
+                modalActionSub.textContent = 'You will receive the total profit after ' + plan.days + ' days.';
+                modalTotalLabel.textContent = '💰 TOTAL AT MATURITY';
                 modalNote.textContent = '📝 This is a Buy plan. After ' + plan.days +
-                    ' days, you will claim the total income in one go.';
+                    ' days, you will claim the full amount (capital + profit) in one go.';
                 modalConfirmBtn.textContent = '✅ Confirm Purchase';
             }
 
@@ -1804,7 +1818,7 @@
         });
 
         // ================================================================
-        // SECURE PURCHASE
+        // SECURE PURCHASE – Invest vs Buy
         // ================================================================
         modalConfirmBtn.addEventListener('click', function() {
             if (!selectedPlan || modalConfirmBtn.disabled) return;
@@ -1815,7 +1829,7 @@
                 return;
             }
 
-            var isInvest = plan.type === 'invest';
+            var isInvest = (plan.type === 'invest');
 
             showPurchaseLoading('Processing transaction...', 'Please do not close this window');
             modalConfirmBtn.disabled = true;
@@ -1890,6 +1904,7 @@
                         var dailyReturn = planData.dailyReturn || 0;
 
                         if (isInvest) {
+                            // ---- INVEST: create investment document ----
                             var investmentRef = db.collection('investments').doc();
                             var startDate = new Date();
                             var purchasedOnWeekend = isWeekend(startDate);
@@ -1909,8 +1924,7 @@
                                 days: earningDays,
                                 businessDays: earningDays,
                                 startDate: firebase.firestore.Timestamp.fromDate(startDate),
-                                businessEndDate: firebase.firestore.Timestamp.fromDate(
-                                businessEndDate),
+                                businessEndDate: firebase.firestore.Timestamp.fromDate(businessEndDate),
                                 lastClaimed: firebase.firestore.Timestamp.fromDate(startDate),
                                 status: 'active',
                                 totalReturn: 0,
@@ -1920,20 +1934,24 @@
                                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
                         } else {
+                            // ---- BUY: create marketplace purchase document ----
                             var purchaseRef = db.collection('marketplacePurchases').doc();
                             var purchaseDate = new Date();
                             var expiryDate2 = new Date(purchaseDate);
                             expiryDate2.setDate(expiryDate2.getDate() + earningDays);
+
+                            // For Buy plans: totalIncome = profit (dailyReturn)
+                            var totalProfit = dailyReturn; // profit, not multiplied by days
 
                             transaction.set(purchaseRef, {
                                 userId: uid,
                                 planId: plan.id,
                                 planName: planData.planName || plan.name,
                                 type: 'buy',
-                                amount: investAmount,
-                                dailyIncome: dailyReturn,
-                                days: earningDays,
-                                totalIncome: dailyReturn * earningDays,
+                                amount: investAmount, // capital
+                                dailyIncome: dailyReturn, // profit
+                                days: earningDays, // duration
+                                totalIncome: totalProfit, // total profit
                                 purchasedAt: firebase.firestore.FieldValue.serverTimestamp(),
                                 expiresAt: firebase.firestore.Timestamp.fromDate(expiryDate2),
                                 status: 'active',
@@ -1945,6 +1963,7 @@
                             });
                         }
 
+                        // ---- Transaction record ----
                         var txRef = db.collection('transactions').doc();
                         var txType = isInvest ? 'investment' : 'purchase';
                         var txDesc = isInvest ? 'Invested in ' + (planData.planName || plan.name) :
@@ -1963,7 +1982,7 @@
             }).then(function() {
                 var successMsg = isInvest ?
                     '✅ Investment successful! Start earning daily income.' :
-                    '✅ Purchase successful! You will receive the total income after ' + plan.days + ' days.';
+                    '✅ Purchase successful! You will receive the full amount after ' + plan.days + ' days.';
                 showPurchaseLoading('✅ Success!', successMsg);
                 setTimeout(function() {
                     window.location.href = 'income.html';
@@ -2067,10 +2086,8 @@
             window.location.href = 'login.html';
         });
 
-        console.log('🛒 Marketplace · Sajvera Capital – vertical card layout applied');
-        console.log('✅ Image on top, info below, button at bottom');
-        console.log('📱 2‑column grid, responsive, stable bottom nav');
-        console.log('❌ Hamburger menu removed');
+        console.log('🛒 Marketplace · Sajvera Capital – Invest & Buy plans supported');
+        console.log('✅ Invest: daily income claims | Buy: lump sum at maturity');
     </script>
 </body>
 </html>

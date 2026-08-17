@@ -64,7 +64,6 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.65);
-            /* Dark overlay only */
         }
 
         /* ----- HEADER (DARK GLASS) ----- */
@@ -807,6 +806,72 @@
             }
         }
 
+        /* ─── NEW: WITHDRAWAL TYPE TOGGLE & SAVING BRANCH ─── */
+        .type-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
+            padding: 0.4rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .type-toggle button {
+            flex: 1;
+            padding: 0.6rem;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.15);
+        }
+        .type-toggle button.active {
+            background: rgba(96, 165, 250, 0.12);
+            color: #60a5fa;
+            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.08);
+        }
+        .type-toggle button:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .branch-selector {
+            display: none;
+            margin-top: 0.5rem;
+        }
+        .branch-selector.visible {
+            display: block;
+        }
+
+        .saving-balance {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
+            padding: 0.8rem 1rem;
+            margin: 0.5rem 0 1rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            display: none;
+        }
+        .saving-balance.visible {
+            display: block;
+        }
+        .saving-balance .bal-label {
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 0.8rem;
+        }
+        .saving-balance .bal-amount {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+        .saving-balance .bal-pending {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
         /* ----- RESPONSIVE ----- */
         @media (max-width: 500px) {
             .header {
@@ -867,6 +932,10 @@
             .back-btn {
                 font-size: 0.65rem;
                 padding: 0.3rem 0.8rem;
+            }
+            .type-toggle button {
+                font-size: 0.8rem;
+                padding: 0.5rem;
             }
         }
 
@@ -936,13 +1005,36 @@
         </div>
 
         <!-- ========================================================== -->
-        <!-- ===== STEP 1: SAVE TRANSACTION INFO ===== -->
+        <!-- ===== STEP 1: SAVE TRANSACTION INFO + WITHDRAWAL TYPE ===== -->
         <!-- ========================================================== -->
         <div class="step-container" id="step1">
             <div class="glass-card" id="step1Card">
                 <div class="card-title">
                     <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.5"/><path d="M8 2v20"/><path d="M16 2v20"/><path d="M2 8h20"/><path d="M2 16h20"/></svg>
                     <span id="step1Title">Withdrawal Info</span>
+                </div>
+
+                <!-- ─── NEW: Withdrawal Type Toggle ─── -->
+                <div class="type-toggle" id="withdrawalTypeToggle">
+                    <button class="active" data-type="normal">Normal</button>
+                    <button data-type="saving">Saving</button>
+                </div>
+
+                <!-- ─── NEW: Branch selector (visible only when Saving is selected) ─── -->
+                <div class="branch-selector" id="branchSelector">
+                    <div class="form-group">
+                        <label>🏦 Select Saving Branch</label>
+                        <select id="savingBranchSelect">
+                            <option value="wealth">PureOre Wealth</option>
+                            <option value="reserve">PureOre Reserve</option>
+                            <option value="growth">PureOre Growth</option>
+                        </select>
+                    </div>
+                    <div class="saving-balance" id="savingBalanceDisplay">
+                        <div class="bal-label">Available Saving Balance</div>
+                        <div class="bal-amount" id="savingBalanceAmount">K0.00</div>
+                        <div class="bal-pending" id="savingPendingInfo"></div>
+                    </div>
                 </div>
 
                 <!-- Saved info display -->
@@ -1115,6 +1207,15 @@
                         <span class="summary-label">⏳ Estimated Processing</span>
                         <span class="summary-value" id="confirmEta" style="color:#60a5fa; font-weight:700;">—</span>
                     </div>
+                    <!-- NEW: Show type and branch if saving -->
+                    <div class="summary-row" id="confirmTypeRow" style="display:none;">
+                        <span class="summary-label">Type</span>
+                        <span class="summary-value" id="confirmType">Normal</span>
+                    </div>
+                    <div class="summary-row" id="confirmBranchRow" style="display:none;">
+                        <span class="summary-label">Saving Branch</span>
+                        <span class="summary-value" id="confirmBranch">—</span>
+                    </div>
                 </div>
 
                 <div class="msg-box" id="confirmMessage"></div>
@@ -1175,10 +1276,11 @@
 
     </main>
 
+    <!-- ================================================================
+    JAVASCRIPT – FIREBASE & LOGIC (with saving withdrawal added)
+    ================================================================ -->
     <script>
-        // ================================================================
-        // FIREBASE CONFIG
-        // ================================================================
+        // ─── FIREBASE CONFIG ────────────────────────────────
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
             authDomain: "pureore-capital-zambia.firebaseapp.com",
@@ -1194,25 +1296,31 @@
         db.settings({ persistence: false });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ================================================================
-        // STATE
-        // ================================================================
+        // ─── STATE ───────────────────────────────────────────
         var currentStep = 1;
         var savedInfo = null;
         var selectedAmount = 0;
         var netAfterFee = 0;
-        var currentBalance = 0;
+        var currentBalance = 0; // for normal withdrawal
         var isSubmitting = false;
         var withdrawRules = { requireDeposit: true, requireInvestment: true };
         var userPhone = '';
+        var withdrawalType = 'normal'; // 'normal' or 'saving'
+        var savingBranch = 'wealth';
+        var savingBalance = 0;
+        var savingPendingTotal = 0;
 
-        // ================================================================
-        // DOM REFS
-        // ================================================================
-        var step1 = document.getElementById('step1');
-        var step2 = document.getElementById('step2');
-        var step3 = document.getElementById('step3');
-        var step4 = document.getElementById('step4');
+        // ─── DOM REFS (new and existing) ────────────────────
+        var typeToggleBtns = document.querySelectorAll('.type-toggle button');
+        var branchSelector = document.getElementById('branchSelector');
+        var savingBranchSelect = document.getElementById('savingBranchSelect');
+        var savingBalanceDisplay = document.getElementById('savingBalanceDisplay');
+        var savingBalanceAmount = document.getElementById('savingBalanceAmount');
+        var savingPendingInfo = document.getElementById('savingPendingInfo');
+        var confirmTypeRow = document.getElementById('confirmTypeRow');
+        var confirmBranchRow = document.getElementById('confirmBranchRow');
+        var confirmType = document.getElementById('confirmType');
+        var confirmBranch = document.getElementById('confirmBranch');
 
         var networkSelect = document.getElementById('networkSelect');
         var phoneInput = document.getElementById('phoneInput');
@@ -1272,9 +1380,7 @@
             document.getElementById('line3')
         ];
 
-        // ================================================================
-        // TOAST
-        // ================================================================
+        // ─── TOAST ────────────────────────────────────────────
         function showToast(msg, isError) {
             var existing = document.querySelector('.toast');
             if (existing) existing.remove();
@@ -1285,11 +1391,10 @@
             setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
         }
 
-        // ================================================================
-        // STEP NAVIGATION
-        // ================================================================
+        // ─── STEP NAVIGATION ──────────────────────────────────
         function goToStep(step) {
-            var allSteps = [step1, step2, step3, step4];
+            var allSteps = [document.getElementById('step1'), document.getElementById('step2'), document.getElementById(
+                'step3'), document.getElementById('step4')];
             allSteps.forEach(function(s) { s.classList.add('hidden'); });
             var target = allSteps[step - 1];
             if (target) {
@@ -1300,25 +1405,20 @@
                 });
             }
             for (var i = 0; i < 4; i++) {
-                dots[i].classList.remove('active', 'done');
-                if (i + 1 < step) {
-                    dots[i].classList.add('done');
-                } else if (i + 1 === step) {
-                    dots[i].classList.add('active');
-                }
+                var dot = document.getElementById('dot' + (i + 1));
+                dot.classList.remove('active', 'done');
+                if (i + 1 < step) dot.classList.add('done');
+                else if (i + 1 === step) dot.classList.add('active');
             }
             for (var j = 0; j < 3; j++) {
-                lines[j].classList.remove('done');
-                if (j + 1 < step) {
-                    lines[j].classList.add('done');
-                }
+                var line = document.getElementById('line' + (j + 1));
+                line.classList.remove('done');
+                if (j + 1 < step) line.classList.add('done');
             }
             currentStep = step;
         }
 
-        // ================================================================
-        // LOAD WITHDRAWAL RULES
-        // ================================================================
+        // ─── LOAD WITHDRAWAL RULES (unchanged) ──────────────
         function loadWithdrawalRules() {
             db.collection('systemSettings').doc('withdrawalRules').get()
                 .then(function(doc) {
@@ -1331,9 +1431,7 @@
                 .catch(function(err) { console.warn('Could not load withdrawal rules', err); });
         }
 
-        // ================================================================
-        // CHECK SAVED INFO
-        // ================================================================
+        // ─── LOAD SAVED INFO (unchanged) ─────────────────────
         function loadSavedInfo() {
             var user = auth.currentUser;
             if (!user) return;
@@ -1379,18 +1477,13 @@
             savedPhone.textContent = info.phone || userPhone || '—';
         }
 
-        // ================================================================
-        // DELETE SAVED INFO
-        // ================================================================
+        // ─── DELETE SAVED INFO (unchanged) ──────────────────
         function deleteSavedInfo() {
             if (!confirm('Are you sure you want to delete your saved withdrawal information?')) return;
-
             var user = auth.currentUser;
             if (!user) { showToast('Please login again.', true); return; }
-
             deleteSavedInfoBtn.disabled = true;
             deleteSavedInfoBtn.textContent = 'Deleting...';
-
             db.collection('users').doc(user.uid).update({
                 withdrawalInfo: firebase.firestore.FieldValue.delete()
             }).then(function() {
@@ -1421,12 +1514,9 @@
                     '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete Info';
             });
         }
-
         deleteSavedInfoBtn.addEventListener('click', deleteSavedInfo);
 
-        // ================================================================
-        // SAVE INFO FORM
-        // ================================================================
+        // ─── SAVE INFO FORM (unchanged) ──────────────────────
         var selectedNetwork = '';
         var selectedBank = '';
 
@@ -1500,7 +1590,6 @@
                 infoMessage.style.display = 'block';
                 return;
             }
-
             var info = {
                 network: selectedNetwork,
                 accountName: accountNameInput.value.trim()
@@ -1513,7 +1602,6 @@
                 var phone = '+260' + phoneInput.value.trim();
                 info.phone = phone;
             }
-
             var user = auth.currentUser;
             if (!user) { window.location.href = 'login.html'; return; }
             saveInfoBtn.disabled = true;
@@ -1548,9 +1636,109 @@
             goToStep(2);
         });
 
-        // ================================================================
-        // STEP 2: AMOUNT (no minimum, 10% fee)
-        // ================================================================
+        // ─── SAVING BALANCE FETCH ─────────────────────────────
+        function fetchSavingBalance(userId, branch) {
+            var depositsQuery = db.collection('savingsTransactions')
+                .where('userId', '==', userId)
+                .where('branch', '==', branch)
+                .where('type', '==', 'saving_deposit')
+                .where('status', '==', 'approved');
+
+            var withdrawalsQuery = db.collection('savingsTransactions')
+                .where('userId', '==', userId)
+                .where('branch', '==', branch)
+                .where('type', '==', 'saving_withdrawal')
+                .where('status', '==', 'approved');
+
+            var pendingWithdrawalsQuery = db.collection('savingsTransactions')
+                .where('userId', '==', userId)
+                .where('branch', '==', branch)
+                .where('type', '==', 'saving_withdrawal')
+                .where('status', '==', 'pending');
+
+            return Promise.all([
+                depositsQuery.get(),
+                withdrawalsQuery.get(),
+                pendingWithdrawalsQuery.get()
+            ]).then(function(results) {
+                var deposits = results[0];
+                var withdrawals = results[1];
+                var pending = results[2];
+                var totalDeposits = 0;
+                deposits.forEach(function(doc) {
+                    totalDeposits += doc.data().amount || 0;
+                });
+                var totalWithdrawals = 0;
+                withdrawals.forEach(function(doc) {
+                    totalWithdrawals += doc.data().amount || 0;
+                });
+                var pendingTotal = 0;
+                pending.forEach(function(doc) {
+                    pendingTotal += doc.data().amount || 0;
+                });
+                var available = totalDeposits - totalWithdrawals - pendingTotal;
+                if (available < 0) available = 0;
+                return { available: available, pendingTotal: pendingTotal };
+            });
+        }
+
+        // ─── UPDATE SAVING BALANCE DISPLAY ──────────────────
+        function updateSavingBalance() {
+            var user = auth.currentUser;
+            if (!user) return;
+            var branch = savingBranchSelect.value;
+            savingBranch = branch;
+            fetchSavingBalance(user.uid, branch).then(function(result) {
+                savingBalance = result.available;
+                savingPendingTotal = result.pendingTotal;
+                savingBalanceAmount.textContent = 'K' + savingBalance.toFixed(2);
+                if (result.pendingTotal > 0) {
+                    savingPendingInfo.textContent = 'Pending withdrawals: K' + result.pendingTotal.toFixed(2);
+                } else {
+                    savingPendingInfo.textContent = '';
+                }
+                savingBalanceDisplay.classList.add('visible');
+            }).catch(function(err) {
+                console.warn('Error fetching saving balance:', err);
+                savingBalanceAmount.textContent = 'K0.00';
+                savingPendingInfo.textContent = 'Error loading balance';
+            });
+        }
+
+        // ─── WITHDRAWAL TYPE TOGGLE ──────────────────────────
+        typeToggleBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                typeToggleBtns.forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                withdrawalType = this.dataset.type;
+                if (withdrawalType === 'saving') {
+                    branchSelector.classList.add('visible');
+                    updateSavingBalance();
+                } else {
+                    branchSelector.classList.remove('visible');
+                    savingBalanceDisplay.classList.remove('visible');
+                }
+                // reset amount field and fee summary
+                document.getElementById('withdrawAmount').value = '';
+                document.getElementById('feeSummary').style.display = 'none';
+                document.getElementById('step2Next').disabled = true;
+                document.getElementById('step2Message').style.display = 'none';
+                amountError.innerText = '';
+            });
+        });
+
+        // ─── BRANCH CHANGE ─────────────────────────────────────
+        savingBranchSelect.addEventListener('change', function() {
+            if (withdrawalType === 'saving') {
+                updateSavingBalance();
+                document.getElementById('withdrawAmount').value = '';
+                document.getElementById('feeSummary').style.display = 'none';
+                document.getElementById('step2Next').disabled = true;
+                amountError.innerText = '';
+            }
+        });
+
+        // ─── STEP 2: AMOUNT VALIDATION (modified for saving) ──
         withdrawAmount.addEventListener('input', function() {
             var val = parseFloat(this.value);
             if (isNaN(val) || val <= 0) {
@@ -1560,8 +1748,15 @@
                 selectedAmount = 0;
                 return;
             }
+            var maxBalance = (withdrawalType === 'normal') ? currentBalance : savingBalance;
+            if (val > maxBalance) {
+                amountError.innerText = 'Insufficient balance. Available: ' + maxBalance.toFixed(2) + ' ZMW';
+                feeSummary.style.display = 'none';
+                step2Next.disabled = true;
+                return;
+            }
             amountError.innerText = '';
-            var fee = val * 0.10; // 10% fee
+            var fee = val * 0.10;
             var net = val - fee;
             summaryGross.textContent = val.toFixed(2) + ' ZMW';
             summaryFee.textContent = fee.toFixed(2) + ' ZMW';
@@ -1574,26 +1769,33 @@
 
         step2Next.addEventListener('click', function() {
             if (this.disabled) return;
-            if (currentBalance < selectedAmount) {
+            var maxBalance = (withdrawalType === 'normal') ? currentBalance : savingBalance;
+            if (selectedAmount > maxBalance) {
                 step2Message.className = 'msg-box error';
-                step2Message.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Insufficient balance. You have ' +
-                    currentBalance.toFixed(2) + ' ZMW.';
+                step2Message.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Insufficient balance. Available: ' +
+                    maxBalance.toFixed(2) + ' ZMW.';
                 step2Message.style.display = 'block';
                 return;
             }
-            checkEligibility(function(eligible, msg) {
-                if (!eligible) {
-                    step2Message.className = 'msg-box error';
-                    step2Message.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' +
-                        msg;
-                    step2Message.style.display = 'block';
-                    return;
-                }
+            if (withdrawalType === 'normal') {
+                checkEligibility(function(eligible, msg) {
+                    if (!eligible) {
+                        step2Message.className = 'msg-box error';
+                        step2Message.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' +
+                            msg;
+                        step2Message.style.display = 'block';
+                        return;
+                    }
+                    populateConfirm();
+                    goToStep(3);
+                });
+            } else {
                 populateConfirm();
                 goToStep(3);
-            });
+            }
         });
 
+        // ─── ELIGIBILITY CHECK (unchanged) ────────────────────
         function checkEligibility(callback) {
             var user = auth.currentUser;
             if (!user) { callback(false, 'Please login again.'); return; }
@@ -1638,13 +1840,10 @@
             });
         }
 
-        // ================================================================
-        // ESTIMATED PROCESSING TIME
-        // ================================================================
+        // ─── ESTIMATED PROCESSING TIME (unchanged) ───────────
         function getEstimatedProcessingTime() {
             var now = new Date();
             var hours = now.getHours();
-
             if (hours >= 9 && hours < 17) {
                 var eta = new Date(now.getTime() + 2 * 60 * 60 * 1000);
                 if (eta.getHours() >= 17 || (eta.getHours() === 17 && eta.getMinutes() > 0)) {
@@ -1661,9 +1860,7 @@
             }
         }
 
-        // ================================================================
-        // POPULATE CONFIRM
-        // ================================================================
+        // ─── POPULATE CONFIRM (modified) ─────────────────────
         function populateConfirm() {
             var info = savedInfo;
             confirmNetwork.textContent = info.network.toUpperCase();
@@ -1678,11 +1875,24 @@
             confirmFee.textContent = (selectedAmount * 0.10).toFixed(2) + ' ZMW';
             confirmNet.textContent = netAfterFee.toFixed(2) + ' ZMW';
             confirmEta.textContent = getEstimatedProcessingTime();
+
+            if (withdrawalType === 'saving') {
+                confirmTypeRow.style.display = 'flex';
+                confirmBranchRow.style.display = 'flex';
+                confirmType.textContent = 'Saving';
+                var branchName = {
+                    wealth: 'PureOre Wealth',
+                    reserve: 'PureOre Reserve',
+                    growth: 'PureOre Growth'
+                } [savingBranch] || savingBranch;
+                confirmBranch.textContent = branchName;
+            } else {
+                confirmTypeRow.style.display = 'none';
+                confirmBranchRow.style.display = 'none';
+            }
         }
 
-        // ================================================================
-        // STEP 3: SUBMIT
-        // ================================================================
+        // ─── SUBMIT WITHDRAWAL (modified for saving) ────────
         confirmSubmit.addEventListener('click', function() {
             if (isSubmitting) return;
             isSubmitting = true;
@@ -1693,71 +1903,112 @@
             if (!user) { window.location.href = 'login.html'; return; }
             var userId = user.uid;
 
-            var withdrawData = {
-                userId: userId,
-                amount: selectedAmount,
-                netAmount: netAfterFee,
-                fee: selectedAmount * 0.10,
-                status: 'pending',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                network: savedInfo.network,
-                accountName: savedInfo.accountName,
-                phone: savedInfo.phone || userPhone || ''
-            };
-            if (savedInfo.network === 'bank') {
-                withdrawData.bankName = savedInfo.bank;
-                withdrawData.cardNumber = savedInfo.cardNumber;
-            }
-
-            db.runTransaction(function(transaction) {
-                var userRef = db.collection('users').doc(userId);
-                return transaction.get(userRef).then(function(doc) {
-                    if (!doc.exists) throw new Error('User data not found');
-                    var currentBal = doc.data().walletBalance !== undefined ? doc.data().walletBalance : (doc.data()
-                        .balance || 0);
-                    if (currentBal < selectedAmount) throw new Error('Insufficient balance');
-                    var newBalance = currentBal - selectedAmount;
-                    transaction.update(userRef, {
-                        walletBalance: newBalance,
-                        balance: newBalance
+            if (withdrawalType === 'normal') {
+                // Normal withdrawal (unchanged)
+                var withdrawData = {
+                    userId: userId,
+                    amount: selectedAmount,
+                    netAmount: netAfterFee,
+                    fee: selectedAmount * 0.10,
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    network: savedInfo.network,
+                    accountName: savedInfo.accountName,
+                    phone: savedInfo.phone || userPhone || ''
+                };
+                if (savedInfo.network === 'bank') {
+                    withdrawData.bankName = savedInfo.bank;
+                    withdrawData.cardNumber = savedInfo.cardNumber;
+                }
+                db.runTransaction(function(transaction) {
+                    var userRef = db.collection('users').doc(userId);
+                    return transaction.get(userRef).then(function(doc) {
+                        if (!doc.exists) throw new Error('User data not found');
+                        var currentBal = doc.data().walletBalance !== undefined ? doc.data().walletBalance : (doc
+                            .data().balance || 0);
+                        if (currentBal < selectedAmount) throw new Error('Insufficient balance');
+                        var newBalance = currentBal - selectedAmount;
+                        transaction.update(userRef, {
+                            walletBalance: newBalance,
+                            balance: newBalance
+                        });
+                        var withdrawalRef = db.collection('withdrawals').doc();
+                        transaction.set(withdrawalRef, withdrawData);
                     });
-                    var withdrawalRef = db.collection('withdrawals').doc();
-                    transaction.set(withdrawalRef, withdrawData);
+                }).then(function() {
+                    finalAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
+                    finalNetwork.textContent = savedInfo.network.toUpperCase();
+                    finalEta.textContent = getEstimatedProcessingTime();
+                    goToStep(4);
+                    showToast('✅ Withdrawal submitted successfully!', false);
+                    isSubmitting = false;
+                    confirmSubmit.disabled = false;
+                    confirmSubmit.innerHTML =
+                        '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
+                }).catch(function(err) {
+                    console.error(err);
+                    confirmMessage.className = 'msg-box error';
+                    confirmMessage.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Error: ' +
+                        err.message;
+                    confirmMessage.style.display = 'block';
+                    isSubmitting = false;
+                    confirmSubmit.disabled = false;
+                    confirmSubmit.innerHTML =
+                        '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
                 });
-            }).then(function() {
-                finalAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
-                finalNetwork.textContent = savedInfo.network.toUpperCase();
-                finalEta.textContent = getEstimatedProcessingTime();
-                goToStep(4);
-                showToast('✅ Withdrawal submitted successfully!', false);
-                isSubmitting = false;
-                confirmSubmit.disabled = false;
-                confirmSubmit.innerHTML =
-                    '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
-            }).catch(function(err) {
-                console.error(err);
-                confirmMessage.className = 'msg-box error';
-                confirmMessage.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Error: ' +
-                    err.message;
-                confirmMessage.style.display = 'block';
-                isSubmitting = false;
-                confirmSubmit.disabled = false;
-                confirmSubmit.innerHTML =
-                    '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
-            });
+            } else {
+                // ─── SAVING WITHDRAWAL ──────────────────────────────
+                var savingWithdrawData = {
+                    userId: userId,
+                    amount: selectedAmount,
+                    netAmount: netAfterFee,
+                    fee: selectedAmount * 0.10,
+                    status: 'pending',
+                    type: 'saving_withdrawal',
+                    branch: savingBranch,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    network: savedInfo.network,
+                    accountName: savedInfo.accountName,
+                    phone: savedInfo.phone || userPhone || '',
+                };
+                if (savedInfo.network === 'bank') {
+                    savingWithdrawData.bankName = savedInfo.bank;
+                    savingWithdrawData.cardNumber = savedInfo.cardNumber;
+                }
+                db.collection('savingsTransactions').add(savingWithdrawData)
+                    .then(function() {
+                        finalAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
+                        finalNetwork.textContent = savedInfo.network.toUpperCase();
+                        finalEta.textContent = getEstimatedProcessingTime();
+                        goToStep(4);
+                        showToast('✅ Saving withdrawal submitted successfully!', false);
+                        isSubmitting = false;
+                        confirmSubmit.disabled = false;
+                        confirmSubmit.innerHTML =
+                            '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
+                    })
+                    .catch(function(err) {
+                        console.error(err);
+                        confirmMessage.className = 'msg-box error';
+                        confirmMessage.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Error: ' +
+                            err.message;
+                        confirmMessage.style.display = 'block';
+                        isSubmitting = false;
+                        confirmSubmit.disabled = false;
+                        confirmSubmit.innerHTML =
+                            '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
+                    });
+            }
         });
 
-        // ================================================================
-        // STEP 4: DONE
-        // ================================================================
+        // ─── STEP 4: DONE ──────────────────────────────────────
         step4Done.addEventListener('click', function() {
             window.location.href = 'history.html';
         });
 
-        // ================================================================
-        // BACK BUTTON
-        // ================================================================
-        document.getElementById('backBtn')?.addEventListener('click', function() {
+        // ─── BACK BUTTON ──────────────────────────────────────
+        document.querySelector('.back-btn')?.addEventListener('click', function(e) {
+            e.preventDefault();
             if (currentStep === 1) {
                 window.location.href = 'dashboard.html';
             } else if (currentStep === 2) {
@@ -1769,9 +2020,7 @@
             }
         });
 
-        // ================================================================
-        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
-        // ================================================================
+        // ─── AUTH STATE ──────────────────────────────────────
         let authResolved = false;
         let redirectTimeout = null;
 
@@ -1784,6 +2033,10 @@
                 }
                 loadWithdrawalRules();
                 loadSavedInfo();
+                // if saving is selected, update balance
+                if (withdrawalType === 'saving') {
+                    updateSavingBalance();
+                }
                 watchBlockStatus(user.uid);
             } else {
                 if (!authResolved) {
@@ -1798,14 +2051,9 @@
                     window.location.href = 'login.html';
                 }
             }
-        }, function(error) {
-            console.error('Auth state error:', error);
-            window.location.href = 'login.html';
         });
 
-        // ================================================================
-        // BLOCK LISTENER
-        // ================================================================
+        // ─── BLOCK LISTENER ──────────────────────────────────
         var blockUnsub = null;
 
         function watchBlockStatus(userId) {
@@ -1821,10 +2069,8 @@
         }
         window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
-        console.log('✅ withdraw.html · Sajvera Capital · Blue glassmorphism design');
-        console.log('💳 Any amount above 0 is allowed, 10% fee applies');
-        console.log('🔵 Blue gradient buttons and glass cards');
-        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
+        console.log('✅ withdraw.html · Sajvera Capital · Normal + Saving Withdrawal');
+        console.log('💳 Saving withdrawal uses separate balance and pending lock');
     </script>
 
 </body>

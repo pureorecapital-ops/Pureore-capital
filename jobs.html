@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Jobs – Sajvera Capital</title>
 
-    <!-- ============================================================
-         FIREBASE SDKs – Load these in the <head>
-         ============================================================ -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -25,7 +23,7 @@
             align-items: center;
         }
 
-        /* ── FULL SCREEN INTRO OVERLAY ── */
+        /* Intro Overlay */
         #introOverlay {
             position: fixed;
             top: 0;
@@ -104,7 +102,7 @@
             letter-spacing: 0.3px;
         }
 
-        /* ── MAIN CONTENT ── */
+        /* Main Container */
         .container {
             max-width: 480px;
             width: 100%;
@@ -304,7 +302,7 @@
     ════════════════════════════════════════════════ -->
     <script>
         // ================================================================
-        // FIREBASE CONFIG – Your project credentials
+        // FIREBASE CONFIG
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -316,9 +314,6 @@
             measurementId: "G-FQKC29NYE9"
         };
 
-        // ================================================================
-        // INITIALIZE FIREBASE (only once)
-        // ================================================================
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -328,7 +323,7 @@
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ================================================================
-        // AUTH STATE CHECK – Redirect if not logged in
+        // AUTH STATE CHECK
         // ================================================================
         var authResolved = false;
         var redirectTimeout = null;
@@ -340,14 +335,13 @@
                     clearTimeout(redirectTimeout);
                     redirectTimeout = null;
                 }
-                console.log('✅ User logged in:', user.uid, user.email);
-                // (Optional) Firestore user data fetch can be added here.
+                console.log('✅ User logged in:', user.uid);
             } else {
                 if (!authResolved) {
                     if (!redirectTimeout) {
                         redirectTimeout = setTimeout(function() {
                             if (!auth.currentUser) {
-                                console.log('❌ No user found. Redirecting to login...');
+                                console.log('❌ No user. Redirecting to login...');
                                 window.location.href = 'login.html';
                             }
                         }, 2000);
@@ -357,30 +351,13 @@
                 }
             }
         }, function(error) {
-            console.error('Auth state error:', error);
+            console.error('Auth error:', error);
             window.location.href = 'login.html';
         });
 
         // ================================================================
-        // HELPER FUNCTIONS
+        // JOBS DATA & RENDER
         // ================================================================
-        function getCurrentUser() {
-            return auth.currentUser;
-        }
-
-        function logoutUser() {
-            auth.signOut().then(function() {
-                window.location.href = 'login.html';
-            }).catch(function(err) {
-                console.warn('Logout error:', err);
-            });
-        }
-    </script>
-
-    <!-- ════════════════════════════════════════════════
-    JOBS DATA & RENDER LOGIC
-    ════════════════════════════════════════════════ -->
-    <script>
         var jobs = [
             {
                 id: 'platform-assistant',
@@ -416,17 +393,18 @@
         jobs.forEach(function(job) {
             var card = document.createElement('div');
             card.className = 'job-card';
+            // ----- FIX: link to apply-job.html instead of apply.html -----
             card.innerHTML = `
                 <div class="job-icon">${job.icon}</div>
                 <div class="job-title">${job.title}</div>
                 <div class="job-sub">${job.sub}</div>
                 <div class="job-desc">${job.desc}</div>
-                <a href="apply.html?job=${job.id}" class="btn-view">VIEW OPPORTUNITY</a>
+                <a href="apply-job.html?job=${job.id}" class="btn-view">VIEW OPPORTUNITY</a>
             `;
             container.appendChild(card);
         });
 
-        // ── Intro overlay fade and reveal main content ──
+        // ── Intro overlay fade ──
         var overlay = document.getElementById('introOverlay');
         var main = document.getElementById('mainContent');
         setTimeout(function() {

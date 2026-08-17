@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Apply – Sajvera Capital</title>
 
-    <!-- ============================================================
-         FIREBASE SDKs – Load these in the <head>
-         ============================================================ -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -364,7 +362,7 @@
             }
         }
 
-        /* ── SUCCESS SCREEN ── */
+        /* ── SUCCESS / PREPARED SCREEN ── */
         #successScreen {
             position: fixed;
             top: 0;
@@ -551,7 +549,7 @@
     <!-- Loading Overlay -->
     <div id="loadingOverlay">
         <div class="loader"></div>
-        <div class="text" id="loadingText">Loading...</div>
+        <div class="text" id="loadingText">Preparing your application...</div>
     </div>
 
     <!-- Success Screen -->
@@ -559,11 +557,11 @@
         <div class="check">
             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <h2>APPLICATION SUBMITTED</h2>
+        <h2>APPLICATION PREPARED</h2>
         <div class="job-name" id="successJobTitle"></div>
-        <p>Your application has been successfully submitted. Management will review your application and contact you if necessary.</p>
+        <p>Your application has been prepared in your email application.<br/>Please check the email and press <strong>Send</strong> to complete your application.</p>
         <div class="app-id" id="appIdDisplay">SJ-XXXX</div>
-        <div><span class="status-badge">PENDING REVIEW</span></div>
+        <div><span class="status-badge">EMAIL PENDING</span></div>
         <div class="contact">Management Office: <a href="mailto:Pureorecapital@gmail.com">Pureorecapital@gmail.com</a></div>
         <button class="btn-done" onclick="window.location.href='dashboard.html'">BACK TO DASHBOARD</button>
     </div>
@@ -573,10 +571,10 @@
     ════════════════════════════════════════════════ -->
     <script>
         // ================================================================
-        // FIREBASE CONFIG – Your project credentials
+        // FIREBASE CONFIG
         // ================================================================
         var firebaseConfig = {
-            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
+            apiKey: "AIzaSyALbWDHrhratYCCqWpAu7jZFw6S8kTg2U",
             authDomain: "pureore-capital-zambia.firebaseapp.com",
             projectId: "pureore-capital-zambia",
             storageBucket: "pureore-capital-zambia.appspot.com",
@@ -585,9 +583,6 @@
             measurementId: "G-FQKC29NYE9"
         };
 
-        // ================================================================
-        // INITIALIZE FIREBASE (only once)
-        // ================================================================
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -597,7 +592,7 @@
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ================================================================
-        // AUTH STATE CHECK – Redirect if not logged in
+        // AUTH STATE CHECK
         // ================================================================
         var authResolved = false;
         var redirectTimeout = null;
@@ -609,14 +604,18 @@
                     clearTimeout(redirectTimeout);
                     redirectTimeout = null;
                 }
-                console.log('✅ User logged in:', user.uid, user.email);
-                // (Optional) Firestore user data fetch can be added here.
+                console.log('✅ User logged in:', user.uid);
+                // Pre-fill personal info
+                var nameEl = document.getElementById('fullName');
+                if (nameEl && user.displayName) nameEl.value = user.displayName;
+                var emailEl = document.getElementById('email');
+                if (emailEl && user.email) emailEl.value = user.email;
             } else {
                 if (!authResolved) {
                     if (!redirectTimeout) {
                         redirectTimeout = setTimeout(function() {
                             if (!auth.currentUser) {
-                                console.log('❌ No user found. Redirecting to login...');
+                                console.log('❌ No user. Redirecting to login...');
                                 window.location.href = 'login.html';
                             }
                         }, 2000);
@@ -626,36 +625,17 @@
                 }
             }
         }, function(error) {
-            console.error('Auth state error:', error);
+            console.error('Auth error:', error);
             window.location.href = 'login.html';
         });
 
-        // ================================================================
-        // HELPER: get current user (for pre‑fill)
-        // ================================================================
         function getCurrentUser() {
             return auth.currentUser;
         }
 
         // ================================================================
-        // LOGOUT FUNCTION
+        // JOB DATA (same as before, kept for context)
         // ================================================================
-        function logoutUser() {
-            auth.signOut().then(function() {
-                window.location.href = 'login.html';
-            }).catch(function(err) {
-                console.warn('Logout error:', err);
-            });
-        }
-    </script>
-
-    <!-- ════════════════════════════════════════════════
-    MAIN APPLICATION LOGIC
-    ════════════════════════════════════════════════ -->
-    <script>
-        // ──────────────────────────────────────────────────────────────
-        // 1. GET & VALIDATE JOB
-        // ──────────────────────────────────────────────────────────────
         var urlParams = new URLSearchParams(window.location.search);
         var jobId = urlParams.get('job');
 
@@ -667,12 +647,11 @@
         ];
 
         if (!ALLOWED_JOBS.includes(jobId)) {
-            // Show error and stop
             document.getElementById('appContainer').innerHTML = `
                 <div style="text-align:center; padding:40px 20px;">
                     <div style="font-size:2rem; margin-bottom:12px;">🚫</div>
                     <h2 style="font-size:1.4rem; color:#FFFFFF;">Opportunity not found.</h2>
-                    <p style="color:rgba(255,255,255,0.20); margin:12px 0 20px;">The position you are looking for does not exist or has been removed.</p>
+                    <p style="color:rgba(255,255,255,0.20); margin:12px 0 20px;">The position you are looking for does not exist.</p>
                     <a href="jobs.html" style="display:inline-block; padding:12px 32px; background:linear-gradient(135deg,#2563EB,#60A5FA); border-radius:14px; color:#FFFFFF; text-decoration:none; font-weight:600;">BACK TO JOBS</a>
                 </div>
             `;
@@ -682,9 +661,6 @@
             throw new Error('Invalid job ID');
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // 2. JOB DEFINITIONS
-        // ──────────────────────────────────────────────────────────────
         var JOB_DATA = {
             'platform-assistant': {
                 title: 'Platform Assistant',
@@ -702,12 +678,7 @@
                 ],
                 questionTypes: ['textarea', 'textarea', 'textarea', 'textarea', 'textarea', 'textarea', 'select', 'select'],
                 selectOptions: [
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
+                    null, null, null, null, null, null,
                     ['Very comfortable', 'Comfortable', 'Somewhat comfortable', 'Not comfortable'],
                     ['Less than 1 hour', '1–2 hours', '2–4 hours', '4+ hours']
                 ],
@@ -743,15 +714,7 @@
                     'textarea'
                 ],
                 selectOptions: [
-                    null,
-                    ['Yes', 'No'],
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
+                    null, ['Yes', 'No'], null, null, null, null, null, null, null
                 ],
                 scenarios: [
                     "Someone asks: 'Is my money guaranteed to increase?' How would you respond?",
@@ -790,18 +753,7 @@
                 ],
                 selectOptions: [
                     ['MTN', 'Airtel', 'Zamtel'],
-                    null,
-                    null,
-                    null,
-                    ['Yes', 'No'],
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    ['Yes', 'No']
+                    null, null, null, ['Yes', 'No'], null, null, null, null, null, null, null, ['Yes', 'No']
                 ],
                 scenarios: [
                     "A customer claims they paid, but the payment cannot be verified. What would you do?",
@@ -840,20 +792,7 @@
                     'textarea', 'textarea', 'textarea', 'textarea', 'textarea', 'textarea'
                 ],
                 selectOptions: [
-                    null,
-                    ['Yes', 'No'],
-                    null,
-                    null,
-                    null,
-                    ['Yes', 'No'],
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
+                    null, ['Yes', 'No'], null, null, null, ['Yes', 'No'], null, null, null, null, null, null, null, null,
                     null
                 ],
                 scenarios: [
@@ -875,13 +814,7 @@
 
         var job = JOB_DATA[jobId];
         if (!job) {
-            // fallback error
-            document.getElementById('appContainer').innerHTML = `
-                <div style="text-align:center; padding:40px 20px;">
-                    <h2 style="color:#FFFFFF;">Invalid job</h2>
-                    <a href="jobs.html" style="display:inline-block; padding:12px 32px; background:linear-gradient(135deg,#2563EB,#60A5FA); border-radius:14px; color:#FFFFFF; text-decoration:none; font-weight:600;">BACK TO JOBS</a>
-                </div>
-            `;
+            document.getElementById('appContainer').innerHTML = `<div style="text-align:center;padding:40px 20px;"><h2>Error</h2><a href="jobs.html">Back</a></div>`;
             throw new Error('Job data missing');
         }
 
@@ -891,28 +824,20 @@
         var appState = {
             jobId: jobId,
             jobTitle: job.title,
-            // Personal
             fullName: '',
             phone: '',
             email: '',
-            // Eligibility (checkboxes)
             eligibility: { age: false, validNumber: false, understand: false },
-            // Job questions (array of answers)
             jobAnswers: [],
-            // Experience
             experience: '',
-            // Availability
             availability: '',
-            // Social media (object per platform)
             social: {},
-            // Scenarios (array of answers)
             scenarios: [],
-            // Agreement
             agreed: false
         };
 
         // ──────────────────────────────────────────────────────────────
-        // 4. STEPS DEFINITION (dynamic based on job)
+        // 4. STEPS DEFINITION
         // ──────────────────────────────────────────────────────────────
         var steps = [
             { id: 'intro', label: 'Intro' },
@@ -922,40 +847,16 @@
             { id: 'experience', label: 'Experience' },
             { id: 'availability', label: 'Availability' }
         ];
-
-        // Add social step if job requires it
-        if (job.hasSocial) {
-            steps.push({ id: 'social', label: 'Social' });
-        }
-
-        // Add scenarios
+        if (job.hasSocial) steps.push({ id: 'social', label: 'Social' });
         steps.push({ id: 'scenarios', label: 'Scenarios' });
-
-        // Add agreement
         steps.push({ id: 'agreement', label: 'Agreement' });
-
-        // Add review
         steps.push({ id: 'review', label: 'Review' });
-
-        // Map step IDs to display names
-        var stepNames = {
-            intro: 'Introduction',
-            personal: 'Personal Information',
-            eligibility: 'Eligibility',
-            'job-questions': 'Job Questions',
-            experience: 'Experience',
-            availability: 'Availability',
-            social: 'Social Media',
-            scenarios: 'Scenarios',
-            agreement: 'Agreement',
-            review: 'Review'
-        };
 
         var totalSteps = steps.length;
         var currentStepIndex = 0;
 
         // ──────────────────────────────────────────────────────────────
-        // 5. DOM REFS
+        // DOM REFS
         // ──────────────────────────────────────────────────────────────
         var stepContainer = document.getElementById('stepContainer');
         var progressFill = document.getElementById('progressFill');
@@ -970,7 +871,7 @@
         var successJobTitle = document.getElementById('successJobTitle');
 
         // ──────────────────────────────────────────────────────────────
-        // 6. RENDER ENGINE
+        // RENDER ENGINE (unchanged structure, but final step uses email)
         // ──────────────────────────────────────────────────────────────
         function renderStep() {
             var step = steps[currentStepIndex];
@@ -1018,19 +919,19 @@
             attachEvents(step.id);
         }
 
-        // ─── Step Renderers ───────────────────────────────────────────
-
+        // ─── Step Renderers (abbreviated – same as before) ──────────
+        // (We keep them for brevity – they are unchanged)
         function renderIntro() {
             return `
                 <div class="step-card active">
                     <h3>${job.title}</h3>
                     <div class="sub">${job.sub}</div>
-                    <p style="color:rgba(255,255,255,0.20); font-size:0.9rem; margin-bottom:16px; line-height:1.6;">
+                    <p style="color:rgba(255,255,255,0.20);font-size:0.9rem;margin-bottom:16px;line-height:1.6;">
                         Please review the position details and click Continue to start your application.
                     </p>
-                    <div style="background:rgba(255,255,255,0.02); border-radius:14px; padding:14px; margin-bottom:16px;">
-                        <div style="font-weight:600; color:#60A5FA; margin-bottom:4px;">Purpose</div>
-                        <p style="color:rgba(255,255,255,0.20); font-size:0.85rem; line-height:1.5;">${job.sub}</p>
+                    <div style="background:rgba(255,255,255,0.02);border-radius:14px;padding:14px;margin-bottom:16px;">
+                        <div style="font-weight:600;color:#60A5FA;margin-bottom:4px;">Purpose</div>
+                        <p style="color:rgba(255,255,255,0.20);font-size:0.85rem;line-height:1.5;">${job.sub}</p>
                     </div>
                     <div class="btn-row">
                         <button class="btn-back-step" onclick="window.location.href='jobs.html'">← Back</button>
@@ -1041,21 +942,13 @@
         }
 
         function renderPersonal() {
-            // Try to pre‑fill from Firebase
-            var name = '',
-                email = '',
-                phone = '';
             var user = getCurrentUser();
-            if (user) {
-                name = user.displayName || '';
-                email = user.email || '';
-                phone = user.phoneNumber || '';
-            }
-            // Store in state
+            var name = user ? user.displayName || '' : '';
+            var email = user ? user.email || '' : '';
+            var phone = user ? user.phoneNumber || '' : '';
             appState.fullName = name;
             appState.email = email;
             appState.phone = phone;
-
             return `
                 <div class="step-card active">
                     <h3>Personal Information</h3>
@@ -1192,7 +1085,6 @@
                     </div>
                 `;
             }
-            // Social fields differ per job, but we'll use a generic set for Promoter and Community Manager
             var platforms = ['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Other'];
             var html = `
                 <div class="step-card active">
@@ -1201,8 +1093,7 @@
             `;
             platforms.forEach(function(plat) {
                 var pdata = appState.social[plat] || {};
-                html += `<div style="font-weight:600; color:rgba(255,255,255,0.15); margin:12px 0 4px;">${plat}</div>`;
-                // For each platform, ask relevant fields
+                html += `<div style="font-weight:600;color:rgba(255,255,255,0.15);margin:12px 0 4px;">${plat}</div>`;
                 var fields = [];
                 if (plat === 'Facebook') fields = ['Profile/Page name', 'Public link', 'Approximate followers/friends',
                     'Activity level'
@@ -1217,7 +1108,6 @@
                     'Total members', 'Are you an admin?', 'How long managed?'
                 ];
                 else if (plat === 'Other') fields = ['Platform name', 'Public link', 'Approximate audience'];
-
                 fields.forEach(function(f) {
                     var fieldId = 'social_' + plat.toLowerCase() + '_' + f.replace(/[^a-zA-Z0-9]/g, '_');
                     var val = pdata[f] || '';
@@ -1266,16 +1156,15 @@
         }
 
         function renderAgreement() {
-            // Show rules dynamically
             var rules = job.rules || [];
             var rulesHtml = rules.map(function(r) { return '<li style="margin-bottom:4px;">' + r + '</li>'; }).join('');
             return `
                 <div class="step-card active">
                     <h3>Rules & Agreement</h3>
                     <div class="sub">Please read and accept the terms.</div>
-                    <div style="background:rgba(255,255,255,0.02); border-radius:14px; padding:14px; margin-bottom:16px; font-size:0.85rem; color:rgba(255,255,255,0.15); line-height:1.6;">
-                        <p style="font-weight:600; color:#60A5FA; margin-bottom:6px;">Position Rules</p>
-                        <ul style="list-style:none; padding-left:0;">${rulesHtml}</ul>
+                    <div style="background:rgba(255,255,255,0.02);border-radius:14px;padding:14px;margin-bottom:16px;font-size:0.85rem;color:rgba(255,255,255,0.15);line-height:1.6;">
+                        <p style="font-weight:600;color:#60A5FA;margin-bottom:6px;">Position Rules</p>
+                        <ul style="list-style:none;padding-left:0;">${rulesHtml}</ul>
                         <p style="margin-top:10px;"><strong>Note:</strong> Submitting this application does not guarantee selection.</p>
                     </div>
                     <div class="form-group checkbox-group">
@@ -1290,28 +1179,29 @@
             `;
         }
 
+        // ─── REVIEW (final step – now with email button) ────────────
+
         function renderReview() {
-            // Build review content from state
-            var html = `
+            return `
                 <div class="step-card active">
-                    <h3>Application Review</h3>
-                    <div class="sub">Please check your information before submitting.</div>
+                    <h3>Review & Submit</h3>
+                    <div class="sub">Check your answers, then open your email to send.</div>
                     <div id="reviewContent"></div>
                     <div class="btn-row">
                         <button class="btn-back-step" id="backReview">← Back</button>
-                        <button class="btn-continue" id="submitApplication">Submit Application</button>
+                        <button class="btn-continue" id="openEmailBtn" style="background:linear-gradient(135deg,#2563EB,#7C3AED);">
+                            📧 Open Email & Send
+                        </button>
+                    </div>
+                    <div style="font-size:0.65rem;color:rgba(255,255,255,0.08);text-align:center;margin-top:8px;">
+                        Your application will be prepared in your email app. You must press Send manually.
                     </div>
                 </div>
             `;
-            return html;
         }
 
-        // ─── Review population ─────────────────────────────────────────
-
         function populateReview() {
-            // Gather all data from form inputs into appState first, then display
             gatherStateFromDOM();
-
             var html = `
                 <div class="review-item"><span class="label">Position</span><span class="value">${appState.jobTitle}</span></div>
                 <div class="review-item"><span class="label">Full Name</span><span class="value">${appState.fullName}</span></div>
@@ -1321,36 +1211,33 @@
                 <div class="review-item"><span class="label">Availability</span><span class="value">${appState.availability || '—'}</span></div>
             `;
 
-            // Job questions
             var questions = job.questions || [];
             if (questions.length) {
-                html += `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.02); padding-top:8px;"></div>`;
+                html += `<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.02);padding-top:8px;"></div>`;
                 questions.forEach(function(q, idx) {
                     var ans = appState.jobAnswers[idx] || '';
                     html += `<div class="review-item"><span class="label" style="font-size:0.7rem;">${q}</span><span class="value" style="font-size:0.8rem;">${ans}</span></div>`;
                 });
             }
 
-            // Scenarios
             var scenarios = job.scenarios || [];
             if (scenarios.length) {
-                html += `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.02); padding-top:8px;"></div>`;
+                html += `<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.02);padding-top:8px;"></div>`;
                 scenarios.forEach(function(q, idx) {
                     var ans = appState.scenarios[idx] || '';
                     html += `<div class="review-item"><span class="label" style="font-size:0.7rem;">${q}</span><span class="value" style="font-size:0.8rem;">${ans}</span></div>`;
                 });
             }
 
-            // Social media if any
             if (job.hasSocial) {
                 var platforms = Object.keys(appState.social);
                 if (platforms.length) {
-                    html += `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.02); padding-top:8px;"></div>`;
+                    html += `<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.02);padding-top:8px;"></div>`;
                     platforms.forEach(function(plat) {
                         var data = appState.social[plat] || {};
                         var hasData = Object.values(data).some(function(v) { return v && v.trim() !== ''; });
                         if (hasData) {
-                            html += `<div style="font-weight:600; color:rgba(255,255,255,0.15); font-size:0.75rem; margin-top:4px;">${plat}</div>`;
+                            html += `<div style="font-weight:600;color:rgba(255,255,255,0.15);font-size:0.75rem;margin-top:4px;">${plat}</div>`;
                             Object.keys(data).forEach(function(f) {
                                 if (data[f] && data[f].trim() !== '') {
                                     html += `<div class="review-item"><span class="label">${f}</span><span class="value">${data[f]}</span></div>`;
@@ -1361,24 +1248,20 @@
                 }
             }
 
-            // Eligibility
             var eligHtml = [];
             if (appState.eligibility.age) eligHtml.push('18+');
             if (appState.eligibility.validNumber) eligHtml.push('Valid mobile/internet');
             if (appState.eligibility.understand) eligHtml.push('Understands no guarantee');
-            html += `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.02); padding-top:8px;"></div>`;
+            html += `<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.02);padding-top:8px;"></div>`;
             html += `<div class="review-item"><span class="label">Eligibility</span><span class="value">${eligHtml.join(' • ') || 'Not confirmed'}</span></div>`;
-
-            // Agreement
             html += `<div class="review-item"><span class="label">Agreement</span><span class="value">${appState.agreed ? '✓ Accepted' : '✗ Not accepted'}</span></div>`;
 
             document.getElementById('reviewContent').innerHTML = html;
         }
 
-        // ─── Helper: gather state from DOM ────────────────────────────
+        // ─── Helper: gather state ─────────────────────────────────────
 
         function gatherStateFromDOM() {
-            // Personal
             var nameEl = document.getElementById('fullName');
             var phoneEl = document.getElementById('phone');
             var emailEl = document.getElementById('email');
@@ -1386,7 +1269,6 @@
             if (phoneEl) appState.phone = phoneEl.value;
             if (emailEl) appState.email = emailEl.value;
 
-            // Eligibility
             var e1 = document.getElementById('eligibility1');
             var e2 = document.getElementById('eligibility2');
             var e3 = document.getElementById('eligibility3');
@@ -1394,28 +1276,17 @@
             if (e2) appState.eligibility.validNumber = e2.checked;
             if (e3) appState.eligibility.understand = e3.checked;
 
-            // Job questions
             var questions = job.questions || [];
             questions.forEach(function(q, idx) {
                 var el = document.getElementById('jobq_' + idx);
-                if (el) {
-                    if (el.tagName === 'SELECT') {
-                        appState.jobAnswers[idx] = el.value;
-                    } else {
-                        appState.jobAnswers[idx] = el.value;
-                    }
-                }
+                if (el) appState.jobAnswers[idx] = el.value;
             });
 
-            // Experience
             var expEl = document.getElementById('experience');
             if (expEl) appState.experience = expEl.value;
-
-            // Availability
             var availEl = document.getElementById('availability');
             if (availEl) appState.availability = availEl.value;
 
-            // Social
             if (job.hasSocial) {
                 var platforms = ['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Other'];
                 platforms.forEach(function(plat) {
@@ -1445,14 +1316,12 @@
                 });
             }
 
-            // Scenarios
             var scenarios = job.scenarios || [];
             scenarios.forEach(function(q, idx) {
                 var el = document.getElementById('scenario_' + idx);
                 if (el) appState.scenarios[idx] = el.value;
             });
 
-            // Agreement
             var agreeEl = document.getElementById('agreementCheck');
             if (agreeEl) appState.agreed = agreeEl.checked;
         }
@@ -1460,7 +1329,7 @@
         // ─── Event attachment ──────────────────────────────────────────
 
         function attachEvents(stepId) {
-            // Back buttons
+            // Back button logic
             var backMap = {
                 'personal': 'intro',
                 'eligibility': 'personal',
@@ -1472,7 +1341,20 @@
                 'agreement': 'scenarios',
                 'review': 'agreement'
             };
+            if (backMap[stepId]) {
+                var backBtn = document.getElementById('back' + stepId.charAt(0).toUpperCase() + stepId.slice(1));
+                if (backBtn) {
+                    backBtn.addEventListener('click', function() {
+                        gatherStateFromDOM();
+                        if (currentStepIndex > 0) {
+                            currentStepIndex--;
+                            renderStep();
+                        }
+                    });
+                }
+            }
 
+            // Continue / Next buttons
             var continueMap = {
                 'intro': 'continueIntro',
                 'personal': 'continuePersonal',
@@ -1482,47 +1364,35 @@
                 'availability': 'continueAvailability',
                 'social': 'continueSocial',
                 'scenarios': 'continueScenarios',
-                'agreement': 'continueAgreement',
-                'review': 'submitApplication'
+                'agreement': 'continueAgreement'
             };
-
-            // Back button for current step
-            if (backMap[stepId]) {
-                var backBtn = document.getElementById('back' + stepId.charAt(0).toUpperCase() + stepId.slice(1));
-                if (backBtn) {
-                    backBtn.addEventListener('click', function() {
-                        gatherStateFromDOM(); // save current answers
-                        if (currentStepIndex > 0) {
-                            currentStepIndex--;
-                            renderStep();
-                        }
-                    });
-                }
-            }
-
-            // Continue button
-            var continueBtnId = continueMap[stepId];
-            if (continueBtnId) {
-                var btn = document.getElementById(continueBtnId);
+            for (var key in continueMap) {
+                var btn = document.getElementById(continueMap[key]);
                 if (btn) {
-                    btn.addEventListener('click', function() {
-                        gatherStateFromDOM();
-                        if (!validateStep(stepId)) return;
-                        if (stepId === 'review') {
-                            submitApplication();
-                            return;
-                        }
-                        if (currentStepIndex < steps.length - 1) {
-                            currentStepIndex++;
-                            renderStep();
-                        }
-                    });
+                    btn.addEventListener('click', function(k) {
+                        return function() {
+                            gatherStateFromDOM();
+                            if (!validateStep(k)) return;
+                            if (currentStepIndex < steps.length - 1) {
+                                currentStepIndex++;
+                                renderStep();
+                            }
+                        };
+                    }(key));
                 }
             }
 
-            // For review, populate content
+            // Special: Review step – the email button
             if (stepId === 'review') {
                 populateReview();
+                var emailBtn = document.getElementById('openEmailBtn');
+                if (emailBtn) {
+                    emailBtn.addEventListener('click', function() {
+                        gatherStateFromDOM();
+                        if (!validateStep('review')) return;
+                        openEmailWithApplication();
+                    });
+                }
             }
 
             // Global back button
@@ -1580,8 +1450,6 @@
                         return false;
                     }
                     return true;
-                case 'social':
-                    return true;
                 case 'scenarios':
                     var scenarios = job.scenarios || [];
                     var emptyScen = false;
@@ -1601,16 +1469,19 @@
                         return false;
                     }
                     return true;
+                case 'review':
+                    // All good if we got here
+                    return true;
                 default:
                     return true;
             }
         }
 
-        // ─── Submit ─────────────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────────────
+        // NEW: Open Email with Application
+        // ──────────────────────────────────────────────────────────────
 
-        function submitApplication() {
-            gatherStateFromDOM();
-
+        function openEmailWithApplication() {
             var user = getCurrentUser();
             if (!user) {
                 alert('You must be logged in.');
@@ -1618,11 +1489,89 @@
                 return;
             }
 
-            // Build application object
+            // Build email content
+            var subject = 'Sajvera Capital Job Application — ' + appState.jobTitle;
+            var body = '';
+            body += 'SAJVERA CAPITAL\n';
+            body += 'JOB APPLICATION\n';
+            body += '--------------------------------\n\n';
+            body += 'Job Applied For:\n' + appState.jobTitle + '\n\n';
+            body += 'Full Name:\n' + appState.fullName + '\n\n';
+            body += 'Email:\n' + appState.email + '\n\n';
+            body += 'Phone:\n' + appState.phone + '\n\n';
+            body += '--------------------------------\n';
+            body += 'APPLICATION RESPONSES\n';
+            body += '--------------------------------\n\n';
+
+            var questions = job.questions || [];
+            questions.forEach(function(q, idx) {
+                var ans = appState.jobAnswers[idx] || '';
+                body += q + '\n';
+                body += 'Answer:\n' + ans + '\n\n';
+            });
+
+            body += '--------------------------------\n';
+            body += 'EXPERIENCE\n';
+            body += '--------------------------------\n\n';
+            body += appState.experience || '—' + '\n\n';
+
+            body += '--------------------------------\n';
+            body += 'AVAILABILITY\n';
+            body += '--------------------------------\n\n';
+            body += appState.availability || '—' + '\n\n';
+
+            if (job.hasSocial) {
+                body += '--------------------------------\n';
+                body += 'SOCIAL MEDIA\n';
+                body += '--------------------------------\n\n';
+                var platforms = Object.keys(appState.social);
+                platforms.forEach(function(plat) {
+                    var data = appState.social[plat] || {};
+                    var has = Object.values(data).some(function(v) { return v && v.trim() !== ''; });
+                    if (has) {
+                        body += plat + '\n';
+                        Object.keys(data).forEach(function(f) {
+                            if (data[f] && data[f].trim() !== '') {
+                                body += '  ' + f + ': ' + data[f] + '\n';
+                            }
+                        });
+                        body += '\n';
+                    }
+                });
+            }
+
+            var scenarios = job.scenarios || [];
+            if (scenarios.length) {
+                body += '--------------------------------\n';
+                body += 'SCENARIO RESPONSES\n';
+                body += '--------------------------------\n\n';
+                scenarios.forEach(function(q, idx) {
+                    var ans = appState.scenarios[idx] || '';
+                    body += q + '\n';
+                    body += 'Answer:\n' + ans + '\n\n';
+                });
+            }
+
+            body += '--------------------------------\n';
+            body += 'APPLICATION DATE\n';
+            body += '--------------------------------\n\n';
+            body += new Date().toLocaleString('en-US', { timeZone: 'Africa/Lusaka' }) + '\n\n';
+            body += '--------------------------------\n';
+            body += 'This application was prepared from Sajvera Capital website.\n';
+            body += 'Please review and send to complete the application.\n';
+
+            // Encode for mailto
+            var mailtoLink = 'mailto:Pureorecapital@gmail.com' +
+                '?subject=' + encodeURIComponent(subject) +
+                '&body=' + encodeURIComponent(body);
+
+            // Save to Firestore first (status: email_pending)
+            showLoading('Preparing your application...');
+
             var appData = {
                 userId: user.uid,
                 jobId: jobId,
-                jobTitle: job.title,
+                jobTitle: appState.jobTitle,
                 fullName: appState.fullName,
                 phone: appState.phone,
                 email: appState.email,
@@ -1633,53 +1582,62 @@
                 socialMedia: appState.social,
                 scenarios: appState.scenarios,
                 agreementAccepted: appState.agreed,
-                status: 'pending',
+                status: 'email_pending',
                 submittedAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
 
-            // Show loading
-            loadingOverlay.classList.add('active');
-            loadingText.textContent = 'Checking your application...';
+            // Check if we already have an application for this user+job to update
+            var query = db.collection('applications')
+                .where('userId', '==', user.uid)
+                .where('jobId', '==', jobId)
+                .limit(1);
 
-            // Simulate stages
-            var stages = [
-                'Checking your application...',
-                'Preparing your application...',
-                'Sending application to management...',
-                'Finalizing...'
-            ];
-            var stageIdx = 0;
-            var interval = setInterval(function() {
-                stageIdx++;
-                if (stageIdx < stages.length) {
-                    loadingText.textContent = stages[stageIdx];
+            query.get().then(function(snapshot) {
+                if (!snapshot.empty) {
+                    // Update existing
+                    var doc = snapshot.docs[0];
+                    return doc.ref.update(appData).then(function() {
+                        return doc.id;
+                    });
+                } else {
+                    // Create new
+                    return db.collection('applications').add(appData).then(function(ref) {
+                        return ref.id;
+                    });
                 }
-            }, 500);
+            }).then(function(docId) {
+                hideLoading();
+                // Show the success screen with prepared message
+                var appId = 'SJ-' + docId.slice(0, 6).toUpperCase();
+                appIdDisplay.textContent = appId;
+                successJobTitle.textContent = appState.jobTitle;
+                successScreen.classList.add('active');
 
-            firebase.firestore().collection('jobApplications').add(appData)
-                .then(function(docRef) {
-                    clearInterval(interval);
-                    loadingText.textContent = 'Application submitted!';
-                    setTimeout(function() {
-                        loadingOverlay.classList.remove('active');
-                        var appId = 'SJ-' + docRef.id.slice(0, 6).toUpperCase();
-                        appIdDisplay.textContent = appId;
-                        successJobTitle.textContent = job.title;
-                        successScreen.classList.add('active');
-                    }, 600);
-                })
-                .catch(function(error) {
-                    clearInterval(interval);
-                    loadingOverlay.classList.remove('active');
-                    alert('Your application could not be submitted. Please check your internet connection and try again.');
-                    console.error('Submit error:', error);
-                });
+                // Open email after a short delay to let the screen show
+                setTimeout(function() {
+                    window.location.href = mailtoLink;
+                }, 800);
+            }).catch(function(error) {
+                hideLoading();
+                alert('There was an error saving your application. Please try again.\n' + error.message);
+                console.error('Firestore error:', error);
+            });
+        }
+
+        // ─── Loading helpers ──────────────────────────────────────────
+
+        function showLoading(text) {
+            loadingText.textContent = text || 'Preparing your application...';
+            loadingOverlay.classList.add('active');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.remove('active');
         }
 
         // ─── Init ──────────────────────────────────────────────────────
 
-        // Handle Android back button via history
         window.addEventListener('popstate', function(e) {
             gatherStateFromDOM();
             if (currentStepIndex > 0) {
@@ -1691,7 +1649,6 @@
         });
         history.pushState({ step: currentStepIndex }, '');
 
-        // Render first step
         renderStep();
     </script>
 </body>
