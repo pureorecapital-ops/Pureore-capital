@@ -1418,7 +1418,8 @@
                         plan.name = plan.planName || plan.name || 'Unnamed Plan';
                         plan.minAmount = plan.investmentPrice || plan.minAmount || 0;
                         plan.days = plan.earningDays || plan.days || 0;
-                        plan.type = plan.planType || plan.type || 'invest';
+                        // Explicitly check for "buy" – everything else is "invest"
+                        plan.type = (plan.planType === 'buy') ? 'buy' : 'invest';
                         plan.dailyReturn = plan.dailyReturn || 0;
                         plan.imageUrl = plan.imageUrl || '';
                         plan.purchasedBy = plan.purchasedBy || [];
@@ -1489,7 +1490,7 @@
         }
 
         // ================================================================
-        // RENDER PLANS – with Invest / Buy distinction
+        // RENDER PLANS – FIXED: 3 rows only, Total includes capital
         // ================================================================
         function renderPlans(plans) {
             var grid = document.getElementById('plansGrid');
@@ -1561,26 +1562,21 @@
                 var dailyReturn = plan.dailyReturn || 0;
                 var days = plan.days || 0;
 
-                // ---- Compute values based on plan type ----
-                var totalIncome, totalCapital, totalCapitalIncome;
-                var incomeLabel, daysLabel, totalLabel, capitalLabel;
+                // ---- Compute values ----
+                var totalIncome, incomeLabel, daysLabel, totalLabel;
 
-                if (planType === 'invest') {
-                    totalIncome = dailyReturn * days;
-                    totalCapital = minAmount;
-                    totalCapitalIncome = totalCapital + totalIncome;
-                    incomeLabel = '📈 Daily Income';
-                    daysLabel = '📅 Cycle Days';
-                    totalLabel = '💰 Total Income';
-                    capitalLabel = '💵 Capital + Income';
-                } else { // buy
-                    totalIncome = dailyReturn; // profit (not multiplied by days)
-                    totalCapital = minAmount;
-                    totalCapitalIncome = totalCapital + totalIncome;
+                if (planType === 'buy') {
+                    // BUY PLAN: Total at Maturity = capital + profit
+                    totalIncome = minAmount + dailyReturn; // capital + profit
                     incomeLabel = '📈 Profit';
                     daysLabel = '📅 Duration';
                     totalLabel = '💰 Total at Maturity';
-                    capitalLabel = '💵 Total Amount';
+                } else {
+                    // INVEST PLAN: Total Income = capital + (daily × days)
+                    totalIncome = minAmount + (dailyReturn * days); // capital + all daily income
+                    incomeLabel = '📈 Daily Income';
+                    daysLabel = '📅 Cycle Days';
+                    totalLabel = '💰 Total Income';
                 }
 
                 var releaseDateStr = plan.releaseDateObj ? formatDate(plan.releaseDateObj) : 'N/A';
@@ -1609,15 +1605,13 @@
                     ' <span class="plan-price">' + minAmount.toFixed(2) +
                     ' <span class="currency">' + currencySym + '</span></span></div>';
 
-                // Dynamic rows
+                // ---- 3 rows only ----
                 html += '<div class="detail-row"><span class="label">' + incomeLabel + '</span><span class="value green">' +
                     dailyReturn.toFixed(2) + ' ' + currencySym + '</span></div>';
                 html += '<div class="detail-row"><span class="label">' + daysLabel + '</span><span class="value blue">' +
                     days + ' Days</span></div>';
                 html += '<div class="detail-row"><span class="label">' + totalLabel + '</span><span class="value gold">' +
                     totalIncome.toFixed(2) + ' ' + currencySym + '</span></div>';
-                html += '<div class="detail-row"><span class="label">' + capitalLabel + '</span><span class="value">' +
-                    totalCapitalIncome.toFixed(2) + ' ' + currencySym + '</span></div>';
 
                 html += '<div class="plan-dates">';
                 html += '<strong>Release:</strong> ' + releaseDateStr + '<br/>';
@@ -1774,7 +1768,7 @@
             modalDuration.textContent = plan.days + ' Days';
             modalExpiry.textContent = plan.expiry || 'Auto';
 
-            // ---- Compute total income based on type ----
+            // ---- Compute total income ----
             var totalIncome;
             if (isInvest) {
                 totalIncome = plan.dailyReturn * plan.days;
@@ -2086,8 +2080,9 @@
             window.location.href = 'login.html';
         });
 
-        console.log('🛒 Marketplace · Sajvera Capital – Invest & Buy plans supported');
-        console.log('✅ Invest: daily income claims | Buy: lump sum at maturity');
+        console.log('🛒 Marketplace · Sajvera Capital – Fixed: Total Income includes Capital');
+        console.log('✅ Invest: Daily Income + Cycle Days + Total Income (capital + earnings)');
+        console.log('✅ Buy: Profit + Duration + Total at Maturity (capital + profit)');
     </script>
 </body>
 </html>

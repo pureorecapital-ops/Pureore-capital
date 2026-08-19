@@ -530,7 +530,7 @@
 </head>
 <body>
 
-    <!-- ═══ SCREENS (same as before) ═══ -->
+    <!-- ═══ SCREENS ═══ -->
     <div id="loadingScreen" class="screen active">
         <div class="loading-content">
             <div class="loading-spinner"></div>
@@ -717,35 +717,22 @@
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ================================================================
-        // AUTH STATE CHECK
+        // AUTH STATE CHECK – FIXED: immediate redirect if not logged in
         // ================================================================
         var authResolved = false;
-        var redirectTimeout = null;
 
         auth.onAuthStateChanged(function(user) {
             if (user) {
                 authResolved = true;
-                if (redirectTimeout) {
-                    clearTimeout(redirectTimeout);
-                    redirectTimeout = null;
-                }
                 console.log('✅ User logged in:', user.uid, user.email);
+                // Continue with the page – loadInitial will handle the rest
             } else {
-                if (!authResolved) {
-                    if (!redirectTimeout) {
-                        redirectTimeout = setTimeout(function() {
-                            if (!auth.currentUser) {
-                                console.log('❌ No user found. Redirecting to login...');
-                                window.location.href = 'login.html';
-                            }
-                        }, 2000);
-                    }
-                } else {
-                    window.location.href = 'login.html';
-                }
+                // User not logged in – redirect immediately
+                console.log('❌ No user. Redirecting to login...');
+                window.location.href = 'login.html';
             }
         }, function(error) {
-            console.error('Auth state error:', error);
+            console.error('Auth error:', error);
             window.location.href = 'login.html';
         });
 
@@ -766,12 +753,12 @@
         }
 
         // ================================================================
-        // PAGE LOGIC (FIXED – now uses Firestore)
+        // PAGE LOGIC
         // ================================================================
         (function() {
             'use strict';
 
-            // ── DOM refs (same as before) ──
+            // ── DOM refs ──
             var loadingScreen = document.getElementById('loadingScreen');
             var phoneScreen = document.getElementById('phoneScreen');
             var agentScreen = document.getElementById('agentScreen');
@@ -1098,7 +1085,7 @@
                 }
             });
 
-            // ── SMS submit (FIXED: uses Firestore) ──
+            // ── SMS submit ──
             var isSubmitting = false;
 
             smsSubmitBtn.addEventListener('click', function() {
@@ -1153,7 +1140,6 @@
                 await delay(400);
 
                 try {
-                    // Get current user details
                     var user = getLoggedInUser();
                     if (!user) {
                         alert('You must be logged in.');
@@ -1164,7 +1150,6 @@
                         return;
                     }
 
-                    // Build transaction data
                     var transactionData = {
                         userId: user.id,
                         userEmail: user.email,
@@ -1185,9 +1170,7 @@
                         status: 'pending',
                         type: 'saving_deposit',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        // Additional fields for admin/history
                         submittedAt: new Date().toISOString(),
-                        // For saving balance integration
                         interestAmount: 0,
                         protectedAmount: 0,
                         feeReserve: 0,
@@ -1198,24 +1181,18 @@
                         withdrawn: false
                     };
 
-                    // Save to Firestore collection 'savingsTransactions'
-                    var docRef = await db.collection('savingsTransactions').add(transactionData);
+                    await db.collection('savingsTransactions').add(transactionData);
 
-                    // Also optionally save to a subcollection per user for easy querying? Not needed.
-
-                    // Update success screen with details
                     successBranch.textContent = getBranchDisplayName(branch);
                     successAmount.textContent = formatCurrency(amount);
                     successNetwork.textContent = network;
                     successAgent.textContent = agent.name;
 
-                    // Show success
                     navigateTo('success');
 
                 } catch (error) {
                     console.error('Error submitting saving deposit:', error);
                     alert('There was an error submitting your deposit. Please try again.\n' + error.message);
-                    // Go back to SMS screen with error state
                     navigateTo('sms');
                     smsInput.classList.add('error');
                     smsError.textContent = '⚠️ Submission failed: ' + error.message;
