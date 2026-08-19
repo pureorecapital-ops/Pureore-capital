@@ -3349,7 +3349,7 @@
         document.getElementById('refreshInvestmentsBtn').onclick = loadInvestments;
 
         // ================================================================
-        // MARKETPLACE – FIXED: ONE PLAN = ONE CARD
+        // MARKETPLACE – FIXED: Removed Total Payout from form
         // ================================================================
         let allPlans = [];
 
@@ -3364,13 +3364,11 @@
                 snap.forEach(d => {
                     const data = d.data();
                     data.id = d.id;
-                    // Ensure each document is only added once
                     if (!seenIds.has(d.id)) {
                         seenIds.add(d.id);
                         allPlans.push(data);
                     }
                 });
-                // Sort by createdAt descending
                 allPlans.sort((a, b) => {
                     const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
                     const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
@@ -3456,6 +3454,7 @@
             showPlanForm('Create Marketplace Plan', null);
         }
 
+        // ─── UPDATED showPlanForm: removed Total Payout ───
         function showPlanForm(title, planData) {
             const isEdit = !!planData;
             const p = planData || {};
@@ -3486,20 +3485,15 @@
                         <div class="form-group"><label>Daily Return (ZMW) *</label><input class="form-control" id="mpDailyReturn" type="number" step="0.01" value="${p.dailyReturn || ''}" placeholder="10" /></div>
                         <div class="form-group"><label>Earning Days *</label><input class="form-control" id="mpEarningDays" type="number" step="1" value="${p.earningDays || ''}" placeholder="10" /></div>
                     </div>
-                    <div class="calc-box">
-                        <div class="calc-item"><span class="calc-label">Total Profit</span><span class="calc-value" id="mpCalcProfit">0.00 ZMW</span></div>
-                        <div class="calc-item"><span class="calc-label">Total Payout</span><span class="calc-value" id="mpCalcPayout">0.00 ZMW</span></div>
+                    <div class="calc-box" style="margin-top:8px;">
+                        <div class="calc-item"><span class="calc-label">Total Income</span><span class="calc-value" id="mpCalcProfit">0.00 ZMW</span></div>
                     </div>
                 </div>
 
                 <div id="mpBuyFields" style="${isDaily ? 'display:none;' : ''}">
                     <div class="form-row">
-                        <div class="form-group"><label>Total Profit (ZMW) *</label><input class="form-control" id="mpTotalProfit" type="number" step="0.01" value="${p.totalProfit || ''}" placeholder="100" /></div>
-                        <div class="form-group"><label>Total Payout (ZMW) *</label><input class="form-control" id="mpTotalPayout" type="number" step="0.01" value="${p.totalPayout || ''}" placeholder="200" /></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Payout Date *</label><input class="form-control" id="mpPayoutDate" type="date" value="${p.payoutDate || ''}" /></div>
-                        <div class="form-group"><label>Payout Time *</label><input class="form-control" id="mpPayoutTime" type="time" value="${p.payoutTime || ''}" /></div>
+                        <div class="form-group"><label>Profit (ZMW) *</label><input class="form-control" id="mpProfit" type="number" step="0.01" value="${p.totalProfit || ''}" placeholder="100" /></div>
+                        <div class="form-group"><label>Duration (Days) *</label><input class="form-control" id="mpDuration" type="number" step="1" value="${p.earningDays || ''}" placeholder="10" /></div>
                     </div>
                 </div>
 
@@ -3561,26 +3555,20 @@
                 }
             };
 
-            // Calc
+            // Calc for Invest: total income = daily * days
             const dailyReturnInput = document.getElementById('mpDailyReturn');
             const earningDaysInput = document.getElementById('mpEarningDays');
-            const priceInput = document.getElementById('mpPrice');
             const calcProfit = document.getElementById('mpCalcProfit');
-            const calcPayout = document.getElementById('mpCalcPayout');
 
             function updateCalc() {
-                const price = parseFloat(priceInput.value) || 0;
                 const daily = parseFloat(dailyReturnInput.value) || 0;
                 const days = parseInt(earningDaysInput.value) || 0;
                 const profit = daily * days;
-                const payout = price + profit;
                 calcProfit.textContent = formatMoney(profit) + ' ZMW';
-                calcPayout.textContent = formatMoney(payout) + ' ZMW';
             }
 
             dailyReturnInput.oninput = updateCalc;
             earningDaysInput.oninput = updateCalc;
-            priceInput.oninput = updateCalc;
 
             // Set initial values
             if (planData) {
@@ -3589,10 +3577,8 @@
                 document.getElementById('mpPrice').value = planData.investmentPrice || '';
                 document.getElementById('mpDailyReturn').value = planData.dailyReturn || '';
                 document.getElementById('mpEarningDays').value = planData.earningDays || '';
-                document.getElementById('mpTotalProfit').value = planData.totalProfit || '';
-                document.getElementById('mpTotalPayout').value = planData.totalPayout || '';
-                document.getElementById('mpPayoutDate').value = planData.payoutDate || '';
-                document.getElementById('mpPayoutTime').value = planData.payoutTime || '';
+                document.getElementById('mpProfit').value = planData.totalProfit || '';
+                document.getElementById('mpDuration').value = planData.earningDays || '';
                 document.getElementById('mpReleaseDate').value = planData.releaseDate || '';
                 document.getElementById('mpReleaseTime').value = planData.releaseTime || '';
                 document.getElementById('mpExpiryDate').value = planData.expiryDate || '';
@@ -3613,6 +3599,7 @@
             document.getElementById('mpPublishBtn').onclick = async function() { await savePlan(true); };
         }
 
+        // ─── UPDATED savePlan: removes Total Payout UI, keeps compatibility ───
         async function savePlan(publish) {
             const btn = publish ? document.getElementById('mpPublishBtn') : document.getElementById('mpSaveDraftBtn');
             const originalText = btn.innerHTML;
@@ -3640,16 +3627,13 @@
                     data.dailyReturn = parseFloat(document.getElementById('mpDailyReturn').value) || 0;
                     data.earningDays = parseInt(document.getElementById('mpEarningDays').value) || 0;
                     data.totalProfit = data.dailyReturn * data.earningDays;
-                    data.totalPayout = data.investmentPrice + data.totalProfit;
-                    data.payoutDate = '';
-                    data.payoutTime = '';
+                    data.totalPayout = data.investmentPrice + data.totalProfit; // kept for compatibility
                 } else {
-                    data.dailyReturn = 0;
-                    data.earningDays = 0;
-                    data.totalProfit = parseFloat(document.getElementById('mpTotalProfit').value) || 0;
-                    data.totalPayout = parseFloat(document.getElementById('mpTotalPayout').value) || 0;
-                    data.payoutDate = document.getElementById('mpPayoutDate').value;
-                    data.payoutTime = document.getElementById('mpPayoutTime').value;
+                    // Buy plan
+                    data.dailyReturn = parseFloat(document.getElementById('mpProfit').value) || 0; // profit
+                    data.earningDays = parseInt(document.getElementById('mpDuration').value) || 0; // duration
+                    data.totalProfit = data.dailyReturn; // profit
+                    data.totalPayout = data.investmentPrice + data.dailyReturn; // for compatibility
                 }
 
                 if (!data.planName) { showToast('Please enter a plan name.', 'warning');
@@ -3658,6 +3642,21 @@
                 if (data.investmentPrice <= 0) { showToast('Please enter a valid investment price.', 'warning');
                     btn.disabled = false;
                     btn.innerHTML = originalText; return; }
+                if (planType === 'Daily') {
+                    if (data.dailyReturn <= 0) { showToast('Please enter daily return.', 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText; return; }
+                    if (data.earningDays <= 0) { showToast('Please enter earning days.', 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText; return; }
+                } else {
+                    if (data.dailyReturn <= 0) { showToast('Please enter profit.', 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText; return; }
+                    if (data.earningDays <= 0) { showToast('Please enter duration.', 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText; return; }
+                }
 
                 if (publish) {
                     data.showOnMarketplace = true;
@@ -5287,6 +5286,7 @@
                 console.log('✅ Admin Dashboard initialized with Savings & Jobs tabs.');
                 console.log('✅ Saving Management: deposits + withdrawals (10% fee) working.');
                 console.log('✅ Buy Plan Management: one plan = one card, no duplication.');
+                console.log('✅ Total Payout removed from marketplace plan form.');
             } catch (err) {
                 console.error('Initialization error:', err);
             }
