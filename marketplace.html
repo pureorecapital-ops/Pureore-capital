@@ -1282,6 +1282,9 @@
         var currentFilter = 'all';
         var countdownIntervals = {};
 
+        // ---- Track plans the user has already purchased/invested in ----
+        var userPurchasedPlanIds = new Set();
+
         // ================================================================
         // DOM REFS
         // ================================================================
@@ -1384,6 +1387,41 @@
         }
 
         // ================================================================
+        // LOAD USER'S EXISTING PURCHASES & INVESTMENTS
+        // ================================================================
+        function loadUserPurchases(uid) {
+            userPurchasedPlanIds.clear();
+            if (!uid) return Promise.resolve();
+
+            // Query both collections in parallel
+            var purchasesPromise = db.collection('marketplacePurchases')
+                .where('userId', '==', uid)
+                .where('status', '==', 'active')
+                .get()
+                .then(function(snapshot) {
+                    snapshot.forEach(function(doc) {
+                        var data = doc.data();
+                        if (data.planId) userPurchasedPlanIds.add(data.planId);
+                    });
+                })
+                .catch(function(err) { console.warn('Error loading purchases:', err); });
+
+            var investmentsPromise = db.collection('investments')
+                .where('userId', '==', uid)
+                .where('status', '==', 'active')
+                .get()
+                .then(function(snapshot) {
+                    snapshot.forEach(function(doc) {
+                        var data = doc.data();
+                        if (data.planId) userPurchasedPlanIds.add(data.planId);
+                    });
+                })
+                .catch(function(err) { console.warn('Error loading investments:', err); });
+
+            return Promise.all([purchasesPromise, investmentsPromise]);
+        }
+
+        // ================================================================
         // LOAD PLANS
         // ================================================================
         function loadPlans() {
@@ -1418,11 +1456,10 @@
                         plan.name = plan.planName || plan.name || 'Unnamed Plan';
                         plan.minAmount = plan.investmentPrice || plan.minAmount || 0;
                         plan.days = plan.earningDays || plan.days || 0;
-                        // Explicitly check for "buy" – everything else is "invest"
                         plan.type = (plan.planType === 'buy') ? 'buy' : 'invest';
                         plan.dailyReturn = plan.dailyReturn || 0;
                         plan.imageUrl = plan.imageUrl || '';
-                        plan.purchasedBy = plan.purchasedBy || [];
+                        plan.purchasedBy = plan.purchasedBy || []; // kept for admin, not used for user checks
                         plan.showOnMarketplace = plan.showOnMarketplace !== false;
                         plan.releaseDateObj = parseAdminDate(plan.releaseDate, plan.releaseTime);
                         plan.expiryDateObj = parseAdminDate(plan.expiryDate, plan.expiryTime);
@@ -1439,7 +1476,7 @@
         }
 
         // ================================================================
-        // APPLY FILTERS & COMPUTE STATUS
+        // APPLY FILTERS & COMPUTE STATUS (using userPurchasedPlanIds)
         // ================================================================
         function applyFilters() {
             var searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -1475,9 +1512,9 @@
 
                 if (searchTerm && !plan.name.toLowerCase().includes(searchTerm)) return false;
 
+                // ---- Use the user's actual purchases to determine if purchased ----
                 if (currentUser) {
-                    var purchasedBy = plan.purchasedBy || [];
-                    plan._userPurchased = purchasedBy.includes(currentUser.uid);
+                    plan._userPurchased = userPurchasedPlanIds.has(plan.id);
                 } else {
                     plan._userPurchased = false;
                 }
@@ -1566,13 +1603,11 @@
                 var totalIncome, incomeLabel, daysLabel, totalLabel;
 
                 if (planType === 'buy') {
-                    // Buy: Total at Maturity = profit (dailyReturn)
-                    totalIncome = dailyReturn; // just profit, no capital
+                    totalIncome = dailyReturn; // profit only
                     incomeLabel = '📈 Profit';
                     daysLabel = '📅 Duration';
                     totalLabel = '💰 Total at Maturity';
                 } else {
-                    // Invest: Total Income = dailyReturn * days (no capital)
                     totalIncome = dailyReturn * days;
                     incomeLabel = '📈 Daily Income';
                     daysLabel = '📅 Cycle Days';
@@ -1605,7 +1640,6 @@
                     ' <span class="plan-price">' + minAmount.toFixed(2) +
                     ' <span class="currency">' + currencySym + '</span></span></div>';
 
-                // ---- 3 rows ----
                 html += '<div class="detail-row"><span class="label">' + incomeLabel + '</span><span class="value green">' +
                     dailyReturn.toFixed(2) + ' ' + currencySym + '</span></div>';
                 html += '<div class="detail-row"><span class="label">' + daysLabel + '</span><span class="value blue">' +
@@ -1768,16 +1802,14 @@
             modalDuration.textContent = plan.days + ' Days';
             modalExpiry.textContent = plan.expiry || 'Auto';
 
-            // ---- Compute total income (excludes capital) ----
             var totalIncome;
             if (isInvest) {
                 totalIncome = plan.dailyReturn * plan.days;
             } else {
-                totalIncome = plan.dailyReturn; // profit
+                totalIncome = plan.dailyReturn;
             }
             modalTotalIncome.textContent = totalIncome.toFixed(2) + ' ' + currencySymbol;
 
-            // ---- Set modal text ----
             if (isInvest) {
                 modalActionTitle.textContent = '💎 Confirm Investment';
                 modalActionSub.textContent = 'You will earn daily income from this plan.';
@@ -1812,7 +1844,7 @@
         });
 
         // ================================================================
-        // SECURE PURCHASE – Invest vs Buy
+        // SECURE PURCHASE – No writes to marketplacePlans
         // ================================================================
         modalConfirmBtn.addEventListener('click', function() {
             if (!selectedPlan || modalConfirmBtn.disabled) return;
@@ -1837,6 +1869,7 @@
                     if (!planDoc.exists) throw new Error('Plan no longer exists.');
                     var planData = planDoc.data();
 
+                    // Validate release / expiry dates
                     var now = new Date();
                     var releaseDate = planData.releaseDateObj || null;
                     var expiryDate = planData.expiryDateObj || null;
@@ -1848,27 +1881,8 @@
                         throw new Error('This plan has expired.');
                     }
 
-                    if (planData.availableSlots !== undefined && planData.availableSlots !== null) {
-                        if (planData.availableSlots <= 0) {
-                            throw new Error('This plan is sold out.');
-                        }
-                    }
-
-                    var purchasedBy = planData.purchasedBy || [];
-                    if (purchasedBy.includes(uid)) {
-                        throw new Error('You have already purchased this plan.');
-                    }
-
-                    var purchaseLimit = planData.purchaseLimit || 0;
-                    if (purchaseLimit > 0) {
-                        var userPurchases = 0;
-                        purchasedBy.forEach(function(userId) {
-                            if (userId === uid) userPurchases++;
-                        });
-                        if (userPurchases >= purchaseLimit) {
-                            throw new Error('You have reached the purchase limit for this plan.');
-                        }
-                    }
+                    // No slot or duplicate checks – they are handled via frontend (userPurchasedPlanIds)
+                    // and we don't update the plan document.
 
                     return transaction.get(userRef).then(function(userDoc) {
                         if (!userDoc.exists) throw new Error('User not found.');
@@ -1883,22 +1897,11 @@
                         var newBalance = depositBalance - investAmount;
                         transaction.update(userRef, { depositBalance: newBalance });
 
-                        if (planData.availableSlots !== undefined && planData.availableSlots !== null) {
-                            transaction.update(planRef, {
-                                availableSlots: planData.availableSlots - 1,
-                                purchasedBy: firebase.firestore.FieldValue.arrayUnion(uid)
-                            });
-                        } else {
-                            transaction.update(planRef, {
-                                purchasedBy: firebase.firestore.FieldValue.arrayUnion(uid)
-                            });
-                        }
-
                         var earningDays = planData.earningDays || plan.days || 0;
                         var dailyReturn = planData.dailyReturn || 0;
 
                         if (isInvest) {
-                            // ---- INVEST: create investment document ----
+                            // INVEST: create investment document
                             var investmentRef = db.collection('investments').doc();
                             var startDate = new Date();
                             var purchasedOnWeekend = isWeekend(startDate);
@@ -1928,24 +1931,23 @@
                                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
                         } else {
-                            // ---- BUY: create marketplace purchase document ----
+                            // BUY: create marketplace purchase document
                             var purchaseRef = db.collection('marketplacePurchases').doc();
                             var purchaseDate = new Date();
                             var expiryDate2 = new Date(purchaseDate);
                             expiryDate2.setDate(expiryDate2.getDate() + earningDays);
 
-                            // For Buy plans: totalIncome = profit (dailyReturn)
-                            var totalProfit = dailyReturn; // profit, not multiplied by days
+                            var totalProfit = dailyReturn; // profit only
 
                             transaction.set(purchaseRef, {
                                 userId: uid,
                                 planId: plan.id,
                                 planName: planData.planName || plan.name,
                                 type: 'buy',
-                                amount: investAmount, // capital
-                                dailyIncome: dailyReturn, // profit
-                                days: earningDays, // duration
-                                totalIncome: totalProfit, // total profit
+                                amount: investAmount,
+                                dailyIncome: dailyReturn,
+                                days: earningDays,
+                                totalIncome: totalProfit,
                                 purchasedAt: firebase.firestore.FieldValue.serverTimestamp(),
                                 expiresAt: firebase.firestore.Timestamp.fromDate(expiryDate2),
                                 status: 'active',
@@ -2039,7 +2041,11 @@
                     redirectTimeout = null;
                 }
                 currentUser = user;
-                loadPlans();
+
+                // Load user's existing purchases first, then load plans
+                loadUserPurchases(user.uid).then(function() {
+                    loadPlans();
+                });
 
                 db.collection('users').doc(user.uid).onSnapshot(function(doc) {
                     if (doc.exists && doc.data().isBlocked === true) {
@@ -2080,9 +2086,8 @@
             window.location.href = 'login.html';
         });
 
-        console.log('🛒 Marketplace · Sajvera Capital – Total Income = Daily Income × Days (no capital)');
-        console.log('✅ Invest: Daily Income + Cycle Days + Total Income (earnings only)');
-        console.log('✅ Buy: Profit + Duration + Total at Maturity (profit only)');
+        console.log('🛒 Marketplace · Sajvera Capital – Fixed: no writes to marketplacePlans');
+        console.log('✅ Users only write to users, marketplacePurchases, investments, transactions');
     </script>
 </body>
 </html>
