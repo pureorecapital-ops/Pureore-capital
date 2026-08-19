@@ -1085,7 +1085,7 @@
 
     <script>
         // ================================================================
-        // FIREBASE CONFIG
+        // FIREBASE CONFIG – Sajvera Capital (Pureore Capital)
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -1663,14 +1663,13 @@
                 });
             });
 
-            // Attach events for Buy claims
+            // Attach events for Buy claims – now using the NEW robust function
             document.querySelectorAll('.claim-btn.buy-claim.ready').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     var planId = this.dataset.id;
-                    var finalAmount = parseFloat(this.dataset.final);
                     this.disabled = true;
-                    claimBuyPlan(planId, finalAmount, this);
+                    claimBuyPlan(planId, this);
                 });
             });
 
@@ -1866,119 +1865,156 @@
         }
 
         // ================================================================
-        // CLAIM BUY PLAN (Full Amount) – WITH DEBUG LOGGING
+        // NEW BUY CLAIM – COMPLETE REIMPLEMENTATION
         // ================================================================
-        async function claimBuyPlan(planId, finalAmount, btnElement) {
-            console.log("=== CLAIM BUY PLAN START ===");
-            console.log("Plan ID:", planId);
-            console.log("Final Amount:", finalAmount);
-            console.log("Authenticated UID:", firebase.auth().currentUser?.uid);
-
-            var user = auth.currentUser;
+        /**
+         * claimBuyPlan – atomic Firestore transaction to claim a matured Buy plan.
+         * Uses the ACTUAL purchase document ID, verifies ownership, expiry, and status.
+         * Final amount is computed from the Firestore document (amount + totalIncome).
+         * Detailed debug logging to console.
+         */
+        async function claimBuyPlan(purchaseId, btnElement) {
+            const user = auth.currentUser;
             if (!user) {
                 showToast('Please log in.', true);
                 if (btnElement) btnElement.disabled = false;
-                console.log("Claim aborted: No user");
+                console.log("🔴 CLAIM BUY: No authenticated user.");
                 return;
             }
 
+            const uid = user.uid;
+            console.log("=== 🚀 BUY CLAIM START ===");
+            console.log("User UID:", uid);
+            console.log("Purchase ID:", purchaseId);
+
+            // 1. Initial check outside transaction (fast fail)
             try {
-                // 1. Initial read (outside transaction)
-                console.log("DEBUG: Reading marketplacePurchases doc", planId);
-                var docSnap = await db.collection('marketplacePurchases').doc(planId).get();
+                const docSnap = await db.collection('marketplacePurchases').doc(purchaseId).get();
                 if (!docSnap.exists) {
                     showToast('Plan not found.', true);
                     if (btnElement) btnElement.disabled = false;
-                    console.log("Claim aborted: Document not found");
+                    console.log("🔴 BUY CLAIM: Document does not exist.");
                     return;
                 }
-                var data = docSnap.data();
-                console.log("DEBUG: Purchase data from initial read:", data);
-                console.log("DEBUG: Purchase userId:", data.userId);
-                console.log("DEBUG: Current user UID:", user.uid);
-                console.log("DEBUG: Ownership match?", data.userId === user.uid);
+                const data = docSnap.data();
 
+                // Ownership
+                if (data.userId !== uid) {
+                    showToast('Unauthorized: this plan does not belong to you.', true);
+                    if (btnElement) btnElement.disabled = false;
+                    console.log("🔴 BUY CLAIM: Ownership mismatch. Purchase userId:", data.userId, "| Current uid:", uid);
+                    return;
+                }
+
+                // Already claimed
                 if (data.status === 'claimed') {
                     showToast('This plan has already been claimed.', true);
                     if (btnElement) btnElement.disabled = false;
-                    console.log("Claim aborted: Already claimed");
+                    console.log("🔴 BUY CLAIM: Already claimed.");
                     return;
                 }
 
-                var now = new Date();
-                var expiryDate = data.expiresAt ? data.expiresAt.toDate() : null;
-                console.log("DEBUG: Now:", now);
-                console.log("DEBUG: Expiry date:", expiryDate);
+                // Expiry
+                const now = new Date();
+                const expiryDate = data.expiresAt ? data.expiresAt.toDate() : null;
                 if (!expiryDate || now < expiryDate) {
                     showToast('Plan is not yet ready for claim.', true);
                     if (btnElement) btnElement.disabled = false;
-                    console.log("Claim aborted: Not ready (expiry:", expiryDate, "now:", now, ")");
+                    console.log("🔴 BUY CLAIM: Not ready – expiry:", expiryDate, "now:", now);
                     return;
                 }
-                console.log("DEBUG: Claim ready – expiry passed");
 
-                // ---- Begin Transaction ----
-                console.log("DEBUG: Starting Firestore transaction...");
-                await db.runTransaction(async function(transaction) {
-                    // 2. Read purchase inside transaction
-                    console.log("DEBUG (tx): Reading purchaseRef", planId);
-                    var purchaseRef = db.collection('marketplacePurchases').doc(planId);
-                    var purchaseSnap = await transaction.get(purchaseRef);
-                    if (!purchaseSnap.exists) throw new Error('Plan not found');
-                    var purchaseData = purchaseSnap.data();
-                    console.log("DEBUG (tx): Purchase data inside tx:", purchaseData);
-                    if (purchaseData.status === 'claimed') throw new Error('Already claimed');
+                console.log("✅ BUY CLAIM: Initial validation passed. Proceeding to transaction.");
+            } catch (err) {
+                console.error("🔴 BUY CLAIM: Pre-flight check error:", err);
+                showToast('Error checking plan status.', true);
+                if (btnElement) btnElement.disabled = false;
+                return;
+            }
 
-                    // 3. Read user inside transaction
-                    console.log("DEBUG (tx): Reading userRef", user.uid);
-                    var userRef = db.collection('users').doc(user.uid);
-                    var userSnap = await transaction.get(userRef);
-                    if (!userSnap.exists) throw new Error('User not found');
-                    console.log("DEBUG (tx): User data exists");
+            // 2. Firestore transaction
+            try {
+                await db.runTransaction(async (transaction) => {
+                    console.log("🔄 BUY CLAIM: Transaction started.");
 
-                    // 4. Update user
-                    console.log("DEBUG (tx): Updating userRef", user.uid, "with walletBalance +=", finalAmount, "and balance +=", finalAmount);
+                    // Read purchase doc inside transaction
+                    const purchaseRef = db.collection('marketplacePurchases').doc(purchaseId);
+                    const purchaseSnap = await transaction.get(purchaseRef);
+                    if (!purchaseSnap.exists) {
+                        throw new Error('Plan not found in transaction.');
+                    }
+                    const purchaseData = purchaseSnap.data();
+                    console.log("📄 BUY CLAIM: Purchase data inside tx:", purchaseData);
+
+                    // Re-check all validations inside transaction
+                    if (purchaseData.userId !== uid) {
+                        throw new Error('Ownership mismatch in transaction.');
+                    }
+                    if (purchaseData.status === 'claimed') {
+                        throw new Error('Plan already claimed in transaction.');
+                    }
+                    const nowTx = new Date();
+                    const expiryTx = purchaseData.expiresAt ? purchaseData.expiresAt.toDate() : null;
+                    if (!expiryTx || nowTx < expiryTx) {
+                        throw new Error('Plan not matured in transaction.');
+                    }
+
+                    // Compute final amount from document (never trust UI)
+                    const amount = purchaseData.amount || 0;
+                    const totalIncome = purchaseData.totalIncome || 0;
+                    const finalAmount = amount + totalIncome;
+                    console.log("💰 BUY CLAIM: Final amount computed:", finalAmount);
+
+                    // Read user doc
+                    const userRef = db.collection('users').doc(uid);
+                    const userSnap = await transaction.get(userRef);
+                    if (!userSnap.exists) {
+                        throw new Error('User document not found in transaction.');
+                    }
+                    console.log("👤 BUY CLAIM: User doc exists.");
+
+                    // Update user balances
                     transaction.update(userRef, {
                         walletBalance: firebase.firestore.FieldValue.increment(finalAmount),
                         balance: firebase.firestore.FieldValue.increment(finalAmount)
                     });
+                    console.log("📈 BUY CLAIM: User balances updated.");
 
-                    // 5. Update purchase
-                    console.log("DEBUG (tx): Updating purchaseRef", planId, "with status='claimed', claimedAt=now, claimAmount=", finalAmount);
+                    // Update purchase doc
                     transaction.update(purchaseRef, {
                         status: 'claimed',
                         claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
                         claimAmount: finalAmount
                     });
+                    console.log("📝 BUY CLAIM: Purchase doc updated.");
 
-                    // 6. Create transaction record
-                    console.log("DEBUG (tx): Creating transaction doc for user", user.uid, "amount", finalAmount);
-                    var txRef = db.collection('transactions').doc();
+                    // Create transaction record
+                    const txRef = db.collection('transactions').doc();
                     transaction.set(txRef, {
-                        userId: user.uid,
+                        userId: uid,
                         type: 'buy_plan_claim',
                         amount: finalAmount,
-                        description: 'Buy plan claim: ' + purchaseData.planName,
+                        description: 'Buy plan claim: ' + (purchaseData.planName || 'Plan'),
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    console.log("📋 BUY CLAIM: Transaction record created.");
 
-                    console.log("DEBUG (tx): All operations added to transaction – committing...");
+                    console.log("✅ BUY CLAIM: All operations added – committing...");
                 });
 
-                console.log("DEBUG: Transaction committed successfully.");
+                console.log("🎉 BUY CLAIM: Transaction committed successfully.");
                 showToast('✅ ' + formatMoney(finalAmount) + ' claimed successfully!', false);
                 if (btnElement) btnElement.disabled = true;
                 await loadAllPlans();
             } catch (err) {
-                console.error("=== CLAIM FAILED ===");
-                console.error("Code:", err.code);
-                console.error("Message:", err.message);
+                console.error("❌ BUY CLAIM: Transaction failed.");
+                console.error("Error code:", err.code);
+                console.error("Error message:", err.message);
                 console.error("Stack:", err.stack);
-                console.error("Full error:", err);
-                showToast(err.message || 'Claim failed', true);
+                showToast(err.message || 'Claim failed. See console for details.', true);
                 if (btnElement) btnElement.disabled = false;
             }
-            console.log("=== CLAIM BUY PLAN END ===");
+            console.log("=== BUY CLAIM END ===");
         }
 
         // ================================================================
