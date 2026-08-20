@@ -1663,16 +1663,13 @@
                 });
             });
 
-            // Attach events for Buy claims – NOW RUNS DIAGNOSTIC FIRST
+            // Attach events for Buy claims – now calls the real claim directly
             document.querySelectorAll('.claim-btn.buy-claim.ready').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     var planId = this.dataset.id;
-                    // Disable button while diagnosing
                     this.disabled = true;
-                    this.textContent = '🔍 Diagnosing…';
-                    // Run diagnostic, then re‑enable and do not execute real claim.
-                    runDiagnostic(planId, this);
+                    claimBuyPlan(planId, this);
                 });
             });
 
@@ -1861,6 +1858,7 @@
                 }
                 return true;
             } catch (err) {
+                console.error("Invest claim error:", err);
                 showToast(err.message || 'Claim failed', true);
                 if (btnElement) btnElement.disabled = false;
                 return false;
@@ -1868,140 +1866,107 @@
         }
 
         // ================================================================
-        // 🔍 DIAGNOSTIC FUNCTION – tests each Firestore operation separately
+        // CLAIM BUY PLAN – REAL IMPLEMENTATION (no diagnostic)
         // ================================================================
-        async function runDiagnostic(purchaseId, btnElement) {
-            console.log("═══════════════════════════════════════════════");
-            console.log("🔍 DIAGNOSTIC START – Sajvera Capital");
-            console.log("═══════════════════════════════════════════════");
-
-            const user = auth.currentUser;
+        async function claimBuyPlan(purchaseId, btnElement) {
+            console.log("=== BUY CLAIM START ===");
+            console.log("Purchase ID:", purchaseId);
+            var user = auth.currentUser;
             if (!user) {
-                console.error("❌ No authenticated user.");
-                showToast("Please log in.", true);
-                if (btnElement) {
-                    btnElement.disabled = false;
-                    btnElement.textContent = '💎 Claim Full Amount';
-                }
+                showToast('Please log in.', true);
+                if (btnElement) btnElement.disabled = false;
                 return;
             }
-
             const uid = user.uid;
-            console.log("👤 User UID:", uid);
-            console.log("📧 User email:", user.email);
+            console.log("User UID:", uid);
 
-            // Firebase project info
-            const app = firebase.app();
-            const projectId = app.options.projectId;
-            console.log("📦 Firebase Project ID:", projectId);
-            console.log("🏷️ App name:", app.name);
-
-            // 1. Read marketplacePurchases doc
-            console.log("\n📄 READ marketplacePurchases/" + purchaseId);
-            let purchaseData = null;
             try {
+                // Pre-flight check (optional but helpful)
                 const docSnap = await db.collection('marketplacePurchases').doc(purchaseId).get();
-                if (docSnap.exists) {
-                    purchaseData = docSnap.data();
-                    console.log("  ✅ exists: true");
-                    console.log("  userId:", purchaseData.userId);
-                    console.log("  status:", purchaseData.status);
-                    console.log("  type:", purchaseData.type);
-                    console.log("  amount:", purchaseData.amount);
-                    console.log("  totalIncome:", purchaseData.totalIncome);
-                    console.log("  expiresAt:", purchaseData.expiresAt ? purchaseData.expiresAt.toDate() : 'undefined');
-                } else {
-                    console.log("  ❌ Document does NOT exist.");
+                if (!docSnap.exists) {
+                    showToast('Plan not found.', true);
+                    if (btnElement) btnElement.disabled = false;
+                    return;
                 }
-            } catch (err) {
-                console.error("  ❌ Read failed:", err.code, err.message);
-            }
-
-            // 2. Read users doc
-            console.log("\n📄 READ users/" + uid);
-            try {
-                const userSnap = await db.collection('users').doc(uid).get();
-                if (userSnap.exists) {
-                    const data = userSnap.data();
-                    console.log("  ✅ exists: true");
-                    console.log("  walletBalance:", data.walletBalance);
-                    console.log("  balance:", data.balance);
-                    console.log("  depositBalance:", data.depositBalance);
-                    console.log("  activityBalance:", data.activityBalance);
-                    console.log("  role:", data.role);
-                    console.log("  isBlocked:", data.isBlocked);
-                } else {
-                    console.log("  ❌ User document does NOT exist.");
+                const data = docSnap.data();
+                if (data.userId !== uid) {
+                    showToast('Unauthorized: this plan does not belong to you.', true);
+                    if (btnElement) btnElement.disabled = false;
+                    return;
                 }
+                if (data.status === 'claimed') {
+                    showToast('This plan has already been claimed.', true);
+                    if (btnElement) btnElement.disabled = false;
+                    return;
+                }
+                const now = new Date();
+                const expiryDate = data.expiresAt ? data.expiresAt.toDate() : null;
+                if (!expiryDate || now < expiryDate) {
+                    showToast('Plan is not yet ready for claim.', true);
+                    if (btnElement) btnElement.disabled = false;
+                    return;
+                }
+                console.log("Pre-flight OK.");
+
+                // Transaction
+                await db.runTransaction(async function(transaction) {
+                    const purchaseRef = db.collection('marketplacePurchases').doc(purchaseId);
+                    const purchaseSnap = await transaction.get(purchaseRef);
+                    if (!purchaseSnap.exists) throw new Error('Plan not found in transaction');
+                    const purchaseData = purchaseSnap.data();
+                    console.log("Transaction purchase data:", purchaseData);
+
+                    // Re-validate inside transaction
+                    if (purchaseData.userId !== uid) throw new Error('Ownership mismatch');
+                    if (purchaseData.status === 'claimed') throw new Error('Already claimed');
+                    const expiryTx = purchaseData.expiresAt ? purchaseData.expiresAt.toDate() : null;
+                    if (!expiryTx || new Date() < expiryTx) throw new Error('Not matured');
+
+                    const amount = purchaseData.amount || 0;
+                    const totalIncome = purchaseData.totalIncome || 0;
+                    const finalAmount = amount + totalIncome;
+                    console.log("Final amount to claim:", finalAmount);
+
+                    // Update user – ONLY walletBalance
+                    const userRef = db.collection('users').doc(uid);
+                    transaction.update(userRef, {
+                        walletBalance: firebase.firestore.FieldValue.increment(finalAmount)
+                    });
+                    console.log("User walletBalance incremented.");
+
+                    // Update purchase – only allowed fields
+                    transaction.update(purchaseRef, {
+                        status: 'claimed',
+                        claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        claimAmount: finalAmount
+                    });
+                    console.log("Purchase updated.");
+
+                    // Create transaction record
+                    const txRef = db.collection('transactions').doc();
+                    transaction.set(txRef, {
+                        userId: uid,
+                        type: 'buy_plan_claim',
+                        amount: finalAmount,
+                        description: 'Buy plan claim: ' + purchaseData.planName,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log("Transaction record created.");
+                });
+
+                console.log("✅ BUY CLAIM SUCCESS");
+                showToast('✅ ' + formatMoney(finalAmount) + ' claimed!', false);
+                if (btnElement) btnElement.disabled = true;
+                await loadAllPlans();
             } catch (err) {
-                console.error("  ❌ Read failed:", err.code, err.message);
+                console.error("❌ BUY CLAIM FAILED");
+                console.error("Code:", err.code);
+                console.error("Message:", err.message);
+                console.error("Stack:", err.stack);
+                showToast(err.message || 'Claim failed. Check console.', true);
+                if (btnElement) btnElement.disabled = false;
             }
-
-            // 3. Test writes (each in its own try/catch)
-            console.log("\n🔧 RUNNING DIAGNOSTIC TEST WRITES (no real financial changes)");
-
-            // Test A: Update users/{uid} – increment walletBalance by 0.01
-            console.log("\n🧪 TEST A: Update users/" + uid + " (increment walletBalance +0.01)");
-            try {
-                await db.collection('users').doc(uid).update({
-                    walletBalance: firebase.firestore.FieldValue.increment(0.01)
-                });
-                console.log("  ✅ SUCCESS – users update works.");
-                // Revert the increment (optional)
-                await db.collection('users').doc(uid).update({
-                    walletBalance: firebase.firestore.FieldValue.increment(-0.01)
-                });
-                console.log("  🔄 Reverted increment.");
-            } catch (err) {
-                console.error("  ❌ FAILED –", err.code, err.message);
-            }
-
-            // Test B: Update marketplacePurchases/{purchaseId} – set a temporary field
-            console.log("\n🧪 TEST B: Update marketplacePurchases/" + purchaseId + " (set _diag = true)");
-            try {
-                await db.collection('marketplacePurchases').doc(purchaseId).update({
-                    _diag: true
-                });
-                console.log("  ✅ SUCCESS – marketplacePurchases update works.");
-                // Clean up
-                await db.collection('marketplacePurchases').doc(purchaseId).update({
-                    _diag: firebase.firestore.FieldValue.delete()
-                });
-                console.log("  🔄 Cleaned up _diag field.");
-            } catch (err) {
-                console.error("  ❌ FAILED –", err.code, err.message);
-            }
-
-            // Test C: Create a test transaction doc
-            console.log("\n🧪 TEST C: Create transactions/ (test doc)");
-            const testTxRef = db.collection('transactions').doc();
-            try {
-                await testTxRef.set({
-                    userId: uid,
-                    type: 'diagnostic_test',
-                    amount: 0.01,
-                    description: 'Diagnostic test – no real transaction',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                console.log("  ✅ SUCCESS – transactions create works.");
-                // Clean up
-                await testTxRef.delete();
-                console.log("  🔄 Deleted test transaction.");
-            } catch (err) {
-                console.error("  ❌ FAILED –", err.code, err.message);
-            }
-
-            console.log("\n═══════════════════════════════════════════════");
-            console.log("🔍 DIAGNOSTIC COMPLETE – check results above");
-            console.log("═══════════════════════════════════════════════\n");
-
-            // Re-enable button and restore text
-            if (btnElement) {
-                btnElement.disabled = false;
-                btnElement.textContent = '💎 Claim Full Amount';
-                // Show toast
-                showToast("Diagnostic complete – check console for results.", false);
-            }
+            console.log("=== BUY CLAIM END ===");
         }
 
         // ================================================================
@@ -2117,10 +2082,8 @@
             });
         });
 
-        console.log('✅ income.html · Sajvera Capital · Diagnostic mode active for Buy plans.');
-        console.log('🔍 Clicking "Claim Full Amount" will run a diagnostic and log results to console.');
-        console.log('ℹ️ No real claim is executed – this only tests Firestore permissions.');
-        console.log('📋 Check the console output to identify which operation fails.');
+        console.log('✅ income.html – real claim enabled for Invest and Buy plans.');
+        console.log('ℹ️ Check console for transaction logs.');
     </script>
 
 </body>
