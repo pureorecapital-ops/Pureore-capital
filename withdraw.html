@@ -2,2075 +2,2180 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Withdraw – Sajvera Capital</title>
-    <link rel="preconnect" href="https://www.gstatic.com" />
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Withdraw | PureOre Nexus</title>
+    <meta name="description" content="Withdraw funds from your PureOre Nexus account." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js",
+                "firebase/functions": "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js"
+            }
+        }
     </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
-    </script>
+
     <style>
-        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
-        * {
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            min-height: 100vh;
-            padding-top: 80px;
-            padding-bottom: 80px;
-            display: flex;
-            flex-direction: column;
-            color: #ffffff;
-            position: relative;
-            background: #000;
+        :root {
+            --gold: #d4af37;
+            --gold-light: #bfa76f;
+            --gold-glow: rgba(212, 175, 55, 0.25);
+            --gold-subtle: rgba(212, 175, 55, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
-        .hero-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+        html,
+        body {
             height: 100%;
-            z-index: -1;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             overflow: hidden;
         }
 
-        .hero-bg::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
-            background-size: cover;
-            background-position: center;
-            filter: blur(14px) brightness(0.25) saturate(0.7);
-            transform: scale(1.1);
-        }
-
-        .hero-bg::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.65);
-        }
-
-        /* ----- HEADER (DARK GLASS) ----- */
-        .header {
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0.8rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.50);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .header-left {
+            inset: 0;
+            z-index: 9999;
             display: flex;
             flex-direction: column;
-            gap: 0;
-        }
-
-        .logo-text {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: -0.4px;
-        }
-        .logo-text .vc {
-            color: #60a5fa;
-        }
-
-        .logo-sub {
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 0.3px;
-            font-weight: 400;
-            margin-top: -2px;
-        }
-        .logo-sub .highlight {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-
-        .back-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.3);
-            padding: 0.4rem 1rem;
-            border-radius: 40px;
-            font-family: inherit;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-        }
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-        }
-
-        /* ----- CONTAINER ----- */
-        .container {
-            max-width: 560px;
-            margin: 0 auto;
-            padding: 0 1.2rem;
-            flex: 1;
-            width: 100%;
-        }
-
-        /* ----- PAGE HEADER ----- */
-        .page-header {
-            margin-bottom: 1.2rem;
-            text-align: center;
-        }
-
-        .page-header h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .page-header h1 span {
-            color: #60a5fa;
-        }
-
-        .page-header p {
-            color: rgba(255, 255, 255, 0.25);
-            font-size: 0.85rem;
-            margin-top: 2px;
-        }
-
-        /* ----- STEP INDICATOR ----- */
-        .step-indicator {
-            display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 1.2rem;
-            padding: 0.5rem 0.8rem;
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
         }
-
-        .step-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.06);
-            transition: all 0.4s ease;
-            border: none;
-            padding: 0;
-            cursor: default;
-        }
-
-        .step-dot.active {
-            background: #60a5fa;
-            box-shadow: 0 0 20px rgba(96, 165, 250, 0.15);
-            transform: scale(1.2);
-        }
-
-        .step-dot.done {
-            background: #4ade80;
-            box-shadow: 0 0 20px rgba(74, 222, 128, 0.10);
-        }
-
-        .step-line {
-            width: 30px;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 2px;
-            transition: background 0.4s ease;
-        }
-
-        .step-line.done {
-            background: #4ade80;
-        }
-
-        .step-label {
-            font-size: 0.5rem;
-            color: rgba(255, 255, 255, 0.10);
-            text-align: center;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-            margin-top: 4px;
-        }
-
-        .step-dots-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* ----- GLASS CARD ----- */
-        .glass-card {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 1.5rem 1.2rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            animation: fadeUp 0.5s ease forwards;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 1.2rem;
-        }
-
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
             pointer-events: none;
         }
 
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
         }
-
-        .glass-card .card-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.15);
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
             margin-bottom: 1rem;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-        }
-
-        .glass-card .card-title svg {
-            width: 18px;
-            height: 18px;
-            stroke: #60a5fa;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* ----- STEP CONTAINER ----- */
-        .step-container {
-            display: block;
-            animation: fadeUp 0.4s ease forwards;
-        }
-
-        .step-container.hidden {
-            display: none;
-        }
-
-        /* ----- FORM ELEMENTS ----- */
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.4rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.15);
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-group select,
-        .form-group input:not([type="checkbox"]) {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border-radius: 14px;
-            border: 1.5px solid rgba(255, 255, 255, 0.04);
-            background: rgba(0, 0, 0, 0.25);
-            color: #ffffff;
-            font-size: 0.95rem;
-            font-family: inherit;
-            transition: all 0.3s;
-            outline: none;
-        }
-
-        .form-group select:focus,
-        .form-group input:focus {
-            border-color: rgba(96, 165, 250, 0.15);
-            background: rgba(0, 0, 0, 0.35);
-            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.02);
-        }
-
-        .form-group select option {
-            background: #000;
-            color: #fff;
-        }
-
-        .form-group select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            padding-right: 2.5rem;
-        }
-
-        .phone-prefix {
-            display: flex;
-            align-items: center;
-            border: 1.5px solid rgba(255, 255, 255, 0.04);
-            border-radius: 14px;
-            background: rgba(0, 0, 0, 0.25);
-            transition: border-color 0.3s;
-        }
-
-        .phone-prefix:focus-within {
-            border-color: rgba(96, 165, 250, 0.15);
-            background: rgba(0, 0, 0, 0.35);
-            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.02);
-        }
-
-        .phone-prefix span {
-            color: rgba(255, 255, 255, 0.15);
-            padding: 0.8rem 0 0.8rem 0.5rem;
-            font-weight: 600;
-            font-size: 0.95rem;
-            flex-shrink: 0;
-        }
-
-        .phone-prefix input {
-            border: none;
-            background: transparent;
-            flex: 1;
-            padding: 0.8rem 0.5rem;
-            color: #ffffff;
-            font-size: 0.95rem;
-            font-family: inherit;
-            outline: none;
-        }
-
-        .phone-prefix input::placeholder {
-            color: rgba(255, 255, 255, 0.06);
-        }
-
-        .input-error {
-            font-size: 0.7rem;
-            color: #f87171;
-            margin-top: 0.2rem;
-            min-height: 1.2rem;
-        }
-
-        /* ----- BANK CHIPS ----- */
-        .bank-chips {
-            display: flex;
-            gap: 0.6rem;
-            flex-wrap: wrap;
-            margin-top: 0.3rem;
-        }
-
-        .bank-chip {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1.5px solid rgba(255, 255, 255, 0.04);
-            border-radius: 40px;
-            padding: 0.4rem 1.2rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.15);
-            cursor: pointer;
-            transition: all 0.25s ease;
-            font-family: inherit;
-        }
-
-        .bank-chip:hover {
-            border-color: rgba(255, 255, 255, 0.10);
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .bank-chip.active {
-            border-color: rgba(96, 165, 250, 0.15);
-            background: rgba(96, 165, 250, 0.06);
-            color: #60a5fa;
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.02);
-        }
-
-        /* ----- BUTTONS ----- */
-        .btn-primary {
-            width: 100%;
-            padding: 0.9rem;
-            border: none;
-            border-radius: 14px;
-            font-family: inherit;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #fff;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            cursor: pointer;
-            transition: all 0.3s;
-            letter-spacing: 0.2px;
-            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
-            margin-top: 0.8rem;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
-        }
-
-        .btn-primary:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        .btn-primary .btn-icon {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary .btn-icon svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .btn-blue {
-            width: auto;
-            padding: 0.6rem 1.8rem;
-            border: none;
-            border-radius: 40px;
-            font-family: inherit;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: #fff;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
-            letter-spacing: 0.2px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 0.8rem;
-        }
-
-        .btn-blue:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
-        }
-
-        .btn-blue:active:not(:disabled) {
-            transform: scale(0.97);
-        }
-
-        .btn-blue:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        .btn-blue .btn-icon {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-blue .btn-icon svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .btn-blue-full {
-            width: 100%;
-            padding: 0.8rem;
-            border: none;
-            border-radius: 14px;
-            font-family: inherit;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #fff;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
-            letter-spacing: 0.2px;
-            margin-top: 0.8rem;
-        }
-
-        .btn-blue-full:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
-        }
-
-        .btn-blue-full:active:not(:disabled) {
-            transform: scale(0.97);
-        }
-
-        .btn-blue-full:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        .btn-blue-full .btn-icon {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-blue-full .btn-icon svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* ----- SAVED INFO DISPLAY ----- */
-        .saved-info {
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 14px;
-            padding: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            margin: 0.5rem 0 1rem 0;
+            background: rgba(212, 175, 55, 0.04);
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.06);
             position: relative;
         }
-
-        .saved-info .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.4rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-            font-size: 0.9rem;
-        }
-
-        .saved-info .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .saved-info .info-label {
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .saved-info .info-value {
-            color: #ffffff;
-            font-weight: 500;
-        }
-
-        .saved-info .info-value.gold {
-            color: #facc15;
-        }
-
-        .saved-info .delete-saved-btn {
+        .load-logo-symbol::after {
+            content: '';
             position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(239, 68, 68, 0.06);
-            border: 1px solid rgba(239, 68, 68, 0.08);
-            border-radius: 40px;
-            padding: 0.2rem 0.8rem;
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: #f87171;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .saved-info .delete-saved-btn:hover {
-            background: rgba(239, 68, 68, 0.12);
-        }
-
-        .saved-info .delete-saved-btn svg {
-            width: 14px;
-            height: 14px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* ----- SUMMARY ----- */
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.6rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-            font-size: 0.95rem;
-        }
-
-        .summary-row:last-child {
-            border-bottom: none;
-        }
-
-        .summary-label {
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .summary-value {
-            color: #ffffff;
-            font-weight: 600;
-        }
-
-        .summary-value.gold {
-            color: #facc15;
-        }
-        .summary-value.green {
-            color: #4ade80;
-        }
-        .summary-value.red {
-            color: #f87171;
-        }
-
-        /* ----- MESSAGE BOX ----- */
-        .msg-box {
-            padding: 0.8rem 1rem;
-            border-radius: 14px;
-            text-align: center;
-            font-weight: 500;
-            font-size: 0.9rem;
-            margin-top: 0.8rem;
-            display: none;
-            border: 1.5px solid transparent;
-        }
-
-        .msg-box.error {
-            display: block;
-            background: rgba(239, 68, 68, 0.06);
-            border-color: rgba(239, 68, 68, 0.08);
-            color: #f87171;
-        }
-
-        .msg-box.success {
-            display: block;
-            background: rgba(74, 222, 128, 0.06);
-            border-color: rgba(74, 222, 128, 0.08);
-            color: #4ade80;
-        }
-
-        .msg-box.info {
-            display: block;
-            background: rgba(96, 165, 250, 0.06);
-            border-color: rgba(96, 165, 250, 0.08);
-            color: #60a5fa;
-        }
-
-        .msg-box svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            vertical-align: middle;
-            margin-right: 8px;
-        }
-
-        /* ----- LOADING SPINNER ----- */
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.04);
-            border-top-color: #60a5fa;
+            inset: -4px;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            vertical-align: middle;
-            margin-right: 8px;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
         }
-
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
         }
-
-        /* ----- SUCCESS ICON ----- */
-        .success-icon {
-            display: block;
-            margin: 0 auto 0.8rem;
-            width: 64px;
-            height: 64px;
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .load-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
         }
 
-        .success-icon svg {
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
             width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
             height: 100%;
-            stroke: #4ade80;
-            stroke-width: 2;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN PAGE
+        ============================================================ */
+        #main-page {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--dark);
+        }
+        #main-page.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/cXxZh1w3/20260824-014737.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.12;
+        }
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(11, 11, 11, 0.5) 0%, rgba(11, 11, 11, 0.95) 80%, #0b0b0b 100%);
+            pointer-events: none;
+        }
+
+        .page-scroll {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 0 16px 30px 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ============================================================
+           HEADER
+        ============================================================ */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(11, 11, 11, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin: 0 -16px;
+            padding: 14px 16px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .back-btn:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .back-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
             fill: none;
+            stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
 
-        /* ----- TOAST ----- */
-        .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(16px);
-            color: #f1f5f9;
-            padding: 12px 24px;
-            border-radius: 40px;
+        .page-header .title {
+            font-size: 1rem;
             font-weight: 600;
-            font-size: 0.85rem;
-            z-index: 1001;
-            animation: toastFade 4.5s ease forwards;
-            max-width: 90%;
+            letter-spacing: 0.02em;
+            color: var(--text-white);
+        }
+        .page-header .title em {
+            color: var(--gold);
+            font-style: normal;
+        }
+
+        /* ============================================================
+           CLOSED OVERLAY (weekend / after 17:00)
+        ============================================================ */
+        .closed-overlay {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 40px 20px;
+            min-height: 55vh;
+        }
+        .closed-overlay.show {
+            display: flex;
+        }
+        .closed-overlay .icon-wrap {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(231, 76, 60, 0.06);
+            border: 2px solid rgba(231, 76, 60, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .closed-overlay .icon-wrap svg {
+            width: 36px;
+            height: 36px;
+            stroke: #e74c3c;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .closed-overlay h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 8px;
+        }
+        .closed-overlay p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            max-width: 380px;
+            line-height: 1.6;
+            margin-bottom: 4px;
+        }
+        .closed-overlay .status-label {
+            font-size: 0.7rem;
+            color: var(--gold);
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-top: 4px;
         }
 
-        .toast.error {
-            border-color: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
+        /* ============================================================
+           STAGE CONTAINERS
+        ============================================================ */
+        .stage {
+            display: none;
+            animation: fadeSlide 0.4s ease forwards;
         }
-        .toast.success {
-            border-color: rgba(74, 222, 128, 0.15);
-            color: #6ee7b7;
+        .stage.active {
+            display: block;
         }
 
-        @keyframes toastFade {
+        @keyframes fadeSlide {
             0% {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px) scale(0.95);
-            }
-            15% {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0) scale(1);
-            }
-            80% {
-                opacity: 1;
+                transform: translateY(12px);
             }
             100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px) scale(0.95);
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        /* ─── NEW: WITHDRAWAL TYPE TOGGLE & SAVING BRANCH ─── */
-        .type-toggle {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 0.8rem;
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 14px;
-            padding: 0.4rem;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-        .type-toggle button {
-            flex: 1;
-            padding: 0.6rem;
-            border: none;
-            border-radius: 10px;
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
+        /* ============================================================
+           CARD
+        ============================================================ */
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px 20px;
+            margin: 16px 0 12px;
             transition: all 0.3s ease;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.15);
         }
-        .type-toggle button.active {
-            background: rgba(96, 165, 250, 0.12);
-            color: #60a5fa;
-            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.08);
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-white);
         }
-        .type-toggle button:hover:not(.active) {
+        .card-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-bottom: 16px;
+        }
+
+        /* ============================================================
+           FORM ELEMENTS
+        ============================================================ */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
             background: rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.4);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-white);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .form-control:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.08);
+        }
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 300;
+        }
+        .form-control.error {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.08);
+        }
+        .form-control:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
-        .branch-selector {
-            display: none;
-            margin-top: 0.5rem;
+        .form-control.with-prefix {
+            padding-left: 44px;
         }
-        .branch-selector.visible {
-            display: block;
+        .input-prefix {
+            position: relative;
+        }
+        .input-prefix .prefix {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 1rem;
+            pointer-events: none;
         }
 
-        .saving-balance {
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 14px;
-            padding: 0.8rem 1rem;
-            margin: 0.5rem 0 1rem 0;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            display: none;
+        .form-error {
+            font-size: 0.7rem;
+            color: #e74c3c;
+            margin-top: 4px;
+            min-height: 1.2em;
         }
-        .saving-balance.visible {
-            display: block;
+
+        /* ============================================================
+           ACCOUNT CARD (saved withdrawal info)
+        ============================================================ */
+        .account-card {
+            background: rgba(212, 175, 55, 0.04);
+            border: 1px solid rgba(212, 175, 55, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            margin-bottom: 12px;
         }
-        .saving-balance .bal-label {
-            color: rgba(255, 255, 255, 0.15);
+        .account-card .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
             font-size: 0.8rem;
         }
-        .saving-balance .bal-amount {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #60a5fa;
+        .account-card .row .label {
+            color: var(--text-muted);
         }
-        .saving-balance .bal-pending {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.15);
+        .account-card .row .value {
+            font-weight: 500;
+            color: var(--text-white);
+        }
+        .account-card .row .value.gold {
+            color: var(--gold);
         }
 
-        /* ----- RESPONSIVE ----- */
-        @media (max-width: 500px) {
-            .header {
-                padding: 0.6rem 1rem;
+        .account-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .account-actions .btn-sm {
+            padding: 8px 20px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            min-height: 38px;
+        }
+        .account-actions .btn-sm.primary {
+            background: var(--gold);
+            color: #0b0b0b;
+        }
+        .account-actions .btn-sm.primary:hover {
+            background: #dbb95c;
+        }
+        .account-actions .btn-sm.secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .account-actions .btn-sm.secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* ============================================================
+           FEE BREAKDOWN
+        ============================================================ */
+        .fee-breakdown {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            margin: 12px 0 16px;
+        }
+        .fee-breakdown .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.8rem;
+        }
+        .fee-breakdown .row .label {
+            color: var(--text-muted);
+        }
+        .fee-breakdown .row .value {
+            font-weight: 500;
+            color: var(--text-white);
+        }
+        .fee-breakdown .row .value.gold {
+            color: var(--gold);
+        }
+        .fee-breakdown .row .value.negative {
+            color: #e74c3c;
+        }
+        .fee-breakdown .row .value.positive {
+            color: #2ecc71;
+        }
+        .fee-breakdown .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.04);
+            margin: 6px 0;
+        }
+        .fee-breakdown .total-row {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* ============================================================
+           BUTTONS
+        ============================================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            font-family: inherit;
+            min-height: 54px;
+            background: var(--gold);
+            color: #0b0b0b;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.1);
+        }
+        .btn:hover:not(:disabled) {
+            background: #dbb95c;
+            box-shadow: 0 0 50px rgba(212, 175, 55, 0.18);
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(11, 11, 11, 0.15);
+            border-top-color: #0b0b0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .btn.loading .spinner {
+            display: inline-block;
+        }
+        .btn.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1.5px solid var(--glass-border);
+            box-shadow: none;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--gold);
+            color: var(--text-white);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.04);
+        }
+
+        /* ============================================================
+           BALANCE DISPLAY
+        ============================================================ */
+        .balance-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 12px;
+        }
+        .balance-display .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+        .balance-display .amount {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        /* ============================================================
+           PIN MODAL
+        ============================================================ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(11, 11, 11, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
             }
-            .logo-text {
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .modal-card {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px 20px 20px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.35s ease;
+        }
+        @keyframes slideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-card .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 4px;
+            color: var(--text-white);
+        }
+        .modal-card .modal-sub {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            font-weight: 300;
+        }
+
+        .modal-pin-section {
+            margin: 6px 0 12px;
+            text-align: center;
+        }
+        .modal-pin-section .pin-boxes {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        .modal-pin-section .pin-box {
+            width: 44px;
+            height: 52px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-white);
+            font-family: inherit;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .modal-pin-section .pin-box:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.08);
+        }
+        .modal-pin-section .pin-box.error {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.08);
+        }
+        .modal-pin-section .pin-box.hidden-pin {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+        .modal-pin-section .pin-error {
+            font-size: 0.7rem;
+            color: #e74c3c;
+            margin-top: 6px;
+            min-height: 1.2em;
+        }
+        .modal-pin-section .pin-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 6px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .modal-pin-section .pin-toggle input[type="checkbox"] {
+            accent-color: var(--gold);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .modal-actions .btn-modal {
+            padding: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            min-height: 48px;
+        }
+        .modal-actions .btn-modal.cancel {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .modal-actions .btn-modal.cancel:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .modal-actions .btn-modal.confirm {
+            background: var(--gold);
+            color: #0b0b0b;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.1);
+        }
+        .modal-actions .btn-modal.confirm:hover:not(:disabled) {
+            background: #dbb95c;
+            box-shadow: 0 0 50px rgba(212, 175, 55, 0.15);
+        }
+        .modal-actions .btn-modal:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .modal-actions .btn-modal .spinner-sm {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(11, 11, 11, 0.15);
+            border-top-color: #0b0b0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+        .modal-actions .btn-modal.loading .spinner-sm {
+            display: inline-block;
+        }
+        .modal-actions .btn-modal.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           SUCCESS / RESULT STATE
+        ============================================================ */
+        .result-state {
+            text-align: center;
+            padding: 16px 0 8px;
+        }
+        .result-state .result-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .result-state .result-icon.success {
+            background: rgba(46, 204, 113, 0.08);
+            border: 2px solid #2ecc71;
+        }
+        .result-state .result-icon.success svg {
+            stroke: #2ecc71;
+        }
+        .result-state .result-icon.error {
+            background: rgba(231, 76, 60, 0.08);
+            border: 2px solid #e74c3c;
+        }
+        .result-state .result-icon.error svg {
+            stroke: #e74c3c;
+        }
+        .result-state .result-icon svg {
+            width: 32px;
+            height: 32px;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .result-state .result-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .result-state .result-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        .result-state .result-details {
+            margin: 12px 0 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .result-state .result-details .highlight {
+            color: var(--gold);
+            font-weight: 500;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .result-actions .btn-result {
+            padding: 10px 24px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .result-actions .btn-result.primary {
+            background: var(--gold);
+            color: #0b0b0b;
+        }
+        .result-actions .btn-result.primary:hover {
+            background: #dbb95c;
+        }
+        .result-actions .btn-result.secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .result-actions .btn-result.secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .result-actions .btn-result svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ============================================================
+           PENDING WITHDRAWAL CARD
+        ============================================================ */
+        .pending-card {
+            background: rgba(241, 196, 15, 0.04);
+            border: 1px solid rgba(241, 196, 15, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        .pending-card .title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #f1c40f;
+            margin-bottom: 4px;
+        }
+        .pending-card .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .pending-card .row .val {
+            color: var(--text-white);
+            font-weight: 500;
+        }
+        .pending-card .row .val.gold {
+            color: var(--gold);
+        }
+
+        /* ============================================================
+           TOAST
+        ============================================================ */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 10px 20px;
+            font-size: 0.75rem;
+            color: var(--text-white);
+            z-index: 200;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            border-color: rgba(46, 204, 113, 0.2);
+        }
+        .toast.error {
+            border-color: rgba(231, 76, 60, 0.2);
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.55rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.5;
+            font-weight: 300;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 16px;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 480px) {
+            .page-scroll {
+                padding: 0 12px 20px 12px;
+            }
+            .page-header {
+                padding: 10px 12px;
+                margin: 0 -12px;
+            }
+            .card {
+                padding: 18px 14px;
+            }
+            .card-title {
+                font-size: 1rem;
+            }
+            .btn {
+                font-size: 0.7rem;
+                min-height: 48px;
+                padding: 12px 16px;
+            }
+            .form-control {
+                padding: 12px 14px;
+                font-size: 0.9rem;
+            }
+            .form-control.with-prefix {
+                padding-left: 38px;
+            }
+            .input-prefix .prefix {
+                left: 14px;
+                font-size: 0.9rem;
+            }
+            .branding-footer {
+                font-size: 0.5rem;
+                padding: 12px 0 6px;
+            }
+            .modal-card {
+                padding: 18px 14px 16px;
+            }
+            .modal-pin-section .pin-box {
+                width: 36px;
+                height: 44px;
                 font-size: 1.2rem;
             }
-            .logo-sub {
-                font-size: 0.5rem;
+            .modal-actions {
+                grid-template-columns: 1fr;
             }
-            .container {
-                padding: 0 0.8rem;
+            .result-state .result-title {
+                font-size: 1rem;
             }
-            .page-header h1 {
-                font-size: 1.4rem;
-            }
-            .glass-card {
-                padding: 1.2rem 1rem;
-                border-radius: 24px;
-            }
-            .step-line {
-                width: 20px;
-            }
-            .step-indicator {
-                padding: 0.4rem 0.6rem;
-                gap: 4px;
-            }
-            .step-label {
-                font-size: 0.4rem;
-            }
-            .step-dot {
-                width: 8px;
-                height: 8px;
-            }
-            .bank-chip {
-                font-size: 0.7rem;
-                padding: 0.3rem 0.8rem;
-            }
-            .saved-info .info-row {
-                font-size: 0.8rem;
-            }
-            .summary-row {
-                font-size: 0.85rem;
-            }
-            .saved-info .delete-saved-btn {
-                font-size: 0.55rem;
-                padding: 0.15rem 0.6rem;
-            }
-            .btn-blue {
-                font-size: 0.8rem;
-                padding: 0.5rem 1.4rem;
-            }
-            .btn-blue-full {
-                font-size: 0.9rem;
-                padding: 0.7rem;
-            }
-            .back-btn {
+            .result-actions .btn-result {
+                padding: 8px 18px;
                 font-size: 0.65rem;
-                padding: 0.3rem 0.8rem;
             }
-            .type-toggle button {
+            .closed-overlay h2 {
+                font-size: 1rem;
+            }
+            .closed-overlay p {
                 font-size: 0.8rem;
-                padding: 0.5rem;
+            }
+            .fee-breakdown .row {
+                font-size: 0.7rem;
+            }
+            .account-actions {
+                flex-wrap: wrap;
+            }
+            .account-actions .btn-sm {
+                flex: 1;
+                min-width: 100px;
+                text-align: center;
             }
         }
 
-        @media (max-width: 400px) {
-            .bank-chips {
-                gap: 0.4rem;
+        @media (min-width: 768px) {
+            .page-scroll {
+                padding: 0 32px 40px 32px;
             }
-            .bank-chip {
-                font-size: 0.6rem;
-                padding: 0.25rem 0.6rem;
+            .page-header {
+                padding: 16px 32px;
+                margin: 0 -32px;
             }
-            .saved-info .delete-saved-btn {
-                position: static;
-                margin-top: 0.5rem;
-                width: 100%;
-                justify-content: center;
-            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        #main-page::-webkit-scrollbar {
+            width: 3px;
+        }
+        #main-page::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #main-page::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
-    <div class="hero-bg"></div>
-
-    <!-- ===== HEADER ===== -->
-    <header class="header">
-        <div class="header-left">
-            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
-            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
-        </div>
-        <div class="header-right">
-            <a href="dashboard.html" class="back-btn">← Back</a>
-        </div>
-    </header>
-
-    <!-- ===== MAIN CONTENT ===== -->
-    <main class="container">
-
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1>💳 <span>Withdraw</span></h1>
-            <p>Withdraw your earnings (10% fee applies)</p>
-        </div>
-
-        <!-- ===== STEP INDICATOR ===== -->
-        <div class="step-indicator" id="stepIndicator">
-            <div class="step-dots-wrapper">
-                <div class="step-dot active" id="dot1"></div>
-                <div class="step-label" id="label1">Info</div>
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
             </div>
-            <div class="step-line" id="line1"></div>
-            <div class="step-dots-wrapper">
-                <div class="step-dot" id="dot2"></div>
-                <div class="step-label" id="label2">Amount</div>
-            </div>
-            <div class="step-line" id="line2"></div>
-            <div class="step-dots-wrapper">
-                <div class="step-dot" id="dot3"></div>
-                <div class="step-label" id="label3">Confirm</div>
-            </div>
-            <div class="step-line" id="line3"></div>
-            <div class="step-dots-wrapper">
-                <div class="step-dot" id="dot4"></div>
-                <div class="step-label" id="label4">Done</div>
-            </div>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">Withdraw Funds</div>
         </div>
-
-        <!-- ========================================================== -->
-        <!-- ===== STEP 1: SAVE TRANSACTION INFO + WITHDRAWAL TYPE ===== -->
-        <!-- ========================================================== -->
-        <div class="step-container" id="step1">
-            <div class="glass-card" id="step1Card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.5"/><path d="M8 2v20"/><path d="M16 2v20"/><path d="M2 8h20"/><path d="M2 16h20"/></svg>
-                    <span id="step1Title">Withdrawal Info</span>
-                </div>
-
-                <!-- ─── NEW: Withdrawal Type Toggle ─── -->
-                <div class="type-toggle" id="withdrawalTypeToggle">
-                    <button class="active" data-type="normal">Normal</button>
-                    <button data-type="saving">Saving</button>
-                </div>
-
-                <!-- ─── NEW: Branch selector (visible only when Saving is selected) ─── -->
-                <div class="branch-selector" id="branchSelector">
-                    <div class="form-group">
-                        <label>🏦 Select Saving Branch</label>
-                        <select id="savingBranchSelect">
-                            <option value="wealth">PureOre Wealth</option>
-                            <option value="reserve">PureOre Reserve</option>
-                            <option value="growth">PureOre Growth</option>
-                        </select>
-                    </div>
-                    <div class="saving-balance" id="savingBalanceDisplay">
-                        <div class="bal-label">Available Saving Balance</div>
-                        <div class="bal-amount" id="savingBalanceAmount">K0.00</div>
-                        <div class="bal-pending" id="savingPendingInfo"></div>
-                    </div>
-                </div>
-
-                <!-- Saved info display -->
-                <div id="savedInfoDisplay" class="saved-info" style="display:none;">
-                    <div class="info-row">
-                        <span class="info-label">Network</span>
-                        <span class="info-value gold" id="savedNetwork">—</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Account</span>
-                        <span class="info-value" id="savedAccount">—</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Name</span>
-                        <span class="info-value" id="savedName">—</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Phone</span>
-                        <span class="info-value" id="savedPhone">—</span>
-                    </div>
-                    <button class="delete-saved-btn" id="deleteSavedInfoBtn">
-                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                        Delete Info
-                    </button>
-                </div>
-
-                <!-- Form to save info -->
-                <div id="infoForm">
-                    <div class="form-group">
-                        <label>📡 Select Network</label>
-                        <select id="networkSelect">
-                            <option value="">-- Select --</option>
-                            <option value="mtn">MTN Mobile Money</option>
-                            <option value="airtel">Airtel Money</option>
-                            <option value="zamtel">Zamtel Kwacha</option>
-                            <option value="bank">Bank Transfer</option>
-                        </select>
-                    </div>
-
-                    <div id="phoneGroup" class="form-group">
-                        <label>📞 Phone Number</label>
-                        <div class="phone-prefix">
-                            <span>+260</span>
-                            <input type="tel" id="phoneInput" placeholder="9 digits" maxlength="9" />
-                        </div>
-                        <div class="input-error" id="phoneError"></div>
-                    </div>
-
-                    <div id="nameGroup" class="form-group">
-                        <label>👤 Account Holder Name</label>
-                        <input type="text" id="accountNameInput" placeholder="Full name on mobile money / bank" />
-                        <div class="input-error" id="nameError"></div>
-                    </div>
-
-                    <div id="bankGroup" class="form-group" style="display:none;">
-                        <label>🏦 Choose Bank</label>
-                        <div class="bank-chips" id="bankChips">
-                            <button class="bank-chip" data-bank="ecobank">EcoBank</button>
-                            <button class="bank-chip" data-bank="zanaco">Zanaco</button>
-                            <button class="bank-chip" data-bank="absa">ABSA Bank</button>
-                            <button class="bank-chip" data-bank="stanbic">Stanbic Bank</button>
-                        </div>
-                        <div class="input-error" id="bankError"></div>
-                        <div style="margin-top:0.8rem;">
-                            <label>💳 Bank Card Number (16 digits)</label>
-                            <input type="text" id="cardNumberInput" placeholder="Card number" maxlength="16" />
-                            <div class="input-error" id="cardError"></div>
-                        </div>
-                    </div>
-
-                    <button class="btn-blue" id="saveInfoBtn">
-                        <span class="btn-icon">
-                            Save Information
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
-                        </span>
-                    </button>
-                    <div class="msg-box" id="infoMessage"></div>
-                </div>
-
-                <button class="btn-primary" id="step1Continue" style="display:none;">
-                    <span class="btn-icon">
-                        Continue →
-                        <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18" /></svg>
-                    </span>
-                </button>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
             </div>
+            <div class="load-msg" id="load-msg">Loading withdrawal information...</div>
         </div>
+    </div>
 
-        <!-- ========================================================== -->
-        <!-- ===== STEP 2: ENTER AMOUNT (no minimum, 10% fee) ===== -->
-        <!-- ========================================================== -->
-        <div class="step-container hidden" id="step2">
-            <div class="glass-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    Withdrawal Amount
-                </div>
+    <!-- ============================================================
+    MAIN PAGE
+    ============================================================ -->
+    <div id="main-page">
+        <div class="bg-wrap" aria-hidden="true"></div>
+        <div class="bg-overlay" aria-hidden="true"></div>
 
-                <div class="form-group">
-                    <label>Amount (ZMW) – 10% fee applies</label>
-                    <input type="number" id="withdrawAmount" placeholder="0.00" min="0.01" step="0.01" />
-                    <div class="input-error" id="amountError"></div>
-                </div>
+        <div class="page-scroll">
 
-                <div id="feeSummary" style="background:rgba(0,0,0,0.25); border-radius:14px; padding:0.8rem 1rem; margin:0.8rem 0; display:none; border:1px solid rgba(255,255,255,0.04);">
-                    <div class="summary-row">
-                        <span class="summary-label">Withdrawal Amount</span>
-                        <span class="summary-value gold" id="summaryGross">0.00 ZMW</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Processing Fee (10%)</span>
-                        <span class="summary-value red" id="summaryFee">0.00 ZMW</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">You'll Receive</span>
-                        <span class="summary-value green" id="summaryNet">0.00 ZMW</span>
-                    </div>
-                </div>
-
-                <button class="btn-primary" id="step2Next" disabled>
-                    <span class="btn-icon">
-                        Review &amp; Confirm
-                        <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18" /></svg>
-                    </span>
-                </button>
-                <div class="msg-box" id="step2Message"></div>
-            </div>
-        </div>
-
-        <!-- ========================================================== -->
-        <!-- ===== STEP 3: CONFIRMATION ===== -->
-        <!-- ========================================================== -->
-        <div class="step-container hidden" id="step3">
-            <div class="glass-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    Confirm
-                </div>
-
-                <div style="background:rgba(0,0,0,0.25); border-radius:14px; padding:0.8rem 1rem; border:1px solid rgba(255,255,255,0.04);">
-                    <div class="summary-row">
-                        <span class="summary-label">Network</span>
-                        <span class="summary-value" id="confirmNetwork">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Account</span>
-                        <span class="summary-value" id="confirmAccount">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Name</span>
-                        <span class="summary-value" id="confirmName">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Phone</span>
-                        <span class="summary-value" id="confirmPhone">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Amount</span>
-                        <span class="summary-value gold" id="confirmAmount">0.00 ZMW</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Fee (10%)</span>
-                        <span class="summary-value red" id="confirmFee">0.00 ZMW</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Net Receive</span>
-                        <span class="summary-value green" id="confirmNet">0.00 ZMW</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">⏳ Estimated Processing</span>
-                        <span class="summary-value" id="confirmEta" style="color:#60a5fa; font-weight:700;">—</span>
-                    </div>
-                    <!-- NEW: Show type and branch if saving -->
-                    <div class="summary-row" id="confirmTypeRow" style="display:none;">
-                        <span class="summary-label">Type</span>
-                        <span class="summary-value" id="confirmType">Normal</span>
-                    </div>
-                    <div class="summary-row" id="confirmBranchRow" style="display:none;">
-                        <span class="summary-label">Saving Branch</span>
-                        <span class="summary-value" id="confirmBranch">—</span>
-                    </div>
-                </div>
-
-                <div class="msg-box" id="confirmMessage"></div>
-
-                <button class="btn-blue-full" id="confirmSubmit">
-                    <span class="btn-icon">
-                        Submit Withdrawal
-                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
-                    </span>
-                </button>
-            </div>
-        </div>
-
-        <!-- ========================================================== -->
-        <!-- ===== STEP 4: SUCCESS ===== -->
-        <!-- ========================================================== -->
-        <div class="step-container hidden" id="step4">
-            <div class="glass-card">
-                <div class="success-icon">
+            <!-- ===== HEADER ===== -->
+            <header class="page-header">
+                <button class="back-btn" id="back-btn" aria-label="Go back">
                     <svg viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="20 6 9 17 4 12" />
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <span class="title">Withdraw <em>Funds</em></span>
+            </header>
+
+            <!-- ===== CLOSED OVERLAY (weekend / after 17:00) ===== -->
+            <div class="closed-overlay" id="closed-overlay">
+                <div class="icon-wrap">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="14" r="3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="12" y1="17" x2="12" y2="14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="12" y1="11" x2="12.01" y2="11" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </div>
+                <h2 id="closed-title">Withdrawals Closed</h2>
+                <p id="closed-message">Withdrawals are unavailable at this time. Please return during the next withdrawal period.</p>
+                <div class="status-label" id="closed-status">—</div>
+            </div>
 
-                <div style="text-align:center; margin-bottom:1.2rem;">
-                    <div style="font-size:1.1rem; font-weight:700; color:#ffffff;">Withdrawal Request Received</div>
-                    <div style="font-size:0.85rem; color:rgba(255,255,255,0.15); margin-top:0.2rem;">Admin will process your request within 24 hours</div>
-                </div>
+            <!-- ============================================================
+            STAGE 0 — CHECK / SAVE WITHDRAWAL ACCOUNT
+            ============================================================ -->
+            <div class="stage active" id="stage-0">
+                <div class="card">
+                    <div class="card-title">Withdrawal Account</div>
+                    <div class="card-sub" id="account-sub">Loading your saved withdrawal information...</div>
 
-                <div style="background:rgba(0,0,0,0.25); border-radius:14px; padding:0.8rem 1rem; border:1px solid rgba(255,255,255,0.04);">
-                    <div class="summary-row">
-                        <span class="summary-label">Amount</span>
-                        <span class="summary-value gold" id="finalAmount">0.00 ZMW</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Network</span>
-                        <span class="summary-value" id="finalNetwork">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Estimated Processing</span>
-                        <span class="summary-value" id="finalEta" style="color:#60a5fa; font-weight:700;">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Status</span>
-                        <span class="summary-value" style="color:#facc15; font-weight:700;">Pending</span>
+                    <div id="account-content">
+                        <!-- Rendered by JS -->
                     </div>
                 </div>
+            </div>
 
-                <button class="btn-primary" id="step4Done" style="margin-top:1rem;">
-                    <span class="btn-icon">
-                        Go to History
-                        <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18" /></svg>
-                    </span>
+            <!-- ============================================================
+            STAGE 1 — ENTER AMOUNT
+            ============================================================ -->
+            <div class="stage" id="stage-1">
+                <div class="card">
+                    <div class="card-title">Withdraw Funds</div>
+                    <div class="card-sub">Enter the amount you would like to withdraw.</div>
+
+                    <!-- Balance -->
+                    <div class="balance-display">
+                        <span class="label">Available Balance</span>
+                        <span class="amount" id="available-balance">K0.00</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Withdrawal Amount</label>
+                        <div class="input-prefix">
+                            <span class="prefix">K</span>
+                            <input type="text" class="form-control with-prefix" id="amount-input" placeholder="0.00" inputmode="decimal" autocomplete="off" />
+                        </div>
+                        <div class="form-error" id="amount-error"></div>
+                    </div>
+
+                    <!-- Fee Breakdown (live) -->
+                    <div class="fee-breakdown" id="fee-breakdown">
+                        <div class="row">
+                            <span class="label">Withdrawal</span>
+                            <span class="value gold" id="fee-amount">K0.00</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">10% Withdrawal Fee</span>
+                            <span class="value negative" id="fee-fee">− K0.00</span>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="row total-row">
+                            <span class="label">You Will Receive</span>
+                            <span class="value positive" id="fee-receive">K0.00</span>
+                        </div>
+                    </div>
+
+                    <button class="btn" id="btn-amount-next">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Next</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            STAGE 2 — CONFIRM & ARRIVAL
+            ============================================================ -->
+            <div class="stage" id="stage-2">
+                <div class="card">
+                    <div class="card-title">Confirm Withdrawal</div>
+                    <div class="card-sub">Review your withdrawal details before confirming.</div>
+
+                    <!-- Arrival info -->
+                    <div style="background:rgba(46,204,113,0.04);border:1px solid rgba(46,204,113,0.08);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:12px;">
+                        <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">Estimated Arrival</div>
+                        <div style="font-size:1.1rem;font-weight:600;color:#2ecc71;">Within 17 hours</div>
+                        <div style="font-size:0.65rem;color:var(--text-muted);font-weight:300;">Your withdrawal is expected to arrive within 17 hours after the request is accepted and processed.</div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="fee-breakdown" id="confirm-breakdown">
+                        <div class="row">
+                            <span class="label">Withdrawal Amount</span>
+                            <span class="value gold" id="confirm-amount">K0.00</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">10% Withdrawal Fee</span>
+                            <span class="value negative" id="confirm-fee">− K0.00</span>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="row total-row">
+                            <span class="label">You Will Receive</span>
+                            <span class="value positive" id="confirm-receive">K0.00</span>
+                        </div>
+                        <div class="row" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.04);">
+                            <span class="label">Network</span>
+                            <span class="value gold" id="confirm-network">—</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Phone</span>
+                            <span class="value" id="confirm-phone">—</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Status</span>
+                            <span class="value" style="color:#f1c40f;">PENDING</span>
+                        </div>
+                    </div>
+
+                    <button class="btn" id="btn-confirm">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Confirm Withdrawal</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== BRANDING ===== -->
+            <div class="branding-footer">
+                <span>@pureorecapital</span> 2025
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+    PIN MODAL
+    ============================================================ -->
+    <div class="modal-overlay" id="pin-modal">
+        <div class="modal-card" id="modal-card">
+            <div class="modal-title">Security PIN</div>
+            <div class="modal-sub">Enter your 6-digit security PIN to confirm this withdrawal.</div>
+
+            <div class="modal-pin-section">
+                <div class="pin-boxes" id="modal-pin-boxes">
+                    <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 1" />
+                    <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 2" />
+                    <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 3" />
+                    <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 4" />
+                    <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 5" />
+                    <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 6" />
+                </div>
+                <div class="pin-error" id="modal-pin-error"></div>
+                <div class="pin-toggle">
+                    <input type="checkbox" id="modal-pin-show" />
+                    <label for="modal-pin-show">Show PIN</label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-modal cancel" id="modal-cancel">Cancel</button>
+                <button class="btn-modal confirm" id="modal-confirm">
+                    <span class="spinner-sm"></span>
+                    <span class="btn-text">Confirm</span>
                 </button>
             </div>
         </div>
+    </div>
 
-    </main>
+    <!-- ============================================================
+    TOAST
+    ============================================================ -->
+    <div class="toast" id="toast"></div>
 
-    <!-- ================================================================
-    JAVASCRIPT – FIREBASE & LOGIC (with saving withdrawal added)
-    ================================================================ -->
-    <script>
-        // ─── FIREBASE CONFIG ────────────────────────────────
-        var firebaseConfig = {
-            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
-            authDomain: "pureore-capital-zambia.firebaseapp.com",
-            projectId: "pureore-capital-zambia",
-            storageBucket: "pureore-capital-zambia.appspot.com",
-            messagingSenderId: "78967797858",
-            appId: "1:78967797858:web:379b9692951429c345793b",
-            measurementId: "G-FQKC29NYE9"
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, runTransaction, query, where, getDocs } from 'firebase/firestore';
+        import { getFunctions, httpsCallable } from 'firebase/functions';
+
+        // ============================================================
+        // FIREBASE CONFIG
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        var auth = firebase.auth();
-        var db = firebase.firestore();
-        db.settings({ persistence: false });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ─── STATE ───────────────────────────────────────────
-        var currentStep = 1;
-        var savedInfo = null;
-        var selectedAmount = 0;
-        var netAfterFee = 0;
-        var currentBalance = 0; // for normal withdrawal
-        var isSubmitting = false;
-        var withdrawRules = { requireDeposit: true, requireInvestment: true };
-        var userPhone = '';
-        var withdrawalType = 'normal'; // 'normal' or 'saving'
-        var savingBranch = 'wealth';
-        var savingBalance = 0;
-        var savingPendingTotal = 0;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const functions = getFunctions(app);
 
-        // ─── DOM REFS (new and existing) ────────────────────
-        var typeToggleBtns = document.querySelectorAll('.type-toggle button');
-        var branchSelector = document.getElementById('branchSelector');
-        var savingBranchSelect = document.getElementById('savingBranchSelect');
-        var savingBalanceDisplay = document.getElementById('savingBalanceDisplay');
-        var savingBalanceAmount = document.getElementById('savingBalanceAmount');
-        var savingPendingInfo = document.getElementById('savingPendingInfo');
-        var confirmTypeRow = document.getElementById('confirmTypeRow');
-        var confirmBranchRow = document.getElementById('confirmBranchRow');
-        var confirmType = document.getElementById('confirmType');
-        var confirmBranch = document.getElementById('confirmBranch');
+        // ============================================================
+        // CONFIGURATION
+        // ============================================================
+        const NETWORK_PREFIXES = {
+            MTN: ['96', '76'],
+            AIRTEL: ['97', '77', '05'],
+            ZAMTEL: ['95', '75']
+        };
 
-        var networkSelect = document.getElementById('networkSelect');
-        var phoneInput = document.getElementById('phoneInput');
-        var accountNameInput = document.getElementById('accountNameInput');
-        var bankChips = document.querySelectorAll('.bank-chip');
-        var cardNumberInput = document.getElementById('cardNumberInput');
-        var saveInfoBtn = document.getElementById('saveInfoBtn');
-        var infoMessage = document.getElementById('infoMessage');
-        var savedInfoDisplay = document.getElementById('savedInfoDisplay');
-        var savedNetwork = document.getElementById('savedNetwork');
-        var savedAccount = document.getElementById('savedAccount');
-        var savedName = document.getElementById('savedName');
-        var savedPhone = document.getElementById('savedPhone');
-        var step1Continue = document.getElementById('step1Continue');
-        var deleteSavedInfoBtn = document.getElementById('deleteSavedInfoBtn');
+        const FEE_PERCENT = 10; // 10%
+        const CLOSING_HOUR = 17; // 17:00
+        const ARRIVAL_HOURS = 17;
 
-        var withdrawAmount = document.getElementById('withdrawAmount');
-        var amountError = document.getElementById('amountError');
-        var feeSummary = document.getElementById('feeSummary');
-        var summaryGross = document.getElementById('summaryGross');
-        var summaryFee = document.getElementById('summaryFee');
-        var summaryNet = document.getElementById('summaryNet');
-        var step2Next = document.getElementById('step2Next');
-        var step2Message = document.getElementById('step2Message');
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentUser = null;
+        let userData = null;
+        let walletData = null;
+        let savedNetwork = '';
+        let savedPhone = '';
+        let savedPhoneRaw = '';
+        let withdrawalAmount = 0;
+        let calculatedFee = 0;
+        let calculatedNet = 0;
+        let isProcessing = false;
+        let currentStage = 0;
+        let isWithdrawalsOpen = false;
+        let isWeekend = false;
+        let isAfterClosing = false;
+        let statusMessage = '';
+        let pendingWithdrawal = null;
 
-        var confirmNetwork = document.getElementById('confirmNetwork');
-        var confirmAccount = document.getElementById('confirmAccount');
-        var confirmName = document.getElementById('confirmName');
-        var confirmPhone = document.getElementById('confirmPhone');
-        var confirmAmount = document.getElementById('confirmAmount');
-        var confirmFee = document.getElementById('confirmFee');
-        var confirmNet = document.getElementById('confirmNet');
-        var confirmEta = document.getElementById('confirmEta');
-        var confirmMessage = document.getElementById('confirmMessage');
-        var confirmSubmit = document.getElementById('confirmSubmit');
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainPage = $('main-page');
 
-        var finalAmount = document.getElementById('finalAmount');
-        var finalNetwork = document.getElementById('finalNetwork');
-        var finalEta = document.getElementById('finalEta');
-        var step4Done = document.getElementById('step4Done');
+        const closedOverlay = $('closed-overlay');
+        const closedTitle = $('closed-title');
+        const closedMessage = $('closed-message');
+        const closedStatus = $('closed-status');
 
-        var dots = [
-            document.getElementById('dot1'),
-            document.getElementById('dot2'),
-            document.getElementById('dot3'),
-            document.getElementById('dot4')
-        ];
-        var labels = [
-            document.getElementById('label1'),
-            document.getElementById('label2'),
-            document.getElementById('label3'),
-            document.getElementById('label4')
-        ];
-        var lines = [
-            document.getElementById('line1'),
-            document.getElementById('line2'),
-            document.getElementById('line3')
-        ];
+        const stage0 = $('stage-0');
+        const stage1 = $('stage-1');
+        const stage2 = $('stage-2');
 
-        // ─── TOAST ────────────────────────────────────────────
-        function showToast(msg, isError) {
-            var existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (isError ? ' error' : ' success');
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
-        }
+        const accountSub = $('account-sub');
+        const accountContent = $('account-content');
 
-        // ─── STEP NAVIGATION ──────────────────────────────────
-        function goToStep(step) {
-            var allSteps = [document.getElementById('step1'), document.getElementById('step2'), document.getElementById(
-                'step3'), document.getElementById('step4')];
-            allSteps.forEach(function(s) { s.classList.add('hidden'); });
-            var target = allSteps[step - 1];
-            if (target) {
-                target.classList.remove('hidden');
-                target.style.animation = 'none';
-                requestAnimationFrame(function() {
-                    target.style.animation = 'fadeUp 0.4s ease forwards';
-                });
-            }
-            for (var i = 0; i < 4; i++) {
-                var dot = document.getElementById('dot' + (i + 1));
-                dot.classList.remove('active', 'done');
-                if (i + 1 < step) dot.classList.add('done');
-                else if (i + 1 === step) dot.classList.add('active');
-            }
-            for (var j = 0; j < 3; j++) {
-                var line = document.getElementById('line' + (j + 1));
-                line.classList.remove('done');
-                if (j + 1 < step) line.classList.add('done');
-            }
-            currentStep = step;
-        }
+        const availableBalance = $('available-balance');
+        const amountInput = $('amount-input');
+        const amountError = $('amount-error');
+        const btnAmount = $('btn-amount-next');
 
-        // ─── LOAD WITHDRAWAL RULES (unchanged) ──────────────
-        function loadWithdrawalRules() {
-            db.collection('systemSettings').doc('withdrawalRules').get()
-                .then(function(doc) {
-                    if (doc.exists) {
-                        var data = doc.data();
-                        withdrawRules.requireDeposit = data.requireDeposit !== false;
-                        withdrawRules.requireInvestment = data.requireInvestment !== false;
-                    }
-                })
-                .catch(function(err) { console.warn('Could not load withdrawal rules', err); });
-        }
+        const feeAmount = $('fee-amount');
+        const feeFee = $('fee-fee');
+        const feeReceive = $('fee-receive');
 
-        // ─── LOAD SAVED INFO (unchanged) ─────────────────────
-        function loadSavedInfo() {
-            var user = auth.currentUser;
-            if (!user) return;
-            db.collection('users').doc(user.uid).get()
-                .then(function(doc) {
-                    if (doc.exists) {
-                        var data = doc.data();
-                        userPhone = data.phone || '';
-                        currentBalance = data.walletBalance !== undefined ? data.walletBalance : (data.balance || 0);
-                        if (userPhone && userPhone.startsWith('+260')) {
-                            phoneInput.value = userPhone.replace('+260', '');
-                        }
-                        if (data.withdrawalInfo) {
-                            savedInfo = data.withdrawalInfo;
-                            displaySavedInfo(savedInfo);
-                            document.getElementById('infoForm').style.display = 'none';
-                            savedInfoDisplay.style.display = 'block';
-                            step1Continue.style.display = 'block';
-                            document.getElementById('step1Title').textContent = 'Your Saved Information';
-                        } else {
-                            document.getElementById('infoForm').style.display = 'block';
-                            savedInfoDisplay.style.display = 'none';
-                            step1Continue.style.display = 'none';
-                            document.getElementById('step1Title').textContent = 'Withdrawal Info';
-                        }
-                    }
-                })
-                .catch(function(err) { console.warn('Error loading saved info', err); });
-        }
+        const confirmAmount = $('confirm-amount');
+        const confirmFee = $('confirm-fee');
+        const confirmReceive = $('confirm-receive');
+        const confirmNetwork = $('confirm-network');
+        const confirmPhone = $('confirm-phone');
+        const btnConfirm = $('btn-confirm');
 
-        function displaySavedInfo(info) {
-            var networkLabel = info.network ? info.network.toUpperCase() : '—';
-            savedNetwork.textContent = networkLabel;
-            var account = '';
-            if (info.network === 'bank') {
-                account = info.bank ? info.bank.toUpperCase() : '—';
-                if (info.cardNumber) account += ' (****' + info.cardNumber.slice(-4) + ')';
-            } else {
-                account = info.phone || '—';
-            }
-            savedAccount.textContent = account;
-            savedName.textContent = info.accountName || '—';
-            savedPhone.textContent = info.phone || userPhone || '—';
-        }
+        const pinModal = $('pin-modal');
+        const modalCard = $('modal-card');
+        const pinBoxes = modalCard.querySelectorAll('.pin-box');
+        const pinError = $('modal-pin-error');
+        const confirmBtn = $('modal-confirm');
+        const cancelBtn = $('modal-cancel');
+        const showToggle = $('modal-pin-show');
 
-        // ─── DELETE SAVED INFO (unchanged) ──────────────────
-        function deleteSavedInfo() {
-            if (!confirm('Are you sure you want to delete your saved withdrawal information?')) return;
-            var user = auth.currentUser;
-            if (!user) { showToast('Please login again.', true); return; }
-            deleteSavedInfoBtn.disabled = true;
-            deleteSavedInfoBtn.textContent = 'Deleting...';
-            db.collection('users').doc(user.uid).update({
-                withdrawalInfo: firebase.firestore.FieldValue.delete()
-            }).then(function() {
-                savedInfo = null;
-                savedInfoDisplay.style.display = 'none';
-                document.getElementById('infoForm').style.display = 'block';
-                step1Continue.style.display = 'none';
-                document.getElementById('step1Title').textContent = 'Withdrawal Info';
-                networkSelect.value = '';
-                phoneInput.value = userPhone || '';
-                accountNameInput.value = '';
-                cardNumberInput.value = '';
-                bankChips.forEach(function(c) { c.classList.remove('active'); });
-                document.getElementById('phoneGroup').style.display = 'block';
-                document.getElementById('nameGroup').style.display = 'block';
-                document.getElementById('bankGroup').style.display = 'none';
-                selectedNetwork = '';
-                selectedBank = '';
-                showToast('✅ Saved info deleted.', false);
-                deleteSavedInfoBtn.disabled = false;
-                deleteSavedInfoBtn.innerHTML =
-                    '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete Info';
-            }).catch(function(err) {
-                console.error(err);
-                showToast('Error deleting saved info.', true);
-                deleteSavedInfoBtn.disabled = false;
-                deleteSavedInfoBtn.innerHTML =
-                    '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete Info';
-            });
-        }
-        deleteSavedInfoBtn.addEventListener('click', deleteSavedInfo);
+        const toast = $('toast');
+        let toastTimeout = null;
 
-        // ─── SAVE INFO FORM (unchanged) ──────────────────────
-        var selectedNetwork = '';
-        var selectedBank = '';
-
-        networkSelect.addEventListener('change', function() {
-            selectedNetwork = this.value;
-            if (selectedNetwork === 'bank') {
-                document.getElementById('phoneGroup').style.display = 'none';
-                document.getElementById('nameGroup').style.display = 'block';
-                document.getElementById('bankGroup').style.display = 'block';
-            } else if (selectedNetwork) {
-                document.getElementById('phoneGroup').style.display = 'block';
-                document.getElementById('nameGroup').style.display = 'block';
-                document.getElementById('bankGroup').style.display = 'none';
-                selectedBank = '';
-                bankChips.forEach(function(c) { c.classList.remove('active'); });
-            } else {
-                document.getElementById('phoneGroup').style.display = 'block';
-                document.getElementById('nameGroup').style.display = 'block';
-                document.getElementById('bankGroup').style.display = 'none';
-            }
-        });
-
-        bankChips.forEach(function(chip) {
-            chip.addEventListener('click', function() {
-                bankChips.forEach(function(c) { c.classList.remove('active'); });
-                this.classList.add('active');
-                selectedBank = this.dataset.bank;
-            });
-        });
-
-        phoneInput.addEventListener('input', function() {
-            this.value = this.value.replace(/\D/g, '').slice(0, 9);
-        });
-
-        cardNumberInput.addEventListener('input', function() {
-            this.value = this.value.replace(/\D/g, '').slice(0, 16);
-        });
-
-        function validateInfoForSave() {
-            var errors = [];
-            if (!selectedNetwork) errors.push('Please select a network.');
-            if (selectedNetwork && selectedNetwork !== 'bank') {
-                var phone = phoneInput.value.trim();
-                if (phone.length !== 9 || !/^\d{9}$/.test(phone)) errors.push('Enter exactly 9 digits for phone.');
-                else {
-                    var prefix = phone.substring(0, 2);
-                    var valid = false;
-                    if (selectedNetwork === 'mtn') valid = (prefix === '96' || prefix === '76');
-                    else if (selectedNetwork === 'airtel') valid = (prefix === '97' || prefix === '77' || prefix === '57');
-                    else if (selectedNetwork === 'zamtel') valid = (prefix === '95' || prefix === '75');
-                    if (!valid) errors.push('Invalid phone prefix for ' + selectedNetwork.toUpperCase() + '.');
-                }
-                var name = accountNameInput.value.trim();
-                if (name.length < 3) errors.push('Account holder name must be at least 3 characters.');
-            } else if (selectedNetwork === 'bank') {
-                if (!selectedBank) errors.push('Please select a bank.');
-                var card = cardNumberInput.value.trim();
-                if (card.length !== 16 || !/^\d{16}$/.test(card)) errors.push('Enter exactly 16 digits for card number.');
-                var name = accountNameInput.value.trim();
-                if (name.length < 3) errors.push('Account holder name must be at least 3 characters.');
-            }
-            return errors;
-        }
-
-        saveInfoBtn.addEventListener('click', function() {
-            var errors = validateInfoForSave();
-            if (errors.length > 0) {
-                infoMessage.className = 'msg-box error';
-                infoMessage.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' +
-                    errors.join('<br>');
-                infoMessage.style.display = 'block';
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
                 return;
             }
-            var info = {
-                network: selectedNetwork,
-                accountName: accountNameInput.value.trim()
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Almost ready...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Loading your withdrawal info...';
+        }, 35);
+
+        // ============================================================
+        // HELPERS
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
+        }
+
+        function showToast(message, type = '') {
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function showStage(stage) {
+            document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(`stage-${stage}`);
+            if (target) target.classList.add('active');
+            currentStage = stage;
+            const input = target?.querySelector('input:not([readonly]), textarea:not([readonly])');
+            if (input) setTimeout(() => input.focus(), 200);
+        }
+
+        function normalizePhone(input) {
+            let num = input.replace(/\s/g, '');
+            if (num.startsWith('+260')) num = num.substring(4);
+            if (num.startsWith('0')) num = num.substring(1);
+            if (num.length < 9) return null;
+            num = num.slice(-9);
+            return num;
+        }
+
+        function detectNetwork(phone) {
+            const normalized = normalizePhone(phone);
+            if (!normalized) return null;
+            const prefix = normalized.substring(0, 2);
+            for (const [network, prefixes] of Object.entries(NETWORK_PREFIXES)) {
+                if (prefixes.includes(prefix)) {
+                    return network;
+                }
+            }
+            return null;
+        }
+
+        function formatPhoneDisplay(phone) {
+            const normalized = normalizePhone(phone);
+            if (!normalized) return phone;
+            return '+260 ' + normalized;
+        }
+
+        function calculateFee(amount) {
+            const fee = amount * (FEE_PERCENT / 100);
+            const net = amount - fee;
+            return { fee, net };
+        }
+
+        // ============================================================
+        // WEEKEND & HOURS CHECK (using Africa/Lusaka timezone)
+        // ============================================================
+        function getBusinessInfo() {
+            const now = new Date();
+            const options = { timeZone: 'Africa/Lusaka', hour12: false };
+            const dateStr = now.toLocaleDateString('en-US', options);
+            const timeStr = now.toLocaleTimeString('en-US', options);
+            const parts = dateStr.split('/');
+            const month = parseInt(parts[0]) - 1;
+            const day = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+            const businessDate = new Date(year, month, day);
+            const dayOfWeek = businessDate.getDay();
+
+            const timeParts = timeStr.split(':');
+            const hour = parseInt(timeParts[0]);
+            const minute = parseInt(timeParts[1]);
+
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const isAfterClosing = hour >= CLOSING_HOUR;
+            const isOpen = !isWeekend && !isAfterClosing;
+            const dayName = dayNames[dayOfWeek];
+
+            return {
+                isWeekend,
+                isAfterClosing,
+                isOpen,
+                dayName,
+                hour,
+                minute,
+                date: businessDate
             };
-            if (selectedNetwork === 'bank') {
-                info.bank = selectedBank;
-                info.cardNumber = cardNumberInput.value.trim();
-                info.phone = userPhone || '';
-            } else {
-                var phone = '+260' + phoneInput.value.trim();
-                info.phone = phone;
-            }
-            var user = auth.currentUser;
-            if (!user) { window.location.href = 'login.html'; return; }
-            saveInfoBtn.disabled = true;
-            saveInfoBtn.innerHTML = '<span class="spinner"></span> Saving...';
-            db.collection('users').doc(user.uid).update({
-                withdrawalInfo: info
-            }).then(function() {
-                savedInfo = info;
-                displaySavedInfo(info);
-                document.getElementById('infoForm').style.display = 'none';
-                savedInfoDisplay.style.display = 'block';
-                step1Continue.style.display = 'block';
-                document.getElementById('step1Title').textContent = 'Your Saved Information';
-                infoMessage.style.display = 'none';
-                showToast('✅ Withdrawal information saved!', false);
-                saveInfoBtn.disabled = false;
-                saveInfoBtn.innerHTML =
-                    '<span class="btn-icon">Save Information <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
-            }).catch(function(err) {
-                console.error(err);
-                infoMessage.className = 'msg-box error';
-                infoMessage.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Error: ' +
-                    err.message;
-                infoMessage.style.display = 'block';
-                saveInfoBtn.disabled = false;
-                saveInfoBtn.innerHTML =
-                    '<span class="btn-icon">Save Information <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
-            });
-        });
-
-        step1Continue.addEventListener('click', function() {
-            goToStep(2);
-        });
-
-        // ─── SAVING BALANCE FETCH ─────────────────────────────
-        function fetchSavingBalance(userId, branch) {
-            var depositsQuery = db.collection('savingsTransactions')
-                .where('userId', '==', userId)
-                .where('branch', '==', branch)
-                .where('type', '==', 'saving_deposit')
-                .where('status', '==', 'approved');
-
-            var withdrawalsQuery = db.collection('savingsTransactions')
-                .where('userId', '==', userId)
-                .where('branch', '==', branch)
-                .where('type', '==', 'saving_withdrawal')
-                .where('status', '==', 'approved');
-
-            var pendingWithdrawalsQuery = db.collection('savingsTransactions')
-                .where('userId', '==', userId)
-                .where('branch', '==', branch)
-                .where('type', '==', 'saving_withdrawal')
-                .where('status', '==', 'pending');
-
-            return Promise.all([
-                depositsQuery.get(),
-                withdrawalsQuery.get(),
-                pendingWithdrawalsQuery.get()
-            ]).then(function(results) {
-                var deposits = results[0];
-                var withdrawals = results[1];
-                var pending = results[2];
-                var totalDeposits = 0;
-                deposits.forEach(function(doc) {
-                    totalDeposits += doc.data().amount || 0;
-                });
-                var totalWithdrawals = 0;
-                withdrawals.forEach(function(doc) {
-                    totalWithdrawals += doc.data().amount || 0;
-                });
-                var pendingTotal = 0;
-                pending.forEach(function(doc) {
-                    pendingTotal += doc.data().amount || 0;
-                });
-                var available = totalDeposits - totalWithdrawals - pendingTotal;
-                if (available < 0) available = 0;
-                return { available: available, pendingTotal: pendingTotal };
-            });
         }
 
-        // ─── UPDATE SAVING BALANCE DISPLAY ──────────────────
-        function updateSavingBalance() {
-            var user = auth.currentUser;
-            if (!user) return;
-            var branch = savingBranchSelect.value;
-            savingBranch = branch;
-            fetchSavingBalance(user.uid, branch).then(function(result) {
-                savingBalance = result.available;
-                savingPendingTotal = result.pendingTotal;
-                savingBalanceAmount.textContent = 'K' + savingBalance.toFixed(2);
-                if (result.pendingTotal > 0) {
-                    savingPendingInfo.textContent = 'Pending withdrawals: K' + result.pendingTotal.toFixed(2);
-                } else {
-                    savingPendingInfo.textContent = '';
-                }
-                savingBalanceDisplay.classList.add('visible');
-            }).catch(function(err) {
-                console.warn('Error fetching saving balance:', err);
-                savingBalanceAmount.textContent = 'K0.00';
-                savingPendingInfo.textContent = 'Error loading balance';
-            });
+        // ============================================================
+        // SHOW PAGE
+        // ============================================================
+        function showPage() {
+            loadScreen.classList.add('hidden');
+            mainPage.classList.add('visible');
+            document.body.style.overflow = 'auto';
         }
 
-        // ─── WITHDRAWAL TYPE TOGGLE ──────────────────────────
-        typeToggleBtns.forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                typeToggleBtns.forEach(function(b) { b.classList.remove('active'); });
-                this.classList.add('active');
-                withdrawalType = this.dataset.type;
-                if (withdrawalType === 'saving') {
-                    branchSelector.classList.add('visible');
-                    updateSavingBalance();
-                } else {
-                    branchSelector.classList.remove('visible');
-                    savingBalanceDisplay.classList.remove('visible');
+        // ============================================================
+        // CHECK WITHDRAWAL AVAILABILITY
+        // ============================================================
+        function checkWithdrawalAvailability() {
+            const info = getBusinessInfo();
+            isWeekend = info.isWeekend;
+            isAfterClosing = info.isAfterClosing;
+            isWithdrawalsOpen = info.isOpen;
+
+            if (!isWithdrawalsOpen) {
+                closedOverlay.classList.add('show');
+                document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+
+                if (isWeekend) {
+                    closedTitle.textContent = 'Withdrawals Closed';
+                    closedMessage.textContent = 'Withdrawals are unavailable on weekends. Please return on Monday.';
+                    closedStatus.textContent = `Today is ${info.dayName}`;
+                } else if (isAfterClosing) {
+                    closedTitle.textContent = 'Withdrawals Closed';
+                    closedMessage.textContent = `Today's withdrawal window has closed. Please return during the next withdrawal period.`;
+                    closedStatus.textContent = `Closed at ${CLOSING_HOUR}:00`;
                 }
-                // reset amount field and fee summary
-                document.getElementById('withdrawAmount').value = '';
-                document.getElementById('feeSummary').style.display = 'none';
-                document.getElementById('step2Next').disabled = true;
-                document.getElementById('step2Message').style.display = 'none';
-                amountError.innerText = '';
-            });
-        });
-
-        // ─── BRANCH CHANGE ─────────────────────────────────────
-        savingBranchSelect.addEventListener('change', function() {
-            if (withdrawalType === 'saving') {
-                updateSavingBalance();
-                document.getElementById('withdrawAmount').value = '';
-                document.getElementById('feeSummary').style.display = 'none';
-                document.getElementById('step2Next').disabled = true;
-                amountError.innerText = '';
+                return false;
             }
-        });
 
-        // ─── STEP 2: AMOUNT VALIDATION (modified for saving) ──
-        withdrawAmount.addEventListener('input', function() {
-            var val = parseFloat(this.value);
-            if (isNaN(val) || val <= 0) {
-                amountError.innerText = val > 0 ? 'Please enter a valid amount' : '';
-                feeSummary.style.display = 'none';
-                step2Next.disabled = true;
-                selectedAmount = 0;
+            closedOverlay.classList.remove('show');
+            return true;
+        }
+
+        // ============================================================
+        // LOAD USER DATA
+        // ============================================================
+        async function loadUserData(uid) {
+            try {
+                // Load user doc
+                const userRef = doc(db, 'users', uid);
+                const userSnap = await getDoc(userRef);
+                if (!userSnap.exists()) {
+                    showToast('User account not found.', 'error');
+                    return;
+                }
+                userData = userSnap.data();
+
+                // Load wallet
+                const walletRef = doc(db, 'wallets', uid);
+                const walletSnap = await getDoc(walletRef);
+                if (walletSnap.exists()) {
+                    walletData = walletSnap.data();
+                } else {
+                    walletData = { walletBalance: 0 };
+                }
+
+                // Load saved withdrawal info from user doc
+                savedNetwork = userData.withdrawalNetwork || '';
+                savedPhoneRaw = userData.withdrawalPhone || '';
+                savedPhone = savedPhoneRaw ? formatPhoneDisplay(savedPhoneRaw) : '';
+
+                // Check for pending withdrawal
+                const wdRef = collection(db, 'withdrawals');
+                const wdQuery = query(wdRef, where('userId', '==', uid), where('status', '==', 'pending'));
+                const wdSnap = await getDocs(wdQuery);
+                if (!wdSnap.empty) {
+                    pendingWithdrawal = wdSnap.docs[0].data();
+                    pendingWithdrawal.id = wdSnap.docs[0].id;
+                }
+
+                // Render account stage
+                renderAccountStage();
+
+                // Check availability
+                const available = checkWithdrawalAvailability();
+                if (!available) {
+                    showPage();
+                    return;
+                }
+
+                // If we have saved info and no pending withdrawal, go to stage 1 (amount)
+                if (savedNetwork && savedPhoneRaw && !pendingWithdrawal) {
+                    showStage(1);
+                    amountInput.focus();
+                    updateAvailableBalance();
+                } else {
+                    showStage(0);
+                }
+
+                showPage();
+
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showToast('Failed to load your account information.', 'error');
+                showPage();
+            }
+        }
+
+        // ============================================================
+        // RENDER ACCOUNT STAGE
+        // ============================================================
+        function renderAccountStage() {
+            if (pendingWithdrawal) {
+                accountSub.textContent = 'You have a pending withdrawal.';
+                accountContent.innerHTML = `
+                        <div class="pending-card">
+                            <div class="title">Withdrawal Pending</div>
+                            <div class="row"><span>Amount</span><span class="val gold">K${formatCurrency(pendingWithdrawal.amount)}</span></div>
+                            <div class="row"><span>Fee</span><span class="val">K${formatCurrency(pendingWithdrawal.fee)}</span></div>
+                            <div class="row"><span>You Receive</span><span class="val gold">K${formatCurrency(pendingWithdrawal.netAmount)}</span></div>
+                            <div class="row"><span>Network</span><span class="val">${pendingWithdrawal.network || '—'}</span></div>
+                            <div class="row"><span>Phone</span><span class="val">${pendingWithdrawal.phone ? formatPhoneDisplay(pendingWithdrawal.phone) : '—'}</span></div>
+                            <div class="row"><span>Status</span><span class="val" style="color:#f1c40f;">${pendingWithdrawal.status}</span></div>
+                            <div class="row"><span>Date</span><span class="val">${pendingWithdrawal.createdAt ? new Date(pendingWithdrawal.createdAt.seconds*1000).toLocaleDateString('en-ZM') : '—'}</span></div>
+                        </div>
+                        <div style="text-align:center;font-size:0.7rem;color:var(--text-muted);margin-top:8px;">
+                            Please wait for your current withdrawal to be processed before submitting another.
+                        </div>
+                    `;
                 return;
             }
-            var maxBalance = (withdrawalType === 'normal') ? currentBalance : savingBalance;
-            if (val > maxBalance) {
-                amountError.innerText = 'Insufficient balance. Available: ' + maxBalance.toFixed(2) + ' ZMW';
-                feeSummary.style.display = 'none';
-                step2Next.disabled = true;
-                return;
-            }
-            amountError.innerText = '';
-            var fee = val * 0.10;
-            var net = val - fee;
-            summaryGross.textContent = val.toFixed(2) + ' ZMW';
-            summaryFee.textContent = fee.toFixed(2) + ' ZMW';
-            summaryNet.textContent = net.toFixed(2) + ' ZMW';
-            feeSummary.style.display = 'block';
-            selectedAmount = val;
-            netAfterFee = net;
-            step2Next.disabled = false;
-        });
 
-        step2Next.addEventListener('click', function() {
-            if (this.disabled) return;
-            var maxBalance = (withdrawalType === 'normal') ? currentBalance : savingBalance;
-            if (selectedAmount > maxBalance) {
-                step2Message.className = 'msg-box error';
-                step2Message.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Insufficient balance. Available: ' +
-                    maxBalance.toFixed(2) + ' ZMW.';
-                step2Message.style.display = 'block';
-                return;
-            }
-            if (withdrawalType === 'normal') {
-                checkEligibility(function(eligible, msg) {
-                    if (!eligible) {
-                        step2Message.className = 'msg-box error';
-                        step2Message.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' +
-                            msg;
-                        step2Message.style.display = 'block';
+            if (savedNetwork && savedPhoneRaw) {
+                accountSub.textContent = 'Your saved withdrawal account is ready.';
+                accountContent.innerHTML = `
+                        <div class="account-card">
+                            <div class="row"><span class="label">Network</span><span class="value gold">${savedNetwork}</span></div>
+                            <div class="row"><span class="label">Phone</span><span class="value">${savedPhone}</span></div>
+                        </div>
+                        <div class="account-actions">
+                            <button class="btn-sm primary" id="btn-use-account">Use This Account</button>
+                            <button class="btn-sm secondary" id="btn-change-account">Change Account</button>
+                        </div>
+                    `;
+
+                document.getElementById('btn-use-account')?.addEventListener('click', () => {
+                    if (!isWithdrawalsOpen) {
+                        showToast('Withdrawals are currently closed.', 'error');
                         return;
                     }
-                    populateConfirm();
-                    goToStep(3);
+                    // Ensure no pending withdrawal before proceeding
+                    if (pendingWithdrawal) {
+                        showToast('You already have a pending withdrawal.', 'error');
+                        return;
+                    }
+                    showStage(1);
+                    amountInput.focus();
+                    updateAvailableBalance();
                 });
-            } else {
-                populateConfirm();
-                goToStep(3);
-            }
-        });
 
-        // ─── ELIGIBILITY CHECK (unchanged) ────────────────────
-        function checkEligibility(callback) {
-            var user = auth.currentUser;
-            if (!user) { callback(false, 'Please login again.'); return; }
-            var userId = user.uid;
-            var checks = [];
-            if (withdrawRules.requireDeposit) {
-                checks.push(db.collection('deposits').where('userId', '==', userId).where('status', '==', 'completed').limit(1)
-                    .get().then(function(snap) { return !snap.empty; }));
-            } else {
-                checks.push(Promise.resolve(true));
-            }
-            if (withdrawRules.requireInvestment) {
-                checks.push(db.collection('investments').where('userId', '==', userId).limit(1).get().then(function(snap) {
-                    return !snap.empty;
-                }));
-            } else {
-                checks.push(Promise.resolve(true));
-            }
-            checks.push(db.collection('loans').where('userId', '==', userId).where('status', '==', 'active').limit(1).get()
-                .then(function(snap) { return snap.empty; }));
+                document.getElementById('btn-change-account')?.addEventListener('click', () => {
+                    // Clear saved info and show phone input
+                    savedNetwork = '';
+                    savedPhoneRaw = '';
+                    savedPhone = '';
+                    pendingWithdrawal = null; // in case it was set but not displayed
+                    renderAccountStage();
+                });
 
-            Promise.all(checks).then(function(results) {
-                var hasDeposit = results[0];
-                var hasInvestment = results[1];
-                var noActiveLoan = results[2];
-                if (!noActiveLoan) {
-                    callback(false, 'You have an active loan. Please repay it before withdrawing.');
+                return;
+            }
+
+            // No saved account
+            accountSub.textContent = 'Add your mobile-money number before making your first withdrawal.';
+            accountContent.innerHTML = `
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label>Phone Number</label>
+                        <input type="tel" class="form-control" id="phone-input" placeholder="e.g. 0961234567" inputmode="numeric" autocomplete="tel" />
+                        <div class="form-error" id="phone-error"></div>
+                    </div>
+                    <button class="btn" id="btn-save-account">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Save Account</span>
+                    </button>
+                `;
+
+            const phoneInput = document.getElementById('phone-input');
+            const phoneError = document.getElementById('phone-error');
+            const btnSave = document.getElementById('btn-save-account');
+
+            btnSave.addEventListener('click', async () => {
+                if (isProcessing) return;
+                const raw = phoneInput.value.trim();
+                if (!raw) {
+                    phoneError.textContent = 'Please enter your phone number.';
+                    phoneInput.classList.add('error');
                     return;
                 }
-                if (withdrawRules.requireDeposit && !hasDeposit) {
-                    callback(false, 'You must make a completed deposit before withdrawing.');
+
+                const network = detectNetwork(raw);
+                if (!network) {
+                    phoneError.textContent = 'Please enter a valid supported Zambia mobile number.';
+                    phoneInput.classList.add('error');
                     return;
                 }
-                if (withdrawRules.requireInvestment && !hasInvestment) {
-                    callback(false, 'You must have at least one active investment plan before withdrawing.');
-                    return;
+
+                phoneError.textContent = '';
+                phoneInput.classList.remove('error');
+
+                isProcessing = true;
+                btnSave.classList.add('loading');
+                btnSave.disabled = true;
+
+                try {
+                    // Save to user doc
+                    const userRef = doc(db, 'users', currentUser.uid);
+                    await updateDoc(userRef, {
+                        withdrawalNetwork: network,
+                        withdrawalPhone: normalizePhone(raw),
+                        updatedAt: serverTimestamp()
+                    });
+
+                    savedNetwork = network;
+                    savedPhoneRaw = normalizePhone(raw);
+                    savedPhone = formatPhoneDisplay(savedPhoneRaw);
+
+                    showToast('Withdrawal account saved!', 'success');
+                    // Re-render to show saved account
+                    renderAccountStage();
+
+                    // Check pending again (just in case)
+                    const wdRef = collection(db, 'withdrawals');
+                    const wdQuery = query(wdRef, where('userId', '==', currentUser.uid), where('status', '==', 'pending'));
+                    const wdSnap = await getDocs(wdQuery);
+                    if (!wdSnap.empty) {
+                        pendingWithdrawal = wdSnap.docs[0].data();
+                        pendingWithdrawal.id = wdSnap.docs[0].id;
+                        renderAccountStage();
+                        showToast('Pending withdrawal detected.', '');
+                        return;
+                    }
+
+                    if (isWithdrawalsOpen) {
+                        showStage(1);
+                        amountInput.focus();
+                        updateAvailableBalance();
+                    }
+
+                } catch (error) {
+                    console.error('Error saving account:', error);
+                    showToast('Failed to save withdrawal account.', 'error');
+                } finally {
+                    isProcessing = false;
+                    btnSave.classList.remove('loading');
+                    btnSave.disabled = false;
                 }
-                callback(true, '');
-            }).catch(function(err) {
-                console.error(err);
-                callback(false, 'Error checking eligibility. Try again.');
+            });
+
+            phoneInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') btnSave.click();
             });
         }
 
-        // ─── ESTIMATED PROCESSING TIME (unchanged) ───────────
-        function getEstimatedProcessingTime() {
-            var now = new Date();
-            var hours = now.getHours();
-            if (hours >= 9 && hours < 17) {
-                var eta = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-                if (eta.getHours() >= 17 || (eta.getHours() === 17 && eta.getMinutes() > 0)) {
-                    eta.setHours(17, 0, 0, 0);
-                }
-                return "by " + eta.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        // ============================================================
+        // UPDATE AVAILABLE BALANCE
+        // ============================================================
+        function updateAvailableBalance() {
+            const balance = walletData?.walletBalance || 0;
+            availableBalance.textContent = 'K' + formatCurrency(balance);
+        }
+
+        // ============================================================
+        // LIVE FEE CALCULATION
+        // ============================================================
+        function updateFeeCalculation() {
+            const raw = amountInput.value.trim().replace(/,/g, '');
+            const amount = parseFloat(raw);
+
+            if (isNaN(amount) || amount <= 0) {
+                feeAmount.textContent = 'K0.00';
+                feeFee.textContent = '− K0.00';
+                feeReceive.textContent = 'K0.00';
+                return;
+            }
+
+            const { fee, net } = calculateFee(amount);
+            feeAmount.textContent = 'K' + formatCurrency(amount);
+            feeFee.textContent = '− K' + formatCurrency(fee);
+            feeReceive.textContent = 'K' + formatCurrency(net);
+
+            // Check against balance
+            const balance = walletData?.walletBalance || 0;
+            if (amount > balance) {
+                amountError.textContent = 'Insufficient balance.';
+                amountInput.classList.add('error');
             } else {
-                var nextDay = new Date(now);
-                nextDay.setDate(nextDay.getDate() + 1);
-                nextDay.setHours(9, 0, 0, 0);
-                if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2);
-                if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1);
-                return "on " + nextDay.toLocaleDateString([], { day: 'numeric', month: 'short' }) + " at 09:00";
+                amountError.textContent = '';
+                amountInput.classList.remove('error');
             }
         }
 
-        // ─── POPULATE CONFIRM (modified) ─────────────────────
-        function populateConfirm() {
-            var info = savedInfo;
-            confirmNetwork.textContent = info.network.toUpperCase();
-            if (info.network === 'bank') {
-                confirmAccount.textContent = info.bank.toUpperCase() + ' (****' + info.cardNumber.slice(-4) + ')';
-            } else {
-                confirmAccount.textContent = info.phone;
+        amountInput.addEventListener('input', updateFeeCalculation);
+
+        // ============================================================
+        // STAGE 1: AMOUNT → NEXT
+        // ============================================================
+        btnAmount.addEventListener('click', async () => {
+            if (isProcessing) return;
+            if (!isWithdrawalsOpen) {
+                showToast('Withdrawals are currently closed.', 'error');
+                return;
             }
-            confirmName.textContent = info.accountName;
-            confirmPhone.textContent = info.phone || userPhone || '—';
-            confirmAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
-            confirmFee.textContent = (selectedAmount * 0.10).toFixed(2) + ' ZMW';
-            confirmNet.textContent = netAfterFee.toFixed(2) + ' ZMW';
-            confirmEta.textContent = getEstimatedProcessingTime();
 
-            if (withdrawalType === 'saving') {
-                confirmTypeRow.style.display = 'flex';
-                confirmBranchRow.style.display = 'flex';
-                confirmType.textContent = 'Saving';
-                var branchName = {
-                    wealth: 'PureOre Wealth',
-                    reserve: 'PureOre Reserve',
-                    growth: 'PureOre Growth'
-                } [savingBranch] || savingBranch;
-                confirmBranch.textContent = branchName;
-            } else {
-                confirmTypeRow.style.display = 'none';
-                confirmBranchRow.style.display = 'none';
+            // Check for pending withdrawal
+            if (pendingWithdrawal) {
+                showToast('You already have a pending withdrawal.', 'error');
+                return;
             }
-        }
 
-        // ─── SUBMIT WITHDRAWAL (modified for saving) ────────
-        confirmSubmit.addEventListener('click', function() {
-            if (isSubmitting) return;
-            isSubmitting = true;
-            confirmSubmit.disabled = true;
-            confirmSubmit.innerHTML = '<span class="spinner"></span> Submitting...';
+            const raw = amountInput.value.trim().replace(/,/g, '');
+            const amount = parseFloat(raw);
 
-            var user = auth.currentUser;
-            if (!user) { window.location.href = 'login.html'; return; }
-            var userId = user.uid;
+            if (isNaN(amount) || amount <= 0) {
+                amountError.textContent = 'Please enter a valid amount greater than zero.';
+                amountInput.classList.add('error');
+                return;
+            }
 
-            if (withdrawalType === 'normal') {
-                // Normal withdrawal (unchanged)
-                var withdrawData = {
-                    userId: userId,
-                    amount: selectedAmount,
-                    netAmount: netAfterFee,
-                    fee: selectedAmount * 0.10,
-                    status: 'pending',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    network: savedInfo.network,
-                    accountName: savedInfo.accountName,
-                    phone: savedInfo.phone || userPhone || ''
-                };
-                if (savedInfo.network === 'bank') {
-                    withdrawData.bankName = savedInfo.bank;
-                    withdrawData.cardNumber = savedInfo.cardNumber;
+            const balance = walletData?.walletBalance || 0;
+            if (amount > balance) {
+                amountError.textContent = 'Insufficient balance.';
+                amountInput.classList.add('error');
+                return;
+            }
+
+            amountError.textContent = '';
+            amountInput.classList.remove('error');
+
+            const { fee, net } = calculateFee(amount);
+            withdrawalAmount = amount;
+            calculatedFee = fee;
+            calculatedNet = net;
+
+            // Populate confirm stage
+            confirmAmount.textContent = 'K' + formatCurrency(amount);
+            confirmFee.textContent = '− K' + formatCurrency(fee);
+            confirmReceive.textContent = 'K' + formatCurrency(net);
+            confirmNetwork.textContent = savedNetwork;
+            confirmPhone.textContent = savedPhone;
+
+            showStage(2);
+        });
+
+        amountInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') btnAmount.click();
+        });
+
+        // ============================================================
+        // STAGE 2: CONFIRM → PIN MODAL
+        // ============================================================
+        btnConfirm.addEventListener('click', () => {
+            if (isProcessing) return;
+            if (!isWithdrawalsOpen) {
+                showToast('Withdrawals are currently closed.', 'error');
+                return;
+            }
+            if (pendingWithdrawal) {
+                showToast('You already have a pending withdrawal.', 'error');
+                return;
+            }
+
+            // Show PIN modal
+            pinModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            pinBoxes.forEach(b => b.value = '');
+            pinError.textContent = '';
+            pinBoxes.forEach(b => b.classList.remove('error'));
+            setTimeout(() => pinBoxes[0].focus(), 300);
+        });
+
+        // ============================================================
+        // PIN MODAL LOGIC
+        // ============================================================
+        pinBoxes.forEach((box, idx) => {
+            box.addEventListener('input', () => {
+                box.value = box.value.replace(/\D/g, '');
+                if (box.value && idx < 5) {
+                    pinBoxes[idx + 1].focus();
                 }
-                db.runTransaction(function(transaction) {
-                    var userRef = db.collection('users').doc(userId);
-                    return transaction.get(userRef).then(function(doc) {
-                        if (!doc.exists) throw new Error('User data not found');
-                        var currentBal = doc.data().walletBalance !== undefined ? doc.data().walletBalance : (doc
-                            .data().balance || 0);
-                        if (currentBal < selectedAmount) throw new Error('Insufficient balance');
-                        var newBalance = currentBal - selectedAmount;
-                        transaction.update(userRef, {
-                            walletBalance: newBalance,
-                            balance: newBalance
-                        });
-                        var withdrawalRef = db.collection('withdrawals').doc();
-                        transaction.set(withdrawalRef, withdrawData);
-                    });
-                }).then(function() {
-                    finalAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
-                    finalNetwork.textContent = savedInfo.network.toUpperCase();
-                    finalEta.textContent = getEstimatedProcessingTime();
-                    goToStep(4);
-                    showToast('✅ Withdrawal submitted successfully!', false);
-                    isSubmitting = false;
-                    confirmSubmit.disabled = false;
-                    confirmSubmit.innerHTML =
-                        '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
-                }).catch(function(err) {
-                    console.error(err);
-                    confirmMessage.className = 'msg-box error';
-                    confirmMessage.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Error: ' +
-                        err.message;
-                    confirmMessage.style.display = 'block';
-                    isSubmitting = false;
-                    confirmSubmit.disabled = false;
-                    confirmSubmit.innerHTML =
-                        '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
+                pinError.textContent = '';
+                pinBoxes.forEach(b => b.classList.remove('error'));
+            });
+            box.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !box.value && idx > 0) {
+                    pinBoxes[idx - 1].focus();
+                }
+                if (e.key === 'ArrowLeft' && idx > 0) pinBoxes[idx - 1].focus();
+                if (e.key === 'ArrowRight' && idx < 5) pinBoxes[idx + 1].focus();
+            });
+            box.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const data = (e.clipboardData || window.clipboardData).getData('text');
+                const digits = data.replace(/\D/g, '').slice(0, 6);
+                if (!digits.length) return;
+                for (let i = 0; i < Math.min(digits.length, 6); i++) {
+                    pinBoxes[i].value = digits[i];
+                }
+                const lastIdx = Math.min(digits.length, 6) - 1;
+                pinBoxes[lastIdx].focus();
+                pinError.textContent = '';
+                pinBoxes.forEach(b => b.classList.remove('error'));
+            });
+        });
+
+        showToggle.addEventListener('change', () => {
+            pinBoxes.forEach(b => {
+                b.type = showToggle.checked ? 'text' : 'password';
+                b.classList.toggle('hidden-pin', !showToggle.checked);
+            });
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            pinModal.classList.remove('open');
+            document.body.style.overflow = 'auto';
+        });
+
+        confirmBtn.addEventListener('click', async () => {
+            const pin = Array.from(pinBoxes).map(b => b.value).join('');
+            if (pin.length !== 6) {
+                pinError.textContent = 'Please enter all 6 digits.';
+                pinBoxes.forEach(b => b.classList.add('error'));
+                return;
+            }
+            if (!/^[0-9]{6}$/.test(pin)) {
+                pinError.textContent = 'PIN must contain only numbers.';
+                pinBoxes.forEach(b => b.classList.add('error'));
+                return;
+            }
+            pinError.textContent = '';
+            pinBoxes.forEach(b => b.classList.remove('error'));
+
+            await submitWithdrawal(pin);
+        });
+
+        // ============================================================
+        // SUBMIT WITHDRAWAL
+        // ============================================================
+        async function submitWithdrawal(pin) {
+            if (isProcessing) return;
+            isProcessing = true;
+            confirmBtn.disabled = true;
+            confirmBtn.classList.add('loading');
+
+            try {
+                // Verify PIN via Cloud Function
+                const verifyPinFn = httpsCallable(functions, 'verifyPin');
+                const pinResult = await verifyPinFn({
+                    uid: currentUser.uid,
+                    pin: pin
                 });
-            } else {
-                // ─── SAVING WITHDRAWAL ──────────────────────────────
-                var savingWithdrawData = {
-                    userId: userId,
-                    amount: selectedAmount,
-                    netAmount: netAfterFee,
-                    fee: selectedAmount * 0.10,
-                    status: 'pending',
-                    type: 'saving_withdrawal',
-                    branch: savingBranch,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    network: savedInfo.network,
-                    accountName: savedInfo.accountName,
-                    phone: savedInfo.phone || userPhone || '',
-                };
-                if (savedInfo.network === 'bank') {
-                    savingWithdrawData.bankName = savedInfo.bank;
-                    savingWithdrawData.cardNumber = savedInfo.cardNumber;
+
+                if (!pinResult.data || pinResult.data.success !== true) {
+                    pinError.textContent = pinResult.data?.message || 'Invalid PIN. Please try again.';
+                    pinBoxes.forEach(b => b.classList.add('error'));
+                    pinBoxes.forEach(b => b.value = '');
+                    pinBoxes[0].focus();
+                    isProcessing = false;
+                    confirmBtn.disabled = false;
+                    confirmBtn.classList.remove('loading');
+                    return;
                 }
-                db.collection('savingsTransactions').add(savingWithdrawData)
-                    .then(function() {
-                        finalAmount.textContent = selectedAmount.toFixed(2) + ' ZMW';
-                        finalNetwork.textContent = savedInfo.network.toUpperCase();
-                        finalEta.textContent = getEstimatedProcessingTime();
-                        goToStep(4);
-                        showToast('✅ Saving withdrawal submitted successfully!', false);
-                        isSubmitting = false;
-                        confirmSubmit.disabled = false;
-                        confirmSubmit.innerHTML =
-                            '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
-                    })
-                    .catch(function(err) {
-                        console.error(err);
-                        confirmMessage.className = 'msg-box error';
-                        confirmMessage.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Error: ' +
-                            err.message;
-                        confirmMessage.style.display = 'block';
-                        isSubmitting = false;
-                        confirmSubmit.disabled = false;
-                        confirmSubmit.innerHTML =
-                            '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
-                    });
-            }
-        });
 
-        // ─── STEP 4: DONE ──────────────────────────────────────
-        step4Done.addEventListener('click', function() {
-            window.location.href = 'history.html';
-        });
+                // Call withdrawal function
+                const withdrawFn = httpsCallable(functions, 'createWithdrawal');
+                const result = await withdrawFn({
+                    amount: withdrawalAmount,
+                    phone: savedPhoneRaw,
+                    network: savedNetwork,
+                    pin: pin
+                });
 
-        // ─── BACK BUTTON ──────────────────────────────────────
-        document.querySelector('.back-btn')?.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (currentStep === 1) {
-                window.location.href = 'dashboard.html';
-            } else if (currentStep === 2) {
-                goToStep(1);
-            } else if (currentStep === 3) {
-                goToStep(2);
-            } else if (currentStep === 4) {
-                goToStep(3);
-            }
-        });
-
-        // ─── AUTH STATE ──────────────────────────────────────
-        let authResolved = false;
-        let redirectTimeout = null;
-
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                authResolved = true;
-                if (redirectTimeout) {
-                    clearTimeout(redirectTimeout);
-                    redirectTimeout = null;
-                }
-                loadWithdrawalRules();
-                loadSavedInfo();
-                // if saving is selected, update balance
-                if (withdrawalType === 'saving') {
-                    updateSavingBalance();
-                }
-                watchBlockStatus(user.uid);
-            } else {
-                if (!authResolved) {
-                    if (!redirectTimeout) {
-                        redirectTimeout = setTimeout(function() {
-                            if (!auth.currentUser) {
-                                window.location.href = 'login.html';
-                            }
-                        }, 2000);
-                    }
+                if (result.data && result.data.success === true) {
+                    // Success
+                    pinModal.classList.remove('open');
+                    document.body.style.overflow = 'auto';
+                    showSuccessScreen(result.data);
                 } else {
-                    window.location.href = 'login.html';
+                    const errorMsg = result.data?.message || 'Withdrawal request failed. Please try again.';
+                    pinError.textContent = errorMsg;
+                    pinBoxes.forEach(b => b.classList.add('error'));
+                    pinBoxes.forEach(b => b.value = '');
+                    pinBoxes[0].focus();
                 }
+
+            } catch (error) {
+                console.error('Withdrawal error:', error);
+                let msg = 'Unable to process withdrawal. Please try again.';
+                if (error.message && error.message.includes('insufficient')) {
+                    msg = 'Insufficient balance.';
+                } else if (error.message && error.message.includes('WEEKEND')) {
+                    msg = 'Withdrawals are not available on weekends.';
+                } else if (error.message && error.message.includes('CLOSED')) {
+                    msg = 'Withdrawal window has closed.';
+                } else if (error.message && error.message.includes('pending')) {
+                    msg = 'You already have a pending withdrawal.';
+                }
+                pinError.textContent = msg;
+                pinBoxes.forEach(b => b.classList.add('error'));
+                pinBoxes.forEach(b => b.value = '');
+                pinBoxes[0].focus();
+            } finally {
+                isProcessing = false;
+                confirmBtn.disabled = false;
+                confirmBtn.classList.remove('loading');
+            }
+        }
+
+        // ============================================================
+        // SUCCESS SCREEN
+        // ============================================================
+        function showSuccessScreen(data) {
+            const container = stage2.querySelector('.card');
+            const amount = data.amount || withdrawalAmount;
+            const fee = data.fee || calculatedFee;
+            const net = data.netAmount || calculatedNet;
+
+            container.innerHTML = `
+                    <div class="result-state">
+                        <div class="result-icon success">
+                            <svg viewBox="0 0 24 24">
+                                <polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="result-title">Withdrawal Request Submitted</div>
+                        <div class="result-sub">Your withdrawal request has been submitted successfully and is being processed.</div>
+                        <div class="result-details">
+                            <div>Amount: <span class="highlight">K${formatCurrency(amount)}</span></div>
+                            <div>Withdrawal Fee: <span class="highlight">K${formatCurrency(fee)}</span></div>
+                            <div>You Will Receive: <span class="highlight">K${formatCurrency(net)}</span></div>
+                            <div>Network: <span class="highlight">${savedNetwork}</span></div>
+                            <div>Phone: <span class="highlight">${savedPhone}</span></div>
+                            <div>Estimated Arrival: <span class="highlight">Within ${ARRIVAL_HOURS} hours</span></div>
+                            <div>Status: <span class="highlight" style="color:#f1c40f;">PENDING</span></div>
+                        </div>
+                        <div class="result-actions">
+                            <a href="history.html" class="btn-result primary">
+                                <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h12M4 17h8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><path d="M20 7l-4 5 4 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                View History
+                            </a>
+                            <a href="profile.html" class="btn-result secondary">
+                                <svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                Done
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+            showToast('Withdrawal submitted successfully!', 'success');
+        }
+
+        // ============================================================
+        // BACK BUTTON
+        // ============================================================
+        document.getElementById('back-btn').addEventListener('click', () => {
+            if (currentStage === 0) {
+                window.history.back();
+            } else if (currentStage === 1) {
+                // Go back to account stage
+                showStage(0);
+            } else if (currentStage === 2) {
+                showStage(1);
+                amountInput.focus();
             }
         });
 
-        // ─── BLOCK LISTENER ──────────────────────────────────
-        var blockUnsub = null;
+        // ============================================================
+        // AUTHENTICATION
+        // ============================================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+            loadUserData(user.uid);
+        });
 
-        function watchBlockStatus(userId) {
-            if (blockUnsub) blockUnsub();
-            blockUnsub = db.collection('users').doc(userId).onSnapshot(function(doc) {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked. Redirecting...', true);
-                    setTimeout(function() {
-                        auth.signOut().then(function() { window.location.href = 'login.html'; });
-                    }, 2000);
-                }
-            }, function(err) { console.warn('Block listener error:', err); });
-        }
-        window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
-
-        console.log('✅ withdraw.html · Sajvera Capital · Normal + Saving Withdrawal');
-        console.log('💳 Saving withdrawal uses separate balance and pending lock');
+        console.log('PureOre Nexus — Withdraw page ready.');
     </script>
 
 </body>

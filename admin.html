@@ -1,0 +1,3094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Admin | PureOre Nexus</title>
+    <meta name="description" content="PureOre Nexus Admin Control Center" />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js",
+                "firebase/functions": "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js"
+            }
+        }
+    </script>
+
+    <style>
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold: #d4af37;
+            --gold-light: #bfa76f;
+            --gold-glow: rgba(212, 175, 55, 0.25);
+            --gold-subtle: rgba(212, 175, 55, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --sidebar-width: 260px;
+            --header-height: 64px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(212, 175, 55, 0.04);
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.06);
+            position: relative;
+        }
+        .load-logo-symbol::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .load-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
+        }
+
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           ADMIN LAYOUT
+        ============================================================ */
+        #admin-app {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            display: flex;
+            flex-direction: column;
+            background: var(--dark);
+        }
+        #admin-app.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ============================================================
+           TOP HEADER
+        ============================================================ */
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            height: var(--header-height);
+            background: rgba(11, 11, 11, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            flex-shrink: 0;
+            z-index: 30;
+            position: relative;
+        }
+
+        .admin-header .left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .admin-header .left .hamburger {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            width: 36px;
+            height: 36px;
+        }
+        .admin-header .left .hamburger:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-white);
+        }
+        .admin-header .left .hamburger svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .admin-header .left .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-white);
+        }
+        .admin-header .left .brand svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 1.8;
+        }
+        .admin-header .left .brand span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        .admin-header .left .brand span em {
+            color: var(--gold);
+            font-style: normal;
+        }
+        .admin-header .left .brand .badge {
+            font-size: 0.5rem;
+            background: rgba(212, 175, 55, 0.12);
+            color: var(--gold);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            border: 1px solid rgba(212, 175, 55, 0.08);
+        }
+
+        .admin-header .right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .admin-header .right .admin-name {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            display: none;
+        }
+        .admin-header .right .admin-name strong {
+            color: var(--text-white);
+            font-weight: 500;
+        }
+        .admin-header .right .header-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+        .admin-header .right .header-btn:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-white);
+        }
+        .admin-header .right .header-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        @media (min-width: 768px) {
+            .admin-header .right .admin-name {
+                display: block;
+            }
+        }
+
+        /* ============================================================
+           SIDEBAR
+        ============================================================ */
+        .admin-sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: rgba(11, 11, 11, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.04);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 25;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            padding: 12px 0 20px;
+        }
+        .admin-sidebar.open {
+            transform: translateX(0);
+        }
+        .admin-sidebar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .admin-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+        }
+
+        .admin-sidebar .sidebar-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            padding: 8px 20px 6px;
+            font-weight: 500;
+            opacity: 0.4;
+        }
+
+        .admin-sidebar .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+        .admin-sidebar .nav-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-white);
+        }
+        .admin-sidebar .nav-item.active {
+            color: var(--gold);
+            border-left-color: var(--gold);
+            background: rgba(212, 175, 55, 0.04);
+        }
+        .admin-sidebar .nav-item.active .nav-icon {
+            color: var(--gold);
+        }
+        .admin-sidebar .nav-item .nav-icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+        .admin-sidebar .nav-item .nav-text {
+            flex: 1;
+            white-space: nowrap;
+            font-size: 0.7rem;
+        }
+
+        @media (min-width: 1024px) {
+            .admin-sidebar {
+                transform: translateX(0);
+            }
+            .admin-sidebar .nav-item {
+                padding: 10px 24px;
+            }
+            .admin-header .left .hamburger {
+                display: none;
+            }
+            #admin-content {
+                margin-left: var(--sidebar-width);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-sidebar {
+                width: 280px;
+            }
+        }
+
+        /* ============================================================
+           MAIN CONTENT
+        ============================================================ */
+        #admin-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 16px 30px;
+            position: relative;
+            z-index: 2;
+            background: var(--dark);
+        }
+        #admin-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        #admin-content::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeSlide 0.3s ease forwards;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .tab-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .tab-header .sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           DASHBOARD CARDS (for admin dashboard stats)
+        ============================================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 14px 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        .stat-card .label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .stat-card .value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 2px;
+            color: var(--text-white);
+        }
+        .stat-card .value.gold {
+            color: var(--gold);
+        }
+        .stat-card .value.green {
+            color: #2ecc71;
+        }
+        .stat-card .value.red {
+            color: #e74c3c;
+        }
+
+        /* ============================================================
+           ADMIN CARDS / TABLES
+        ============================================================ */
+        .admin-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            margin-bottom: 14px;
+            overflow-x: auto;
+        }
+        .admin-card .card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            min-width: 600px;
+        }
+        .admin-table th {
+            text-align: left;
+            padding: 8px 8px;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .admin-table td {
+            padding: 8px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            vertical-align: middle;
+            color: var(--text-white);
+        }
+        .admin-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge-status {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .badge-status.active {
+            background: rgba(46, 204, 113, 0.08);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.08);
+        }
+        .badge-status.pending {
+            background: rgba(241, 196, 15, 0.08);
+            color: #f1c40f;
+            border: 1px solid rgba(241, 196, 15, 0.08);
+        }
+        .badge-status.completed {
+            background: rgba(46, 204, 113, 0.06);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.06);
+        }
+        .badge-status.blocked,
+        .badge-status.rejected {
+            background: rgba(231, 76, 60, 0.06);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.06);
+        }
+        .badge-status.approved {
+            background: rgba(46, 204, 113, 0.06);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.06);
+        }
+
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 0.6rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.25s ease;
+            margin: 2px;
+        }
+        .btn-sm.gold {
+            background: var(--gold);
+            color: #0b0b0b;
+        }
+        .btn-sm.gold:hover {
+            background: #dbb95c;
+        }
+        .btn-sm.danger {
+            background: rgba(231, 76, 60, 0.08);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.08);
+        }
+        .btn-sm.danger:hover {
+            background: rgba(231, 76, 60, 0.15);
+        }
+        .btn-sm.green {
+            background: rgba(46, 204, 113, 0.08);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.08);
+        }
+        .btn-sm.green:hover {
+            background: rgba(46, 204, 113, 0.15);
+        }
+        .btn-sm.secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .btn-sm.secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .btn-sm:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .form-group-admin {
+            margin-bottom: 12px;
+        }
+        .form-group-admin label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .form-group-admin input,
+        .form-group-admin select,
+        .form-group-admin textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-white);
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+            outline: none;
+        }
+        .form-group-admin input:focus,
+        .form-group-admin select:focus,
+        .form-group-admin textarea:focus {
+            border-color: var(--gold);
+        }
+        .form-group-admin textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .form-group-admin select option {
+            background: var(--dark);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-admin {
+            padding: 10px 24px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: var(--gold);
+            color: #0b0b0b;
+        }
+        .btn-admin:hover:not(:disabled) {
+            background: #dbb95c;
+            transform: translateY(-1px);
+        }
+        .btn-admin:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .btn-admin.danger {
+            background: rgba(231, 76, 60, 0.08);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.08);
+        }
+        .btn-admin.danger:hover:not(:disabled) {
+            background: rgba(231, 76, 60, 0.15);
+        }
+        .btn-admin.green {
+            background: rgba(46, 204, 113, 0.08);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.08);
+        }
+        .btn-admin.green:hover:not(:disabled) {
+            background: rgba(46, 204, 113, 0.15);
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .search-input {
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-white);
+            font-size: 0.8rem;
+            font-family: inherit;
+            outline: none;
+            min-width: 160px;
+        }
+        .search-input:focus {
+            border-color: var(--gold);
+        }
+
+        .toggle-switch-admin {
+            width: 40px;
+            height: 22px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 11px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.25s ease;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+        .toggle-switch-admin.on {
+            background: var(--gold);
+        }
+        .toggle-switch-admin .knob {
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.25s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .toggle-switch-admin.on .knob {
+            transform: translateX(18px);
+        }
+
+        /* ============================================================
+           ADS PREVIEW
+        ============================================================ */
+        .ad-preview {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-top: 12px;
+            max-width: 400px;
+        }
+        .ad-preview img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            background: var(--charcoal);
+        }
+        .ad-preview .ad-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .ad-preview .ad-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin: 4px 0 8px;
+        }
+        .ad-preview .ad-btn {
+            display: inline-block;
+            padding: 6px 16px;
+            background: var(--gold);
+            color: #0b0b0b;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* ============================================================
+           MODAL
+        ============================================================ */
+        .modal-overlay-admin {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(11, 11, 11, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-overlay-admin.open {
+            display: flex;
+        }
+        .modal-card-admin {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px 20px 20px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.35s ease;
+        }
+        .modal-card-admin .modal-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .modal-card-admin .modal-sub {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-bottom: 16px;
+        }
+        .modal-card-admin .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .modal-card-admin .modal-actions .btn-modal {
+            padding: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            min-height: 44px;
+        }
+        .modal-card-admin .modal-actions .btn-modal.cancel {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .modal-card-admin .modal-actions .btn-modal.confirm {
+            background: var(--gold);
+            color: #0b0b0b;
+        }
+        .modal-card-admin .modal-actions .btn-modal.danger {
+            background: #e74c3c;
+            color: #fff;
+        }
+        .modal-card-admin .modal-actions .btn-modal:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        @media (max-width: 480px) {
+            .modal-card-admin .modal-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============================================================
+           EMPTY / LOADING
+        ============================================================ */
+        .empty-state-admin {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state-admin svg {
+            width: 40px;
+            height: 40px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.3;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .empty-state-admin p {
+            font-size: 0.75rem;
+            font-weight: 300;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* ============================================================
+           TOAST
+        ============================================================ */
+        .toast-admin {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 10px 20px;
+            font-size: 0.75rem;
+            color: var(--text-white);
+            z-index: 300;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast-admin.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast-admin.success {
+            border-color: rgba(46, 204, 113, 0.2);
+        }
+        .toast-admin.error {
+            border-color: rgba(231, 76, 60, 0.2);
+        }
+
+        /* ============================================================
+           RESPONSIVE SIDEBAR OVERLAY
+        ============================================================ */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 24;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+        .sidebar-overlay.open {
+            display: block;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar-overlay {
+                display: none !important;
+            }
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .hidden {
+            display: none !important;
+        }
+        .text-muted {
+            color: var(--text-muted);
+        }
+        .text-gold {
+            color: var(--gold);
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
+        }
+        .gap-8 {
+            gap: 8px;
+        }
+        .flex {
+            display: flex;
+        }
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
+        .items-center {
+            align-items: center;
+        }
+
+        .admin-sidebar .nav-item .nav-text {
+            font-size: 0.7rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">Admin Control Center</div>
+        </div>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
+            </div>
+            <div class="load-msg" id="load-msg">Initializing admin panel...</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    TOAST
+    ============================================================ -->
+    <div class="toast-admin" id="toast-admin"></div>
+
+    <!-- ============================================================
+    ADMIN APP
+    ============================================================ -->
+    <div id="admin-app">
+
+        <!-- ===== HEADER ===== -->
+        <header class="admin-header">
+            <div class="left">
+                <button class="hamburger" id="hamburger-btn" aria-label="Toggle menu">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <a href="#" class="brand">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Pure<em>Ore</em> Nexus</span>
+                    <span class="badge">Admin</span>
+                </a>
+            </div>
+            <div class="right">
+                <span class="admin-name" id="admin-name-display"><strong id="admin-name-text">—</strong></span>
+                <button class="header-btn" id="admin-logout-btn" aria-label="Sign out">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- ===== SIDEBAR OVERLAY ===== -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- ===== SIDEBAR ===== -->
+        <nav class="admin-sidebar" id="admin-sidebar">
+            <div class="sidebar-label">Navigation</div>
+
+            <div class="nav-item active" data-tab="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Dashboard</span>
+            </div>
+
+            <div class="nav-item" data-tab="users">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Users</span>
+            </div>
+
+            <div class="nav-item" data-tab="investments">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Investment Plans</span>
+            </div>
+
+            <div class="nav-item" data-tab="active-investments">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Active Investments</span>
+            </div>
+
+            <div class="nav-item" data-tab="deposits">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Deposits</span>
+            </div>
+
+            <div class="nav-item" data-tab="withdrawals">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 19V5M5 12h14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Withdrawals</span>
+            </div>
+
+            <div class="nav-item" data-tab="income">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Income</span>
+            </div>
+
+            <div class="nav-item" data-tab="daily-check">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Daily Check</span>
+            </div>
+
+            <div class="nav-item" data-tab="transactions">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M4 7h16M4 12h12M4 17h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M20 7l-4 5 4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Transactions</span>
+            </div>
+
+            <div class="nav-item" data-tab="referrals">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Referrals</span>
+            </div>
+
+            <div class="nav-item" data-tab="notifications">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Notifications</span>
+            </div>
+
+            <div class="nav-item" data-tab="announcements">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Announcements</span>
+            </div>
+
+            <div class="nav-item" data-tab="support">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Support</span>
+            </div>
+
+            <div class="nav-item" data-tab="ai-support">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10 10 10 0 0 1-10-10 10 10 0 0 1 10-10z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 6v4M12 14h.01" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2V8z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">AI Support</span>
+            </div>
+
+            <div class="nav-item" data-tab="deposit-rules">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Deposit Rules</span>
+            </div>
+
+            <div class="nav-item" data-tab="withdrawal-rules">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 19V5M5 12h14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Withdrawal Rules</span>
+            </div>
+
+            <div class="nav-item" data-tab="system-settings">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">System Settings</span>
+            </div>
+
+            <div class="nav-item" data-tab="admins">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Admins</span>
+            </div>
+
+            <div class="nav-item" data-tab="audit">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M4 7h16M4 12h12M4 17h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M20 7l-4 5 4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Audit Log</span>
+            </div>
+
+            <!-- ===== NEW ADS TAB ===== -->
+            <div class="nav-item" data-tab="ads">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 10l3 3 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="nav-text">Ads</span>
+            </div>
+
+        </nav>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <div id="admin-content">
+
+            <!-- ============================================================
+            TAB: DASHBOARD
+            ============================================================ -->
+            <div class="tab-content active" id="tab-dashboard">
+                <div class="tab-header">
+                    <div><h2>Admin Dashboard</h2><div class="sub">Overview of platform activity</div></div>
+                </div>
+                <div class="stats-grid" id="dashboard-stats">
+                    <div class="stat-card"><div class="label">Total Users</div><div class="value gold" id="stat-users">—</div></div>
+                    <div class="stat-card"><div class="label">Active Users</div><div class="value green" id="stat-active-users">—</div></div>
+                    <div class="stat-card"><div class="label">Total Invested</div><div class="value gold" id="stat-invested">—</div></div>
+                    <div class="stat-card"><div class="label">Pending Deposits</div><div class="value" id="stat-pending-deposits">—</div></div>
+                    <div class="stat-card"><div class="label">Pending Withdrawals</div><div class="value" id="stat-pending-withdrawals">—</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="card-title">Recent Activity</div>
+                    <div class="table-wrap">
+                        <table class="admin-table" id="recent-activity-table">
+                            <thead><tr><th>User</th><th>Action</th><th>Amount</th><th>Date</th></tr></thead>
+                            <tbody id="recent-activity-body"><tr><td colspan="4" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: USERS
+            ============================================================ -->
+            <div class="tab-content" id="tab-users">
+                <div class="tab-header">
+                    <div><h2>Users</h2><div class="sub">Manage all platform users</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="flex-between mb-8">
+                        <input class="search-input" placeholder="Search users..." id="users-search" />
+                        <div>
+                            <button class="btn-sm secondary" id="users-filter-all">All</button>
+                            <button class="btn-sm secondary" id="users-filter-active">Active</button>
+                            <button class="btn-sm secondary" id="users-filter-blocked">Blocked</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="admin-table" id="users-table">
+                            <thead><tr><th>Name</th><th>Phone</th><th>Wallet</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="users-body"><tr><td colspan="5" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: INVESTMENT PLANS
+            ============================================================ -->
+            <div class="tab-content" id="tab-investments">
+                <div class="tab-header">
+                    <div><h2>Investment Plans</h2><div class="sub">Manage available investment plans</div></div>
+                    <button class="btn-admin" id="create-plan-btn">Create Plan</button>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="plans-table">
+                            <thead><tr><th>Name</th><th>Amount</th><th>Daily</th><th>Duration</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="plans-body"><tr><td colspan="6" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: ACTIVE INVESTMENTS
+            ============================================================ -->
+            <div class="tab-content" id="tab-active-investments">
+                <div class="tab-header">
+                    <div><h2>Active Investments</h2><div class="sub">All user investments</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="active-investments-table">
+                            <thead><tr><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="active-investments-body"><tr><td colspan="5" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: DEPOSITS
+            ============================================================ -->
+            <div class="tab-content" id="tab-deposits">
+                <div class="tab-header">
+                    <div><h2>Deposits</h2><div class="sub">Manage user deposits</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="deposits-table">
+                            <thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+                            <tbody id="deposits-body"><tr><td colspan="5" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: WITHDRAWALS
+            ============================================================ -->
+            <div class="tab-content" id="tab-withdrawals">
+                <div class="tab-header">
+                    <div><h2>Withdrawals</h2><div class="sub">Manage user withdrawals</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="withdrawals-table">
+                            <thead><tr><th>User</th><th>Amount</th><th>Fee</th><th>Net</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="withdrawals-body"><tr><td colspan="6" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: INCOME
+            ============================================================ -->
+            <div class="tab-content" id="tab-income">
+                <div class="tab-header">
+                    <div><h2>Income Claims</h2><div class="sub">All income claim requests</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="income-table">
+                            <thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                            <tbody id="income-body"><tr><td colspan="4" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: DAILY CHECK
+            ============================================================ -->
+            <div class="tab-content" id="tab-daily-check">
+                <div class="tab-header">
+                    <div><h2>Daily Check</h2><div class="sub">Configure Daily Check amounts</div></div>
+                </div>
+                <div class="admin-card" id="daily-check-config">
+                    <div class="form-group-admin">
+                        <label>Enabled</label>
+                        <div class="toggle-switch-admin on" id="daily-check-toggle"><div class="knob"></div></div>
+                    </div>
+                    <div id="daily-check-amounts">
+                        <div class="form-row">
+                            <div class="form-group-admin"><label>Day 1</label><input type="number" class="daily-amount" data-day="1" /></div>
+                            <div class="form-group-admin"><label>Day 2</label><input type="number" class="daily-amount" data-day="2" /></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group-admin"><label>Day 3</label><input type="number" class="daily-amount" data-day="3" /></div>
+                            <div class="form-group-admin"><label>Day 4</label><input type="number" class="daily-amount" data-day="4" /></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group-admin"><label>Day 5</label><input type="number" class="daily-amount" data-day="5" /></div>
+                            <div class="form-group-admin"><label>Day 6</label><input type="number" class="daily-amount" data-day="6" /></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group-admin"><label>Day 7</label><input type="number" class="daily-amount" data-day="7" /></div>
+                            <div class="form-group-admin" style="display:flex;align-items:flex-end;"><button class="btn-admin" id="save-daily-check">Save Daily Check</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: TRANSACTIONS
+            ============================================================ -->
+            <div class="tab-content" id="tab-transactions">
+                <div class="tab-header">
+                    <div><h2>Transactions</h2><div class="sub">All financial transactions</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="transactions-table">
+                            <thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                            <tbody id="transactions-body"><tr><td colspan="5" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: REFERRALS
+            ============================================================ -->
+            <div class="tab-content" id="tab-referrals">
+                <div class="tab-header">
+                    <div><h2>Referrals</h2><div class="sub">Track referral activity</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="referrals-table">
+                            <thead><tr><th>Referrer</th><th>Referred</th><th>Bonus</th><th>Date</th></tr></thead>
+                            <tbody id="referrals-body"><tr><td colspan="4" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: NOTIFICATIONS
+            ============================================================ -->
+            <div class="tab-content" id="tab-notifications">
+                <div class="tab-header">
+                    <div><h2>Notifications</h2><div class="sub">Send notifications to users</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="form-group-admin">
+                        <label>Recipient</label>
+                        <select id="notif-recipient">
+                            <option value="all">All Users</option>
+                            <option value="single">Specific User (UID)</option>
+                        </select>
+                    </div>
+                    <div class="form-group-admin" id="notif-uid-group" style="display:none;">
+                        <label>User UID</label>
+                        <input type="text" id="notif-uid" placeholder="Enter user UID" />
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Title</label>
+                        <input type="text" id="notif-title" placeholder="Notification title" />
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Message</label>
+                        <textarea id="notif-message" placeholder="Notification message"></textarea>
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Type</label>
+                        <select id="notif-type">
+                            <option value="system">System</option>
+                            <option value="investment">Investment</option>
+                            <option value="income">Income</option>
+                            <option value="deposit">Deposit</option>
+                            <option value="withdrawal">Withdrawal</option>
+                            <option value="dailyCheck">Daily Check</option>
+                            <option value="referral">Referral</option>
+                            <option value="announcement">Announcement</option>
+                        </select>
+                    </div>
+                    <button class="btn-admin" id="send-notification-btn">Send Notification</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: ANNOUNCEMENTS
+            ============================================================ -->
+            <div class="tab-content" id="tab-announcements">
+                <div class="tab-header">
+                    <div><h2>Announcements</h2><div class="sub">Create and manage announcements</div></div>
+                    <button class="btn-admin" id="create-announcement-btn">New Announcement</button>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="announcements-table">
+                            <thead><tr><th>Title</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+                            <tbody id="announcements-body"><tr><td colspan="4" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: SUPPORT
+            ============================================================ -->
+            <div class="tab-content" id="tab-support">
+                <div class="tab-header">
+                    <div><h2>Support</h2><div class="sub">Manage support configuration</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="form-group-admin">
+                        <label>Support Email</label>
+                        <input type="email" id="support-email" value="pureorecapital@gmail.com" />
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Telegram Manager Link</label>
+                        <input type="url" id="support-telegram" value="https://t.me/pureorecapital" />
+                    </div>
+                    <button class="btn-admin" id="save-support-config">Save Support Config</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: AI SUPPORT
+            ============================================================ -->
+            <div class="tab-content" id="tab-ai-support">
+                <div class="tab-header">
+                    <div><h2>AI Support</h2><div class="sub">Manage AI knowledge base</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="form-group-admin">
+                        <label>Add Knowledge Entry</label>
+                        <input type="text" id="ai-knowledge-key" placeholder="Keyword / Topic" />
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Response</label>
+                        <textarea id="ai-knowledge-response" placeholder="AI response text"></textarea>
+                    </div>
+                    <button class="btn-admin" id="add-ai-knowledge">Add Knowledge</button>
+                    <div class="mt-12 table-wrap">
+                        <table class="admin-table" id="ai-knowledge-table">
+                            <thead><tr><th>Topic</th><th>Response</th><th>Actions</th></tr></thead>
+                            <tbody id="ai-knowledge-body"><tr><td colspan="3" class="text-muted text-center">No knowledge entries yet.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: DEPOSIT RULES
+            ============================================================ -->
+            <div class="tab-content" id="tab-deposit-rules">
+                <div class="tab-header">
+                    <div><h2>Deposit Rules</h2><div class="sub">Configure deposit verification rules</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="form-group-admin">
+                        <label>Phone Number Check</label>
+                        <div class="toggle-switch-admin on" id="deposit-phone-check"><div class="knob"></div></div>
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Amount Check</label>
+                        <div class="toggle-switch-admin on" id="deposit-amount-check"><div class="knob"></div></div>
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Date Check</label>
+                        <div class="toggle-switch-admin" id="deposit-date-check"><div class="knob"></div></div>
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Time Check</label>
+                        <div class="toggle-switch-admin" id="deposit-time-check"><div class="knob"></div></div>
+                    </div>
+                    <button class="btn-admin" id="save-deposit-rules">Save Deposit Rules</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: WITHDRAWAL RULES
+            ============================================================ -->
+            <div class="tab-content" id="tab-withdrawal-rules">
+                <div class="tab-header">
+                    <div><h2>Withdrawal Rules</h2><div class="sub">Configure withdrawal settings</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="form-group-admin">
+                        <label>Enabled</label>
+                        <div class="toggle-switch-admin on" id="withdrawal-enabled"><div class="knob"></div></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group-admin">
+                            <label>Fee (%)</label>
+                            <input type="number" id="withdrawal-fee" value="10" />
+                        </div>
+                        <div class="form-group-admin">
+                            <label>Opening Time</label>
+                            <input type="time" id="withdrawal-open" value="09:00" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group-admin">
+                            <label>Closing Time</label>
+                            <input type="time" id="withdrawal-close" value="17:00" />
+                        </div>
+                        <div class="form-group-admin">
+                            <label>Weekend Withdrawals</label>
+                            <div class="toggle-switch-admin" id="withdrawal-weekend"><div class="knob"></div></div>
+                        </div>
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Minimum Withdrawal</label>
+                        <input type="number" id="withdrawal-min" value="0" />
+                    </div>
+                    <button class="btn-admin" id="save-withdrawal-rules">Save Withdrawal Rules</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: SYSTEM SETTINGS
+            ============================================================ -->
+            <div class="tab-content" id="tab-system-settings">
+                <div class="tab-header">
+                    <div><h2>System Settings</h2><div class="sub">Platform-wide configuration</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="form-group-admin">
+                        <label>Platform Name</label>
+                        <input type="text" id="sys-platform-name" value="PureOre Nexus" />
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Timezone</label>
+                        <select id="sys-timezone">
+                            <option value="Africa/Lusaka">Africa/Lusaka</option>
+                            <option value="UTC">UTC</option>
+                        </select>
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Maintenance Mode</label>
+                        <div class="toggle-switch-admin" id="sys-maintenance"><div class="knob"></div></div>
+                    </div>
+                    <button class="btn-admin" id="save-system-settings">Save Settings</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: ADMINS
+            ============================================================ -->
+            <div class="tab-content" id="tab-admins">
+                <div class="tab-header">
+                    <div><h2>Administrators</h2><div class="sub">Manage admin accounts</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="admins-table">
+                            <thead><tr><th>UID</th><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+                            <tbody id="admins-body"><tr><td colspan="5" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: AUDIT LOG
+            ============================================================ -->
+            <div class="tab-content" id="tab-audit">
+                <div class="tab-header">
+                    <div><h2>Audit Log</h2><div class="sub">Sensitive admin actions</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="table-wrap">
+                        <table class="admin-table" id="audit-table">
+                            <thead><tr><th>Admin</th><th>Action</th><th>Target</th><th>Details</th><th>Timestamp</th></tr></thead>
+                            <tbody id="audit-body"><tr><td colspan="5" class="text-muted text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            TAB: ADS
+            ============================================================ -->
+            <div class="tab-content" id="tab-ads">
+                <div class="tab-header">
+                    <div><h2>Advertisement</h2><div class="sub">Configure the promotional banner shown on the dashboard</div></div>
+                </div>
+                <div class="admin-card">
+                    <div class="form-group-admin">
+                        <label>Enabled</label>
+                        <div class="toggle-switch-admin" id="ad-enabled"><div class="knob"></div></div>
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Image URL</label>
+                        <input type="url" id="ad-image" placeholder="https://example.com/ad-image.jpg" />
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Title</label>
+                        <input type="text" id="ad-title" placeholder="e.g. Sajvera Capital" />
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Description</label>
+                        <textarea id="ad-description" placeholder="e.g. Discover Sajvera Capital."></textarea>
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Button Text</label>
+                        <input type="text" id="ad-button-text" placeholder="e.g. Visit Sajvera Capital →" />
+                    </div>
+                    <div class="form-group-admin">
+                        <label>Destination URL</label>
+                        <input type="url" id="ad-destination" placeholder="https://example.com" />
+                    </div>
+                    <button class="btn-admin" id="save-ad">Save Advertisement</button>
+                </div>
+
+                <div class="admin-card">
+                    <div class="card-title">Preview</div>
+                    <div class="ad-preview" id="ad-preview">
+                        <img id="ad-preview-img" src="" alt="Ad image" />
+                        <div class="ad-title" id="ad-preview-title">—</div>
+                        <div class="ad-desc" id="ad-preview-desc">—</div>
+                        <a href="#" class="ad-btn" id="ad-preview-btn" target="_blank">—</a>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /admin-content -->
+    </div><!-- /admin-app -->
+
+    <!-- ============================================================
+    MODAL (for confirmations and announcements)
+    ============================================================ -->
+    <div class="modal-overlay-admin" id="modal-admin">
+        <div class="modal-card-admin">
+            <div class="modal-title" id="modal-title">Confirm</div>
+            <div class="modal-sub" id="modal-message">Are you sure?</div>
+            <div class="modal-actions">
+                <button class="btn-modal cancel" id="modal-cancel-btn">Cancel</button>
+                <button class="btn-modal confirm" id="modal-confirm-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div class="modal-overlay-admin" id="announcement-modal">
+        <div class="modal-card-admin">
+            <div class="modal-title" id="announcement-modal-title">New Announcement</div>
+            <div class="modal-sub">Create a new platform announcement</div>
+            <div class="form-group-admin">
+                <label>Title</label>
+                <input type="text" id="announcement-title" placeholder="Announcement title" />
+            </div>
+            <div class="form-group-admin">
+                <label>Message</label>
+                <textarea id="announcement-message" placeholder="Announcement content"></textarea>
+            </div>
+            <div class="form-group-admin">
+                <label>Image URL (optional)</label>
+                <input type="url" id="announcement-image" placeholder="https://example.com/image.jpg" />
+            </div>
+            <div class="form-group-admin">
+                <label>Published</label>
+                <div class="toggle-switch-admin on" id="announcement-published"><div class="knob"></div></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-modal cancel" id="announcement-cancel">Cancel</button>
+                <button class="btn-modal confirm" id="announcement-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // ============================================================
+        // FIREBASE IMPORTS & INIT
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, runTransaction, deleteDoc, addDoc, orderBy, limit } from 'firebase/firestore';
+        import { getFunctions, httpsCallable } from 'firebase/functions';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const functions = getFunctions(app);
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const toast = $('toast-admin');
+        let toastTimeout = null;
+
+        function showToast(message, type = '') {
+            toast.textContent = message;
+            toast.className = 'toast-admin ' + type;
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const adminApp = $('admin-app');
+
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
+            }
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Almost ready...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Loading admin panel...';
+        }, 35);
+
+        // ============================================================
+        // AUTH / ADMIN CHECK
+        // ============================================================
+        let currentUser = null;
+        let isAdmin = false;
+        let adminName = '';
+
+        async function checkAdmin(uid) {
+            try {
+                const userRef = doc(db, 'users', uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    if (data.role === 'admin' || data.isAdmin === true) {
+                        isAdmin = true;
+                        adminName = data.fullName || 'Admin';
+                        return true;
+                    }
+                }
+                return false;
+            } catch (e) {
+                console.error('Admin check error:', e);
+                return false;
+            }
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+            const authorized = await checkAdmin(user.uid);
+            if (!authorized) {
+                showToast('You are not authorized to access the admin panel.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+                return;
+            }
+
+            // Show admin app
+            loadScreen.classList.add('hidden');
+            adminApp.classList.add('visible');
+            document.body.style.overflow = 'auto';
+
+            // Set admin name
+            document.getElementById('admin-name-text').textContent = adminName;
+
+            // Load all data
+            loadDashboardStats();
+            loadUsers();
+            loadPlans();
+            loadActiveInvestments();
+            loadDeposits();
+            loadWithdrawals();
+            loadIncomeClaims();
+            loadDailyCheckConfig();
+            loadTransactions();
+            loadReferrals();
+            loadAnnouncements();
+            loadSupportConfig();
+            loadAIKnowledge();
+            loadDepositRules();
+            loadWithdrawalRules();
+            loadSystemSettings();
+            loadAdmins();
+            loadAuditLog();
+            loadAdConfig();
+
+            // Sidebar navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const tab = item.dataset.tab;
+                    switchTab(tab);
+                });
+            });
+
+            // Hamburger menu
+            const hamburger = document.getElementById('hamburger-btn');
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            hamburger.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
+            });
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+
+            // Logout
+            document.getElementById('admin-logout-btn').addEventListener('click', async () => {
+                if (confirm('Sign out of admin?')) {
+                    await signOut(auth);
+                    window.location.href = 'login.html';
+                }
+            });
+
+            setupAdsTab();
+            setupAnnouncementsTab();
+            setupDepositActions();
+            setupWithdrawalActions();
+            setupUserActions();
+            setupPlanActions();
+            setupNotificationSending();
+            setupDailyCheckSave();
+            setupSupportSave();
+            setupDepositRulesSave();
+            setupWithdrawalRulesSave();
+            setupSystemSettingsSave();
+            setupAIKnowledge();
+        });
+
+        // ============================================================
+        // TAB SWITCHING
+        // ============================================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(`tab-${tabId}`);
+            if (target) target.classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const navItem = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+            if (navItem) navItem.classList.add('active');
+            document.getElementById('admin-sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('open');
+        }
+
+        // ============================================================
+        // FORMAT HELPERS
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return '—';
+            try {
+                const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return d.toLocaleDateString('en-ZM', { day: '2-digit', month: 'short', year: 'numeric' });
+            } catch (e) {
+                return '—';
+            }
+        }
+
+        function getStatusBadge(status) {
+            const s = (status || '').toLowerCase();
+            const map = {
+                'active': 'active',
+                'approved': 'approved',
+                'completed': 'completed',
+                'pending': 'pending',
+                'blocked': 'blocked',
+                'rejected': 'rejected',
+                'coming soon': 'pending'
+            };
+            return map[s] || 'pending';
+        }
+
+        // ============================================================
+        // DASHBOARD STATS
+        // ============================================================
+        async function loadDashboardStats() {
+            try {
+                // Users count
+                const usersSnap = await getDocs(collection(db, 'users'));
+                const totalUsers = usersSnap.size;
+                let activeUsers = 0;
+                usersSnap.forEach(doc => {
+                    if (doc.data().isBlocked !== true) activeUsers++;
+                });
+
+                // Total invested (sum of investmentAmount from investments)
+                const invSnap = await getDocs(collection(db, 'investments'));
+                let totalInvested = 0;
+                invSnap.forEach(doc => {
+                    totalInvested += doc.data().investmentAmount || 0;
+                });
+
+                // Pending deposits
+                const depQ = query(collection(db, 'deposits'), where('status', '==', 'pending'));
+                const depSnap = await getDocs(depQ);
+                const pendingDeposits = depSnap.size;
+
+                // Pending withdrawals
+                const wdQ = query(collection(db, 'withdrawals'), where('status', '==', 'pending'));
+                const wdSnap = await getDocs(wdQ);
+                const pendingWithdrawals = wdSnap.size;
+
+                document.getElementById('stat-users').textContent = totalUsers;
+                document.getElementById('stat-active-users').textContent = activeUsers;
+                document.getElementById('stat-invested').textContent = 'K' + formatCurrency(totalInvested);
+                document.getElementById('stat-pending-deposits').textContent = pendingDeposits;
+                document.getElementById('stat-pending-withdrawals').textContent = pendingWithdrawals;
+
+                // Recent activity - last 5 transactions
+                const txQ = query(collection(db, 'transactions'), orderBy('createdAt', 'desc'), limit(5));
+                const txSnap = await getDocs(txQ);
+                const tbody = document.getElementById('recent-activity-body');
+                if (txSnap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No recent activity</td></tr>';
+                    return;
+                }
+                let html = '';
+                txSnap.forEach(doc => {
+                    const data = doc.data();
+                    const userRef = doc(db, 'users', data.userId);
+                    // We'll just show userId for now
+                    const userDisplay = data.userId ? data.userId.substring(0, 8) : '—';
+                    html += `<tr>
+                        <td>${userDisplay}</td>
+                        <td>${data.type || '—'}</td>
+                        <td>K${formatCurrency(data.amount)}</td>
+                        <td>${formatDate(data.createdAt)}</td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading dashboard stats:', e);
+            }
+        }
+
+        // ============================================================
+        // USERS
+        // ============================================================
+        async function loadUsers(filter = 'all') {
+            try {
+                let q;
+                if (filter === 'active') {
+                    q = query(collection(db, 'users'), where('isBlocked', '==', false));
+                } else if (filter === 'blocked') {
+                    q = query(collection(db, 'users'), where('isBlocked', '==', true));
+                } else {
+                    q = collection(db, 'users');
+                }
+                const snap = await getDocs(q);
+                const tbody = document.getElementById('users-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No users found</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const status = data.isBlocked ? 'Blocked' : 'Active';
+                    const statusClass = data.isBlocked ? 'blocked' : 'active';
+                    html += `<tr>
+                        <td>${data.fullName || '—'}</td>
+                        <td>${data.phone || '—'}</td>
+                        <td>K${formatCurrency(data.walletBalance || 0)}</td>
+                        <td><span class="badge-status ${statusClass}">${status}</span></td>
+                        <td>
+                            <button class="btn-sm secondary view-user" data-uid="${doc.id}">View</button>
+                            ${data.isBlocked ? 
+                                `<button class="btn-sm green unblock-user" data-uid="${doc.id}">Unblock</button>` :
+                                `<button class="btn-sm danger block-user" data-uid="${doc.id}">Block</button>`
+                            }
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+                // Attach event listeners
+                tbody.querySelectorAll('.block-user').forEach(btn => {
+                    btn.addEventListener('click', () => blockUser(btn.dataset.uid));
+                });
+                tbody.querySelectorAll('.unblock-user').forEach(btn => {
+                    btn.addEventListener('click', () => unblockUser(btn.dataset.uid));
+                });
+            } catch (e) {
+                console.error('Error loading users:', e);
+            }
+        }
+
+        // User filter buttons
+        document.getElementById('users-filter-all').addEventListener('click', () => loadUsers('all'));
+        document.getElementById('users-filter-active').addEventListener('click', () => loadUsers('active'));
+        document.getElementById('users-filter-blocked').addEventListener('click', () => loadUsers('blocked'));
+
+        // Search
+        document.getElementById('users-search').addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#users-body tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(search) ? '' : 'none';
+            });
+        });
+
+        async function blockUser(uid) {
+            if (!confirm('Block this user?')) return;
+            try {
+                await updateDoc(doc(db, 'users', uid), { isBlocked: true });
+                showToast('User blocked.', 'success');
+                loadUsers();
+            } catch (e) {
+                console.error('Error blocking user:', e);
+                showToast('Failed to block user.', 'error');
+            }
+        }
+
+        async function unblockUser(uid) {
+            if (!confirm('Unblock this user?')) return;
+            try {
+                await updateDoc(doc(db, 'users', uid), { isBlocked: false });
+                showToast('User unblocked.', 'success');
+                loadUsers();
+            } catch (e) {
+                console.error('Error unblocking user:', e);
+                showToast('Failed to unblock user.', 'error');
+            }
+        }
+
+        function setupUserActions() {
+            // Will be attached dynamically
+        }
+
+        // ============================================================
+        // INVESTMENT PLANS
+        // ============================================================
+        async function loadPlans() {
+            try {
+                const snap = await getDocs(collection(db, 'investmentPlans'));
+                const tbody = document.getElementById('plans-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center">No plans found</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const statusClass = data.status === 'active' ? 'active' : 'pending';
+                    html += `<tr>
+                        <td>${data.planName || '—'}</td>
+                        <td>K${formatCurrency(data.investmentAmount)}</td>
+                        <td>K${formatCurrency(data.dailyReturn)}</td>
+                        <td>${data.durationDays || 0} days</td>
+                        <td><span class="badge-status ${statusClass}">${data.status || '—'}</span></td>
+                        <td>
+                            <button class="btn-sm secondary edit-plan" data-id="${doc.id}">Edit</button>
+                            <button class="btn-sm danger delete-plan" data-id="${doc.id}">Delete</button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading plans:', e);
+            }
+        }
+
+        function setupPlanActions() {
+            // Edit and delete handlers would go here
+        }
+
+        // ============================================================
+        // ACTIVE INVESTMENTS
+        // ============================================================
+        async function loadActiveInvestments() {
+            try {
+                const q = query(collection(db, 'investments'), where('status', '==', 'active'));
+                const snap = await getDocs(q);
+                const tbody = document.getElementById('active-investments-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No active investments</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const userRef = doc(db, 'users', data.userId);
+                    // We'll just show userId for now
+                    html += `<tr>
+                        <td>${data.userId ? data.userId.substring(0, 8) : '—'}</td>
+                        <td>${data.planName || '—'}</td>
+                        <td>K${formatCurrency(data.investmentAmount)}</td>
+                        <td><span class="badge-status active">Active</span></td>
+                        <td><button class="btn-sm secondary view-investment" data-id="${doc.id}">View</button></td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading active investments:', e);
+            }
+        }
+
+        // ============================================================
+        // DEPOSITS
+        // ============================================================
+        async function loadDeposits() {
+            try {
+                const q = query(collection(db, 'deposits'), orderBy('createdAt', 'desc'));
+                const snap = await getDocs(q);
+                const tbody = document.getElementById('deposits-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No deposits</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const statusClass = getStatusBadge(data.status);
+                    html += `<tr>
+                        <td>${data.userId ? data.userId.substring(0, 8) : '—'}</td>
+                        <td>K${formatCurrency(data.amount)}</td>
+                        <td><span class="badge-status ${statusClass}">${data.status || '—'}</span></td>
+                        <td>${formatDate(data.createdAt)}</td>
+                        <td>
+                            ${data.status === 'pending' ? `
+                                <button class="btn-sm green approve-deposit" data-id="${doc.id}">Approve</button>
+                                <button class="btn-sm danger reject-deposit" data-id="${doc.id}">Reject</button>
+                            ` : ''}
+                            <button class="btn-sm secondary view-deposit" data-id="${doc.id}">View</button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading deposits:', e);
+            }
+        }
+
+        function setupDepositActions() {
+            // Will attach after render, but we use event delegation
+            document.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('approve-deposit')) {
+                    const id = e.target.dataset.id;
+                    if (!confirm('Approve this deposit?')) return;
+                    try {
+                        const fn = httpsCallable(functions, 'adminApproveDeposit');
+                        await fn({ depositId: id });
+                        showToast('Deposit approved.', 'success');
+                        loadDeposits();
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Failed to approve deposit.', 'error');
+                    }
+                }
+                if (e.target.classList.contains('reject-deposit')) {
+                    const id = e.target.dataset.id;
+                    const reason = prompt('Reason for rejection:');
+                    if (reason === null) return;
+                    try {
+                        const fn = httpsCallable(functions, 'adminRejectDeposit');
+                        await fn({ depositId: id, reason });
+                        showToast('Deposit rejected.', 'success');
+                        loadDeposits();
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Failed to reject deposit.', 'error');
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // WITHDRAWALS
+        // ============================================================
+        async function loadWithdrawals() {
+            try {
+                const q = query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc'));
+                const snap = await getDocs(q);
+                const tbody = document.getElementById('withdrawals-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center">No withdrawals</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const statusClass = getStatusBadge(data.status);
+                    html += `<tr>
+                        <td>${data.userId ? data.userId.substring(0, 8) : '—'}</td>
+                        <td>K${formatCurrency(data.amount)}</td>
+                        <td>K${formatCurrency(data.fee)}</td>
+                        <td>K${formatCurrency(data.netAmount)}</td>
+                        <td><span class="badge-status ${statusClass}">${data.status || '—'}</span></td>
+                        <td>
+                            ${data.status === 'pending' ? `
+                                <button class="btn-sm green approve-withdrawal" data-id="${doc.id}">Approve</button>
+                                <button class="btn-sm danger reject-withdrawal" data-id="${doc.id}">Reject</button>
+                            ` : ''}
+                            <button class="btn-sm secondary view-withdrawal" data-id="${doc.id}">View</button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading withdrawals:', e);
+            }
+        }
+
+        function setupWithdrawalActions() {
+            document.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('approve-withdrawal')) {
+                    const id = e.target.dataset.id;
+                    if (!confirm('Approve this withdrawal?')) return;
+                    try {
+                        const fn = httpsCallable(functions, 'adminApproveWithdrawal');
+                        await fn({ withdrawalId: id });
+                        showToast('Withdrawal approved.', 'success');
+                        loadWithdrawals();
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Failed to approve withdrawal.', 'error');
+                    }
+                }
+                if (e.target.classList.contains('reject-withdrawal')) {
+                    const id = e.target.dataset.id;
+                    const reason = prompt('Reason for rejection:');
+                    if (reason === null) return;
+                    try {
+                        const fn = httpsCallable(functions, 'adminRejectWithdrawal');
+                        await fn({ withdrawalId: id, reason });
+                        showToast('Withdrawal rejected.', 'success');
+                        loadWithdrawals();
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Failed to reject withdrawal.', 'error');
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // INCOME CLAIMS
+        // ============================================================
+        async function loadIncomeClaims() {
+            try {
+                const snap = await getDocs(collection(db, 'incomeClaims'));
+                const tbody = document.getElementById('income-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No income claims</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const statusClass = getStatusBadge(data.status);
+                    html += `<tr>
+                        <td>${data.userId ? data.userId.substring(0, 8) : '—'}</td>
+                        <td>K${formatCurrency(data.amount)}</td>
+                        <td><span class="badge-status ${statusClass}">${data.status || '—'}</span></td>
+                        <td>${formatDate(data.createdAt)}</td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading income claims:', e);
+            }
+        }
+
+        // ============================================================
+        // DAILY CHECK
+        // ============================================================
+        async function loadDailyCheckConfig() {
+            try {
+                const ref = doc(db, 'systemSettings', 'dailyCheckSettings');
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    const enabled = data.enabled !== false;
+                    const toggle = document.getElementById('daily-check-toggle');
+                    if (enabled) toggle.classList.add('on');
+                    else toggle.classList.remove('on');
+                    const amounts = data.amounts || [20, 30, 30, 40, 50, 50, 80];
+                    document.querySelectorAll('.daily-amount').forEach((input, i) => {
+                        if (i < amounts.length) input.value = amounts[i];
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading daily check config:', e);
+            }
+        }
+
+        function setupDailyCheckSave() {
+            document.getElementById('save-daily-check').addEventListener('click', async () => {
+                const enabled = document.getElementById('daily-check-toggle').classList.contains('on');
+                const inputs = document.querySelectorAll('.daily-amount');
+                const amounts = [];
+                inputs.forEach(input => amounts.push(parseFloat(input.value) || 0));
+                try {
+                    await setDoc(doc(db, 'systemSettings', 'dailyCheckSettings'), {
+                        enabled,
+                        amounts,
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                    showToast('Daily Check settings saved.', 'success');
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to save settings.', 'error');
+                }
+            });
+        }
+
+        // ============================================================
+        // TRANSACTIONS
+        // ============================================================
+        async function loadTransactions() {
+            try {
+                const q = query(collection(db, 'transactions'), orderBy('createdAt', 'desc'), limit(50));
+                const snap = await getDocs(q);
+                const tbody = document.getElementById('transactions-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No transactions</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const statusClass = getStatusBadge(data.status);
+                    html += `<tr>
+                        <td>${data.userId ? data.userId.substring(0, 8) : '—'}</td>
+                        <td>${data.type || '—'}</td>
+                        <td>K${formatCurrency(data.amount)}</td>
+                        <td><span class="badge-status ${statusClass}">${data.status || '—'}</span></td>
+                        <td>${formatDate(data.createdAt)}</td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading transactions:', e);
+            }
+        }
+
+        // ============================================================
+        // REFERRALS
+        // ============================================================
+        async function loadReferrals() {
+            try {
+                const snap = await getDocs(collection(db, 'referrals'));
+                const tbody = document.getElementById('referrals-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No referrals</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    html += `<tr>
+                        <td>${data.referrerId ? data.referrerId.substring(0, 8) : '—'}</td>
+                        <td>${data.userId ? data.userId.substring(0, 8) : '—'}</td>
+                        <td>K${formatCurrency(data.bonusAmount || 0)}</td>
+                        <td>${formatDate(data.timestamp)}</td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading referrals:', e);
+            }
+        }
+
+        // ============================================================
+        // ANNOUNCEMENTS
+        // ============================================================
+        let editingAnnouncementId = null;
+
+        async function loadAnnouncements() {
+            try {
+                const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
+                const snap = await getDocs(q);
+                const tbody = document.getElementById('announcements-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No announcements</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const statusClass = data.isActive ? 'active' : 'blocked';
+                    html += `<tr>
+                        <td>${data.title || '—'}</td>
+                        <td><span class="badge-status ${statusClass}">${data.isActive ? 'Published' : 'Unpublished'}</span></td>
+                        <td>${formatDate(data.createdAt)}</td>
+                        <td>
+                            <button class="btn-sm green edit-announcement" data-id="${doc.id}">Edit</button>
+                            <button class="btn-sm danger delete-announcement" data-id="${doc.id}">Delete</button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading announcements:', e);
+            }
+        }
+
+        function setupAnnouncementsTab() {
+            document.getElementById('create-announcement-btn').addEventListener('click', () => {
+                editingAnnouncementId = null;
+                document.getElementById('announcement-modal-title').textContent = 'New Announcement';
+                document.getElementById('announcement-title').value = '';
+                document.getElementById('announcement-message').value = '';
+                document.getElementById('announcement-image').value = '';
+                document.getElementById('announcement-published').classList.add('on');
+                document.getElementById('announcement-modal').classList.add('open');
+            });
+
+            document.getElementById('announcement-cancel').addEventListener('click', () => {
+                document.getElementById('announcement-modal').classList.remove('open');
+            });
+
+            document.getElementById('announcement-save').addEventListener('click', async () => {
+                const title = document.getElementById('announcement-title').value.trim();
+                const message = document.getElementById('announcement-message').value.trim();
+                const image = document.getElementById('announcement-image').value.trim();
+                const isActive = document.getElementById('announcement-published').classList.contains('on');
+                if (!title || !message) {
+                    showToast('Please enter title and message.', 'error');
+                    return;
+                }
+                try {
+                    const data = { title, message, image, isActive, updatedAt: serverTimestamp() };
+                    if (editingAnnouncementId) {
+                        await updateDoc(doc(db, 'announcements', editingAnnouncementId), data);
+                        showToast('Announcement updated.', 'success');
+                    } else {
+                        data.createdAt = serverTimestamp();
+                        await addDoc(collection(db, 'announcements'), data);
+                        showToast('Announcement created.', 'success');
+                    }
+                    document.getElementById('announcement-modal').classList.remove('open');
+                    loadAnnouncements();
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to save announcement.', 'error');
+                }
+            });
+
+            // Event delegation for edit/delete
+            document.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('edit-announcement')) {
+                    const id = e.target.dataset.id;
+                    try {
+                        const snap = await getDoc(doc(db, 'announcements', id));
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            editingAnnouncementId = id;
+                            document.getElementById('announcement-modal-title').textContent = 'Edit Announcement';
+                            document.getElementById('announcement-title').value = data.title || '';
+                            document.getElementById('announcement-message').value = data.message || '';
+                            document.getElementById('announcement-image').value = data.image || '';
+                            if (data.isActive) document.getElementById('announcement-published').classList.add('on');
+                            else document.getElementById('announcement-published').classList.remove('on');
+                            document.getElementById('announcement-modal').classList.add('open');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Failed to load announcement.', 'error');
+                    }
+                }
+                if (e.target.classList.contains('delete-announcement')) {
+                    const id = e.target.dataset.id;
+                    if (!confirm('Delete this announcement?')) return;
+                    try {
+                        await deleteDoc(doc(db, 'announcements', id));
+                        showToast('Announcement deleted.', 'success');
+                        loadAnnouncements();
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Failed to delete announcement.', 'error');
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // SUPPORT CONFIG
+        // ============================================================
+        async function loadSupportConfig() {
+            try {
+                const ref = doc(db, 'systemSettings', 'supportConfig');
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    document.getElementById('support-email').value = data.email || '';
+                    document.getElementById('support-telegram').value = data.telegram || '';
+                }
+            } catch (e) {
+                console.error('Error loading support config:', e);
+            }
+        }
+
+        function setupSupportSave() {
+            document.getElementById('save-support-config').addEventListener('click', async () => {
+                const email = document.getElementById('support-email').value.trim();
+                const telegram = document.getElementById('support-telegram').value.trim();
+                try {
+                    await setDoc(doc(db, 'systemSettings', 'supportConfig'), {
+                        email,
+                        telegram,
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                    showToast('Support config saved.', 'success');
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to save support config.', 'error');
+                }
+            });
+        }
+
+        // ============================================================
+        // AI KNOWLEDGE
+        // ============================================================
+        async function loadAIKnowledge() {
+            try {
+                const ref = collection(db, 'systemSettings', 'aiKnowledge', 'entries');
+                const snap = await getDocs(ref);
+                const tbody = document.getElementById('ai-knowledge-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">No knowledge entries yet.</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    html += `<tr>
+                        <td>${data.keyword || '—'}</td>
+                        <td style="font-size:0.65rem;color:var(--text-muted);">${data.response ? data.response.substring(0, 60) + '...' : '—'}</td>
+                        <td><button class="btn-sm danger delete-knowledge" data-id="${doc.id}">Delete</button></td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading AI knowledge:', e);
+            }
+        }
+
+        function setupAIKnowledge() {
+            document.getElementById('add-ai-knowledge').addEventListener('click', async () => {
+                const keyword = document.getElementById('ai-knowledge-key').value.trim();
+                const response = document.getElementById('ai-knowledge-response').value.trim();
+                if (!keyword || !response) {
+                    showToast('Please enter both keyword and response.', 'error');
+                    return;
+                }
+                try {
+                    await addDoc(collection(db, 'systemSettings', 'aiKnowledge', 'entries'), {
+                        keyword,
+                        response,
+                        createdAt: serverTimestamp()
+                    });
+                    showToast('Knowledge entry added.', 'success');
+                    document.getElementById('ai-knowledge-key').value = '';
+                    document.getElementById('ai-knowledge-response').value = '';
+                    loadAIKnowledge();
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to add knowledge entry.', 'error');
+                }
+            });
+
+            document.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('delete-knowledge')) {
+                    const id = e.target.dataset.id;
+                    if (!confirm('Delete this entry?')) return;
+                    try {
+                        await deleteDoc(doc(db, 'systemSettings', 'aiKnowledge', 'entries', id));
+                        showToast('Entry deleted.', 'success');
+                        loadAIKnowledge();
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Failed to delete entry.', 'error');
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // DEPOSIT RULES
+        // ============================================================
+        async function loadDepositRules() {
+            try {
+                const ref = doc(db, 'systemSettings', 'depositRules');
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setToggle('deposit-phone-check', data.phoneCheckEnabled !== false);
+                    setToggle('deposit-amount-check', data.amountCheckEnabled !== false);
+                    setToggle('deposit-date-check', data.dateCheckEnabled === true);
+                    setToggle('deposit-time-check', data.timeCheckEnabled === true);
+                }
+            } catch (e) {
+                console.error('Error loading deposit rules:', e);
+            }
+        }
+
+        function setToggle(id, on) {
+            const el = document.getElementById(id);
+            if (on) el.classList.add('on');
+            else el.classList.remove('on');
+        }
+
+        function setupDepositRulesSave() {
+            document.getElementById('save-deposit-rules').addEventListener('click', async () => {
+                const phoneCheck = document.getElementById('deposit-phone-check').classList.contains('on');
+                const amountCheck = document.getElementById('deposit-amount-check').classList.contains('on');
+                const dateCheck = document.getElementById('deposit-date-check').classList.contains('on');
+                const timeCheck = document.getElementById('deposit-time-check').classList.contains('on');
+                try {
+                    await setDoc(doc(db, 'systemSettings', 'depositRules'), {
+                        phoneCheckEnabled: phoneCheck,
+                        amountCheckEnabled: amountCheck,
+                        dateCheckEnabled: dateCheck,
+                        timeCheckEnabled: timeCheck,
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                    showToast('Deposit rules saved.', 'success');
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to save deposit rules.', 'error');
+                }
+            });
+        }
+
+        // ============================================================
+        // WITHDRAWAL RULES
+        // ============================================================
+        async function loadWithdrawalRules() {
+            try {
+                const ref = doc(db, 'systemSettings', 'withdrawalSettings');
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setToggle('withdrawal-enabled', data.enabled !== false);
+                    document.getElementById('withdrawal-fee').value = data.feePercent || 10;
+                    document.getElementById('withdrawal-open').value = data.openTime || '09:00';
+                    document.getElementById('withdrawal-close').value = data.closeTime || '17:00';
+                    setToggle('withdrawal-weekend', data.weekendEnabled === true);
+                    document.getElementById('withdrawal-min').value = data.minWithdrawal || 0;
+                }
+            } catch (e) {
+                console.error('Error loading withdrawal rules:', e);
+            }
+        }
+
+        function setupWithdrawalRulesSave() {
+            document.getElementById('save-withdrawal-rules').addEventListener('click', async () => {
+                const enabled = document.getElementById('withdrawal-enabled').classList.contains('on');
+                const fee = parseFloat(document.getElementById('withdrawal-fee').value) || 10;
+                const openTime = document.getElementById('withdrawal-open').value || '09:00';
+                const closeTime = document.getElementById('withdrawal-close').value || '17:00';
+                const weekend = document.getElementById('withdrawal-weekend').classList.contains('on');
+                const min = parseFloat(document.getElementById('withdrawal-min').value) || 0;
+                try {
+                    await setDoc(doc(db, 'systemSettings', 'withdrawalSettings'), {
+                        enabled,
+                        feePercent: fee,
+                        openTime,
+                        closeTime,
+                        weekendEnabled: weekend,
+                        minWithdrawal: min,
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                    showToast('Withdrawal rules saved.', 'success');
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to save withdrawal rules.', 'error');
+                }
+            });
+        }
+
+        // ============================================================
+        // SYSTEM SETTINGS
+        // ============================================================
+        async function loadSystemSettings() {
+            try {
+                const ref = doc(db, 'systemSettings', 'appSettings');
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    document.getElementById('sys-platform-name').value = data.platformName || 'PureOre Nexus';
+                    document.getElementById('sys-timezone').value = data.timezone || 'Africa/Lusaka';
+                    setToggle('sys-maintenance', data.maintenanceMode === true);
+                }
+            } catch (e) {
+                console.error('Error loading system settings:', e);
+            }
+        }
+
+        function setupSystemSettingsSave() {
+            document.getElementById('save-system-settings').addEventListener('click', async () => {
+                const platformName = document.getElementById('sys-platform-name').value.trim();
+                const timezone = document.getElementById('sys-timezone').value;
+                const maintenance = document.getElementById('sys-maintenance').classList.contains('on');
+                try {
+                    await setDoc(doc(db, 'systemSettings', 'appSettings'), {
+                        platformName,
+                        timezone,
+                        maintenanceMode: maintenance,
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                    showToast('System settings saved.', 'success');
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to save system settings.', 'error');
+                }
+            });
+        }
+
+        // ============================================================
+        // ADMINS
+        // ============================================================
+        async function loadAdmins() {
+            try {
+                const q = query(collection(db, 'users'), where('role', '==', 'admin'));
+                const snap = await getDocs(q);
+                // Also check isAdmin flag
+                const q2 = query(collection(db, 'users'), where('isAdmin', '==', true));
+                const snap2 = await getDocs(q2);
+                const adminMap = new Map();
+                snap.forEach(doc => adminMap.set(doc.id, { id: doc.id, ...doc.data() }));
+                snap2.forEach(doc => {
+                    if (!adminMap.has(doc.id)) adminMap.set(doc.id, { id: doc.id, ...doc.data() });
+                });
+                const admins = Array.from(adminMap.values());
+                const tbody = document.getElementById('admins-body');
+                if (admins.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No administrators found.</td></tr>';
+                    return;
+                }
+                let html = '';
+                admins.forEach(admin => {
+                    html += `<tr>
+                        <td style="font-size:0.6rem;color:var(--text-muted);">${admin.id}</td>
+                        <td>${admin.fullName || '—'}</td>
+                        <td>${admin.phone || '—'}</td>
+                        <td><span class="badge-status active">Admin</span></td>
+                        <td><button class="btn-sm secondary view-admin" data-uid="${admin.id}">View</button></td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading admins:', e);
+                document.getElementById('admins-body').innerHTML = '<tr><td colspan="5" class="text-muted text-center">Error loading admins.</td></tr>';
+            }
+        }
+
+        // ============================================================
+        // AUDIT LOG
+        // ============================================================
+        async function loadAuditLog() {
+            try {
+                const q = query(collection(db, 'auditLog'), orderBy('timestamp', 'desc'), limit(50));
+                const snap = await getDocs(q);
+                const tbody = document.getElementById('audit-body');
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No audit records.</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    html += `<tr>
+                        <td>${data.adminName || data.adminUid || '—'}</td>
+                        <td>${data.action || '—'}</td>
+                        <td>${data.targetUserId || '—'}</td>
+                        <td>${data.reason || '—'}</td>
+                        <td style="font-size:0.65rem;">${data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : '—'}</td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                console.error('Error loading audit log:', e);
+                document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" class="text-muted text-center">Error loading audit log.</td></tr>';
+            }
+        }
+
+        // ============================================================
+        // ADS
+        // ============================================================
+        let adData = { enabled: false, title: '', description: '', imageUrl: '', buttonText: '', destinationUrl: '' };
+
+        async function loadAdConfig() {
+            try {
+                const ref = doc(db, 'systemSettings', 'ads');
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    adData = snap.data();
+                }
+                document.getElementById('ad-enabled').classList.toggle('on', adData.enabled === true);
+                document.getElementById('ad-image').value = adData.imageUrl || '';
+                document.getElementById('ad-title').value = adData.title || '';
+                document.getElementById('ad-description').value = adData.description || '';
+                document.getElementById('ad-button-text').value = adData.buttonText || '';
+                document.getElementById('ad-destination').value = adData.destinationUrl || '';
+                updateAdPreview();
+            } catch (e) {
+                console.error('Error loading ad config:', e);
+            }
+        }
+
+        function updateAdPreview() {
+            const img = document.getElementById('ad-preview-img');
+            const title = document.getElementById('ad-preview-title');
+            const desc = document.getElementById('ad-preview-desc');
+            const btn = document.getElementById('ad-preview-btn');
+            img.src = document.getElementById('ad-image').value || 'https://placehold.co/600x400/1a1a1a/888?text=Ad+Image';
+            title.textContent = document.getElementById('ad-title').value || '—';
+            desc.textContent = document.getElementById('ad-description').value || '—';
+            btn.textContent = document.getElementById('ad-button-text').value || '—';
+            btn.href = document.getElementById('ad-destination').value || '#';
+        }
+
+        document.getElementById('ad-image').addEventListener('input', updateAdPreview);
+        document.getElementById('ad-title').addEventListener('input', updateAdPreview);
+        document.getElementById('ad-description').addEventListener('input', updateAdPreview);
+        document.getElementById('ad-button-text').addEventListener('input', updateAdPreview);
+        document.getElementById('ad-destination').addEventListener('input', updateAdPreview);
+
+        document.getElementById('ad-enabled').addEventListener('click', function() {
+            this.classList.toggle('on');
+        });
+
+        document.getElementById('save-ad').addEventListener('click', async () => {
+            const enabled = document.getElementById('ad-enabled').classList.contains('on');
+            const imageUrl = document.getElementById('ad-image').value.trim();
+            const title = document.getElementById('ad-title').value.trim();
+            const description = document.getElementById('ad-description').value.trim();
+            const buttonText = document.getElementById('ad-button-text').value.trim();
+            const destinationUrl = document.getElementById('ad-destination').value.trim();
+            if (!title || !description || !buttonText || !destinationUrl) {
+                showToast('Please fill in all fields.', 'error');
+                return;
+            }
+            try {
+                await setDoc(doc(db, 'systemSettings', 'ads'), {
+                    enabled,
+                    title,
+                    description,
+                    imageUrl,
+                    buttonText,
+                    destinationUrl,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                showToast('Advertisement saved.', 'success');
+                loadAdConfig();
+            } catch (e) {
+                console.error(e);
+                showToast('Failed to save advertisement.', 'error');
+            }
+        });
+
+        function setupAdsTab() {
+            // already done
+        }
+
+        // ============================================================
+        // NOTIFICATIONS SENDING
+        // ============================================================
+        function setupNotificationSending() {
+            document.getElementById('notif-recipient').addEventListener('change', function() {
+                const group = document.getElementById('notif-uid-group');
+                if (this.value === 'single') group.style.display = 'block';
+                else group.style.display = 'none';
+            });
+
+            document.getElementById('send-notification-btn').addEventListener('click', async () => {
+                const recipient = document.getElementById('notif-recipient').value;
+                const uid = document.getElementById('notif-uid').value.trim();
+                const title = document.getElementById('notif-title').value.trim();
+                const message = document.getElementById('notif-message').value.trim();
+                const type = document.getElementById('notif-type').value;
+                if (!title || !message) {
+                    showToast('Please enter title and message.', 'error');
+                    return;
+                }
+                if (recipient === 'single' && !uid) {
+                    showToast('Please enter a user UID.', 'error');
+                    return;
+                }
+                try {
+                    const fn = httpsCallable(functions, 'sendNotification');
+                    await fn({ recipient, uid, title, message, type });
+                    showToast('Notification sent.', 'success');
+                    document.getElementById('notif-title').value = '';
+                    document.getElementById('notif-message').value = '';
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to send notification.', 'error');
+                }
+            });
+        }
+
+        // ============================================================
+        // CREATE PLAN BUTTON (placeholder)
+        // ============================================================
+        document.getElementById('create-plan-btn').addEventListener('click', () => {
+            showToast('Create plan functionality coming soon.', '');
+        });
+
+        console.log('PureOre Nexus Admin — Fully connected.');
+    </script>
+
+</body>
+</html>

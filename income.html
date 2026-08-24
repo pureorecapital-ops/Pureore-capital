@@ -2,2089 +2,1548 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Income – Sajvera Capital</title>
-    <link rel="preconnect" href="https://www.gstatic.com" />
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Income | PureOre Nexus</title>
+    <meta name="description" content="Claim your daily income from PureOre Nexus investments." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js",
+                "firebase/functions": "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js"
+            }
+        }
     </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
-    </script>
+
     <style>
-        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
-        * {
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            min-height: 100vh;
-            padding-top: 80px;
-            padding-bottom: 80px;
-            display: flex;
-            flex-direction: column;
-            color: #ffffff;
-            position: relative;
-            background: #000;
+        :root {
+            --gold: #c9a84c;
+            --gold-glow: rgba(201, 168, 76, 0.25);
+            --gold-subtle: rgba(201, 168, 76, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        .hero-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+        html,
+        body {
             height: 100%;
-            z-index: -1;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             overflow: hidden;
         }
 
-        .hero-bg::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
-            background-size: cover;
-            background-position: center;
-            filter: blur(14px) brightness(0.25) saturate(0.7);
-            transform: scale(1.1);
-        }
-
-        .hero-bg::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.65);
-        }
-
-        /* ----- HEADER (DARK GLASS) ----- */
-        .header {
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0.8rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.50);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .header-left {
+            inset: 0;
+            z-index: 9999;
             display: flex;
             flex-direction: column;
-            gap: 0;
-        }
-
-        .logo-text {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: -0.4px;
-        }
-        .logo-text .vc {
-            color: #60a5fa;
-        }
-
-        .logo-sub {
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 0.3px;
-            font-weight: 400;
-            margin-top: -2px;
-        }
-        .logo-sub .highlight {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .header-right {
-            display: flex;
             align-items: center;
-            gap: 0.8rem;
+            justify-content: center;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
         }
-
-        .hamburger {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .hamburger:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-        .hamburger span {
-            display: block;
-            width: 24px;
-            height: 2px;
-            background: #f1f5f9;
-            border-radius: 4px;
-            transition: 0.3s;
-        }
-        .hamburger.active span:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-        .hamburger.active span:nth-child(2) {
+        #loading-screen.hidden {
             opacity: 0;
-        }
-        .hamburger.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(5px, -5px);
+            visibility: hidden;
+            pointer-events: none;
         }
 
-        /* ----- SLIDE MENU PANEL (GLASS) ----- */
-        .menu-panel {
-            position: fixed;
-            top: 0;
-            right: -380px;
-            width: 340px;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
-            padding: 2rem 1.8rem;
-            transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-            z-index: 200;
-            overflow-y: auto;
+        .load-logo {
             display: flex;
             flex-direction: column;
-            gap: 0.3rem;
-            color: #f1f5f9;
-            border-left: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .menu-panel.open {
-            right: 0;
-        }
-
-        .menu-panel .close-btn {
-            align-self: flex-end;
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 2rem;
-            cursor: pointer;
-            padding: 0 0.5rem;
-            transition: 0.2s;
-        }
-        .menu-panel .close-btn:hover {
-            color: #ffffff;
-        }
-
-        .menu-panel .panel-header {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            padding-bottom: 0.8rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .menu-panel .panel-header .panel-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .menu-panel .panel-header .panel-email {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .menu-item {
-            display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 0.7rem 0.8rem;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            text-decoration: none;
-            color: rgba(255, 255, 255, 0.5);
-            border: none;
-            background: transparent;
-            width: 100%;
-            font-family: inherit;
-            font-size: 0.95rem;
+            margin-bottom: 2rem;
         }
-
-        .menu-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            color: #ffffff;
-            transform: translateX(4px);
-        }
-
-        .menu-item .mi-icon {
-            width: 32px;
-            height: 32px;
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .menu-item .mi-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: currentColor;
-            stroke-width: 1.8;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .menu-item .mi-label {
-            flex: 1;
-        }
-
-        .menu-item .mi-arrow {
-            color: rgba(255, 255, 255, 0.15);
-        }
-        .menu-item .mi-arrow svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .menu-divider {
-            height: 1px;
-            background: rgba(255, 255, 255, 0.04);
-            margin: 0.2rem 0.8rem;
-        }
-
-        /* ----- CONTAINER ----- */
-        .container {
-            max-width: 560px;
-            margin: 0 auto;
-            padding: 0 1.2rem;
-            flex: 1;
-            width: 100%;
-        }
-
-        /* ----- PAGE HEADER ----- */
-        .page-header {
             margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        .page-header h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .page-header h1 span {
-            color: #60a5fa;
-        }
-
-        .page-header p {
-            color: rgba(255, 255, 255, 0.25);
-            font-size: 0.85rem;
-            margin-top: 2px;
-        }
-
-        /* ----- TOTAL EARNINGS BAR (GLASS) ----- */
-        .total-bar {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 1rem 1.2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-            margin-bottom: 1.2rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.06);
             position: relative;
-            overflow: hidden;
         }
-
-        .total-bar::before {
+        .load-logo-symbol::after {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
-            pointer-events: none;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
         }
-
-        .total-left {
-            display: flex;
-            flex-direction: column;
-            gap: 0.1rem;
-            position: relative;
-            z-index: 1;
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
-
-        .total-label {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.15);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .total-amount {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: #facc15;
-        }
-
-        .claim-all-btn {
-            padding: 0.5rem 1.2rem;
-            border: none;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            font-family: inherit;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.15);
-            white-space: nowrap;
-            position: relative;
-            z-index: 1;
-        }
-
-        .claim-all-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none !important;
-        }
-
-        .claim-all-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);
-        }
-
-        /* ----- TABS (GLASS) ----- */
-        .tabs {
-            display: flex;
-            gap: 0.4rem;
-            margin-bottom: 1.2rem;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 0.3rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-        }
-
-        .tab-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 0.5rem 0.5rem;
-            border-radius: 16px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.2);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-            text-align: center;
-        }
-
-        .tab-btn.active {
-            background: rgba(96, 165, 250, 0.06);
-            color: #60a5fa;
-            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.04);
-        }
-
-        .tab-btn:hover:not(.active) {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        /* ----- PLAN CARD (GLASS) ----- */
-        .plan-card {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            overflow: hidden;
-            margin-bottom: 1.2rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .plan-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
-            pointer-events: none;
-        }
-
-        .plan-card:hover {
-            border-color: rgba(255, 255, 255, 0.08);
-            transform: translateY(-3px);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
-        }
-
-        .plan-card .plan-image {
-            width: 100%;
-            height: 160px;
-            object-fit: cover;
-            background: rgba(0, 0, 0, 0.25);
-            display: block;
-        }
-
-        .plan-card .plan-body {
-            padding: 1rem 1.2rem 1.2rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .plan-card .plan-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.2px;
-        }
-
-        .plan-card .plan-meta {
-            display: flex;
-            gap: 0.8rem;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.15);
-            flex-wrap: wrap;
-            margin-top: 2px;
-        }
-
-        .plan-card .plan-meta span {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .plan-card .plan-meta svg {
-            width: 14px;
-            height: 14px;
-            stroke: currentColor;
-            stroke-width: 2;
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
             fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
-
-        .plan-card .claim-stats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.8rem 1.5rem;
-            margin: 0.4rem 0 0.6rem 0;
-            padding: 0.4rem 0.6rem;
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.15);
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
         }
-
-        .plan-card .claim-stats .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .plan-card .claim-stats .stat-item .num {
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .plan-card .claim-stats .stat-item .num.gold {
-            color: #facc15;
-        }
-        .plan-card .claim-stats .stat-item .num.blue {
-            color: #60a5fa;
-        }
-        .plan-card .claim-stats .stat-item .num.green {
-            color: #4ade80;
-        }
-
-        .plan-card .weekend-purchase-note {
+        .load-sub {
             font-size: 0.65rem;
-            color: #60a5fa;
-            background: rgba(96, 165, 250, 0.04);
-            border: 1px solid rgba(96, 165, 250, 0.06);
-            border-radius: 30px;
-            padding: 0.2rem 0.8rem;
-            display: inline-block;
-            margin: 0.2rem 0 0.4rem 0;
-        }
-
-        .plan-card .weekend-purchase-note svg {
-            width: 12px;
-            height: 12px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            vertical-align: middle;
-            margin-right: 4px;
-        }
-
-        .plan-card .claim-progress {
-            margin: 0.6rem 0 0.8rem 0;
-        }
-
-        .plan-card .claim-progress .progress-track {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 0.3rem;
-        }
-
-        .plan-card .claim-progress .progress-fill {
-            height: 100%;
-            border-radius: 4px;
-            background: linear-gradient(90deg, #2563eb, #7c3aed);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        .plan-card .claim-progress .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .plan-card .claim-progress .progress-label .earned {
-            color: #60a5fa;
-            font-weight: 600;
-        }
-
-        .plan-card .claim-action {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            padding-top: 0.8rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .plan-card .claim-status {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.15);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .plan-card .claim-status .countdown {
-            color: #fbbf24;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .plan-card .claim-status .ready-text {
-            color: #4ade80;
-            font-weight: 600;
-        }
-
-        .plan-card .claim-btn {
-            padding: 0.4rem 1.2rem;
-            border: none;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 0.8rem;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.02);
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .plan-card .claim-btn.active {
-            background: linear-gradient(135deg, #facc15, #f5a623);
-            color: #0a0815;
-            box-shadow: 0 4px 24px rgba(250, 204, 21, 0.15);
-        }
-
-        .plan-card .claim-btn.active:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(250, 204, 21, 0.25);
-        }
-
-        .plan-card .claim-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .plan-card .weekend-note {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.06);
-            margin-top: 0.3rem;
-            text-align: right;
-        }
-
-        .plan-card .buy-plan-details {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 12px;
-            padding: 0.6rem 0.8rem;
-            margin: 0.3rem 0 0.6rem 0;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .plan-card .buy-plan-details .detail-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            padding: 0.15rem 0;
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .plan-card .buy-plan-details .detail-row .label {
-            color: rgba(255, 255, 255, 0.3);
-        }
-        .plan-card .buy-plan-details .detail-row .value {
-            font-weight: 600;
-        }
-        .plan-card .buy-plan-details .detail-row .value.gold {
-            color: #facc15;
-        }
-
-        .plan-card .buy-plan-details .detail-row .value.green {
-            color: #4ade80;
-        }
-
-        .plan-card .claim-btn.buy-claim {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: #fff;
-            box-shadow: 0 4px 24px rgba(16, 185, 129, 0.2);
-        }
-
-        .plan-card .claim-btn.buy-claim:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
-        }
-
-        .plan-card .claim-btn.buy-claim:disabled {
-            background: rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.15);
-            box-shadow: none;
-        }
-
-        .plan-card .claim-btn.buy-claim.ready {
-            background: linear-gradient(135deg, #facc15, #f5a623);
-            color: #0a0815;
-        }
-
-        .plan-card .claim-btn.buy-claim.ready:hover:not(:disabled) {
-            box-shadow: 0 8px 32px rgba(250, 204, 21, 0.3);
-        }
-
-        /* ----- EMPTY STATE (GLASS) ----- */
-        .empty-state {
-            text-align: center;
-            padding: 2.5rem 1rem;
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .empty-state svg {
-            width: 48px;
-            height: 48px;
-            stroke: currentColor;
-            stroke-width: 1.5;
-            fill: none;
-            margin-bottom: 0.8rem;
-        }
-
-        .empty-state .title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .empty-state .sub {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.1);
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
             margin-top: 0.2rem;
         }
 
-        /* ----- BOTTOM NAV (DARK GLASS) – FIXED ORDER: HOME → INCOME → MARKET → TEAM → ME ----- */
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN PAGE
+        ============================================================ */
+        #main-page {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--dark);
+        }
+        #main-page.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/cXxZh1w3/20260824-014737.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+        }
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(11, 11, 11, 0.5) 0%, rgba(11, 11, 11, 0.95) 80%, #0b0b0b 100%);
+            pointer-events: none;
+        }
+
+        .page-scroll {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 0 16px 90px 16px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ============================================================
+           HEADER
+        ============================================================ */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(11, 11, 11, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin: 0 -16px;
+            padding: 14px 16px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-white);
+        }
+        .header-brand svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 1.8;
+            flex-shrink: 0;
+        }
+        .header-brand span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        .header-brand span em {
+            color: var(--gold);
+            font-style: normal;
+        }
+
+        /* ============================================================
+           CONTENT SECTIONS
+        ============================================================ */
+        .income-summary {
+            margin: 20px 0 16px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            text-align: center;
+        }
+        .income-summary .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+        .income-summary .amount {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin: 4px 0 6px;
+        }
+        .income-summary .sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .weekend-message {
+            background: rgba(231, 76, 60, 0.04);
+            border: 1px solid rgba(231, 76, 60, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            text-align: center;
+            margin: 12px 0 16px;
+        }
+        .weekend-message .title {
+            font-weight: 600;
+            color: #e74c3c;
+            font-size: 0.85rem;
+        }
+        .weekend-message .desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+
+        .claim-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            font-family: inherit;
+            background: var(--gold);
+            color: #0b0b0b;
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.12);
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 8px 0 20px;
+        }
+        .claim-btn:hover:not(:disabled) {
+            background: #dbb95c;
+            box-shadow: 0 0 60px rgba(201, 168, 76, 0.2);
+            transform: translateY(-2px);
+        }
+        .claim-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            box-shadow: none;
+            border: 1px solid var(--glass-border);
+        }
+        .claim-btn .spinner {
+            display: none;
+            width: 22px;
+            height: 22px;
+            border: 2.5px solid rgba(11, 11, 11, 0.15);
+            border-top-color: #0b0b0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .claim-btn.loading .spinner {
+            display: inline-block;
+        }
+        .claim-btn.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        .investments-list {
+            margin-top: 8px;
+        }
+        .investments-list .list-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .income-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .income-item:last-child {
+            border-bottom: none;
+        }
+        .income-item .info .name {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .income-item .info .detail {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+        .income-item .right .amount {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .previous-claims {
+            margin-top: 16px;
+        }
+        .previous-claims .claim-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .previous-claims .claim-item .date {
+            color: var(--text-muted);
+        }
+        .previous-claims .claim-item .camount {
+            color: var(--text-white);
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 24px 16px;
+            color: var(--text-muted);
+        }
+        .empty-state svg {
+            width: 40px;
+            height: 40px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.3;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .empty-state p {
+            font-size: 0.75rem;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MODAL
+        ============================================================ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(11, 11, 11, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .modal-card {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 28px 22px 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.35s ease;
+        }
+        @keyframes slideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-card .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 12px;
+            color: var(--text-white);
+        }
+        .modal-card .modal-amount {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+        .modal-card .modal-sub {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .modal-pin-section {
+            margin: 12px 0;
+            text-align: center;
+        }
+        .modal-pin-section .pin-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .modal-pin-section .pin-boxes {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        .modal-pin-section .pin-box {
+            width: 44px;
+            height: 52px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-white);
+            font-family: inherit;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .modal-pin-section .pin-box:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.08);
+        }
+        .modal-pin-section .pin-box.error {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.08);
+        }
+        .modal-pin-section .pin-box.hidden-pin {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+        .modal-pin-section .pin-error {
+            font-size: 0.7rem;
+            color: #e74c3c;
+            margin-top: 6px;
+            min-height: 1.2em;
+        }
+        .modal-pin-section .pin-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 6px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .modal-pin-section .pin-toggle input[type="checkbox"] {
+            accent-color: var(--gold);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .modal-actions .btn-modal {
+            padding: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            min-height: 48px;
+        }
+        .modal-actions .btn-modal.cancel {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .modal-actions .btn-modal.cancel:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .modal-actions .btn-modal.confirm {
+            background: var(--gold);
+            color: #0b0b0b;
+            box-shadow: 0 0 30px rgba(201, 168, 76, 0.1);
+        }
+        .modal-actions .btn-modal.confirm:hover:not(:disabled) {
+            background: #dbb95c;
+            box-shadow: 0 0 50px rgba(201, 168, 76, 0.15);
+        }
+        .modal-actions .btn-modal:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .modal-actions .btn-modal .spinner-sm {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(11, 11, 11, 0.15);
+            border-top-color: #0b0b0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+        .modal-actions .btn-modal.loading .spinner-sm {
+            display: inline-block;
+        }
+        .modal-actions .btn-modal.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           SUCCESS / ERROR state in modal
+        ============================================================ */
+        .result-state {
+            text-align: center;
+            padding: 8px 0;
+        }
+        .result-state .result-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+        }
+        .result-state .result-icon.success {
+            background: rgba(46, 204, 113, 0.08);
+            border: 2px solid #2ecc71;
+        }
+        .result-state .result-icon.success svg {
+            stroke: #2ecc71;
+        }
+        .result-state .result-icon.error {
+            background: rgba(231, 76, 60, 0.08);
+            border: 2px solid #e74c3c;
+        }
+        .result-state .result-icon.error svg {
+            stroke: #e74c3c;
+        }
+        .result-state .result-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .result-state .result-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .result-state .result-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .result-actions .btn-result {
+            padding: 8px 20px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .result-actions .btn-result.primary {
+            background: var(--gold);
+            color: #0b0b0b;
+        }
+        .result-actions .btn-result.primary:hover {
+            background: #dbb95c;
+        }
+        .result-actions .btn-result.secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .result-actions .btn-result.secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .result-actions .btn-result svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.55rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.5;
+            font-weight: 300;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 16px;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           BOTTOM NAVIGATION
+        ============================================================ */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.50);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            right: 0;
+            z-index: 20;
+            background: rgba(11, 11, 11, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 6px 4px 14px;
-            z-index: 30;
-            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
+            padding: 6px 0 env(safe-area-inset-bottom, 8px) 0;
+            height: 68px;
         }
-
-        .nav-item {
+        .bottom-nav a {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 2px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            text-align: center;
-            padding: 4px 2px;
-            border-radius: 16px;
-            border: none;
-            background: transparent;
-            font-family: inherit;
-            color: rgba(255, 255, 255, 0.15);
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.5rem;
+            letter-spacing: 0.04em;
+            transition: color 0.25s ease;
+            padding: 4px 12px;
+            position: relative;
+            min-width: 48px;
         }
-
-        .nav-item .nav-icon {
+        .bottom-nav a svg {
             width: 24px;
             height: 24px;
             stroke: currentColor;
-            stroke-width: 1.8;
             fill: none;
+            stroke-width: 1.8;
             stroke-linecap: round;
             stroke-linejoin: round;
-            transition: all 0.3s;
+            transition: stroke 0.25s ease;
+        }
+        .bottom-nav a.active {
+            color: var(--gold);
+        }
+        .bottom-nav a.active svg {
+            stroke: var(--gold);
         }
 
-        .nav-item.active .nav-icon {
-            stroke: #60a5fa;
-            transform: scale(1.05);
-        }
-
-        .nav-item .nav-label {
-            font-size: 0.45rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.15);
-            transition: 0.3s;
-            letter-spacing: 0.3px;
-        }
-
-        .nav-item.active .nav-label {
-            color: #60a5fa;
-        }
-
-        .nav-item:hover .nav-icon {
-            stroke: #60a5fa;
-        }
-
-        .nav-item.marketplace .nav-icon {
-            width: 32px;
-            height: 32px;
-            stroke-width: 2;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
-            border-radius: 50%;
-            padding: 4px;
-            stroke: #fff;
-            margin-bottom: 2px;
-        }
-
-        .nav-item.marketplace.active .nav-icon {
-            transform: scale(1.1);
-            box-shadow: 0 0 30px rgba(37, 99, 235, 0.15);
-        }
-
-        .nav-item.marketplace .nav-label {
-            color: #60a5fa;
-            font-weight: 700;
-        }
-
-        /* ----- TOAST (GLASS) ----- */
-        .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(16px);
-            color: #f1f5f9;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            z-index: 1001;
-            animation: toastFade 4.5s ease forwards;
-            max-width: 90%;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .toast.error {
-            border-color: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-        }
-        .toast.success {
-            border-color: rgba(74, 222, 128, 0.15);
-            color: #6ee7b7;
-        }
-
-        @keyframes toastFade {
-            0% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px) scale(0.95);
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 480px) {
+            .page-scroll {
+                padding: 0 12px 80px 12px;
             }
-            15% {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0) scale(1);
+            .page-header {
+                padding: 10px 12px;
+                margin: 0 -12px;
             }
-            80% {
-                opacity: 1;
+            .income-summary .amount {
+                font-size: 2rem;
             }
-            100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px) scale(0.95);
+            .claim-btn {
+                font-size: 0.8rem;
+                min-height: 50px;
+                padding: 14px;
             }
-        }
-
-        /* ----- RESPONSIVE ----- */
-        @media (max-width: 500px) {
-            .header {
-                padding: 0.6rem 1rem;
+            .modal-card {
+                padding: 20px 14px 18px;
             }
-            .logo-text {
+            .modal-pin-section .pin-box {
+                width: 36px;
+                height: 44px;
                 font-size: 1.2rem;
             }
-            .logo-sub {
+            .modal-actions {
+                grid-template-columns: 1fr;
+            }
+            .bottom-nav {
+                height: 62px;
+                padding: 4px 0 env(safe-area-inset-bottom, 6px) 0;
+            }
+            .bottom-nav a {
+                font-size: 0.45rem;
+                padding: 2px 8px;
+                min-width: 40px;
+            }
+            .bottom-nav a svg {
+                width: 20px;
+                height: 20px;
+            }
+            .branding-footer {
                 font-size: 0.5rem;
-            }
-            .container {
-                padding: 0 0.8rem;
-            }
-            .page-header h1 {
-                font-size: 1.4rem;
-            }
-            .total-amount {
-                font-size: 1.2rem;
-            }
-            .claim-all-btn {
-                font-size: 0.75rem;
-                padding: 0.4rem 0.8rem;
-            }
-            .plan-card .plan-image {
-                height: 120px;
-            }
-            .plan-card .plan-name {
-                font-size: 0.95rem;
-            }
-            .plan-card .claim-action {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0.5rem;
-            }
-            .plan-card .claim-status {
-                justify-content: center;
-                font-size: 0.7rem;
-            }
-            .plan-card .claim-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            .nav-item .nav-icon {
-                width: 22px;
-                height: 22px;
-            }
-            .nav-item.marketplace .nav-icon {
-                width: 30px;
-                height: 30px;
-            }
-            .menu-panel {
-                width: 280px;
-                right: -300px;
-                padding: 1.5rem;
+                padding: 12px 0 6px;
             }
         }
 
-        @media (max-width: 400px) {
-            .total-bar {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0.5rem;
+        @media (min-width: 768px) {
+            .page-scroll {
+                padding: 0 32px 40px 32px;
             }
-            .total-left {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
+            .bottom-nav {
+                display: none;
             }
-            .total-amount {
-                font-size: 1.1rem;
+            .page-scroll {
+                padding-bottom: 40px;
             }
-            .plan-card .plan-image {
-                height: 100px;
-            }
-            .plan-card .plan-meta {
-                font-size: 0.65rem;
-                gap: 0.4rem;
-            }
-            .plan-card .claim-stats {
-                font-size: 0.65rem;
-                gap: 0.4rem;
-            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        #main-page::-webkit-scrollbar {
+            width: 3px;
+        }
+        #main-page::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #main-page::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
-    <div class="hero-bg"></div>
-
-    <!-- ===== HEADER ===== -->
-    <header class="header">
-        <div class="header-left">
-            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
-            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
-        </div>
-        <div class="header-right">
-            <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
-                <span></span><span></span><span></span>
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
             </div>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">Income</div>
         </div>
-    </header>
-
-    <!-- ===== SLIDE MENU PANEL (GLASS) ===== -->
-    <div class="menu-panel" id="menuPanel">
-        <button class="close-btn" id="closeMenu">✕</button>
-        <div class="panel-header">
-            <div class="panel-name" id="panelName">Loading...</div>
-            <div class="panel-email" id="panelEmail">Loading...</div>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
+            </div>
+            <div class="load-msg" id="load-msg">Loading your income...</div>
         </div>
-
-        <button class="menu-item" onclick="window.location.href='dashboard.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
-            <span class="mi-label">Dashboard</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" onclick="window.location.href='chat.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-            <span class="mi-label">Chat</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" onclick="window.location.href='news.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></span>
-            <span class="mi-label">News</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" id="changePasswordBtn">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-            <span class="mi-label">Change Password</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" onclick="window.location.href='support.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
-            <span class="mi-label">Customer Service</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <div class="menu-divider"></div>
-
-        <button class="menu-item" id="logoutBtn" style="color:#f87171;">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
-            <span class="mi-label">Logout</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
     </div>
 
-    <!-- ===== MAIN CONTENT ===== -->
-    <main class="container">
+    <!-- ============================================================
+    MAIN PAGE
+    ============================================================ -->
+    <div id="main-page">
+        <div class="bg-wrap" aria-hidden="true"></div>
+        <div class="bg-overlay" aria-hidden="true"></div>
 
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1>💰 <span>Income</span></h1>
-            <p>Your investments and Buy plans</p>
-        </div>
+        <div class="page-scroll">
 
-        <!-- Total Earnings Bar -->
-        <div class="total-bar">
-            <div class="total-left">
-                <span class="total-label">Pending Earnings</span>
-                <span class="total-amount" id="totalPending">0.00 ZMW</span>
+            <!-- ===== HEADER ===== -->
+            <header class="page-header">
+                <a href="#" class="header-brand" aria-label="PureOre Nexus">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Pure<em>Ore</em> Nexus</span>
+                </a>
+            </header>
+
+            <!-- ===== INCOME SUMMARY ===== -->
+            <div class="income-summary">
+                <div class="label">Total Available Income</div>
+                <div class="amount" id="total-income">K0.00</div>
+                <div class="sub" id="income-sub">Eligible income from active investments</div>
             </div>
-            <button class="claim-all-btn" id="claimAllBtn" disabled>Claim All</button>
+
+            <!-- ===== WEEKEND MESSAGE (hidden by default) ===== -->
+            <div class="weekend-message hidden" id="weekend-message">
+                <div class="title">Weekend Claiming Unavailable</div>
+                <div class="desc">Income claims are available Monday to Friday. Please return on Monday to claim your eligible income.</div>
+            </div>
+
+            <!-- ===== CLAIM BUTTON ===== -->
+            <button class="claim-btn" id="claim-btn">
+                <span class="spinner"></span>
+                <span class="btn-text">Claim All Income</span>
+            </button>
+
+            <!-- ===== INVESTMENTS LIST ===== -->
+            <div class="investments-list">
+                <div class="list-title">Active Investments</div>
+                <div id="investments-container">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- ===== PREVIOUS CLAIMS ===== -->
+            <div class="previous-claims">
+                <div class="list-title" style="margin-top: 16px;">Recent Claims</div>
+                <div id="claims-container">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- ===== BRANDING ===== -->
+            <div class="branding-footer">
+                <span>@pureorecapital</span> 2025
+            </div>
+
         </div>
-
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="active">📈 Active</button>
-            <button class="tab-btn" data-tab="expired">⏰ Expired</button>
-        </div>
-
-        <!-- Active Plans -->
-        <div id="activeTab" class="tab-content">
-            <div id="activePlansContainer"></div>
-        </div>
-
-        <!-- Expired Plans -->
-        <div id="expiredTab" class="tab-content" style="display:none;">
-            <div id="expiredPlansContainer"></div>
-        </div>
-
-    </main>
-
-    <!-- ===== BOTTOM NAV (DARK GLASS) – ORDER: HOME → INCOME → MARKET → TEAM → ME ===== -->
-    <div class="bottom-nav">
-        <button class="nav-item" data-page="dashboard.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            <span class="nav-label">Home</span>
-        </button>
-        <button class="nav-item active" data-page="income.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-            <span class="nav-label">Income</span>
-        </button>
-        <button class="nav-item marketplace" data-page="marketplace.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            <span class="nav-label">Market</span>
-        </button>
-        <button class="nav-item" data-page="team.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span class="nav-label">Team</span>
-        </button>
-        <button class="nav-item" data-page="me.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span class="nav-label">Me</span>
-        </button>
     </div>
 
-    <script>
-        // ================================================================
-        // FIREBASE CONFIG – Sajvera Capital (Pureore Capital)
-        // ================================================================
-        var firebaseConfig = {
-            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
-            authDomain: "pureore-capital-zambia.firebaseapp.com",
-            projectId: "pureore-capital-zambia",
-            storageBucket: "pureore-capital-zambia.appspot.com",
-            messagingSenderId: "78967797858",
-            appId: "1:78967797858:web:379b9692951429c345793b",
-            measurementId: "G-FQKC29NYE9"
+    <!-- ============================================================
+    BOTTOM NAVIGATION
+    ============================================================ -->
+    <nav class="bottom-nav" aria-label="Main navigation">
+        <a href="dashboard.html" aria-label="Home">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Home
+        </a>
+        <a href="income.html" class="active" aria-label="Income">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Income
+        </a>
+        <a href="invest.html" aria-label="Invest">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Invest
+        </a>
+        <a href="referrals.html" aria-label="Referral">
+            <svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Referral
+        </a>
+        <a href="profile.html" aria-label="Profile">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Profile
+        </a>
+    </nav>
+
+    <!-- ============================================================
+    MODAL (PIN verification)
+    ============================================================ -->
+    <div class="modal-overlay" id="claim-modal">
+        <div class="modal-card" id="modal-card">
+            <!-- Dynamic content -->
+        </div>
+    </div>
+
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, collection, query, where, getDocs, orderBy, limit, doc, getDoc, runTransaction } from 'firebase/firestore';
+        import { getFunctions, httpsCallable } from 'firebase/functions';
+
+        // ============================================================
+        // FIREBASE CONFIG
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        var auth = firebase.auth();
-        var db = firebase.firestore();
-        db.settings({ persistence: false });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ================================================================
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const functions = getFunctions(app);
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainPage = $('main-page');
+
+        const totalIncomeEl = $('total-income');
+        const incomeSub = $('income-sub');
+        const weekendMsg = $('weekend-message');
+        const claimBtn = $('claim-btn');
+        const investmentsContainer = $('investments-container');
+        const claimsContainer = $('claims-container');
+        const modal = $('claim-modal');
+        const modalCard = $('modal-card');
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentUser = null;
+        let totalEligibleIncome = 0;
+        let activeInvestments = [];
+        let recentClaims = [];
+        let isWeekend = false;
+
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
+            }
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Almost ready...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Loading your income data...';
+        }, 35);
+
+        // ============================================================
         // HELPERS
-        // ================================================================
-        function formatMoney(amount) {
-            return 'K' + parseFloat(amount).toFixed(2);
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
         }
 
-        function showToast(msg, isError) {
-            var existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (isError ? ' error' : ' success');
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
-        }
-
-        function isWeekend(date) {
-            var day = date.getDay();
+        function isWeekendDay(date) {
+            const day = date.getDay();
             return day === 0 || day === 6;
         }
 
-        function addBusinessDays(startDate, numDays) {
-            var result = new Date(startDate);
-            var added = 0;
-            while (added < numDays) {
-                result.setDate(result.getDate() + 1);
-                if (!isWeekend(result)) added++;
-            }
-            return result;
+        // Get current day in business timezone (Africa/Lusaka)
+        function getBusinessDay() {
+            const now = new Date();
+            const options = { timeZone: 'Africa/Lusaka', hour12: false };
+            const dateStr = now.toLocaleDateString('en-US', options);
+            const parts = dateStr.split('/');
+            // month/day/year
+            const month = parseInt(parts[0]) - 1;
+            const day = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+            const businessDate = new Date(year, month, day);
+            return businessDate;
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
+        function checkWeekend() {
+            const bizDate = getBusinessDay();
+            return isWeekendDay(bizDate);
         }
 
-        function formatDateWithTime(date) {
-            var options = { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            return date.toLocaleDateString('en-US', options);
+        // ============================================================
+        // SHOW PAGE
+        // ============================================================
+        function showPage() {
+            loadScreen.classList.add('hidden');
+            mainPage.classList.add('visible');
+            document.body.style.overflow = 'auto';
         }
 
-        // ================================================================
-        // IMAGE HELPER
-        // ================================================================
-        function getSafeImageUrl(url) {
-            if (!url || typeof url !== 'string' || url.trim() === '') {
-                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-            }
-            var safeUrl = url.trim();
-            if (safeUrl.includes('ibb.co/') && !safeUrl.includes('i.ibb.co')) {
-                var match = safeUrl.match(/ibb\.co\/([a-zA-Z0-9]+)(\/[^ ]*)?/);
-                if (match && match[1]) {
-                    var code = match[1];
-                    var filename = match[2] || '';
-                    var ext = 'jpg';
-                    if (filename) {
-                        var extMatch = filename.match(/\.([a-zA-Z0-9]+)$/);
-                        if (extMatch && extMatch[1]) ext = extMatch[1];
-                    }
-                    safeUrl = 'https://i.ibb.co/' + code + '/image.' + ext;
-                    if (filename) {
-                        safeUrl = 'https://i.ibb.co/' + code + filename;
-                    }
+        // ============================================================
+        // LOAD DATA
+        // ============================================================
+        async function loadIncomeData(uid) {
+            try {
+                // Determine if weekend
+                isWeekend = checkWeekend();
+                if (isWeekend) {
+                    weekendMsg.classList.remove('hidden');
+                    claimBtn.disabled = true;
+                    claimBtn.classList.add('disabled');
+                    claimBtn.querySelector('.btn-text').textContent = 'Weekend Unavailable';
+                } else {
+                    weekendMsg.classList.add('hidden');
+                    claimBtn.disabled = false;
+                    claimBtn.classList.remove('disabled');
+                    claimBtn.querySelector('.btn-text').textContent = 'Claim All Income';
                 }
+
+                // 1. Load active investments for this user
+                const invRef = collection(db, 'investments');
+                const invQuery = query(
+                    invRef,
+                    where('userId', '==', uid),
+                    where('status', '==', 'active')
+                );
+                const invSnap = await getDocs(invQuery);
+                const investments = [];
+                let totalIncome = 0;
+                invSnap.forEach(doc => {
+                    const data = doc.data();
+                    // Only include investments that are still active and within duration
+                    const endDate = data.endDate;
+                    let isActive = true;
+                    if (endDate) {
+                        const end = endDate.toDate ? endDate.toDate() : new Date(endDate);
+                        if (end < new Date()) {
+                            isActive = false;
+                        }
+                    }
+                    if (isActive) {
+                        const daily = Number(data.dailyReturn) || 0;
+                        totalIncome += daily;
+                        investments.push({
+                            id: doc.id,
+                            planName: data.planName || 'Investment',
+                            dailyReturn: daily,
+                            investmentAmount: Number(data.investmentAmount) || 0,
+                            imageUrl: data.imageUrl || 'https://placehold.co/400x225/1a1a1a/888?text=Investment'
+                        });
+                    }
+                });
+
+                totalEligibleIncome = totalIncome;
+                activeInvestments = investments;
+
+                // 2. Load recent claims (last 5)
+                const claimRef = collection(db, 'incomeClaims');
+                const claimQuery = query(
+                    claimRef,
+                    where('userId', '==', uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(5)
+                );
+                const claimSnap = await getDocs(claimQuery);
+                const claims = [];
+                claimSnap.forEach(doc => {
+                    const data = doc.data();
+                    claims.push({
+                        amount: Number(data.amount) || 0,
+                        createdAt: data.createdAt,
+                        status: data.status || 'completed'
+                    });
+                });
+                recentClaims = claims;
+
+                // Render
+                renderIncome();
+                showPage();
+
+            } catch (error) {
+                console.error('Error loading income data:', error);
+                // Show error state in the income summary
+                totalIncomeEl.textContent = '—';
+                incomeSub.textContent = 'Unable to load income data. Please try again.';
+                claimBtn.disabled = true;
+                claimBtn.classList.add('disabled');
+                claimBtn.querySelector('.btn-text').textContent = 'Error';
+                investmentsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <p>Could not load investments. <button onclick="location.reload()" style="background:none;border:1px solid var(--gold);color:var(--gold);padding:4px 16px;border-radius:12px;font-family:inherit;font-size:0.7rem;cursor:pointer;margin-top:6px;">Retry</button></p>
+                        </div>
+                    `;
+                claimsContainer.innerHTML = '';
+                showPage();
             }
-            if (safeUrl.includes('imgur.com/') && !safeUrl.includes('i.imgur.com')) {
-                var match2 = safeUrl.match(/imgur\.com\/([a-zA-Z0-9]+)/);
-                if (match2 && match2[1]) {
-                    safeUrl = 'https://i.imgur.com/' + match2[1] + '.jpg';
-                }
-            }
-            if (safeUrl.startsWith('http://')) {
-                safeUrl = safeUrl.replace('http://', 'https://');
-            }
-            if (safeUrl.startsWith('//')) {
-                safeUrl = 'https:' + safeUrl;
-            }
-            if (!safeUrl.startsWith('https://')) {
-                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-            }
-            return safeUrl;
         }
 
-        // ================================================================
-        // STATE
-        // ================================================================
-        var currentUserId = null;
-        var refreshInterval = null;
-        var timerInterval = null;
-        var userBlockListener = null;
-        var planImageCache = {};
-        var allActivePlans = []; // combined array of invest and buy plans
+        // ============================================================
+        // RENDER
+        // ============================================================
+        function renderIncome() {
+            // Update total
+            totalIncomeEl.textContent = 'K' + formatCurrency(totalEligibleIncome);
+            incomeSub.textContent = activeInvestments.length > 0 ?
+                `From ${activeInvestments.length} active investment${activeInvestments.length > 1 ? 's' : ''}` :
+                'No active investments found';
 
-        window.addEventListener('beforeunload', function() {
-            if (refreshInterval) clearInterval(refreshInterval);
-            if (timerInterval) clearInterval(timerInterval);
-            if (userBlockListener) userBlockListener();
-        });
-
-        // ================================================================
-        // BLOCK LISTENER
-        // ================================================================
-        function watchBlockStatus(userId) {
-            if (userBlockListener) userBlockListener();
-            userBlockListener = db.collection('users').doc(userId)
-                .onSnapshot(function(doc) {
-                    if (doc.exists && doc.data().isBlocked === true) {
-                        showToast('⚠️ Your account has been blocked. Redirecting...', true);
-                        setTimeout(function() {
-                            auth.signOut().then(function() { window.location.href = 'login.html'; });
-                        }, 2000);
-                    }
-                }, function(err) { console.warn('Block listener error:', err); });
-        }
-
-        // ================================================================
-        // AUTH STATE
-        // ================================================================
-        let authResolved = false;
-        let redirectTimeout = null;
-
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                authResolved = true;
-                if (redirectTimeout) {
-                    clearTimeout(redirectTimeout);
-                    redirectTimeout = null;
-                }
-                currentUserId = user.uid;
-                watchBlockStatus(currentUserId);
-                loadAllPlans();
-                if (refreshInterval) clearInterval(refreshInterval);
-                refreshInterval = setInterval(function() {
-                    var activeTab = document.getElementById('activeTab');
-                    if (activeTab && activeTab.style.display !== 'none') {
-                        loadAllPlans();
-                    }
-                }, 60000);
-                if (timerInterval) clearInterval(timerInterval);
-                timerInterval = setInterval(updateTimers, 1000);
-
-                db.collection('users').doc(user.uid).get().then(function(doc) {
-                    if (doc.exists) {
-                        var data = doc.data();
-                        document.getElementById('panelName').textContent = data.fullName || 'User';
-                        document.getElementById('panelEmail').textContent = data.email || user.email;
-                    }
-                }).catch(console.warn);
+            // Render investments list
+            if (activeInvestments.length === 0) {
+                investmentsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p>No active investments generating income.</p>
+                        </div>
+                    `;
             } else {
-                if (!authResolved) {
-                    if (!redirectTimeout) {
-                        redirectTimeout = setTimeout(function() {
-                            if (!auth.currentUser) {
-                                window.location.href = 'login.html';
-                            }
-                        }, 2000);
-                    }
-                } else {
-                    window.location.href = 'login.html';
-                }
-            }
-        }, function(error) {
-            console.error('Auth state error:', error);
-            window.location.href = 'login.html';
-        });
-
-        // ================================================================
-        // FETCH PLAN IMAGE
-        // ================================================================
-        async function fetchPlanImage(planName) {
-            if (planImageCache[planName]) return planImageCache[planName];
-            try {
-                var snapshot = await db.collection('marketplacePlans')
-                    .where('planName', '==', planName)
-                    .limit(1)
-                    .get();
-                if (!snapshot.empty) {
-                    var data = snapshot.docs[0].data();
-                    var img = getSafeImageUrl(data.imageUrl || data.image);
-                    planImageCache[planName] = img;
-                    return img;
-                }
-                var defaultImg = 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-                planImageCache[planName] = defaultImg;
-                return defaultImg;
-            } catch (err) {
-                console.warn('Error fetching image for plan:', planName, err);
-                return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-            }
-        }
-
-        // ================================================================
-        // GET CLAIM STATUS (Invest Plans)
-        // ================================================================
-        function getClaimStatus(inv, now) {
-            var start = inv.startDate;
-            var claimsCount = inv.claimsCount || 0;
-            var dailyAmount = inv.dailyAmount;
-            var totalBusinessDays = inv.businessDays;
-
-            var index = claimsCount;
-            while (index < totalBusinessDays) {
-                var dueDate = index === 0 ? start : addBusinessDays(start, index);
-                var claimStart = new Date(dueDate);
-                claimStart.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
-                var windowEnd = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
-
-                if (now >= windowEnd) {
-                    index++;
-                    continue;
-                }
-
-                if (now >= claimStart && now < windowEnd) {
-                    var available = !isWeekend(now);
-                    var hoursSince = Math.max(0, (now - claimStart) / (1000 * 60 * 60));
-                    var earnedSoFar = Math.min(dailyAmount, dailyAmount * (hoursSince / 24));
-                    var progress = Math.min(100, (hoursSince / 24) * 100);
-                    return {
-                        available: available,
-                        nextClaimTime: claimStart,
-                        windowEnd: windowEnd,
-                        dailyAmount: dailyAmount,
-                        earnedSoFar: earnedSoFar,
-                        hoursSince: hoursSince,
-                        progress: progress,
-                        index: index,
-                        status: available ? 'ready' : 'waiting'
-                    };
-                }
-
-                if (now < claimStart) {
-                    var hoursRemaining = (claimStart - now) / (1000 * 60 * 60);
-                    return {
-                        available: false,
-                        nextClaimTime: claimStart,
-                        windowEnd: windowEnd,
-                        dailyAmount: dailyAmount,
-                        earnedSoFar: 0,
-                        hoursSince: 0,
-                        progress: 0,
-                        index: index,
-                        status: 'waiting',
-                        hoursRemaining: hoursRemaining
-                    };
-                }
-            }
-
-            return {
-                available: false,
-                nextClaimTime: null,
-                windowEnd: null,
-                dailyAmount: dailyAmount,
-                earnedSoFar: 0,
-                hoursSince: 0,
-                progress: 0,
-                index: -1,
-                status: 'done'
-            };
-        }
-
-        // ================================================================
-        // LOAD ALL PLANS (Invest + Buy)
-        // ================================================================
-        async function loadAllPlans() {
-            if (!currentUserId) return;
-            try {
-                // 1. Load Invest plans from "investments"
-                var invSnapshot = await db.collection('investments')
-                    .where('userId', '==', currentUserId)
-                    .get();
-
-                var investPlans = [];
-                invSnapshot.forEach(function(doc) {
-                    investPlans.push({ id: doc.id, ...doc.data(), planType: 'invest' });
-                });
-
-                // 2. Load Buy plans from "marketplacePurchases"
-                var buySnapshot = await db.collection('marketplacePurchases')
-                    .where('userId', '==', currentUserId)
-                    .where('type', '==', 'buy')
-                    .get();
-
-                var buyPlans = [];
-                buySnapshot.forEach(function(doc) {
-                    buyPlans.push({ id: doc.id, ...doc.data(), planType: 'buy' });
-                });
-
-                // Combine all plans
-                var allPlans = [...investPlans, ...buyPlans];
-                allPlans.sort(function(a, b) {
-                    var aTime = (a.startDate || a.purchasedAt)?.toMillis ? (a.startDate || a.purchasedAt).toMillis() :
-                        0;
-                    var bTime = (b.startDate || b.purchasedAt)?.toMillis ? (b.startDate || b.purchasedAt).toMillis() :
-                        0;
-                    return bTime - aTime;
-                });
-
-                // Separate active and expired
-                var now = new Date();
-                var active = [];
-                var expired = [];
-
-                for (var i = 0; i < allPlans.length; i++) {
-                    var plan = allPlans[i];
-                    if (plan.planType === 'invest') {
-                        var startDate = plan.startDate.toDate();
-                        var businessDays = plan.businessDays || plan.days;
-                        var endDate = plan.businessEndDate ? plan.businessEndDate.toDate() : addBusinessDays(startDate,
-                            businessDays);
-                        var today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        var isExpired = plan.status !== 'active' || today > endDate;
-
-                        var investment = {
-                            id: plan.id,
-                            ...plan,
-                            startDate: startDate,
-                            businessDays: businessDays,
-                            endDate: endDate,
-                            dailyAmount: plan.dailyReturn,
-                            claimsCount: plan.claimsCount || 0,
-                            lastClaimed: plan.lastClaimed,
-                            purchasedOnWeekend: plan.purchasedOnWeekend || false,
-                            planType: 'invest',
-                            claimable: true // Invest plans have daily claims
-                        };
-                        if (!isExpired) {
-                            active.push(investment);
-                        } else {
-                            expired.push(investment);
-                        }
-                    } else { // buy plan
-                        var expiryDate = plan.expiresAt ? plan.expiresAt.toDate() : null;
-                        var isExpiredBuy = plan.status === 'claimed' || plan.status === 'expired' || (expiryDate && now >
-                            expiryDate);
-                        var buyPlan = {
-                            id: plan.id,
-                            ...plan,
-                            planType: 'buy',
-                            expiryDate: expiryDate,
-                            amount: plan.amount || plan.purchaseAmount || 0,
-                            totalIncome: plan.totalIncome || 0,
-                            finalAmount: (plan.amount || plan.purchaseAmount || 0) + (plan.totalIncome || 0),
-                            status: plan.status || 'active',
-                            claimedAt: plan.claimedAt || null,
-                            claimAmount: plan.claimAmount || null,
-                            claimable: false // Buy plans are not daily claimable
-                        };
-                        if (!isExpiredBuy) {
-                            active.push(buyPlan);
-                        } else {
-                            expired.push(buyPlan);
-                        }
-                    }
-                }
-
-                allActivePlans = active;
-                await renderActive(active);
-                renderExpired(expired);
-                updateTotalPendingAndClaimAll(active);
-            } catch (err) {
-                console.error("Error loading plans:", err);
-                var container = document.getElementById('activePlansContainer');
-                if (container) container.innerHTML =
-                    '<div class="empty-state"><div class="title">Error loading plans</div><div class="sub">Please refresh the page</div></div>';
-            }
-        }
-
-        // ================================================================
-        // RENDER ACTIVE
-        // ================================================================
-        async function renderActive(plans) {
-            var container = document.getElementById('activePlansContainer');
-            if (!container) return;
-            if (!plans.length) {
-                container.innerHTML =
-                    '<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><div class="title">No active plans</div><div class="sub">Purchase an investment or Buy plan to start earning</div></div>';
-                return;
-            }
-
-            // Prepare images
-            var imagePromises = plans.map(function(p) {
-                return fetchPlanImage(p.planName).catch(function() { return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; });
-            });
-            var images = await Promise.all(imagePromises);
-
-            var now = new Date();
-            var html = '';
-            for (var i = 0; i < plans.length; i++) {
-                var plan = plans[i];
-                var img = images[i] || 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-                if (plan.planType === 'invest') {
-                    // Render Invest Plan (existing)
-                    var status = getClaimStatus(plan, now);
-                    var canClaim = status.available && !isWeekend(now);
-                    var daysLeft = plan.businessDays - (plan.claimsCount || 0);
-                    var totalClaimed = (plan.claimsCount || 0) * plan.dailyAmount;
-                    var claimsCount = plan.claimsCount || 0;
-
-                    var statusText = '';
-                    var countdownText = '';
-                    if (canClaim) {
-                        statusText = '✅ Ready to claim';
-                    } else if (status.status === 'waiting' && status.hoursRemaining !== undefined) {
-                        var hrs = Math.floor(status.hoursRemaining);
-                        var mins = Math.floor((status.hoursRemaining % 1) * 60);
-                        countdownText = hrs + 'h ' + mins + 'm';
-                        statusText = '⏳ Next claim in';
-                    } else if (isWeekend(now)) {
-                        statusText = '⏳ Weekends – claims resume Monday';
-                    } else if (status.status === 'done') {
-                        statusText = '✅ All claims completed';
-                    } else {
-                        statusText = '⏳ Waiting for next window';
-                    }
-
-                    var progress = status.progress || 0;
-                    var earnedDisplay = status.earnedSoFar || 0;
-                    var dailyDisplay = status.dailyAmount || plan.dailyAmount;
-
-                    var startDateFormatted = formatDateWithTime(plan.startDate);
-
-                    var isWeekendPurchase = plan.purchasedOnWeekend === true;
-                    if (!isWeekendPurchase && plan.claimsCount === 0 && plan.startDate.getDay() === 1) {
-                        var daysSinceStart = Math.floor((now - plan.startDate) / (1000 * 60 * 60 * 24));
-                        if (daysSinceStart <= 3) {
-                            isWeekendPurchase = true;
-                        }
-                    }
-
-                    var weekendNoteHtml = '';
-                    if (isWeekendPurchase && plan.claimsCount === 0) {
-                        var claimTimeStr = plan.startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                        weekendNoteHtml = `
-                            <div class="weekend-purchase-note">
-                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                📅 Weekend purchase – first claim available from ${claimTimeStr} on weekdays
+                investmentsContainer.innerHTML = activeInvestments.map(inv => `
+                        <div class="income-item">
+                            <div class="info">
+                                <div class="name">${inv.planName}</div>
+                                <div class="detail">Invested: K${formatCurrency(inv.investmentAmount)}</div>
                             </div>
-                        `;
-                    }
-
-                    html += `
-                        <div class="plan-card" data-id="${plan.id}" data-next-claim="${status.nextClaimTime ? status.nextClaimTime.getTime() : ''}" data-daily="${dailyDisplay}">
-                            <img class="plan-image" src="${img}" alt="${escapeHtml(plan.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
-                            <div class="plan-body">
-                                <div class="plan-name">${escapeHtml(plan.planName)}</div>
-                                <div class="plan-meta">
-                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
-                                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${formatMoney(dailyDisplay)}/day</span>
-                                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${daysLeft} days left</span>
-                                </div>
-                                ${weekendNoteHtml}
-
-                                <div class="claim-stats">
-                                    <span class="stat-item">💰 Total Claimed: <span class="num gold">${formatMoney(totalClaimed)}</span></span>
-                                    <span class="stat-item">📊 Claims: <span class="num blue">${claimsCount}</span></span>
-                                    <span class="stat-item">📆 Days Left: <span class="num">${daysLeft}</span></span>
-                                </div>
-
-                                <div class="claim-progress">
-                                    <div class="progress-track">
-                                        <div class="progress-fill" style="width: ${Math.min(progress, 100)}%;"></div>
-                                    </div>
-                                    <div class="progress-label">
-                                        <span class="earned">Earned: ${formatMoney(earnedDisplay)}</span>
-                                        <span>Daily target: ${formatMoney(dailyDisplay)}</span>
-                                    </div>
-                                </div>
-                                <div class="claim-action">
-                                    <div class="claim-status">
-                                        ${statusText}
-                                        ${countdownText ? `<span class="countdown" id="countdown-${plan.id}">${countdownText}</span>` : ''}
-                                        ${canClaim ? '<span class="ready-text">● Ready</span>' : ''}
-                                    </div>
-                                    <button class="claim-btn ${canClaim ? 'active' : ''}" ${canClaim ? '' : 'disabled'} data-id="${plan.id}" data-daily="${dailyDisplay}">
-                                        ${canClaim ? '💰 Claim' : (isWeekend(now) ? '⏳ Weekend' : '⏳ Wait')}
-                                    </button>
-                                </div>
-                                ${isWeekend(now) ? '<div class="weekend-note">⛔ Claims resume Monday</div>' : ''}
+                            <div class="right">
+                                <div class="amount">+K${formatCurrency(inv.dailyReturn)}</div>
+                                <div style="font-size:0.5rem;color:var(--text-muted);text-align:right;">today</div>
                             </div>
                         </div>
-                    `;
-                } else {
-                    // Render Buy Plan
-                    var expiryDate = plan.expiryDate;
-                    var isExpired = plan.status === 'claimed' || (expiryDate && now > expiryDate);
-                    var isReady = !isExpired && expiryDate && now >= expiryDate && plan.status !== 'claimed';
+                    `).join('');
+            }
 
-                    var statusTextBuy = '';
-                    var claimableBuy = false;
-                    if (plan.status === 'claimed') {
-                        statusTextBuy = '✅ Claimed';
-                    } else if (isReady) {
-                        statusTextBuy = '🟢 Ready to Claim';
-                        claimableBuy = true;
-                    } else if (expiryDate) {
-                        var diff = expiryDate - now;
-                        if (diff > 0) {
-                            var daysRemaining = Math.floor(diff / (1000 * 60 * 60 * 24));
-                            var hoursRemaining = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                            statusTextBuy = `⏳ Matures in ${daysRemaining}d ${hoursRemaining}h`;
-                        } else {
-                            statusTextBuy = '⏳ Processing...';
-                        }
-                    } else {
-                        statusTextBuy = '⏳ Active';
-                    }
-
-                    var startDateDisplay = plan.purchasedAt ? formatDateWithTime(plan.purchasedAt.toDate()) : '—';
-                    var expiryDisplay = expiryDate ? formatDateWithTime(expiryDate) : '—';
-
-                    html += `
-                        <div class="plan-card" data-id="${plan.id}" data-buy="true">
-                            <img class="plan-image" src="${img}" alt="${escapeHtml(plan.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
-                            <div class="plan-body">
-                                <div class="plan-name">${escapeHtml(plan.planName)} <span style="font-size:0.6rem;color:var(--accent-3);margin-left:8px;">🛒 BUY</span></div>
-                                <div class="plan-meta">
-                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Start: ${startDateDisplay}</span>
-                                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Expires: ${expiryDisplay}</span>
-                                </div>
-
-                                <div class="buy-plan-details">
-                                    <div class="detail-row"><span class="label">💰 Capital</span><span class="value gold">${formatMoney(plan.amount)}</span></div>
-                                    <div class="detail-row"><span class="label">📈 Profit</span><span class="value green">${formatMoney(plan.totalIncome)}</span></div>
-                                    <div class="detail-row"><span class="label">💎 Final Amount</span><span class="value gold" style="font-weight:700;">${formatMoney(plan.finalAmount)}</span></div>
-                                </div>
-
-                                <div class="claim-action">
-                                    <div class="claim-status">
-                                        ${statusTextBuy}
-                                        ${claimableBuy ? '<span class="ready-text">● Ready</span>' : ''}
-                                    </div>
-                                    <button class="claim-btn buy-claim ${claimableBuy ? 'ready' : ''}" ${claimableBuy ? '' : 'disabled'} data-id="${plan.id}" data-final="${plan.finalAmount}">
-                                        ${claimableBuy ? '💎 Claim Full Amount' : (plan.status === 'claimed' ? '✅ Claimed' : '⏳ Locked')}
-                                    </button>
-                                </div>
-                            </div>
+            // Render claims
+            if (recentClaims.length === 0) {
+                claimsContainer.innerHTML = `
+                        <div class="empty-state" style="padding:8px 0;">
+                            <p style="font-size:0.7rem;">No claims yet.</p>
                         </div>
                     `;
-                }
-            }
-
-            container.innerHTML = html;
-
-            // Attach events for Invest claims
-            document.querySelectorAll('.claim-btn.active:not(.buy-claim)').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var invId = this.dataset.id;
-                    var dailyAmount = parseFloat(this.dataset.daily);
-                    this.disabled = true;
-                    claimDailyIncome(invId, dailyAmount, true, this);
-                });
-            });
-
-            // Attach events for Buy claims – now calls the real claim directly
-            document.querySelectorAll('.claim-btn.buy-claim.ready').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var planId = this.dataset.id;
-                    this.disabled = true;
-                    claimBuyPlan(planId, this);
-                });
-            });
-
-            updateTimers();
-        }
-
-        // ================================================================
-        // RENDER EXPIRED
-        // ================================================================
-        async function renderExpired(plans) {
-            var container = document.getElementById('expiredPlansContainer');
-            if (!container) return;
-            if (!plans.length) {
-                container.innerHTML =
-                    '<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="title">No expired plans</div><div class="sub">All your plans are active</div></div>';
-                return;
-            }
-
-            var imagePromises = plans.map(function(p) {
-                return fetchPlanImage(p.planName).catch(function() { return 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'; });
-            });
-            var images = await Promise.all(imagePromises);
-
-            var html = '';
-            for (var i = 0; i < plans.length; i++) {
-                var plan = plans[i];
-                var img = images[i] || 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
-                var isBuy = plan.planType === 'buy';
-                var statusText = plan.status === 'completed' ? 'Completed' : plan.status === 'claimed' ? 'Claimed' : 'Expired';
-                var startDateFormatted = plan.startDate ? formatDateWithTime(plan.startDate) : '—';
-
-                if (isBuy) {
-                    var finalAmount = (plan.amount || 0) + (plan.totalIncome || 0);
-                    html += `
-                        <div class="plan-card expired">
-                            <img class="plan-image" src="${img}" alt="${escapeHtml(plan.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
-                            <div class="plan-body">
-                                <div class="plan-name">${escapeHtml(plan.planName)} <span style="font-size:0.6rem;color:var(--accent-3);margin-left:8px;">🛒 BUY</span></div>
-                                <div class="plan-meta">
-                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
-                                    <span>⏱️ ${statusText}</span>
-                                </div>
-                                <div class="buy-plan-details">
-                                    <div class="detail-row"><span class="label">💰 Capital</span><span class="value gold">${formatMoney(plan.amount || 0)}</span></div>
-                                    <div class="detail-row"><span class="label">📈 Profit</span><span class="value green">${formatMoney(plan.totalIncome || 0)}</span></div>
-                                    <div class="detail-row"><span class="label">💎 Final Amount</span><span class="value gold" style="font-weight:700;">${formatMoney(finalAmount)}</span></div>
-                                    ${plan.claimAmount ? `<div class="detail-row"><span class="label">Claimed Amount</span><span class="value gold">${formatMoney(plan.claimAmount)}</span></div>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    var totalClaimed = (plan.claimsCount || 0) * (plan.dailyReturn || 0);
-                    html += `
-                        <div class="plan-card expired">
-                            <img class="plan-image" src="${img}" alt="${escapeHtml(plan.planName)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg'" />
-                            <div class="plan-body">
-                                <div class="plan-name">${escapeHtml(plan.planName)}</div>
-                                <div class="plan-meta">
-                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${startDateFormatted}</span>
-                                    <span>⏱️ ${statusText}</span>
-                                </div>
-                                <div class="claim-stats" style="margin-top:0.3rem;">
-                                    <span class="stat-item">💰 Total Claimed: <span class="num gold">${formatMoney(totalClaimed)}</span></span>
-                                    <span class="stat-item">📊 Claims: <span class="num blue">${plan.claimsCount || 0}</span></span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-            container.innerHTML = html;
-        }
-
-        // ================================================================
-        // UPDATE TIMERS
-        // ================================================================
-        function updateTimers() {
-            var now = new Date();
-            var cards = document.querySelectorAll('.plan-card[data-next-claim]');
-            cards.forEach(function(card) {
-                var nextClaim = card.dataset.nextClaim;
-                if (!nextClaim) return;
-                var targetTime = parseInt(nextClaim);
-                if (isNaN(targetTime)) return;
-                var diff = (targetTime - now.getTime()) / 1000;
-                var countdownEl = card.querySelector('.countdown');
-                if (!countdownEl) return;
-
-                if (diff <= 0) {
-                    countdownEl.textContent = '0h 0m';
-                    return;
-                }
-
-                var hrs = Math.floor(diff / 3600);
-                var mins = Math.floor((diff % 3600) / 60);
-                countdownEl.textContent = hrs + 'h ' + mins + 'm';
-            });
-        }
-
-        // ================================================================
-        // UPDATE TOTALS & CLAIM ALL (only for Invest plans)
-        // ================================================================
-        function updateTotalPendingAndClaimAll(plans) {
-            var now = new Date();
-            var total = 0;
-            var hasClaimable = false;
-            for (var i = 0; i < plans.length; i++) {
-                var plan = plans[i];
-                if (plan.planType === 'invest') {
-                    var status = getClaimStatus(plan, now);
-                    if (status.available && !isWeekend(now)) {
-                        total += status.dailyAmount;
-                        hasClaimable = true;
-                    }
-                }
-            }
-            var totalSpan = document.getElementById('totalPending');
-            if (totalSpan) totalSpan.innerText = total.toFixed(2) + ' ZMW';
-
-            var claimAllBtn = document.getElementById('claimAllBtn');
-            if (claimAllBtn) {
-                claimAllBtn.disabled = isWeekend(now) || !hasClaimable;
-            }
-        }
-
-        // ================================================================
-        // CLAIM DAILY INCOME (Invest) – UPDATES ONLY walletBalance
-        // ================================================================
-        async function claimDailyIncome(investmentId, dailyAmount, refreshAfter, btnElement) {
-            var user = auth.currentUser;
-            if (!user) return false;
-            var now = new Date();
-            if (isWeekend(now)) {
-                showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
-                if (btnElement) btnElement.disabled = false;
-                return false;
-            }
-
-            try {
-                await db.runTransaction(async function(transaction) {
-                    var invRef = db.collection('investments').doc(investmentId);
-                    var invSnap = await transaction.get(invRef);
-                    if (!invSnap.exists) throw new Error('Investment not found');
-                    var invData = invSnap.data();
-                    var start = invData.startDate.toDate();
-                    var claimsCount = invData.claimsCount || 0;
-                    var totalBusinessDays = invData.businessDays || invData.days;
-
-                    var status = getClaimStatus({
-                        startDate: start,
-                        claimsCount: claimsCount,
-                        dailyAmount: dailyAmount,
-                        businessDays: totalBusinessDays,
-                    }, now);
-
-                    if (!status.available) {
-                        throw new Error('Claim not available at this time');
-                    }
-
-                    var userRef = db.collection('users').doc(user.uid);
-
-                    // ✅ Update ONLY walletBalance – do NOT touch balance, depositBalance, or activityBalance
-                    transaction.update(userRef, {
-                        walletBalance: firebase.firestore.FieldValue.increment(dailyAmount)
-                    });
-
-                    transaction.update(invRef, {
-                        claimsCount: firebase.firestore.FieldValue.increment(1),
-                        lastClaimed: firebase.firestore.Timestamp.fromDate(now)
-                    });
-
-                    var txRef = db.collection('transactions').doc();
-                    transaction.set(txRef, {
-                        userId: user.uid,
-                        type: 'daily_income',
-                        amount: dailyAmount,
-                        description: 'Daily income from ' + invData.planName,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                });
-
-                showToast('✅ ' + formatMoney(dailyAmount) + ' claimed!', false);
-                if (refreshAfter) {
-                    await loadAllPlans();
-                }
-                return true;
-            } catch (err) {
-                console.error("Invest claim error:", err);
-                showToast(err.message || 'Claim failed', true);
-                if (btnElement) btnElement.disabled = false;
-                return false;
-            }
-        }
-
-        // ================================================================
-        // CLAIM BUY PLAN – REAL IMPLEMENTATION (no diagnostic)
-        // ================================================================
-        async function claimBuyPlan(purchaseId, btnElement) {
-            console.log("=== BUY CLAIM START ===");
-            console.log("Purchase ID:", purchaseId);
-            var user = auth.currentUser;
-            if (!user) {
-                showToast('Please log in.', true);
-                if (btnElement) btnElement.disabled = false;
-                return;
-            }
-            const uid = user.uid;
-            console.log("User UID:", uid);
-
-            try {
-                // Pre-flight check (optional but helpful)
-                const docSnap = await db.collection('marketplacePurchases').doc(purchaseId).get();
-                if (!docSnap.exists) {
-                    showToast('Plan not found.', true);
-                    if (btnElement) btnElement.disabled = false;
-                    return;
-                }
-                const data = docSnap.data();
-                if (data.userId !== uid) {
-                    showToast('Unauthorized: this plan does not belong to you.', true);
-                    if (btnElement) btnElement.disabled = false;
-                    return;
-                }
-                if (data.status === 'claimed') {
-                    showToast('This plan has already been claimed.', true);
-                    if (btnElement) btnElement.disabled = false;
-                    return;
-                }
-                const now = new Date();
-                const expiryDate = data.expiresAt ? data.expiresAt.toDate() : null;
-                if (!expiryDate || now < expiryDate) {
-                    showToast('Plan is not yet ready for claim.', true);
-                    if (btnElement) btnElement.disabled = false;
-                    return;
-                }
-                console.log("Pre-flight OK.");
-
-                // Transaction
-                await db.runTransaction(async function(transaction) {
-                    const purchaseRef = db.collection('marketplacePurchases').doc(purchaseId);
-                    const purchaseSnap = await transaction.get(purchaseRef);
-                    if (!purchaseSnap.exists) throw new Error('Plan not found in transaction');
-                    const purchaseData = purchaseSnap.data();
-                    console.log("Transaction purchase data:", purchaseData);
-
-                    // Re-validate inside transaction
-                    if (purchaseData.userId !== uid) throw new Error('Ownership mismatch');
-                    if (purchaseData.status === 'claimed') throw new Error('Already claimed');
-                    const expiryTx = purchaseData.expiresAt ? purchaseData.expiresAt.toDate() : null;
-                    if (!expiryTx || new Date() < expiryTx) throw new Error('Not matured');
-
-                    const amount = purchaseData.amount || 0;
-                    const totalIncome = purchaseData.totalIncome || 0;
-                    const finalAmount = amount + totalIncome;
-                    console.log("Final amount to claim:", finalAmount);
-
-                    // Update user – ONLY walletBalance
-                    const userRef = db.collection('users').doc(uid);
-                    transaction.update(userRef, {
-                        walletBalance: firebase.firestore.FieldValue.increment(finalAmount)
-                    });
-                    console.log("User walletBalance incremented.");
-
-                    // Update purchase – only allowed fields
-                    transaction.update(purchaseRef, {
-                        status: 'claimed',
-                        claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        claimAmount: finalAmount
-                    });
-                    console.log("Purchase updated.");
-
-                    // Create transaction record
-                    const txRef = db.collection('transactions').doc();
-                    transaction.set(txRef, {
-                        userId: uid,
-                        type: 'buy_plan_claim',
-                        amount: finalAmount,
-                        description: 'Buy plan claim: ' + purchaseData.planName,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    console.log("Transaction record created.");
-                });
-
-                console.log("✅ BUY CLAIM SUCCESS");
-                showToast('✅ ' + formatMoney(finalAmount) + ' claimed!', false);
-                if (btnElement) btnElement.disabled = true;
-                await loadAllPlans();
-            } catch (err) {
-                console.error("❌ BUY CLAIM FAILED");
-                console.error("Code:", err.code);
-                console.error("Message:", err.message);
-                console.error("Stack:", err.stack);
-                showToast(err.message || 'Claim failed. Check console.', true);
-                if (btnElement) btnElement.disabled = false;
-            }
-            console.log("=== BUY CLAIM END ===");
-        }
-
-        // ================================================================
-        // CLAIM ALL (Invest only)
-        // ================================================================
-        async function claimAllAvailable() {
-            var user = auth.currentUser;
-            if (!user) return;
-            var now = new Date();
-            if (isWeekend(now)) {
-                showToast('❌ Daily income can only be claimed on weekdays (Monday–Friday).', true);
-                return;
-            }
-
-            var claimable = [];
-            for (var i = 0; i < allActivePlans.length; i++) {
-                var plan = allActivePlans[i];
-                if (plan.planType === 'invest') {
-                    var status = getClaimStatus(plan, now);
-                    if (status.available && !isWeekend(now)) {
-                        claimable.push({ id: plan.id, dailyAmount: status.dailyAmount });
-                    }
-                }
-            }
-
-            if (claimable.length === 0) {
-                showToast('No pending earnings to claim.', true);
-                return;
-            }
-
-            var claimBtn = document.getElementById('claimAllBtn');
-            claimBtn.disabled = true;
-            claimBtn.innerText = 'Claiming...';
-
-            var totalClaimed = 0;
-            var successCount = 0;
-            for (var j = 0; j < claimable.length; j++) {
-                var item = claimable[j];
-                var success = await claimDailyIncome(item.id, item.dailyAmount, false, null);
-                if (success) {
-                    totalClaimed += item.dailyAmount;
-                    successCount++;
-                }
-            }
-
-            await loadAllPlans();
-            if (successCount > 0) {
-                showToast('✅ Claimed ' + formatMoney(totalClaimed) + ' from ' + successCount + ' plan(s)!', false);
             } else {
-                showToast('No claims were successful. Please try again.', true);
+                claimsContainer.innerHTML = recentClaims.map(claim => `
+                        <div class="claim-item">
+                            <span class="date">${formatDate(claim.createdAt)}</span>
+                            <span class="camount">+K${formatCurrency(claim.amount)}</span>
+                        </div>
+                    `).join('');
             }
 
-            claimBtn.disabled = false;
-            claimBtn.innerText = 'Claim All';
+            // Update claim button state based on weekend and eligibility
+            if (!isWeekend && totalEligibleIncome > 0) {
+                claimBtn.disabled = false;
+                claimBtn.classList.remove('disabled');
+                claimBtn.querySelector('.btn-text').textContent = 'Claim All Income';
+            } else if (!isWeekend && totalEligibleIncome === 0) {
+                claimBtn.disabled = true;
+                claimBtn.classList.add('disabled');
+                claimBtn.querySelector('.btn-text').textContent = 'No Income to Claim';
+            }
         }
 
-        // ================================================================
-        // TABS
-        // ================================================================
-        var tabBtns = document.querySelectorAll('.tab-btn');
-        var activeTab = document.getElementById('activeTab');
-        var expiredTab = document.getElementById('expiredTab');
+        function formatDate(timestamp) {
+            if (!timestamp) return '';
+            try {
+                const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return d.toLocaleDateString('en-ZM', { day: '2-digit', month: 'short', year: 'numeric' });
+            } catch (e) {
+                return '';
+            }
+        }
 
-        tabBtns.forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var tabId = this.dataset.tab;
-                tabBtns.forEach(function(b) { b.classList.remove('active'); });
-                this.classList.add('active');
-                if (tabId === 'active') {
-                    activeTab.style.display = 'block';
-                    expiredTab.style.display = 'none';
-                    loadAllPlans();
+        // ============================================================
+        // CLAIM FLOW
+        // ============================================================
+        claimBtn.addEventListener('click', () => {
+            if (claimBtn.disabled) return;
+            if (isWeekend) return;
+            if (totalEligibleIncome <= 0) return;
+
+            // Show PIN modal
+            showClaimModal();
+        });
+
+        function showClaimModal() {
+            modalCard.innerHTML = `
+                    <div class="modal-title">Claim Income</div>
+                    <div class="modal-amount">K${formatCurrency(totalEligibleIncome)}</div>
+                    <div class="modal-sub">Enter your security PIN to confirm</div>
+
+                    <div class="modal-pin-section">
+                        <div class="pin-label">Enter your 6-digit PIN</div>
+                        <div class="pin-boxes" id="modal-pin-boxes">
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 1" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 2" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 3" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 4" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 5" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 6" />
+                        </div>
+                        <div class="pin-error" id="modal-pin-error"></div>
+                        <div class="pin-toggle">
+                            <input type="checkbox" id="modal-pin-show" />
+                            <label for="modal-pin-show">Show PIN</label>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-modal cancel" id="modal-cancel">Cancel</button>
+                        <button class="btn-modal confirm" id="modal-confirm">
+                            <span class="spinner-sm"></span>
+                            <span class="btn-text">Confirm Claim</span>
+                        </button>
+                    </div>
+                `;
+
+            // Setup PIN boxes
+            const pinBoxes = modalCard.querySelectorAll('.pin-box');
+            const pinError = modalCard.querySelector('#modal-pin-error');
+            const confirmBtn = modalCard.querySelector('#modal-confirm');
+            const cancelBtn = modalCard.querySelector('#modal-cancel');
+            const showToggle = modalCard.querySelector('#modal-pin-show');
+
+            pinBoxes.forEach((box, idx) => {
+                box.addEventListener('input', () => {
+                    box.value = box.value.replace(/\D/g, '');
+                    if (box.value && idx < 5) {
+                        pinBoxes[idx + 1].focus();
+                    }
+                    pinError.textContent = '';
+                    pinBoxes.forEach(b => b.classList.remove('error'));
+                });
+                box.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !box.value && idx > 0) {
+                        pinBoxes[idx - 1].focus();
+                    }
+                    if (e.key === 'ArrowLeft' && idx > 0) pinBoxes[idx - 1].focus();
+                    if (e.key === 'ArrowRight' && idx < 5) pinBoxes[idx + 1].focus();
+                });
+                box.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const data = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = data.replace(/\D/g, '').slice(0, 6);
+                    if (!digits.length) return;
+                    for (let i = 0; i < Math.min(digits.length, 6); i++) {
+                        pinBoxes[i].value = digits[i];
+                    }
+                    const lastIdx = Math.min(digits.length, 6) - 1;
+                    pinBoxes[lastIdx].focus();
+                    pinError.textContent = '';
+                    pinBoxes.forEach(b => b.classList.remove('error'));
+                });
+            });
+
+            showToggle.addEventListener('change', () => {
+                pinBoxes.forEach(b => {
+                    b.type = showToggle.checked ? 'text' : 'password';
+                    b.classList.toggle('hidden-pin', !showToggle.checked);
+                });
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                modal.classList.remove('open');
+                document.body.style.overflow = 'auto';
+            });
+
+            confirmBtn.addEventListener('click', async () => {
+                const pin = Array.from(pinBoxes).map(b => b.value).join('');
+                if (pin.length !== 6) {
+                    pinError.textContent = 'Please enter all 6 digits.';
+                    pinBoxes.forEach(b => b.classList.add('error'));
+                    return;
+                }
+                if (!/^[0-9]{6}$/.test(pin)) {
+                    pinError.textContent = 'PIN must contain only numbers.';
+                    pinBoxes.forEach(b => b.classList.add('error'));
+                    return;
+                }
+                pinError.textContent = '';
+                pinBoxes.forEach(b => b.classList.remove('error'));
+
+                await processClaim(pin, confirmBtn, pinBoxes);
+            });
+
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => pinBoxes[0].focus(), 300);
+        }
+
+        // ============================================================
+        // PROCESS CLAIM via Cloud Function
+        // ============================================================
+        async function processClaim(pin, confirmBtn, pinBoxes) {
+            confirmBtn.disabled = true;
+            confirmBtn.classList.add('loading');
+
+            try {
+                // Verify PIN via Cloud Function
+                const verifyPinFn = httpsCallable(functions, 'verifyPin');
+                const pinResult = await verifyPinFn({
+                    uid: currentUser.uid,
+                    pin: pin
+                });
+
+                if (!pinResult.data || pinResult.data.success !== true) {
+                    const errorMsg = pinResult.data?.message || 'Invalid PIN. Please try again.';
+                    document.getElementById('modal-pin-error').textContent = errorMsg;
+                    pinBoxes.forEach(b => b.classList.add('error'));
+                    pinBoxes.forEach(b => b.value = '');
+                    pinBoxes[0].focus();
+                    confirmBtn.disabled = false;
+                    confirmBtn.classList.remove('loading');
+                    return;
+                }
+
+                // PIN verified - call claimIncome function
+                const claimFn = httpsCallable(functions, 'claimIncome');
+                const claimResult = await claimFn({});
+
+                if (claimResult.data && claimResult.data.success === true) {
+                    // Claim successful
+                    const claimedAmount = claimResult.data.amount || totalEligibleIncome;
+                    showClaimSuccess(claimedAmount);
                 } else {
-                    activeTab.style.display = 'none';
-                    expiredTab.style.display = 'block';
+                    const errorMsg = claimResult.data?.message || 'Claim failed. Please try again.';
+                    showClaimError(errorMsg);
                 }
-            });
-        });
 
-        document.getElementById('claimAllBtn')?.addEventListener('click', claimAllAvailable);
-
-        // ================================================================
-        // HAMBURGER MENU
-        // ================================================================
-        var hamburger = document.getElementById('hamburger');
-        var menuPanel = document.getElementById('menuPanel');
-        var closeMenu = document.getElementById('closeMenu');
-
-        function toggleMenu() {
-            var open = menuPanel.classList.toggle('open');
-            hamburger.classList.toggle('active', open);
-            document.body.style.overflow = open ? 'hidden' : '';
+            } catch (error) {
+                console.error('Claim error:', error);
+                let msg = 'Unable to process claim. Please try again.';
+                if (error.message && error.message.includes('WEEKEND')) {
+                    msg = 'Weekend claiming is not allowed.';
+                } else if (error.message && error.message.includes('insufficient')) {
+                    msg = 'No eligible income to claim.';
+                } else if (error.message && error.message.includes('already claimed')) {
+                    msg = 'Income already claimed for today.';
+                }
+                showClaimError(msg);
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.classList.remove('loading');
+            }
         }
-        hamburger.addEventListener('click', toggleMenu);
-        closeMenu.addEventListener('click', toggleMenu);
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && menuPanel.classList.contains('open')) toggleMenu();
-        });
 
-        // ================================================================
-        // BOTTOM NAV
-        // ================================================================
-        var navItems = document.querySelectorAll('.nav-item');
-        var currentPage = window.location.pathname.split('/').pop() || 'income.html';
-        navItems.forEach(function(item) {
-            var targetPage = item.getAttribute('data-page');
-            if (currentPage === targetPage) item.classList.add('active');
-            item.addEventListener('click', function() {
-                var target = this.getAttribute('data-page');
-                if (target && !window.location.pathname.includes(target)) {
-                    window.location.href = target;
-                }
-            });
-        });
+        function showClaimSuccess(amount) {
+            modalCard.innerHTML = `
+                    <div class="result-state">
+                        <div class="result-icon success">
+                            <svg viewBox="0 0 24 24">
+                                <polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="result-title">Income Claimed!</div>
+                        <div class="result-sub">K${formatCurrency(amount)} has been added to your wallet.</div>
+                        <div class="result-actions">
+                            <button class="btn-result primary" onclick="location.reload()">Done</button>
+                        </div>
+                    </div>
+                `;
+            // Auto-close modal after 3s and reload to refresh data
+            setTimeout(() => {
+                modal.classList.remove('open');
+                document.body.style.overflow = 'auto';
+                location.reload();
+            }, 2000);
+        }
 
-        console.log('✅ income.html – real claim enabled for Invest and Buy plans.');
-        console.log('ℹ️ Check console for transaction logs.');
-    </script>
-
-</body>
-</html>
+        function showClaimError(message) {
+            modalCard.innerHTML = `
+                    <div class="result-state">
+                        <div class="result-icon error">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="result-title">Claim Failed</div>
+                        <div class="result-sub">${message}</div>
+                        <div class="result-actions">
+                            <button class="btn-result primary" id="modal-retry">Try Again</button>
+                            <button class="btn-result secondary" id="modal-close">Close</button>
+                        </div>
+                    </div>
+                `;
+            document.getElementById('modal-retry').addEventListener('click', () => {
+                modal.classList.remove('open');
+                document.body.style.overflow =

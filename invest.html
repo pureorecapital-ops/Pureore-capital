@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Invest | PureOre Nexus</title>
+    <meta name="description" content="Your PureOre Nexus investment hub. View your portfolio and explore opportunities." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js"
+            }
+        }
+    </script>
+
+    <style>
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold: #c9a84c;
+            --gold-glow: rgba(201, 168, 76, 0.25);
+            --gold-subtle: rgba(201, 168, 76, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.06);
+            position: relative;
+        }
+        .load-logo-symbol::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .load-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
+        }
+
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN PAGE
+        ============================================================ */
+        #main-page {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--dark);
+        }
+        #main-page.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/cXxZh1w3/20260824-014737.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+        }
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(11, 11, 11, 0.5) 0%, rgba(11, 11, 11, 0.95) 80%, #0b0b0b 100%);
+            pointer-events: none;
+        }
+
+        .page-scroll {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 0 16px 90px 16px;
+            max-width: 960px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ============================================================
+           HEADER
+        ============================================================ */
+        .page-header {
+            padding: 18px 0 10px;
+        }
+        .page-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-white);
+        }
+        .page-header .brand svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 1.8;
+            flex-shrink: 0;
+        }
+        .page-header .brand span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        .page-header .brand span em {
+            color: var(--gold);
+            font-style: normal;
+        }
+        .page-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 6px;
+            letter-spacing: -0.01em;
+        }
+        .page-header .sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-top: 2px;
+        }
+
+        /* ============================================================
+           HERO SECTION (automotive visual)
+        ============================================================ */
+        .hero-section {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 6;
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin: 6px 0 18px;
+            background: var(--charcoal);
+            min-height: 80px;
+        }
+        .hero-section .hero-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .hero-section .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(11, 11, 11, 0.7) 0%, rgba(11, 11, 11, 0.3) 60%, transparent 100%);
+            pointer-events: none;
+        }
+        .hero-section .hero-text {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            pointer-events: none;
+        }
+        .hero-section .hero-text .small {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--gold);
+            font-weight: 500;
+        }
+        .hero-section .hero-text .large {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 2px;
+            color: var(--text-white);
+        }
+        .hero-section .hero-text .large em {
+            color: var(--gold);
+            font-style: normal;
+        }
+
+        @media (max-width: 480px) {
+            .hero-section {
+                aspect-ratio: 16 / 5;
+                min-height: 60px;
+            }
+            .hero-section .hero-text .large {
+                font-size: 0.95rem;
+            }
+            .hero-section .hero-text .small {
+                font-size: 0.5rem;
+            }
+            .hero-section .hero-text {
+                left: 14px;
+            }
+        }
+
+        /* ============================================================
+           SUMMARY GRID
+        ============================================================ */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .summary-card:hover {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        .summary-card .label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .summary-card .value {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 2px;
+            color: var(--text-white);
+        }
+        .summary-card .value.gold {
+            color: var(--gold);
+        }
+
+        @media (max-width: 480px) {
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .summary-card {
+                padding: 10px 6px;
+            }
+            .summary-card .value {
+                font-size: 0.85rem;
+            }
+            .summary-card .label {
+                font-size: 0.5rem;
+            }
+        }
+
+        /* ============================================================
+           MAIN ACTION CARDS
+        ============================================================ */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .action-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 18px 16px 16px;
+            text-decoration: none;
+            color: var(--text-white);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            cursor: pointer;
+        }
+        .action-card:hover {
+            border-color: rgba(201, 168, 76, 0.15);
+            transform: translateY(-2px);
+        }
+        .action-card .icon-wrap {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(201, 168, 76, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            border: 1px solid rgba(201, 168, 76, 0.08);
+        }
+        .action-card .icon-wrap svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .action-card .action-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .action-card .action-desc {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            flex: 1;
+        }
+        .action-card .action-link {
+            font-size: 0.6rem;
+            color: var(--gold);
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.25s ease;
+        }
+        .action-card .action-link svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .action-card .action-link:hover {
+            color: #dbb95c;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .action-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .action-card {
+                padding: 14px 14px 12px;
+            }
+            .action-card .icon-wrap {
+                width: 34px;
+                height: 34px;
+            }
+            .action-card .icon-wrap svg {
+                width: 16px;
+                height: 16px;
+            }
+            .action-card .action-title {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* ============================================================
+           SECTION HEADERS
+        ============================================================ */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 18px 0 10px;
+        }
+        .section-header .section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .section-header .view-all {
+            font-size: 0.6rem;
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.25s ease;
+        }
+        .section-header .view-all svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .section-header .view-all:hover {
+            color: #dbb95c;
+            text-decoration: underline;
+        }
+
+        /* ============================================================
+           PREVIEW CARDS (Active Investments & Available Plans)
+        ============================================================ */
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .preview-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .preview-card:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .preview-card .preview-img {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            display: block;
+            background: var(--charcoal);
+        }
+        .preview-card .preview-body {
+            padding: 10px 10px 12px;
+        }
+        .preview-card .preview-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--text-white);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .preview-card .preview-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .preview-card .preview-details .val {
+            color: var(--text-white);
+            font-weight: 500;
+        }
+        .preview-card .preview-details .val.gold {
+            color: var(--gold);
+        }
+        .preview-card .preview-status {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 1px 8px;
+            border-radius: 8px;
+            display: inline-block;
+            background: rgba(46, 204, 113, 0.08);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.08);
+            margin-top: 4px;
+        }
+        .preview-card .preview-status.inactive {
+            background: rgba(231, 76, 60, 0.04);
+            color: #e74c3c;
+            border-color: rgba(231, 76, 60, 0.04);
+        }
+
+        .preview-card .preview-action {
+            font-size: 0.55rem;
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            transition: color 0.25s ease;
+        }
+        .preview-card .preview-action svg {
+            width: 12px;
+            height: 12px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .preview-card .preview-action:hover {
+            color: #dbb95c;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .preview-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .preview-card .preview-body {
+                padding: 8px 8px 10px;
+            }
+            .preview-card .preview-name {
+                font-size: 0.65rem;
+            }
+            .preview-card .preview-details {
+                font-size: 0.5rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============================================================
+           EMPTY STATE
+        ============================================================ */
+        .empty-state {
+            text-align: center;
+            padding: 30px 16px;
+            color: var(--text-muted);
+        }
+        .empty-state svg {
+            width: 40px;
+            height: 40px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.3;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .empty-state p {
+            font-size: 0.75rem;
+            font-weight: 300;
+            line-height: 1.5;
+        }
+        .empty-state .btn-empty {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 24px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: 1px solid var(--gold);
+            border-radius: 60px;
+            color: var(--gold);
+            text-decoration: none;
+            transition: all 0.25s ease;
+            background: transparent;
+        }
+        .empty-state .btn-empty:hover {
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 0 30px rgba(201, 168, 76, 0.04);
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.55rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.5;
+            font-weight: 300;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 16px;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           BOTTOM NAVIGATION
+        ============================================================ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            background: rgba(11, 11, 11, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 0 env(safe-area-inset-bottom, 8px) 0;
+            height: 68px;
+        }
+        .bottom-nav a {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.5rem;
+            letter-spacing: 0.04em;
+            transition: color 0.25s ease;
+            padding: 4px 12px;
+            position: relative;
+            min-width: 48px;
+        }
+        .bottom-nav a svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.25s ease;
+        }
+        .bottom-nav a.active {
+            color: var(--gold);
+        }
+        .bottom-nav a.active svg {
+            stroke: var(--gold);
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 480px) {
+            .page-scroll {
+                padding: 0 12px 80px 12px;
+            }
+            .page-header h1 {
+                font-size: 1.2rem;
+            }
+            .page-header .sub {
+                font-size: 0.75rem;
+            }
+            .page-header .brand span {
+                font-size: 0.7rem;
+                letter-spacing: 0.15em;
+            }
+            .bottom-nav {
+                height: 62px;
+                padding: 4px 0 env(safe-area-inset-bottom, 6px) 0;
+            }
+            .bottom-nav a {
+                font-size: 0.45rem;
+                padding: 2px 8px;
+                min-width: 40px;
+            }
+            .bottom-nav a svg {
+                width: 20px;
+                height: 20px;
+            }
+            .branding-footer {
+                font-size: 0.5rem;
+                padding: 12px 0 6px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .page-scroll {
+                padding: 0 32px 40px 32px;
+            }
+            .bottom-nav {
+                display: none;
+            }
+            .page-scroll {
+                padding-bottom: 40px;
+            }
+            .summary-grid {
+                gap: 14px;
+            }
+            .summary-card .value {
+                font-size: 1.15rem;
+            }
+            .action-grid {
+                gap: 16px;
+            }
+            .preview-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 14px;
+            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        #main-page::-webkit-scrollbar {
+            width: 3px;
+        }
+        #main-page::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #main-page::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">Investment Hub</div>
+        </div>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
+            </div>
+            <div class="load-msg" id="load-msg">Preparing your investment hub...</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    MAIN PAGE
+    ============================================================ -->
+    <div id="main-page">
+        <div class="bg-wrap" aria-hidden="true"></div>
+        <div class="bg-overlay" aria-hidden="true"></div>
+
+        <div class="page-scroll">
+
+            <!-- ===== HEADER ===== -->
+            <header class="page-header">
+                <a href="#" class="brand" aria-label="PureOre Nexus">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Pure<em>Ore</em> Nexus</span>
+                </a>
+                <h1>Investment Hub</h1>
+                <div class="sub">Build your portfolio with plans designed for your goals.</div>
+            </header>
+
+            <!-- ===== HERO ===== -->
+            <div class="hero-section">
+                <img class="hero-bg" src="https://i.ibb.co/cXxZh1w3/20260824-014737.jpg" alt="Luxury automotive background" loading="lazy" />
+                <div class="hero-overlay"></div>
+                <div class="hero-text">
+                    <div class="small">PureOre Nexus</div>
+                    <div class="large">Invest in <em>Automotive</em> Excellence</div>
+                </div>
+            </div>
+
+            <!-- ===== SUMMARY ===== -->
+            <div class="summary-grid" id="summary-grid">
+                <div class="summary-card">
+                    <div class="label">Total Invested</div>
+                    <div class="value gold" id="total-invested">K0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Active Investments</div>
+                    <div class="value" id="active-count">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Today's Income</div>
+                    <div class="value gold" id="today-income">K0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Total Claimed</div>
+                    <div class="value" id="total-claimed">K0.00</div>
+                </div>
+            </div>
+
+            <!-- ===== MAIN ACTIONS ===== -->
+            <div class="action-grid">
+                <a href="my-investments.html" class="action-card">
+                    <div class="icon-wrap">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <div class="action-title">My Investments</div>
+                    <div class="action-desc">View your active and completed investments.</div>
+                    <span class="action-link">
+                        View My Investments
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                </a>
+                <a href="investment.html" class="action-card">
+                    <div class="icon-wrap">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <div class="action-title">Explore Plans</div>
+                    <div class="action-desc">Browse available PureOre Nexus investment plans.</div>
+                    <span class="action-link">
+                        Explore Plans
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                </a>
+            </div>
+
+            <!-- ===== ACTIVE INVESTMENTS PREVIEW ===== -->
+            <div id="active-investments-section">
+                <div class="section-header">
+                    <span class="section-title">Active Investments</span>
+                    <a href="my-investments.html" class="view-all">
+                        View All
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </a>
+                </div>
+                <div class="preview-grid" id="active-preview">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- ===== AVAILABLE PLANS PREVIEW ===== -->
+            <div id="available-plans-section">
+                <div class="section-header">
+                    <span class="section-title">Available Plans</span>
+                    <a href="investment.html" class="view-all">
+                        View All Plans
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </a>
+                </div>
+                <div class="preview-grid" id="plans-preview">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- ===== BRANDING ===== -->
+            <div class="branding-footer">
+                <span>@pureorecapital</span> 2025
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+    BOTTOM NAVIGATION
+    ============================================================ -->
+    <nav class="bottom-nav" aria-label="Main navigation">
+        <a href="dashboard.html" aria-label="Home">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Home
+        </a>
+        <a href="income.html" aria-label="Income">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Income
+        </a>
+        <a href="invest.html" class="active" aria-label="Invest">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Invest
+        </a>
+        <a href="referrals.html" aria-label="Referral">
+            <svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Referral
+        </a>
+        <a href="profile.html" aria-label="Profile">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Profile
+        </a>
+    </nav>
+
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+
+        // ============================================================
+        // FIREBASE CONFIG
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainPage = $('main-page');
+
+        const totalInvestedEl = $('total-invested');
+        const activeCountEl = $('active-count');
+        const todayIncomeEl = $('today-income');
+        const totalClaimedEl = $('total-claimed');
+        const activePreview = $('active-preview');
+        const plansPreview = $('plans-preview');
+
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
+            }
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Almost ready...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Loading your portfolio...';
+        }, 35);
+
+        // ============================================================
+        // FORMAT CURRENCY
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
+        }
+
+        // ============================================================
+        // SHOW PAGE
+        // ============================================================
+        function showPage() {
+            loadScreen.classList.add('hidden');
+            mainPage.classList.add('visible');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ============================================================
+        // DATE HELPERS
+        // ============================================================
+        function parseDate(timestamp) {
+            if (!timestamp) return null;
+            if (timestamp.toDate) return timestamp.toDate();
+            if (typeof timestamp === 'string') return new Date(timestamp);
+            if (timestamp instanceof Date) return timestamp;
+            return null;
+        }
+
+        function daysRemaining(end) {
+            const e = parseDate(end);
+            if (!e) return 0;
+            const now = new Date();
+            const diff = e.getTime() - now.getTime();
+            return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        // ============================================================
+        // LOAD DATA
+        // ============================================================
+        async function loadData(uid) {
+            try {
+                // 1. Load user investments
+                const invRef = collection(db, 'investments');
+                const invQuery = query(invRef, where('userId', '==', uid), orderBy('createdAt', 'desc'));
+                const invSnap = await getDocs(invQuery);
+                const investments = [];
+                invSnap.forEach(doc => {
+                    investments.push({ id: doc.id, ...doc.data() });
+                });
+
+                // 2. Load income claims
+                const claimRef = collection(db, 'incomeClaims');
+                const claimQuery = query(claimRef, where('userId', '==', uid));
+                const claimSnap = await getDocs(claimQuery);
+                let totalClaimed = 0;
+                claimSnap.forEach(doc => {
+                    const data = doc.data();
+                    totalClaimed += Number(data.amount) || 0;
+                });
+
+                // 3. Load available plans (active)
+                const planRef = collection(db, 'investmentPlans');
+                const planQuery = query(planRef, where('status', '==', 'active'), orderBy('createdAt', 'desc'), limit(3));
+                const planSnap = await getDocs(planQuery);
+                const plans = [];
+                planSnap.forEach(doc => {
+                    plans.push({ id: doc.id, ...doc.data() });
+                });
+
+                // 4. Calculate summary
+                let totalInvested = 0;
+                let activeCount = 0;
+                let todayIncome = 0;
+                const activeInvestments = [];
+
+                for (const inv of investments) {
+                    const status = (inv.status || 'active').toLowerCase();
+                    totalInvested += Number(inv.investmentAmount) || 0;
+
+                    if (status === 'active') {
+                        activeCount++;
+                        activeInvestments.push(inv);
+                        // Today's income: daily return if active and within duration
+                        const endDate = inv.endDate;
+                        if (endDate) {
+                            const remaining = daysRemaining(endDate);
+                            if (remaining > 0) {
+                                todayIncome += Number(inv.dailyReturn) || 0;
+                            }
+                        } else {
+                            todayIncome += Number(inv.dailyReturn) || 0;
+                        }
+                    }
+                }
+
+                // If no active investments but we have some, show them anyway
+                const displayActive = activeInvestments.slice(0, 3);
+
+                // Render
+                renderSummary(totalInvested, activeCount, todayIncome, totalClaimed);
+                renderActivePreview(displayActive, activeCount);
+                renderPlansPreview(plans);
+
+                showPage();
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                // Show error state
+                document.querySelector('.summary-grid').innerHTML = `
+                        <div class="summary-card" style="grid-column:1/-1;padding:20px;">
+                            <div class="label" style="color:#e74c3c;">Unable to load data</div>
+                            <div class="value" style="font-size:0.8rem;color:var(--text-muted);">Please try again</div>
+                            <button onclick="location.reload()" style="margin-top:8px;background:none;border:1px solid var(--gold);color:var(--gold);padding:6px 20px;border-radius:20px;font-family:inherit;font-size:0.65rem;cursor:pointer;">Retry</button>
+                        </div>
+                    `;
+                activePreview.innerHTML = '';
+                plansPreview.innerHTML = '';
+                showPage();
+            }
+        }
+
+        // ============================================================
+        // RENDER SUMMARY
+        // ============================================================
+        function renderSummary(totalInvested, activeCount, todayIncome, totalClaimed) {
+            totalInvestedEl.textContent = 'K' + formatCurrency(totalInvested);
+            activeCountEl.textContent = activeCount;
+            todayIncomeEl.textContent = 'K' + formatCurrency(todayIncome);
+            totalClaimedEl.textContent = 'K' + formatCurrency(totalClaimed);
+        }
+
+        // ============================================================
+        // RENDER ACTIVE PREVIEW
+        // ============================================================
+        function renderActivePreview(activeInvestments, totalActive) {
+            if (activeInvestments.length === 0) {
+                activePreview.innerHTML = `
+                        <div class="empty-state" style="grid-column:1/-1;padding:20px 0;">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p>You don't have any active investments yet.</p>
+                            <a href="investment.html" class="btn-empty">Explore Plans</a>
+                        </div>
+                    `;
+                return;
+            }
+
+            activePreview.innerHTML = activeInvestments.map(inv => {
+                const image = inv.imageUrl || 'https://placehold.co/400x225/1a1a1a/888?text=Investment';
+                const name = inv.planName || 'Investment Plan';
+                const amount = Number(inv.investmentAmount) || 0;
+                const daily = Number(inv.dailyReturn) || 0;
+                const duration = Number(inv.durationDays) || 0;
+
+                return `
+                        <div class="preview-card">
+                            <img class="preview-img" src="${image}" alt="${name}" loading="lazy" />
+                            <div class="preview-body">
+                                <div class="preview-name">${name}</div>
+                                <div class="preview-details">
+                                    <span>Invested <span class="val gold">K${formatCurrency(amount)}</span></span>
+                                    <span>Daily <span class="val">K${formatCurrency(daily)}</span></span>
+                                </div>
+                                <div class="preview-details">
+                                    <span>Duration <span class="val">${duration} Days</span></span>
+                                    <span class="preview-status">Active</span>
+                                </div>
+                                <a href="my-investments.html" class="preview-action">
+                                    View
+                                    <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        // ============================================================
+        // RENDER PLANS PREVIEW
+        // ============================================================
+        function renderPlansPreview(plans) {
+            if (plans.length === 0) {
+                plansPreview.innerHTML = `
+                        <div class="empty-state" style="grid-column:1/-1;padding:20px 0;">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p>No investment plans are currently available.</p>
+                            <span style="font-size:0.7rem;">Please check again later.</span>
+                        </div>
+                    `;
+                return;
+            }
+
+            plansPreview.innerHTML = plans.slice(0, 3).map(plan => {
+                const image = plan.imageUrl || 'https://placehold.co/400x225/1a1a1a/888?text=Automotive';
+                const name = plan.planName || 'Unnamed Plan';
+                const amount = Number(plan.investmentAmount) || 0;
+                const daily = Number(plan.dailyReturn) || 0;
+                const duration = Number(plan.durationDays) || 0;
+
+                return `
+                        <div class="preview-card">
+                            <img class="preview-img" src="${image}" alt="${name}" loading="lazy" />
+                            <div class="preview-body">
+                                <div class="preview-name">${name}</div>
+                                <div class="preview-details">
+                                    <span>Invest <span class="val gold">K${formatCurrency(amount)}</span></span>
+                                    <span>Daily <span class="val">K${formatCurrency(daily)}</span></span>
+                                </div>
+                                <div class="preview-details">
+                                    <span>Duration <span class="val">${duration} Days</span></span>
+                                    <span class="preview-status">Active</span>
+                                </div>
+                                <a href="investment-details.html?id=${plan.id}" class="preview-action">
+                                    View Plan
+                                    <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        // ============================================================
+        // AUTHENTICATION CHECK
+        // ============================================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            loadData(user.uid);
+        });
+
+        console.log('PureOre Nexus — Invest Hub ready.');
+    </script>
+</body>
+</html>

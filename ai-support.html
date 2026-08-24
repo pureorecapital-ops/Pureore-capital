@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AI Support | PureOre Nexus</title>
+    <meta name="description" content="Get AI-powered customer support for PureOre Nexus." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js",
+                "firebase/functions": "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js"
+            }
+        }
+    </script>
+
+    <style>
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold: #d4af37;
+            --gold-light: #bfa76f;
+            --gold-glow: rgba(212, 175, 55, 0.25);
+            --gold-subtle: rgba(212, 175, 55, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --user-bubble: #0a7bff;
+            --user-bubble-dark: #0655b3;
+            --assistant-bubble: #1e1e1e;
+            --assistant-border: rgba(212, 175, 55, 0.15);
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(212, 175, 55, 0.04);
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.06);
+            position: relative;
+        }
+        .load-logo-symbol::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .load-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
+        }
+
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           CHAT WALLPAPER
+        ============================================================ */
+        .chat-wallpaper {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-color: #0a0e12;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg opacity='0.04'%3E%3Cpath d='M30 30 L40 20 L40 40 L30 30' fill='none' stroke='%234a6fa5' stroke-width='0.5'/%3E%3Cpath d='M30 30 L20 40 L20 20 L30 30' fill='none' stroke='%234a6fa5' stroke-width='0.5'/%3E%3Ccircle cx='30' cy='30' r='2' fill='%234a6fa5'/%3E%3C/g%3E%3C/svg%3E");
+            background-size: 60px 60px;
+            background-repeat: repeat;
+            opacity: 0.4;
+        }
+
+        /* ============================================================
+           MAIN PAGE
+        ============================================================ */
+        #main-page {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+        }
+        #main-page.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ============================================================
+           HEADER
+        ============================================================ */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: rgba(11, 11, 11, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            flex-shrink: 0;
+            z-index: 10;
+            position: relative;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .back-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+        .header-info .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.06);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .header-info .avatar svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .header-info .details {
+            flex: 1;
+            min-width: 0;
+        }
+        .header-info .details .name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-white);
+            letter-spacing: -0.01em;
+        }
+        .header-info .details .status {
+            font-size: 0.6rem;
+            color: #2ecc71;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .header-info .details .status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #2ecc71;
+            display: inline-block;
+        }
+
+        /* ============================================================
+           CHAT MESSAGES AREA
+        ============================================================ */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 16px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            z-index: 2;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* message bubble */
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            animation: messageIn 0.25s ease;
+        }
+        @keyframes messageIn {
+            0% {
+                opacity: 0;
+                transform: translateY(8px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--user-bubble);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .message.assistant {
+            align-self: flex-start;
+            background: var(--assistant-bubble);
+            color: var(--text-white);
+            border: 1px solid var(--assistant-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message .time {
+            font-size: 0.5rem;
+            opacity: 0.6;
+            margin-top: 4px;
+            text-align: right;
+            color: inherit;
+        }
+
+        /* typing indicator */
+        .typing-indicator {
+            align-self: flex-start;
+            background: var(--assistant-bubble);
+            border: 1px solid var(--assistant-border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            border-bottom-left-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            animation: messageIn 0.25s ease;
+        }
+        .typing-indicator.show {
+            display: flex;
+        }
+        .typing-indicator .dots {
+            display: flex;
+            gap: 4px;
+        }
+        .typing-indicator .dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: dotBounce 1.4s infinite;
+        }
+        .typing-indicator .dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator .dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes dotBounce {
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.4;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ============================================================
+           QUICK QUESTIONS
+        ============================================================ */
+        .quick-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 4px 16px 8px;
+            flex-shrink: 0;
+            z-index: 2;
+            background: rgba(11, 11, 11, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-top: 1px solid rgba(255, 255, 255, 0.02);
+        }
+        .quick-questions .q-btn {
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-muted);
+            font-size: 0.6rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+        }
+        .quick-questions .q-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(212, 175, 55, 0.04);
+        }
+
+        /* ============================================================
+           INPUT AREA
+        ============================================================ */
+        .chat-input {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 8px 16px 12px;
+            background: rgba(11, 11, 11, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            flex-shrink: 0;
+            z-index: 2;
+        }
+        .chat-input textarea {
+            flex: 1;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-white);
+            font-size: 0.85rem;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s ease;
+            min-height: 44px;
+            max-height: 120px;
+            line-height: 1.4;
+        }
+        .chat-input textarea:focus {
+            border-color: var(--gold);
+        }
+        .chat-input textarea::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 300;
+        }
+        .chat-input .send-btn {
+            background: var(--gold);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            flex-shrink: 0;
+            color: #0b0b0b;
+        }
+        .chat-input .send-btn:hover:not(:disabled) {
+            background: #dbb95c;
+            transform: scale(1.04);
+        }
+        .chat-input .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .chat-input .send-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ============================================================
+           CONTACT SECTION (embedded at bottom of chat)
+        ============================================================ */
+        .contact-section {
+            padding: 16px 16px 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 8px;
+            flex-shrink: 0;
+            background: rgba(11, 11, 11, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .contact-section .title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .contact-section .contact-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+        }
+        .contact-section .contact-row .icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.04);
+            border: 1px solid rgba(212, 175, 55, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .contact-section .contact-row .icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .contact-section .contact-row .info {
+            flex: 1;
+            font-size: 0.7rem;
+        }
+        .contact-section .contact-row .info .label {
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        .contact-section .contact-row .info .value {
+            color: var(--text-white);
+            font-weight: 500;
+        }
+        .contact-section .contact-row .action-link {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--gold);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            transition: all 0.25s ease;
+        }
+        .contact-section .contact-row .action-link:hover {
+            background: rgba(212, 175, 55, 0.04);
+            border-color: var(--gold);
+        }
+        .contact-section .contact-row .action-link svg {
+            width: 12px;
+            height: 12px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 12px 0 8px;
+            font-size: 0.5rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.4;
+            font-weight: 300;
+            flex-shrink: 0;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.6;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 480px) {
+            .message {
+                max-width: 85%;
+                font-size: 0.8rem;
+                padding: 8px 12px;
+            }
+            .quick-questions {
+                padding: 4px 8px 6px;
+                gap: 4px;
+            }
+            .quick-questions .q-btn {
+                font-size: 0.55rem;
+                padding: 3px 10px;
+            }
+            .chat-input {
+                padding: 6px 8px 8px;
+                gap: 6px;
+            }
+            .chat-input textarea {
+                font-size: 0.8rem;
+                min-height: 36px;
+                padding: 8px 10px;
+            }
+            .chat-input .send-btn {
+                width: 38px;
+                height: 38px;
+            }
+            .chat-input .send-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+            .header-info .details .name {
+                font-size: 0.85rem;
+            }
+            .contact-section .contact-row .info {
+                font-size: 0.65rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .chat-messages {
+                padding: 20px 32px 12px;
+            }
+            .message {
+                max-width: 65%;
+            }
+            .quick-questions {
+                padding: 6px 32px 10px;
+            }
+            .chat-input {
+                padding: 10px 32px 16px;
+            }
+            .contact-section {
+                padding: 20px 32px 12px;
+            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        .chat-messages::-webkit-scrollbar {
+            width: 3px;
+        }
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">AI Support</div>
+        </div>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
+            </div>
+            <div class="load-msg" id="load-msg">Loading assistant...</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    MAIN PAGE
+    ============================================================ -->
+    <div id="main-page">
+        <!-- Chat Wallpaper -->
+        <div class="chat-wallpaper"></div>
+
+        <!-- Header -->
+        <header class="page-header">
+            <button class="back-btn" id="back-btn" aria-label="Go back">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            <div class="header-info">
+                <div class="avatar">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 6v4M12 14h.01" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M8 8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2V8z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="details">
+                    <div class="name">PureOreCapital Assistant</div>
+                    <div class="status">Online • PureOre Nexus Support</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages will be appended here -->
+        </div>
+
+        <!-- Quick Questions -->
+        <div class="quick-questions" id="quick-questions">
+            <button class="q-btn" data-question="How do I deposit?">💰 Deposit</button>
+            <button class="q-btn" data-question="How do I withdraw?">🏦 Withdraw</button>
+            <button class="q-btn" data-question="How does Daily Check work?">📅 Daily Check</button>
+            <button class="q-btn" data-question="Where are my investments?">📈 My Investments</button>
+            <button class="q-btn" data-question="How do I claim income?">💵 Claim Income</button>
+            <button class="q-btn" data-question="Contact support">📞 Support</button>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input">
+            <textarea id="message-input" rows="1" placeholder="Type your message..." aria-label="Type your message"></textarea>
+            <button class="send-btn" id="send-btn" aria-label="Send message">
+                <svg viewBox="0 0 24 24">
+                    <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M22 2L15 22l-4-9-9-4 18-7z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Contact & Branding -->
+        <div class="contact-section">
+            <div class="title">Need a Human?</div>
+            <div class="contact-row">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="info">
+                    <div class="label">Email Support</div>
+                    <div class="value">pureorecapital@gmail.com</div>
+                </div>
+                <a href="mailto:pureorecapital@gmail.com" class="action-link">
+                    Email
+                    <svg viewBox="0 0 24 24">
+                        <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </a>
+            </div>
+            <div class="contact-row">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M8 12l2.5 2.5L16 8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M8 12l3.5 3.5L20 7" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="info">
+                    <div class="label">Telegram Manager</div>
+                    <div class="value">@pureorecapital</div>
+                </div>
+                <a href="https://t.me/pureorecapital" target="_blank" rel="noopener noreferrer" class="action-link">
+                    Contact
+                    <svg viewBox="0 0 24 24">
+                        <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </a>
+            </div>
+            <div class="branding-footer">
+                <span>@pureorecapital</span> 2025
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, serverTimestamp, addDoc } from 'firebase/firestore';
+        import { getFunctions, httpsCallable } from 'firebase/functions';
+
+        // ============================================================
+        // FIREBASE CONFIG
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const functions = getFunctions(app);
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainPage = $('main-page');
+        const chatMessages = $('chat-messages');
+        const messageInput = $('message-input');
+        const sendBtn = $('send-btn');
+        const quickBtns = document.querySelectorAll('.q-btn');
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentUser = null;
+        let userData = null;
+        let isProcessing = false;
+        let conversationId = null;
+
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
+            }
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Almost ready...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Loading assistant...';
+        }, 35);
+
+        // ============================================================
+        // HELPERS
+        // ============================================================
+        function showPage() {
+            loadScreen.classList.add('hidden');
+            mainPage.classList.add('visible');
+            document.body.style.overflow = 'auto';
+        }
+
+        function getTime() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function addMessage(text, sender, timestamp) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            div.innerHTML = `
+                    ${text}
+                    <div class="time">${timestamp || getTime()}</div>
+                `;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const typing = document.createElement('div');
+            typing.className = 'typing-indicator show';
+            typing.id = 'typing-indicator';
+            typing.innerHTML = `
+                    <span>PureOreCapital Assistant is typing</span>
+                    <div class="dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                `;
+            chatMessages.appendChild(typing);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        // ============================================================
+        // KNOWLEDGE BASE (local fallback)
+        // ============================================================
+        function getLocalResponse(userText) {
+            const text = userText.toLowerCase();
+
+            // Deposit
+            if (text.includes('deposit') || text.includes('depositing') || text.includes('fund')) {
+                return "To make a deposit, go to your Profile and tap the 'Deposit' button. You'll be guided through entering the amount and your payment phone number. After that, you'll see payment agent details to complete the transaction. Once you've made the payment, enter the transaction ID or SMS confirmation to submit your deposit for review.";
+            }
+            // Withdraw
+            if (text.includes('withdraw') || text.includes('withdrawal') || text.includes('withdrawing')) {
+                return "To withdraw funds, open your Profile and tap 'Withdraw'. Ensure you have a saved withdrawal account (phone number and network). Enter the amount you wish to withdraw. A 10% fee applies, so you'll receive 90% of the requested amount. Confirm the details and submit the request. Withdrawals are processed during business hours (Monday–Friday, before 17:00).";
+            }
+            // Daily Check
+            if (text.includes('daily check') || text.includes('daily reward') || text.includes('check in')) {
+                return "Daily Check is a 7-day reward program. Each day has a specific reward amount. You can claim one day per day. The amounts increase as you progress through the week. To claim, go to the Daily Check page from your Dashboard or Profile, and tap 'Claim' on the available day. The reward will be added to your wallet balance.";
+            }
+            // Investments
+            if (text.includes('investment') || text.includes('invest') || text.includes('plan')) {
+                return "You can view available investment plans by tapping 'Invest' in the bottom navigation. Each plan shows the required investment amount, daily return, duration, and total return. To invest, select a plan and follow the process. You can also see your active investments under 'My Investments' in the Invest section.";
+            }
+            // Income
+            if (text.includes('income') || text.includes('claim income') || text.includes('earnings')) {
+                return "Your income is generated from active investments. The income page (from bottom navigation) shows your total available income. You can claim all eligible income at once. After claiming, the amount is credited to your wallet. Income claiming is available Monday–Friday only.";
+            }
+            // Referrals
+            if (text.includes('referral') || text.includes('refer') || text.includes('invite')) {
+                return "Your referral code and link can be found on the Referrals page. Share the link with friends. When they register using your code, you'll earn referral bonuses according to the platform's rules. You can track your referrals and activity on the Referrals page.";
+            }
+            // History
+            if (text.includes('history') || text.includes('transaction') || text.includes('activity')) {
+                return "Your transaction history shows all your financial activity: deposits, withdrawals, investments, income claims, and referral bonuses. You can filter by type and view details of each transaction. Access History from your Profile or the quick actions on the Dashboard.";
+            }
+            // Profile
+            if (text.includes('profile') || text.includes('photo') || text.includes('avatar')) {
+                return "Your Profile page shows your account information, including your name, phone number, and referral code. You can also update your profile photo. To change your photo, tap the edit icon on your avatar and select a new image. The photo will be uploaded and saved to your account.";
+            }
+            // Security / PIN
+            if (text.includes('pin') || text.includes('security')) {
+                return "Your security PIN is used to confirm sensitive actions like investments, withdrawals, and income claims. It's a 6-digit code you set during registration. Never share your PIN with anyone. If you need to change it, go to Settings (from Profile) and follow the security options.";
+            }
+            // Support / human
+            if (text.includes('support') || text.includes('help') || text.includes('contact') || text.includes('human')) {
+                return "If you need direct assistance, you can email us at pureorecapital@gmail.com or contact our manager on Telegram: https://t.me/pureorecapital. Our support team is here to help you with any issues.";
+            }
+            // General
+            if (text.includes('hello') || text.includes('hi') || text.includes('hey')) {
+                return "Hello! How can I assist you today? Feel free to ask about deposits, withdrawals, investments, income, daily check, referrals, or anything else related to PureOre Nexus.";
+            }
+            // Default
+            return "I'm here to help with PureOre Nexus support. Could you please clarify your question? I can assist with deposits, withdrawals, investments, income, daily check, referrals, history, profile, security, or contacting support.";
+        }
+
+        // ============================================================
+        // SEND MESSAGE
+        // ============================================================
+        async function sendMessage(text) {
+            if (isProcessing) return;
+            const trimmed = text.trim();
+            if (!trimmed) return;
+
+            // Add user message
+            addMessage(trimmed, 'user');
+
+            // Clear input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+
+            // Disable input
+            isProcessing = true;
+            sendBtn.disabled = true;
+            messageInput.disabled = true;
+
+            // Show typing indicator
+            addTypingIndicator();
+
+            try {
+                // First, try to call the Cloud Function for AI response
+                let response = '';
+                let usedFunction = false;
+
+                try {
+                    const aiFn = httpsCallable(functions, 'aiSupportChat');
+                    const result = await aiFn({
+                        message: trimmed,
+                        conversationId: conversationId || null
+                    });
+                    if (result.data && result.data.response) {
+                        response = result.data.response;
+                        usedFunction = true;
+                        // Save conversationId if returned
+                        if (result.data.conversationId) {
+                            conversationId = result.data.conversationId;
+                        }
+                    }
+                } catch (fnError) {
+                    console.warn('Cloud Function not available, using local fallback.', fnError);
+                    // Fallback to local knowledge base
+                }
+
+                // If cloud function didn't respond, use local
+                if (!response) {
+                    response = getLocalResponse(trimmed);
+                }
+
+                // Remove typing
+                removeTypingIndicator();
+
+                // Add assistant response
+                addMessage(response, 'assistant');
+
+                // Save conversation to Firestore if we have a user and conversationId
+                if (currentUser && conversationId) {
+                    try {
+                        const msgRef = collection(db, 'aiChats', conversationId, 'messages');
+                        await addDoc(msgRef, {
+                            sender: 'user',
+                            text: trimmed,
+                            timestamp: serverTimestamp()
+                        });
+                        await addDoc(msgRef, {
+                            sender: 'assistant',
+                            text: response,
+                            timestamp: serverTimestamp()
+                        });
+                    } catch (saveError) {
+                        console.warn('Could not save message to Firestore:', saveError);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Send message error:', error);
+                removeTypingIndicator();
+                addMessage("Sorry, I'm having trouble responding right now. Please try again or contact PureOre Capital support.", 'assistant');
+            } finally {
+                isProcessing = false;
+                sendBtn.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+                // Adjust input height
+                autoResizeTextarea();
+            }
+        }
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+
+        // Send button
+        sendBtn.addEventListener('click', () => {
+            sendMessage(messageInput.value);
+        });
+
+        // Enter key (Shift+Enter for new line)
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(messageInput.value);
+            }
+        });
+
+        // Auto-resize textarea
+        function autoResizeTextarea() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+        }
+        messageInput.addEventListener('input', autoResizeTextarea);
+
+        // Quick questions
+        quickBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const question = btn.dataset.question;
+                if (question === 'Contact support') {
+                    // Scroll to contact section
+                    document.querySelector('.contact-section').scrollIntoView({ behavior: 'smooth' });
+                    return;
+                }
+                sendMessage(question);
+            });
+        });
+
+        // ============================================================
+        // BACK BUTTON
+        // ============================================================
+        document.getElementById('back-btn').addEventListener('click', () => {
+            window.history.back();
+        });
+
+        // ============================================================
+        // LOAD CONVERSATION HISTORY
+        // ============================================================
+        async function loadConversationHistory(uid) {
+            try {
+                // Get or create conversation
+                const convRef = collection(db, 'aiChats');
+                const q = query(convRef, where('userId', '==', uid), orderBy('createdAt', 'desc'), limit(1));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const doc = snap.docs[0];
+                    conversationId = doc.id;
+                    // Load last 20 messages
+                    const msgRef = collection(db, 'aiChats', conversationId, 'messages');
+                    const msgQuery = query(msgRef, orderBy('timestamp', 'asc'), limit(20));
+                    const msgSnap = await getDocs(msgQuery);
+                    const msgs = [];
+                    msgSnap.forEach(d => {
+                        const data = d.data();
+                        msgs.push({
+                            sender: data.sender,
+                            text: data.text,
+                            timestamp: data.timestamp
+                        });
+                    });
+                    // Add messages to chat (skip if we already have welcome message)
+                    if (msgs.length > 0) {
+                        chatMessages.innerHTML = '';
+                        for (const m of msgs) {
+                            const time = m.timestamp ? new Date(m.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTime();
+                            addMessage(m.text, m.sender, time);
+                        }
+                        // Scroll to bottom
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    } else {
+                        // No messages, add welcome
+                        addMessage("Hello! I'm PureOreCapital Assistant. How can I help you today?", 'assistant');
+                    }
+                } else {
+                    // No conversation, create one
+                    const newConv = {
+                        userId: uid,
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    };
+                    const docRef = await addDoc(convRef, newConv);
+                    conversationId = docRef.id;
+                    addMessage("Hello! I'm PureOreCapital Assistant. How can I help you today?", 'assistant');
+                }
+            } catch (error) {
+                console.warn('Could not load conversation history:', error);
+                // Default welcome message
+                addMessage("Hello! I'm PureOreCapital Assistant. How can I help you today?", 'assistant');
+            }
+        }
+
+        // ============================================================
+        // AUTHENTICATION
+        // ============================================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+            // Load user data if needed
+            const userRef = doc(db, 'users', user.uid);
+            getDoc(userRef).then(snap => {
+                if (snap.exists()) {
+                    userData = snap.data();
+                }
+                // Load conversation history
+                loadConversationHistory(user.uid).then(() => {
+                    showPage();
+                    messageInput.focus();
+                });
+            }).catch(() => {
+                // Still load conversation
+                loadConversationHistory(user.uid).then(() => {
+                    showPage();
+                    messageInput.focus();
+                });
+            });
+        });
+
+        console.log('PureOre Nexus — AI Support ready.');
+    </script>
+
+</body>
+</html>

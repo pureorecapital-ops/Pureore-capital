@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>My Investments | PureOre Nexus</title>
+    <meta name="description" content="View your PureOre Nexus investment portfolio." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js"
+            }
+        }
+    </script>
+
+    <style>
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold: #c9a84c;
+            --gold-glow: rgba(201, 168, 76, 0.25);
+            --gold-subtle: rgba(201, 168, 76, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.06);
+            position: relative;
+        }
+        .load-logo-symbol::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .load-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
+        }
+
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN PAGE
+        ============================================================ */
+        #main-page {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--dark);
+        }
+        #main-page.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/cXxZh1w3/20260824-014737.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+        }
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(11, 11, 11, 0.5) 0%, rgba(11, 11, 11, 0.95) 80%, #0b0b0b 100%);
+            pointer-events: none;
+        }
+
+        .page-scroll {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 0 16px 30px 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ============================================================
+           HEADER (Back button)
+        ============================================================ */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(11, 11, 11, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin: 0 -16px;
+            padding: 14px 16px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .back-btn:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .back-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .page-header .title {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--text-white);
+        }
+        .page-header .title em {
+            color: var(--gold);
+            font-style: normal;
+        }
+
+        /* ============================================================
+           SUMMARY SECTION
+        ============================================================ */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 18px 0 16px;
+        }
+        .summary-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .summary-card:hover {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        .summary-card .label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .summary-card .value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 2px;
+            color: var(--text-white);
+        }
+        .summary-card .value.gold {
+            color: var(--gold);
+        }
+
+        /* ============================================================
+           FILTER TABS
+        ============================================================ */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 10px;
+        }
+        .filter-tab {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+        .filter-tab:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .filter-tab.active {
+            color: var(--gold);
+            background: rgba(201, 168, 76, 0.06);
+            border: 1px solid rgba(201, 168, 76, 0.1);
+        }
+
+        /* ============================================================
+           INVESTMENT CARDS
+        ============================================================ */
+        .investment-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 14px;
+            transition: all 0.3s ease;
+        }
+        .investment-card:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .card-image {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background: var(--charcoal);
+        }
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .card-image .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            background: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.15);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .card-image .status-badge.completed {
+            background: rgba(46, 204, 113, 0.06);
+            color: #2ecc71;
+            border-color: rgba(46, 204, 113, 0.08);
+        }
+        .card-image .status-badge.cancelled {
+            background: rgba(231, 76, 60, 0.06);
+            color: #e74c3c;
+            border-color: rgba(231, 76, 60, 0.08);
+        }
+
+        .card-content {
+            padding: 14px 14px 16px;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-white);
+        }
+
+        .card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin: 8px 0 10px;
+        }
+        .card-stat {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+        .card-stat .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 400;
+        }
+        .card-stat .stat-value {
+            font-weight: 600;
+            color: var(--text-white);
+            display: block;
+            margin-top: 1px;
+        }
+        .card-stat .stat-value.gold {
+            color: var(--gold);
+        }
+
+        .card-income-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            margin: 6px 0 10px;
+            font-size: 0.7rem;
+        }
+        .card-income-row .label {
+            color: var(--text-muted);
+        }
+        .card-income-row .value {
+            font-weight: 500;
+        }
+        .card-income-row .value.gold {
+            color: var(--gold);
+        }
+        .card-income-row .value.claimed {
+            color: #2ecc71;
+        }
+
+        .card-progress {
+            margin: 8px 0 10px;
+        }
+        .card-progress .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+        .card-progress .progress-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .card-progress .progress-bar {
+            height: 100%;
+            background: var(--gold);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+        }
+        .card-footer .remaining {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+        .card-footer .view-link {
+            font-size: 0.6rem;
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.25s ease;
+        }
+        .card-footer .view-link svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .card-footer .view-link:hover {
+            color: #dbb95c;
+            text-decoration: underline;
+        }
+
+        /* ============================================================
+           EMPTY STATE
+        ============================================================ */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.3;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        .empty-state p {
+            font-size: 0.85rem;
+            font-weight: 300;
+            max-width: 360px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        .empty-state .btn-empty {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 10px 28px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: 1px solid var(--gold);
+            border-radius: 60px;
+            color: var(--gold);
+            text-decoration: none;
+            transition: all 0.25s ease;
+            background: transparent;
+        }
+        .empty-state .btn-empty:hover {
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 0 30px rgba(201, 168, 76, 0.04);
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.55rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.5;
+            font-weight: 300;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 8px;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 480px) {
+            .page-scroll {
+                padding: 0 12px 20px 12px;
+            }
+            .page-header {
+                padding: 10px 12px;
+                margin: 0 -12px;
+            }
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .summary-card .value {
+                font-size: 0.95rem;
+            }
+            .card-stats {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 4px;
+            }
+            .card-stat {
+                font-size: 0.55rem;
+            }
+            .card-title {
+                font-size: 0.85rem;
+            }
+            .card-income-row {
+                font-size: 0.6rem;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .card-footer {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .filter-tabs {
+                gap: 4px;
+                padding-bottom: 8px;
+            }
+            .filter-tab {
+                font-size: 0.6rem;
+                padding: 4px 12px;
+            }
+            .branding-footer {
+                font-size: 0.5rem;
+                padding: 12px 0 6px;
+            }
+            .empty-state p {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .page-scroll {
+                padding: 0 32px 40px 32px;
+            }
+            .page-header {
+                padding: 16px 32px;
+                margin: 0 -32px;
+            }
+            .summary-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 14px;
+            }
+            .summary-card .value {
+                font-size: 1.2rem;
+            }
+            .card-stats {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                gap: 10px;
+            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        #main-page::-webkit-scrollbar {
+            width: 3px;
+        }
+        #main-page::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #main-page::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">My Investments</div>
+        </div>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
+            </div>
+            <div class="load-msg" id="load-msg">Loading your investments...</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    MAIN PAGE
+    ============================================================ -->
+    <div id="main-page">
+        <div class="bg-wrap" aria-hidden="true"></div>
+        <div class="bg-overlay" aria-hidden="true"></div>
+
+        <div class="page-scroll">
+
+            <!-- ===== HEADER ===== -->
+            <header class="page-header">
+                <button class="back-btn" id="back-btn" aria-label="Go back">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <span class="title">My <em>Investments</em></span>
+            </header>
+
+            <!-- ===== SUMMARY ===== -->
+            <div class="summary-grid" id="summary-grid">
+                <div class="summary-card">
+                    <div class="label">Total Invested</div>
+                    <div class="value gold" id="total-invested">K0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Active Investments</div>
+                    <div class="value" id="active-count">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Today's Income</div>
+                    <div class="value gold" id="today-income">K0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Total Claimed</div>
+                    <div class="value" id="total-claimed">K0.00</div>
+                </div>
+            </div>
+
+            <!-- ===== FILTERS ===== -->
+            <div class="filter-tabs" id="filter-tabs">
+                <button class="filter-tab active" data-filter="all">All</button>
+                <button class="filter-tab" data-filter="active">Active</button>
+                <button class="filter-tab" data-filter="completed">Completed</button>
+                <button class="filter-tab" data-filter="cancelled">Cancelled</button>
+            </div>
+
+            <!-- ===== INVESTMENTS LIST ===== -->
+            <div id="investments-list">
+                <!-- Rendered by JavaScript -->
+            </div>
+
+            <!-- ===== BRANDING ===== -->
+            <div class="branding-footer">
+                <span>@pureorecapital</span> 2025
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
+
+        // ============================================================
+        // FIREBASE CONFIG
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainPage = $('main-page');
+
+        const totalInvestedEl = $('total-invested');
+        const activeCountEl = $('active-count');
+        const todayIncomeEl = $('today-income');
+        const totalClaimedEl = $('total-claimed');
+        const investmentsList = $('investments-list');
+        const filterTabs = document.querySelectorAll('.filter-tab');
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let allInvestments = [];
+        let currentFilter = 'all';
+        let user = null;
+
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
+            }
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Preparing your portfolio...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Loading your investments...';
+        }, 35);
+
+        // ============================================================
+        // FORMAT CURRENCY
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
+        }
+
+        // ============================================================
+        // SHOW PAGE
+        // ============================================================
+        function showPage() {
+            loadScreen.classList.add('hidden');
+            mainPage.classList.add('visible');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ============================================================
+        // DATE HELPERS
+        // ============================================================
+        function parseDate(timestamp) {
+            if (!timestamp) return null;
+            if (timestamp.toDate) return timestamp.toDate();
+            if (typeof timestamp === 'string') return new Date(timestamp);
+            if (timestamp instanceof Date) return timestamp;
+            return null;
+        }
+
+        function daysBetween(start, end) {
+            const s = parseDate(start);
+            const e = parseDate(end);
+            if (!s || !e) return 0;
+            const diff = e.getTime() - s.getTime();
+            return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        function daysRemaining(end) {
+            const e = parseDate(end);
+            if (!e) return 0;
+            const now = new Date();
+            const diff = e.getTime() - now.getTime();
+            return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        function progress(start, end) {
+            const s = parseDate(start);
+            const e = parseDate(end);
+            if (!s || !e) return 0;
+            const total = e.getTime() - s.getTime();
+            if (total <= 0) return 100;
+            const now = Date.now();
+            const elapsed = Math.min(now - s.getTime(), total);
+            return Math.min(100, (elapsed / total) * 100);
+        }
+
+        // ============================================================
+        // LOAD INVESTMENTS
+        // ============================================================
+        async function loadInvestments(uid) {
+            try {
+                // Query investments for this user
+                const invRef = collection(db, 'investments');
+                const q = query(invRef, where('userId', '==', uid), orderBy('createdAt', 'desc'));
+                const snapshot = await getDocs(q);
+
+                const investments = [];
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data();
+                    const inv = { id: docSnap.id, ...data };
+
+                    // If plan image missing, try to fetch from investmentPlans
+                    if (!inv.imageUrl && inv.planId) {
+                        try {
+                            const planRef = doc(db, 'investmentPlans', inv.planId);
+                            const planSnap = await getDoc(planRef);
+                            if (planSnap.exists()) {
+                                const planData = planSnap.data();
+                                if (planData.imageUrl) inv.imageUrl = planData.imageUrl;
+                                if (!inv.planName && planData.planName) inv.planName = planData.planName;
+                            }
+                        } catch (e) { /* ignore */ }
+                    }
+
+                    // Ensure numeric fields
+                    inv.investmentAmount = Number(inv.investmentAmount) || 0;
+                    inv.dailyReturn = Number(inv.dailyReturn) || 0;
+                    inv.durationDays = Number(inv.durationDays) || 0;
+                    inv.claimedIncome = Number(inv.claimedIncome) || 0;
+
+                    // Calculate total return if not present
+                    if (!inv.totalReturn) {
+                        inv.totalReturn = inv.dailyReturn * inv.durationDays;
+                    }
+
+                    investments.push(inv);
+                }
+
+                allInvestments = investments;
+                renderAll();
+
+            } catch (error) {
+                console.error('Error loading investments:', error);
+                investmentsList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <p>Unable to load your investments. Please try again.</p>
+                            <button onclick="location.reload()" style="display:inline-block;margin-top:12px;color:var(--gold);background:none;border:1px solid var(--gold);padding:8px 24px;border-radius:20px;font-family:inherit;font-size:0.75rem;cursor:pointer;">Try Again</button>
+                        </div>
+                    `;
+                showPage();
+            }
+        }
+
+        // ============================================================
+        // RENDER ALL
+        // ============================================================
+        function renderAll() {
+            updateSummary();
+            renderFiltered();
+            showPage();
+        }
+
+        // ============================================================
+        // UPDATE SUMMARY
+        // ============================================================
+        function updateSummary() {
+            let totalInvested = 0;
+            let activeCount = 0;
+            let todayIncome = 0;
+            let totalClaimed = 0;
+
+            for (const inv of allInvestments) {
+                const status = (inv.status || 'active').toLowerCase();
+                totalInvested += inv.investmentAmount || 0;
+                totalClaimed += inv.claimedIncome || 0;
+
+                if (status === 'active') {
+                    activeCount++;
+                    // Today's income: daily return if active and not ended
+                    // We'll use a simple approach: if active and still within duration
+                    const endDate = inv.endDate;
+                    if (endDate) {
+                        const remaining = daysRemaining(endDate);
+                        if (remaining > 0) {
+                            todayIncome += inv.dailyReturn || 0;
+                        }
+                    } else {
+                        // If no end date, assume active indefinitely (fallback)
+                        todayIncome += inv.dailyReturn || 0;
+                    }
+                }
+            }
+
+            totalInvestedEl.textContent = 'K' + formatCurrency(totalInvested);
+            activeCountEl.textContent = activeCount;
+            todayIncomeEl.textContent = 'K' + formatCurrency(todayIncome);
+            totalClaimedEl.textContent = 'K' + formatCurrency(totalClaimed);
+        }
+
+        // ============================================================
+        // FILTER & RENDER
+        // ============================================================
+        function renderFiltered() {
+            let filtered = allInvestments;
+
+            if (currentFilter === 'active') {
+                filtered = filtered.filter(inv => (inv.status || 'active').toLowerCase() === 'active');
+            } else if (currentFilter === 'completed') {
+                filtered = filtered.filter(inv => (inv.status || '').toLowerCase() === 'completed');
+            } else if (currentFilter === 'cancelled') {
+                filtered = filtered.filter(inv => (inv.status || '').toLowerCase() === 'cancelled');
+            }
+
+            if (filtered.length === 0) {
+                investmentsList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            ${allInvestments.length === 0 ? `
+                                <p>You don't have any investments yet.</p>
+                                <a href="investment.html" class="btn-empty">Explore Investments</a>
+                            ` : `
+                                <p>No investments match the selected filter.</p>
+                            `}
+                        </div>
+                    `;
+                return;
+            }
+
+            investmentsList.innerHTML = filtered.map(inv => {
+                const status = (inv.status || 'active').toLowerCase();
+                const statusClass = status === 'active' ? '' :
+                                    status === 'completed' ? 'completed' :
+                                    status === 'cancelled' ? 'cancelled' : '';
+
+                const image = inv.imageUrl || 'https://placehold.co/800x450/1a1a1a/888?text=Investment';
+                const name = inv.planName || 'Investment Plan';
+                const amount = inv.investmentAmount || 0;
+                const daily = inv.dailyReturn || 0;
+                const duration = inv.durationDays || 0;
+                const total = inv.totalReturn || (daily * duration);
+                const claimed = inv.claimedIncome || 0;
+
+                // Calculate today's income (if active)
+                let todayIncomeDisplay = 'K0.00';
+                let remainingDays = 0;
+                let progressPercent = 0;
+
+                if (status === 'active') {
+                    const endDate = inv.endDate;
+                    if (endDate) {
+                        remainingDays = daysRemaining(endDate);
+                        if (remainingDays > 0) {
+                            todayIncomeDisplay = 'K' + formatCurrency(daily);
+                        } else {
+                            todayIncomeDisplay = 'Completed';
+                        }
+                    } else {
+                        // No end date, assume active
+                        todayIncomeDisplay = 'K' + formatCurrency(daily);
+                    }
+                    const startDate = inv.startDate;
+                    if (startDate && endDate) {
+                        progressPercent = progress(startDate, endDate);
+                    }
+                } else if (status === 'completed') {
+                    progressPercent = 100;
+                    todayIncomeDisplay = 'Completed';
+                } else {
+                    progressPercent = 0;
+                    todayIncomeDisplay = 'N/A';
+                }
+
+                const remainingDisplay = remainingDays > 0 ? `${remainingDays} days remaining` : 'Completed';
+
+                return `
+                        <div class="investment-card">
+                            <div class="card-image">
+                                <img src="${image}" alt="${name}" loading="lazy" />
+                                <span class="status-badge ${statusClass}">${status.toUpperCase()}</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-title">${name}</div>
+                                <div class="card-stats">
+                                    <div class="card-stat">
+                                        <span class="stat-label">Invested</span>
+                                        <span class="stat-value gold">K${formatCurrency(amount)}</span>
+                                    </div>
+                                    <div class="card-stat">
+                                        <span class="stat-label">Daily Return</span>
+                                        <span class="stat-value">K${formatCurrency(daily)}</span>
+                                    </div>
+                                    <div class="card-stat">
+                                        <span class="stat-label">Duration</span>
+                                        <span class="stat-value">${duration} Days</span>
+                                    </div>
+                                    <div class="card-stat">
+                                        <span class="stat-label">Total</span>
+                                        <span class="stat-value gold">K${formatCurrency(total)}</span>
+                                    </div>
+                                </div>
+                                <div class="card-income-row">
+                                    <span class="label">Today's Income</span>
+                                    <span class="value gold">${todayIncomeDisplay}</span>
+                                    <span class="label">Claimed</span>
+                                    <span class="value claimed">K${formatCurrency(claimed)}</span>
+                                </div>
+                                <div class="card-progress">
+                                    <div class="progress-label">
+                                        <span>Investment Progress</span>
+                                        <span>${Math.round(progressPercent)}%</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-bar" style="width:${progressPercent}%;"></div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <span class="remaining">${remainingDisplay}</span>
+                                    <a href="investment-details.html?id=${inv.id}" class="view-link">
+                                        View Details
+                                        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        // ============================================================
+        // FILTER TABS
+        // ============================================================
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                filterTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentFilter = tab.dataset.filter;
+                renderFiltered();
+            });
+        });
+
+        // ============================================================
+        // BACK BUTTON
+        // ============================================================
+        document.getElementById('back-btn').addEventListener('click', () => {
+            window.history.back();
+        });
+
+        // ============================================================
+        // AUTHENTICATION CHECK
+        // ============================================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            // Load investments
+            loadInvestments(user.uid);
+        });
+
+        console.log('PureOre Nexus — My Investments ready.');
+    </script>
+
+</body>
+</html>

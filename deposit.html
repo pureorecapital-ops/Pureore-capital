@@ -2,852 +2,1763 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Deposit – Sajvera Capital</title>
-    <link rel="preconnect" href="https://www.gstatic.com" />
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Deposit | PureOre Nexus</title>
+    <meta name="description" content="Make a deposit to your PureOre Nexus account." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js"
+            }
+        }
     </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
-    </script>
+
     <style>
-        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
-        * {
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --gold: #d4af37;
+            --gold-light: #bfa76f;
+            --gold-glow: rgba(212, 175, 55, 0.25);
+            --gold-subtle: rgba(212, 175, 55, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        html,
         body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            background: #060d1a;
-            min-height: 100vh;
-            padding-top: 80px;
-            padding-bottom: 30px;
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
             display: flex;
             flex-direction: column;
-            color: #ffffff;
-            position: relative;
-        }
-
-        /* ----- FULL SCREEN BLURRED BACKGROUND (YOUR IMAGE) ----- */
-        .hero-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-
-        .hero-bg::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ibb.co/Zt8nS8N/IMG-20260731-WA1244.jpg');
-            background-size: cover;
-            background-position: center;
-            filter: blur(12px) brightness(0.3) saturate(0.8);
-            transform: scale(1.1);
-        }
-
-        .hero-bg::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(180deg, rgba(10, 22, 40, 0.40) 0%, rgba(6, 13, 26, 0.85) 100%);
-        }
-
-        /* ----- HEADER (TRANSLUCENT GLASS) ----- */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0.8rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-            background: rgba(10, 22, 40, 0.60);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .header-left {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .logo-text {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: -0.4px;
-        }
-        .logo-text .vc {
-            color: #60a5fa;
-        }
-
-        .logo-sub {
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 0.3px;
-            font-weight: 400;
-            margin-top: -2px;
-        }
-        .logo-sub .highlight {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-
-        .back-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.3);
-            padding: 0.4rem 1rem;
-            border-radius: 40px;
-            font-family: inherit;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-        }
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-        }
-
-        /* ----- CONTAINER ----- */
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 0 1.2rem;
-            flex: 1;
-            width: 100%;
-        }
-
-        /* ----- GLASS CARD ----- */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 2rem 1.8rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-            animation: fadeUp 0.5s ease forwards;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 60%);
-            pointer-events: none;
-        }
-
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .glass-card .card-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.2rem;
-            letter-spacing: -0.3px;
-        }
-
-        .glass-card .card-title span {
-            color: #60a5fa;
-        }
-
-        .glass-card .card-sub {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.3);
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-        }
-
-        /* ----- INPUT WRAP ----- */
-        .input-wrap {
-            margin-bottom: 0.3rem;
-        }
-
-        .input-wrap label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.2);
-            display: block;
-            margin-bottom: 0.3rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .input-wrap input {
-            width: 100%;
-            padding: 1rem 1rem;
-            border-radius: 16px;
-            border: 1.5px solid rgba(255, 255, 255, 0.04);
-            background: rgba(255, 255, 255, 0.02);
-            color: #ffffff;
-            font-size: 1.2rem;
-            font-family: inherit;
-            transition: all 0.3s;
-            outline: none;
-            font-weight: 600;
-        }
-
-        .input-wrap input:focus {
-            border-color: rgba(59, 130, 246, 0.15);
-            background: rgba(255, 255, 255, 0.04);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.04);
-        }
-
-        .input-wrap input::placeholder {
-            color: rgba(255, 255, 255, 0.06);
-            font-weight: 400;
-        }
-
-        .input-wrap input[readonly] {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .input-error {
-            font-size: 0.7rem;
-            color: #f87171;
-            min-height: 1.2rem;
-            margin-top: 0.1rem;
-        }
-
-        /* ----- NOTICE CARD (GLASS) ----- */
-        .notice-card {
-            background: rgba(59, 130, 246, 0.02);
-            border: 1px solid rgba(59, 130, 246, 0.04);
-            border-radius: 16px;
-            padding: 0.8rem 1rem;
-            margin: 0.8rem 0 1.2rem;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.2);
-            line-height: 1.5;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .notice-card svg {
-            width: 18px;
-            height: 18px;
-            stroke: #60a5fa;
-            stroke-width: 2;
-            fill: none;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-
-        /* ----- BUTTON ----- */
-        .btn-primary {
-            width: 100%;
-            padding: 0.9rem;
-            border: none;
-            border-radius: 16px;
-            font-family: inherit;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #fff;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            cursor: pointer;
-            transition: all 0.3s;
-            letter-spacing: 0.2px;
-            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.20);
-            margin-top: 0.3rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
-            pointer-events: none;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.30);
-        }
-
-        .btn-primary:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        /* ===== LOADING OVERLAY (GLASS, SHOWS USER NAME) ===== */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(6, 13, 26, 0.80);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: none;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
-            padding: 1.5rem;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
         }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .loading-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 2.5rem 2rem;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
-            animation: modalPop 0.4s ease forwards;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .loading-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 60%);
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
             pointer-events: none;
         }
 
-        @keyframes modalPop {
-            from {
-                opacity: 0;
-                transform: scale(0.92) translateY(16px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
         }
-
-        .loading-card .loader-icon {
+        .load-logo-symbol {
             width: 64px;
             height: 64px;
-            margin: 0 auto 1rem;
+            border: 2px solid var(--gold);
             border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.04);
-            border-top-color: #60a5fa;
-            animation: spin 1s linear infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(212, 175, 55, 0.04);
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.06);
+            position: relative;
         }
-
+        .load-logo-symbol::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
         }
-
-        .loading-card .loader-name {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.2rem;
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
-
-        .loading-card .loader-email {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.2);
-            margin-bottom: 0.6rem;
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
         }
-
-        .loading-card .loader-amount {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #facc15;
-            margin-bottom: 0.4rem;
-        }
-
-        .loading-card .loader-amount .currency {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.2);
-            font-weight: 400;
-        }
-
-        .loading-card .loader-status {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.3);
-            animation: pulseText 1.5s ease-in-out infinite;
-        }
-
-        .loading-card .loader-status .dot {
-            display: inline-block;
-            animation: dotPulse 1.5s ease-in-out infinite;
-        }
-
-        .loading-card .loader-status .dot:nth-child(2) {
-            animation-delay: 0.3s;
-        }
-        .loading-card .loader-status .dot:nth-child(3) {
-            animation-delay: 0.6s;
-        }
-
-        @keyframes pulseText {
-            0%,
-            100% {
-                opacity: 0.4;
-            }
-            50% {
-                opacity: 1;
-            }
-        }
-
-        @keyframes dotPulse {
-            0%,
-            100% {
-                opacity: 0.2;
-            }
-            50% {
-                opacity: 1;
-            }
-        }
-
-        .loading-card .loader-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
-            margin: 0.6rem 0;
-        }
-
-        .loading-card .loader-note {
+        .load-sub {
             font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.08);
-            margin-top: 0.4rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
         }
 
-        /* ===== TOAST ===== */
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN PAGE
+        ============================================================ */
+        #main-page {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--dark);
+        }
+        #main-page.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/cXxZh1w3/20260824-014737.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.12;
+        }
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(11, 11, 11, 0.5) 0%, rgba(11, 11, 11, 0.95) 80%, #0b0b0b 100%);
+            pointer-events: none;
+        }
+
+        .page-scroll {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 0 16px 30px 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ============================================================
+           HEADER
+        ============================================================ */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(11, 11, 11, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin: 0 -16px;
+            padding: 14px 16px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .back-btn:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .back-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .page-header .title {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--text-white);
+        }
+        .page-header .title em {
+            color: var(--gold);
+            font-style: normal;
+        }
+
+        /* ============================================================
+           WEEKEND OVERLAY
+        ============================================================ */
+        .weekend-overlay {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            min-height: 60vh;
+        }
+        .weekend-overlay.show {
+            display: flex;
+        }
+        .weekend-overlay .icon-wrap {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.06);
+            border: 2px solid rgba(212, 175, 55, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .weekend-overlay .icon-wrap svg {
+            width: 36px;
+            height: 36px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .weekend-overlay h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 8px;
+        }
+        .weekend-overlay p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            max-width: 380px;
+            line-height: 1.6;
+            margin-bottom: 6px;
+        }
+        .weekend-overlay .day-label {
+            font-size: 0.7rem;
+            color: var(--gold);
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* ============================================================
+           PENDING DEPOSIT WARNING
+        ============================================================ */
+        .pending-deposit-warning {
+            display: none;
+            background: rgba(241, 196, 15, 0.08);
+            border: 1px solid rgba(241, 196, 15, 0.12);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            margin: 8px 0 12px;
+        }
+        .pending-deposit-warning .title {
+            font-size: 0.7rem;
+            color: #f1c40f;
+            font-weight: 500;
+        }
+        .pending-deposit-warning .desc {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ============================================================
+           STAGE CONTAINERS
+        ============================================================ */
+        .stage {
+            display: none;
+            animation: fadeSlide 0.4s ease forwards;
+        }
+        .stage.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================================
+           CARD
+        ============================================================ */
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px 20px;
+            margin: 16px 0 12px;
+            transition: all 0.3s ease;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-white);
+        }
+        .card-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-bottom: 16px;
+        }
+
+        /* ============================================================
+           FORM ELEMENTS
+        ============================================================ */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-white);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .form-control:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.08);
+        }
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 300;
+        }
+        .form-control.error {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.08);
+        }
+        .form-control:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .form-control.with-prefix {
+            padding-left: 44px;
+        }
+        .input-prefix {
+            position: relative;
+        }
+        .input-prefix .prefix {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        .form-error {
+            font-size: 0.7rem;
+            color: #e74c3c;
+            margin-top: 4px;
+            min-height: 1.2em;
+        }
+
+        textarea.form-control {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
+        /* ============================================================
+           BUTTONS
+        ============================================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            font-family: inherit;
+            min-height: 54px;
+            background: var(--gold);
+            color: #0b0b0b;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.1);
+        }
+        .btn:hover:not(:disabled) {
+            background: #dbb95c;
+            box-shadow: 0 0 50px rgba(212, 175, 55, 0.18);
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(11, 11, 11, 0.15);
+            border-top-color: #0b0b0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .btn.loading .spinner {
+            display: inline-block;
+        }
+        .btn.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1.5px solid var(--glass-border);
+            box-shadow: none;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--gold);
+            color: var(--text-white);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.04);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.65rem;
+            min-height: 36px;
+            width: auto;
+        }
+
+        /* ============================================================
+           NETWORK BADGE / IMAGE
+        ============================================================ */
+        .network-display {
+            text-align: center;
+            margin: 12px 0 16px;
+        }
+        .network-display .network-img {
+            width: 100%;
+            max-width: 280px;
+            border-radius: var(--radius-sm);
+            object-fit: cover;
+            border: 1px solid var(--glass-border);
+            background: var(--charcoal);
+            aspect-ratio: 16 / 9;
+        }
+        .network-display .network-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--gold);
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        /* ============================================================
+           AGENT CARDS
+        ============================================================ */
+        .agent-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.25s ease;
+        }
+        .agent-card:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .agent-card .info .name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-white);
+        }
+        .agent-card .info .number {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: 'Courier New', monospace;
+        }
+        .agent-card .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-family: inherit;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid var(--glass-border);
+        }
+        .agent-card .copy-btn:hover {
+            color: var(--gold);
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.04);
+        }
+        .agent-card .copy-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ============================================================
+           PAYMENT INFO CARD
+        ============================================================ */
+        .payment-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .payment-info-row:last-child {
+            border-bottom: none;
+        }
+        .payment-info-row .label {
+            color: var(--text-muted);
+        }
+        .payment-info-row .value {
+            font-weight: 500;
+            color: var(--text-white);
+        }
+        .payment-info-row .value.gold {
+            color: var(--gold);
+        }
+
+        /* ============================================================
+           REFRESH BUTTON
+        ============================================================ */
+        .refresh-wrap {
+            text-align: right;
+            margin: 4px 0 12px;
+        }
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            transition: all 0.25s ease;
+        }
+        .refresh-btn:hover {
+            color: var(--gold);
+        }
+        .refresh-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .refresh-btn .spinner-sm {
+            display: none;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .refresh-btn.loading .spinner-sm {
+            display: inline-block;
+        }
+        .refresh-btn.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           TOAST
+        ============================================================ */
         .toast {
             position: fixed;
             bottom: 30px;
             left: 50%;
-            transform: translateX(-50%);
-            background: rgba(10, 22, 40, 0.90);
-            backdrop-filter: blur(16px);
-            color: #f1f5f9;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            z-index: 1001;
-            animation: toastFade 4.5s ease forwards;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 10px 20px;
+            font-size: 0.75rem;
+            color: var(--text-white);
+            z-index: 200;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
             max-width: 90%;
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-
-        .toast.error {
-            border-color: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
         .toast.success {
-            border-color: rgba(52, 211, 153, 0.15);
-            color: #6ee7b7;
+            border-color: rgba(46, 204, 113, 0.2);
+        }
+        .toast.error {
+            border-color: rgba(231, 76, 60, 0.2);
         }
 
-        @keyframes toastFade {
-            0% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px) scale(0.95);
-            }
-            15% {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0) scale(1);
-            }
-            80% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px) scale(0.95);
-            }
+        /* ============================================================
+           SUCCESS / RESULT STATE
+        ============================================================ */
+        .result-state {
+            text-align: center;
+            padding: 16px 0 8px;
+        }
+        .result-state .result-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .result-state .result-icon.success {
+            background: rgba(46, 204, 113, 0.08);
+            border: 2px solid #2ecc71;
+        }
+        .result-state .result-icon.success svg {
+            stroke: #2ecc71;
+        }
+        .result-state .result-icon.error {
+            background: rgba(231, 76, 60, 0.08);
+            border: 2px solid #e74c3c;
+        }
+        .result-state .result-icon.error svg {
+            stroke: #e74c3c;
+        }
+        .result-state .result-icon svg {
+            width: 32px;
+            height: 32px;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .result-state .result-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .result-state .result-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        .result-state .result-details {
+            margin: 12px 0 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .result-state .result-details .highlight {
+            color: var(--gold);
+            font-weight: 500;
         }
 
-        /* ===== RESPONSIVE ===== */
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .result-actions .btn-result {
+            padding: 10px 24px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .result-actions .btn-result.primary {
+            background: var(--gold);
+            color: #0b0b0b;
+        }
+        .result-actions .btn-result.primary:hover {
+            background: #dbb95c;
+        }
+        .result-actions .btn-result.secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .result-actions .btn-result.secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .result-actions .btn-result svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.55rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.5;
+            font-weight: 300;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 16px;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
         @media (max-width: 480px) {
-            .header {
-                padding: 0.6rem 1rem;
+            .page-scroll {
+                padding: 0 12px 20px 12px;
             }
-            .logo-text {
-                font-size: 1.2rem;
+            .page-header {
+                padding: 10px 12px;
+                margin: 0 -12px;
             }
-            .logo-sub {
-                font-size: 0.5rem;
+            .card {
+                padding: 18px 14px;
             }
-            .container {
-                padding: 0 0.8rem;
-            }
-            .glass-card {
-                padding: 1.5rem 1.2rem;
-                border-radius: 24px;
-            }
-            .glass-card .card-title {
-                font-size: 1.3rem;
-            }
-            .input-wrap input {
+            .card-title {
                 font-size: 1rem;
-                padding: 0.8rem 0.9rem;
             }
-            .loading-card {
-                padding: 2rem 1.5rem;
+            .network-display .network-img {
+                max-width: 100%;
             }
-            .loading-card .loader-name {
-                font-size: 1.2rem;
+            .agent-card {
+                flex-wrap: wrap;
+                gap: 8px;
             }
-            .loading-card .loader-amount {
-                font-size: 1.6rem;
+            .agent-card .info {
+                flex: 1;
+                min-width: 0;
             }
-            .back-btn {
+            .btn {
+                font-size: 0.7rem;
+                min-height: 48px;
+                padding: 12px 16px;
+            }
+            .form-control {
+                padding: 12px 14px;
+                font-size: 0.9rem;
+            }
+            .form-control.with-prefix {
+                padding-left: 38px;
+            }
+            .input-prefix .prefix {
+                left: 14px;
+                font-size: 0.9rem;
+            }
+            .branding-footer {
+                font-size: 0.5rem;
+                padding: 12px 0 6px;
+            }
+            .result-state .result-title {
+                font-size: 1rem;
+            }
+            .result-actions .btn-result {
+                padding: 8px 18px;
                 font-size: 0.65rem;
-                padding: 0.3rem 0.8rem;
+            }
+            .weekend-overlay h2 {
+                font-size: 1rem;
+            }
+            .weekend-overlay p {
+                font-size: 0.8rem;
             }
         }
 
-        @media (max-width: 400px) {
-            .glass-card {
-                padding: 1.2rem 1rem;
+        @media (min-width: 768px) {
+            .page-scroll {
+                padding: 0 32px 40px 32px;
             }
-            .input-wrap input {
-                font-size: 0.9rem;
-                padding: 0.7rem 0.8rem;
+            .page-header {
+                padding: 16px 32px;
+                margin: 0 -32px;
             }
-            .notice-card {
-                font-size: 0.7rem;
-                padding: 0.6rem 0.8rem;
+            .agent-card {
+                padding: 14px 18px;
             }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        #main-page::-webkit-scrollbar {
+            width: 3px;
+        }
+        #main-page::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #main-page::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
-    <div class="hero-bg"></div>
-
-    <!-- ===== HEADER ===== -->
-    <header class="header">
-        <div class="header-left">
-            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
-            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
-        </div>
-        <div class="header-right">
-            <a href="dashboard.html" class="back-btn">← Back</a>
-        </div>
-    </header>
-
-    <!-- ===== MAIN CONTENT ===== -->
-    <main class="container">
-        <div class="glass-card">
-            <div class="card-title">💰 <span>Deposit</span> Funds</div>
-            <div class="card-sub">Enter the amount you wish to deposit.</div>
-
-            <div class="input-wrap">
-                <label for="amountInput">Amount (ZMW)</label>
-                <input type="number" id="amountInput" placeholder="0.00" min="0.01" step="0.01" autofocus />
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
             </div>
-            <div class="input-error" id="amountError"></div>
-
-            <div class="notice-card">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span>Enter any amount you wish to deposit. Please confirm the amount before continuing.</span>
-            </div>
-
-            <button class="btn-primary" id="continueBtn" disabled>💳 Continue to Payment</button>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">Make a Deposit</div>
         </div>
-    </main>
-
-    <!-- ===== LOADING OVERLAY (SHOWS USER NAME + PAYMENT STATUS) ===== -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-card">
-            <div class="loader-icon"></div>
-            <div class="loader-name" id="loaderName">—</div>
-            <div class="loader-email" id="loaderEmail">—</div>
-            <div class="loader-divider"></div>
-            <div class="loader-amount" id="loaderAmount">0.00 <span class="currency">ZMW</span></div>
-            <div class="loader-status" id="loaderStatus">
-                Processing your payment<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
             </div>
-            <div class="loader-divider"></div>
-            <div class="loader-note">⏳ Please do not close this window</div>
+            <div class="load-msg" id="load-msg">Preparing deposit...</div>
         </div>
     </div>
 
-    <script>
-        // ================================================================
+    <!-- ============================================================
+    MAIN PAGE
+    ============================================================ -->
+    <div id="main-page">
+        <div class="bg-wrap" aria-hidden="true"></div>
+        <div class="bg-overlay" aria-hidden="true"></div>
+
+        <div class="page-scroll">
+
+            <!-- ===== HEADER ===== -->
+            <header class="page-header">
+                <button class="back-btn" id="back-btn" aria-label="Go back">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <span class="title">Make a <em>Deposit</em></span>
+            </header>
+
+            <!-- ===== WEEKEND OVERLAY ===== -->
+            <div class="weekend-overlay" id="weekend-overlay">
+                <div class="icon-wrap">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <h2>Weekend Deposits Unavailable</h2>
+                <p>Deposits are available Monday to Friday. Please return on Monday to make a deposit.</p>
+                <div class="day-label" id="weekend-day-label">—</div>
+            </div>
+
+            <!-- ===== PENDING DEPOSIT WARNING ===== -->
+            <div class="pending-deposit-warning" id="pending-deposit-warning">
+                <div class="title">⚠️ Pending Deposit</div>
+                <div class="desc">You already have a pending deposit request. Please wait for it to be processed before submitting another.</div>
+            </div>
+
+            <!-- ============================================================
+            STAGE 1 — ENTER AMOUNT
+            ============================================================ -->
+            <div class="stage active" id="stage-1">
+                <div class="card">
+                    <div class="card-title">Make a Deposit</div>
+                    <div class="card-sub">Enter the amount you would like to deposit.</div>
+
+                    <div class="form-group">
+                        <label>Deposit Amount</label>
+                        <div class="input-prefix">
+                            <span class="prefix">K</span>
+                            <input type="text" class="form-control with-prefix" id="amount-input" placeholder="0.00" inputmode="decimal" autocomplete="off" />
+                        </div>
+                        <div class="form-error" id="amount-error"></div>
+                    </div>
+
+                    <button class="btn" id="btn-amount-continue">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Continue</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            STAGE 2 — ENTER PHONE NUMBER
+            ============================================================ -->
+            <div class="stage" id="stage-2">
+                <div class="card">
+                    <div class="card-title">Payment Phone Number</div>
+                    <div class="card-sub">Enter the phone number you will use to make the payment.</div>
+
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" class="form-control" id="phone-input" placeholder="e.g. 0961234567" inputmode="numeric" autocomplete="tel" />
+                        <div class="form-error" id="phone-error"></div>
+                    </div>
+
+                    <button class="btn" id="btn-phone-continue">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Continue</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            STAGE 3 — PAYMENT AGENTS & SUBMIT
+            ============================================================ -->
+            <div class="stage" id="stage-3">
+                <div class="card">
+                    <div class="card-title">Payment Information</div>
+                    <div class="card-sub">Complete your payment using the details below.</div>
+
+                    <!-- Network Image -->
+                    <div class="network-display" id="network-display">
+                        <img class="network-img" id="network-img" src="" alt="Network" loading="lazy" />
+                        <div class="network-label" id="network-label">—</div>
+                    </div>
+
+                    <!-- Agent Cards -->
+                    <div id="agent-container">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Payment Info Summary -->
+                    <div style="margin:12px 0;padding:12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);">
+                        <div class="payment-info-row">
+                            <span class="label">Network</span>
+                            <span class="value gold" id="summary-network">—</span>
+                        </div>
+                        <div class="payment-info-row">
+                            <span class="label">Phone Number</span>
+                            <span class="value" id="summary-phone">—</span>
+                        </div>
+                        <div class="payment-info-row">
+                            <span class="label">Deposit Amount</span>
+                            <span class="value gold" id="summary-amount">K0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Confirmation Message -->
+                    <div style="font-size:0.7rem;color:var(--text-muted);padding:4px 0 8px;line-height:1.6;">
+                        Make your payment using the displayed payment information. After completing the payment, enter the transaction information below.
+                    </div>
+
+                    <!-- Transaction ID / SMS Text -->
+                    <div class="form-group">
+                        <label>Transaction ID / SMS Text</label>
+                        <textarea class="form-control" id="txn-input" placeholder="Paste your payment confirmation SMS or enter your transaction ID." rows="3"></textarea>
+                        <div class="form-error" id="txn-error"></div>
+                    </div>
+
+                    <!-- Refresh -->
+                    <div class="refresh-wrap">
+                        <button class="refresh-btn" id="refresh-btn">
+                            <span class="spinner-sm"></span>
+                            <svg viewBox="0 0 24 24"><path d="M1 4v6h6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            <span class="btn-text">Refresh</span>
+                        </button>
+                    </div>
+
+                    <!-- Submit -->
+                    <button class="btn" id="btn-submit">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Submit Deposit</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== BRANDING ===== -->
+            <div class="branding-footer">
+                <span>@pureorecapital</span> 2025
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+    TOAST
+    ============================================================ -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+
+        // ============================================================
         // FIREBASE CONFIG
-        // ================================================================
-        var firebaseConfig = {
-            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
-            authDomain: "pureore-capital-zambia.firebaseapp.com",
-            projectId: "pureore-capital-zambia",
-            storageBucket: "pureore-capital-zambia.appspot.com",
-            messagingSenderId: "78967797858",
-            appId: "1:78967797858:web:379b9692951429c345793b",
-            measurementId: "G-FQKC29NYE9"
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        var auth = firebase.auth();
-        var db = firebase.firestore();
-        db.settings({ persistence: false });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ================================================================
-        // HELPERS
-        // ================================================================
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' } [m]; });
-        }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        function showToast(message, isError) {
-            var existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (isError ? ' error' : ' success');
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4500);
-        }
+        // ============================================================
+        // CONFIGURATION
+        // ============================================================
+        const AGENTS = {
+            MTN: [
+                { name: 'Getrude Sonpo', number: '0960338304' },
+                { name: 'John Kabwe', number: '0963070992' }
+            ],
+            AIRTEL: [
+                { name: 'John Kabwe', number: '0571518417' }
+            ],
+            ZAMTEL: [
+                { name: 'Jeremiah Ilunga', number: '0951359357' }
+            ]
+        };
 
-        // ================================================================
+        const NETWORK_IMAGES = {
+            MTN: 'https://i.ibb.co/PzMfLqZS/IMG-20260824-101028.jpg',
+            AIRTEL: 'https://i.ibb.co/WNGhXKdG/IMG-20260824-101016.jpg',
+            ZAMTEL: 'https://i.ibb.co/nMvvDKTJ/IMG-20260824-101003.jpg'
+        };
+
+        const NETWORK_PREFIXES = {
+            MTN: ['96', '76'],
+            AIRTEL: ['97', '77', '05'],
+            ZAMTEL: ['95', '75']
+        };
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentUser = null;
+        let depositAmount = 0;
+        let depositPhone = '';
+        let detectedNetwork = '';
+        let isProcessing = false;
+        let currentStage = 1;
+        let isWeekend = false;
+        let weekendDay = '';
+        let hasPendingDeposit = false;
+
+        // ============================================================
         // DOM REFS
-        // ================================================================
-        var amountInput = document.getElementById('amountInput');
-        var amountError = document.getElementById('amountError');
-        var continueBtn = document.getElementById('continueBtn');
-        var loadingOverlay = document.getElementById('loadingOverlay');
-        var loaderName = document.getElementById('loaderName');
-        var loaderEmail = document.getElementById('loaderEmail');
-        var loaderAmount = document.getElementById('loaderAmount');
-        var loaderStatus = document.getElementById('loaderStatus');
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainPage = $('main-page');
 
-        var currentUser = null;
-        var userData = null;
+        const stage1 = $('stage-1');
+        const stage2 = $('stage-2');
+        const stage3 = $('stage-3');
+        const weekendOverlay = $('weekend-overlay');
+        const weekendDayLabel = $('weekend-day-label');
+        const pendingWarning = $('pending-deposit-warning');
 
-        // ================================================================
-        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
-        // ================================================================
-        let authResolved = false;
-        let redirectTimeout = null;
+        const amountInput = $('amount-input');
+        const amountError = $('amount-error');
+        const btnAmount = $('btn-amount-continue');
 
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                // User is authenticated – clear any pending redirect timeout
-                authResolved = true;
-                if (redirectTimeout) {
-                    clearTimeout(redirectTimeout);
-                    redirectTimeout = null;
-                }
+        const phoneInput = $('phone-input');
+        const phoneError = $('phone-error');
+        const btnPhone = $('btn-phone-continue');
 
-                currentUser = user;
+        const networkImg = $('network-img');
+        const networkLabel = $('network-label');
+        const agentContainer = $('agent-container');
+        const summaryNetwork = $('summary-network');
+        const summaryPhone = $('summary-phone');
+        const summaryAmount = $('summary-amount');
+        const txnInput = $('txn-input');
+        const txnError = $('txn-error');
+        const btnSubmit = $('btn-submit');
+        const refreshBtn = $('refresh-btn');
 
-                db.collection('users').doc(user.uid).get().then(function(doc) {
-                    if (doc.exists) {
-                        userData = doc.data();
-                        loaderName.textContent = escapeHtml(userData.fullName || 'User');
-                        loaderEmail.textContent = escapeHtml(userData.email || user.email);
-                    } else {
-                        loaderName.textContent = escapeHtml(user.displayName || 'User');
-                        loaderEmail.textContent = escapeHtml(user.email || '');
-                    }
-                }).catch(function(err) {
-                    console.warn('Error loading user data:', err);
-                    loaderName.textContent = escapeHtml(user.displayName || 'User');
-                    loaderEmail.textContent = escapeHtml(user.email || '');
-                });
+        const toast = $('toast');
+        let toastTimeout = null;
 
-                // Watch for block status
-                db.collection('users').doc(user.uid).onSnapshot(function(doc) {
-                    if (doc.exists && doc.data().isBlocked === true) {
-                        showToast('⚠️ Your account has been blocked.', true);
-                        setTimeout(function() {
-                            auth.signOut().then(function() { window.location.href = 'login.html'; });
-                        }, 2000);
-                    }
-                }, function(err) { console.warn('Block listener error:', err); });
-
-            } else {
-                // user is null
-                if (!authResolved) {
-                    // First callback: still initializing; set a safety timeout
-                    if (!redirectTimeout) {
-                        redirectTimeout = setTimeout(function() {
-                            // After 2 seconds, if still no user, redirect to login
-                            if (!auth.currentUser) {
-                                window.location.href = 'login.html';
-                            }
-                        }, 2000);
-                    }
-                } else {
-                    // User was previously logged in and now signed out (or session lost)
-                    window.location.href = 'login.html';
-                }
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
             }
-        }, function(error) {
-            console.error('Auth state error:', error);
-            window.location.href = 'login.html';
-        });
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Almost ready...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Preparing deposit...';
+        }, 35);
 
-        // ================================================================
-        // VALIDATE AMOUNT
-        // ================================================================
-        function validateAmount() {
-            var val = parseFloat(amountInput.value);
-            if (isNaN(val) || val <= 0) {
-                amountError.innerText = 'Please enter a valid amount';
-                continueBtn.disabled = true;
-                return false;
-            }
-            if (val < 1) {
-                amountError.innerText = 'Minimum deposit is 1.00 ZMW';
-                continueBtn.disabled = true;
-                return false;
-            }
-            amountError.innerText = '';
-            continueBtn.disabled = false;
-            return true;
+        // ============================================================
+        // HELPERS
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
         }
 
-        amountInput.addEventListener('input', validateAmount);
+        function showToast(message, type = '') {
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
 
-        // ================================================================
-        // CONTINUE BUTTON – SHOW LOADING WITH USER NAME
-        // ================================================================
-        continueBtn.addEventListener('click', function() {
-            if (this.disabled) return;
+        function showStage(stage) {
+            document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(`stage-${stage}`);
+            if (target) target.classList.add('active');
+            currentStage = stage;
+            const input = target?.querySelector('input:not([readonly]), textarea:not([readonly])');
+            if (input) setTimeout(() => input.focus(), 200);
+        }
 
-            var amount = parseFloat(amountInput.value);
-            if (isNaN(amount) || amount <= 0) {
-                validateAmount();
+        function normalizePhone(input) {
+            let num = input.replace(/\s/g, '');
+            if (num.startsWith('+260')) num = num.substring(4);
+            if (num.startsWith('0')) num = num.substring(1);
+            if (num.length < 9) return null;
+            num = num.slice(-9);
+            return num;
+        }
+
+        function detectNetwork(phone) {
+            const normalized = normalizePhone(phone);
+            if (!normalized) return null;
+            const prefix = normalized.substring(0, 2);
+            for (const [network, prefixes] of Object.entries(NETWORK_PREFIXES)) {
+                if (prefixes.includes(prefix)) {
+                    return network;
+                }
+            }
+            return null;
+        }
+
+        function formatPhoneDisplay(phone) {
+            const normalized = normalizePhone(phone);
+            if (!normalized) return phone;
+            return '+260 ' + normalized;
+        }
+
+        // ============================================================
+        // WEEKEND CHECK (using Africa/Lusaka timezone)
+        // ============================================================
+        function checkWeekend() {
+            const now = new Date();
+            const options = { timeZone: 'Africa/Lusaka', hour12: false };
+            const dateStr = now.toLocaleDateString('en-US', options);
+            const parts = dateStr.split('/');
+            const month = parseInt(parts[0]) - 1;
+            const day = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+            const businessDate = new Date(year, month, day);
+            const dayOfWeek = businessDate.getDay(); // 0 = Sunday, 6 = Saturday
+
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            weekendDay = dayNames[dayOfWeek];
+            return isWeekend;
+        }
+
+        // ============================================================
+        // SHOW PAGE
+        // ============================================================
+        function showPage() {
+            loadScreen.classList.add('hidden');
+            mainPage.classList.add('visible');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ============================================================
+        // RENDER AGENTS
+        // ============================================================
+        function renderAgents(network) {
+            const agents = AGENTS[network] || [];
+            if (agents.length === 0) {
+                agentContainer.innerHTML = `
+                        <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.75rem;">
+                            No payment agents available for ${network}.
+                        </div>
+                    `;
                 return;
             }
 
-            // Update loader with amount
-            loaderAmount.textContent = amount.toFixed(2) + ' ZMW';
+            agentContainer.innerHTML = agents.map(agent => `
+                    <div class="agent-card">
+                        <div class="info">
+                            <div class="name">${agent.name}</div>
+                            <div class="number">${agent.number}</div>
+                        </div>
+                        <button class="copy-btn" data-number="${agent.number}">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                `).join('');
 
-            // Update status message
-            var name = loaderName.textContent || 'User';
-            loaderStatus.innerHTML = 'Processing payment for <strong>' + escapeHtml(name) + '</strong><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>';
+            agentContainer.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const number = btn.dataset.number;
+                    navigator.clipboard.writeText(number).then(() => {
+                        showToast('Number copied!', 'success');
+                    }).catch(() => {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = number;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        showToast('Number copied!', 'success');
+                    });
+                });
+            });
+        }
 
-            // Show loading overlay
-            loadingOverlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
-
-            // Store amount in localStorage for next step
-            localStorage.setItem('depositAmount', amount);
-
-            // Simulate payment processing with status updates
-            var statusMessages = [
-                '⏳ Initializing payment gateway...',
-                '🔐 Securing transaction...',
-                '💳 Connecting to payment processor...',
-                '✅ Payment successful! Redirecting...'
-            ];
-
-            var statusIndex = 0;
-
-            function updateStatus() {
-                if (statusIndex < statusMessages.length) {
-                    loaderStatus.innerHTML = statusMessages[statusIndex];
-                    statusIndex++;
-                    setTimeout(updateStatus, 1800);
-                } else {
-                    // All done - redirect to step 2 or complete
-                    setTimeout(function() {
-                        window.location.href = 'deposit-step2.html';
-                    }, 800);
+        // ============================================================
+        // CHECK PENDING DEPOSIT
+        // ============================================================
+        async function checkPendingDeposit(uid) {
+            try {
+                const depRef = collection(db, 'deposits');
+                const q = query(depRef, where('userId', '==', uid), where('status', '==', 'pending'));
+                const snapshot = await getDocs(q);
+                if (!snapshot.empty) {
+                    hasPendingDeposit = true;
+                    pendingWarning.style.display = 'block';
+                    // Disable submit button if already in stage 3
+                    if (btnSubmit) {
+                        btnSubmit.disabled = true;
+                        btnSubmit.querySelector('.btn-text').textContent = 'Pending Deposit';
+                    }
+                    // Also disable continue buttons if needed
+                    btnAmount.disabled = true;
+                    btnPhone.disabled = true;
+                    return true;
                 }
+                return false;
+            } catch (e) {
+                console.warn('Error checking pending deposit:', e);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // INITIALIZE PAGE
+        // ============================================================
+        function initializePage() {
+            // Check weekend
+            checkWeekend();
+
+            if (isWeekend) {
+                // Show weekend overlay, hide stages
+                weekendOverlay.classList.add('show');
+                weekendDayLabel.textContent = `Today is ${weekendDay}`;
+                document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+                // Hide the deposit flow
+                return;
             }
 
-            // Start status updates after a brief delay
-            setTimeout(updateStatus, 600);
-        });
+            // Show stage 1
+            weekendOverlay.classList.remove('show');
+            showStage(1);
+            amountInput.focus();
+        }
 
-        // ================================================================
-        // KEYBOARD SHORTCUT
-        // ================================================================
-        amountInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !continueBtn.disabled) {
-                continueBtn.click();
+        // ============================================================
+        // STAGE 1: AMOUNT
+        // ============================================================
+        btnAmount.addEventListener('click', async () => {
+            if (isProcessing) return;
+            if (isWeekend) return;
+            if (hasPendingDeposit) {
+                showToast('You already have a pending deposit.', 'error');
+                return;
+            }
+
+            const raw = amountInput.value.trim().replace(/,/g, '');
+            const amount = parseFloat(raw);
+
+            if (isNaN(amount) || amount <= 0) {
+                amountError.textContent = 'Please enter a valid amount greater than zero.';
+                amountInput.classList.add('error');
+                return;
+            }
+
+            amountError.textContent = '';
+            amountInput.classList.remove('error');
+            depositAmount = amount;
+
+            isProcessing = true;
+            btnAmount.classList.add('loading');
+            btnAmount.disabled = true;
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 600));
+                showStage(2);
+                phoneInput.focus();
+            } finally {
+                isProcessing = false;
+                btnAmount.classList.remove('loading');
+                btnAmount.disabled = false;
             }
         });
 
-        // ================================================================
-        // FOCUS
-        // ================================================================
-        setTimeout(function() { amountInput.focus(); }, 400);
-
-        // ================================================================
-        // CLOSE LOADING IF USER LEAVES (cleanup)
-        // ================================================================
-        window.addEventListener('beforeunload', function() {
-            loadingOverlay.classList.remove('active');
-            document.body.style.overflow = '';
+        amountInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') btnAmount.click();
         });
 
-        console.log('💰 Deposit · Sajvera Capital · Glassmorphism design');
-        console.log('👤 Loading overlay shows user name during payment processing');
-        console.log('🔐 Login check and block monitoring active');
-        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
+        // ============================================================
+        // STAGE 2: PHONE NUMBER
+        // ============================================================
+        btnPhone.addEventListener('click', async () => {
+            if (isProcessing) return;
+            if (isWeekend) return;
+            if (hasPendingDeposit) {
+                showToast('You already have a pending deposit.', 'error');
+                return;
+            }
+
+            const raw = phoneInput.value.trim();
+            if (!raw) {
+                phoneError.textContent = 'Please enter your phone number.';
+                phoneInput.classList.add('error');
+                return;
+            }
+
+            const network = detectNetwork(raw);
+            if (!network) {
+                phoneError.textContent = 'Please enter a valid supported Zambia mobile number.';
+                phoneInput.classList.add('error');
+                return;
+            }
+
+            phoneError.textContent = '';
+            phoneInput.classList.remove('error');
+            depositPhone = raw;
+            detectedNetwork = network;
+
+            isProcessing = true;
+            btnPhone.classList.add('loading');
+            btnPhone.disabled = true;
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                const displayPhone = formatPhoneDisplay(depositPhone);
+                summaryNetwork.textContent = network;
+                summaryPhone.textContent = displayPhone;
+                summaryAmount.textContent = 'K' + formatCurrency(depositAmount);
+
+                networkImg.src = NETWORK_IMAGES[network] || '';
+                networkImg.alt = network + ' logo';
+                networkLabel.textContent = network;
+
+                renderAgents(network);
+
+                showStage(3);
+                txnInput.focus();
+
+            } finally {
+                isProcessing = false;
+                btnPhone.classList.remove('loading');
+                btnPhone.disabled = false;
+            }
+        });
+
+        phoneInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') btnPhone.click();
+        });
+
+        // ============================================================
+        // REFRESH
+        // ============================================================
+        refreshBtn.addEventListener('click', async () => {
+            if (isProcessing) return;
+
+            isProcessing = true;
+            refreshBtn.classList.add('loading');
+            refreshBtn.disabled = true;
+
+            try {
+                // Re-check weekend and re-render
+                checkWeekend();
+                if (isWeekend) {
+                    weekendOverlay.classList.add('show');
+                    weekendDayLabel.textContent = `Today is ${weekendDay}`;
+                    document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+                    showToast('Deposits are not available on weekends.', 'error');
+                } else {
+                    weekendOverlay.classList.remove('show');
+                    if (detectedNetwork) {
+                        renderAgents(detectedNetwork);
+                    }
+                    showToast('Payment information refreshed.', 'success');
+                }
+            } catch (error) {
+                console.error('Refresh error:', error);
+                showToast('Failed to refresh. Please try again.', 'error');
+            } finally {
+                isProcessing = false;
+                refreshBtn.classList.remove('loading');
+                refreshBtn.disabled = false;
+            }
+        });
+
+        // ============================================================
+        // SUBMIT
+        // ============================================================
+        btnSubmit.addEventListener('click', async () => {
+            if (isProcessing) return;
+            if (isWeekend) return;
+            if (hasPendingDeposit) {
+                showToast('You already have a pending deposit.', 'error');
+                return;
+            }
+
+            const txnData = txnInput.value.trim();
+            if (!txnData) {
+                txnError.textContent = 'Please enter your transaction ID or payment confirmation.';
+                txnInput.classList.add('error');
+                return;
+            }
+            txnError.textContent = '';
+            txnInput.classList.remove('error');
+
+            isProcessing = true;
+            btnSubmit.classList.add('loading');
+            btnSubmit.disabled = true;
+
+            try {
+                // Create deposit record
+                const depositRef = doc(collection(db, 'deposits'));
+                const depositData = {
+                    userId: currentUser.uid,
+                    amount: depositAmount,
+                    phone: depositPhone,
+                    normalizedPhone: normalizePhone(depositPhone),
+                    detectedNetwork: detectedNetwork,
+                    transactionId: txnData,
+                    paymentText: txnData.substring(0, 500),
+                    status: 'pending',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    source: 'deposit_page'
+                };
+
+                await setDoc(depositRef, depositData);
+
+                // Transaction record
+                const txRef = doc(collection(db, 'transactions'));
+                const txData = {
+                    userId: currentUser.uid,
+                    type: 'deposit',
+                    amount: depositAmount,
+                    status: 'pending',
+                    description: `Deposit of K${formatCurrency(depositAmount)} via ${detectedNetwork}`,
+                    referenceId: depositRef.id,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                };
+                await setDoc(txRef, txData);
+
+                // Show success
+                const container = stage3.querySelector('.card');
+                container.innerHTML = `
+                        <div class="result-state">
+                            <div class="result-icon success">
+                                <svg viewBox="0 0 24 24">
+                                    <polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div class="result-title">Deposit Submitted</div>
+                            <div class="result-sub">Your deposit has been submitted and is pending verification.</div>
+                            <div class="result-details">
+                                <div>Amount: <span class="highlight">K${formatCurrency(depositAmount)}</span></div>
+                                <div>Network: <span class="highlight">${detectedNetwork}</span></div>
+                                <div>Phone: <span class="highlight">${formatPhoneDisplay(depositPhone)}</span></div>
+                                <div>Status: <span class="highlight" style="color:#f1c40f;">PENDING</span></div>
+                            </div>
+                            <div class="result-actions">
+                                <a href="history.html" class="btn-result primary">
+                                    <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h12M4 17h8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><path d="M20 7l-4 5 4 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    View History
+                                </a>
+                                <a href="dashboard.html" class="btn-result secondary">
+                                    <svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    Go to Home
+                                </a>
+                            </div>
+                        </div>
+                    `;
+
+                showToast('Deposit submitted successfully!', 'success');
+
+            } catch (error) {
+                console.error('Submit error:', error);
+                txnError.textContent = 'Failed to submit deposit. Please try again.';
+                showToast('Failed to submit deposit.', 'error');
+            } finally {
+                isProcessing = false;
+                btnSubmit.classList.remove('loading');
+                btnSubmit.disabled = false;
+            }
+        });
+
+        // ============================================================
+        // BACK BUTTON
+        // ============================================================
+        document.getElementById('back-btn').addEventListener('click', () => {
+            if (isWeekend) {
+                window.history.back();
+                return;
+            }
+            if (currentStage === 1) {
+                window.history.back();
+            } else if (currentStage === 2) {
+                showStage(1);
+                amountInput.focus();
+            } else if (currentStage === 3) {
+                showStage(2);
+                phoneInput.focus();
+            }
+        });
+
+        // ============================================================
+        // AUTHENTICATION
+        // ============================================================
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+
+            // Check weekend first
+            checkWeekend();
+            initializePage();
+
+            // Check for pending deposit
+            await checkPendingDeposit(user.uid);
+
+            showPage();
+        });
+
+        console.log('PureOre Nexus — Deposit page ready (weekend restricted, no minimum, pending check added).');
     </script>
 
 </body>

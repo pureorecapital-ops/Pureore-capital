@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Investment Details | PureOre Nexus</title>
+    <meta name="description" content="View and invest in PureOre Nexus automotive investment opportunities." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js",
+                "firebase/functions": "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js"
+            }
+        }
+    </script>
+
+    <style>
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold: #c9a84c;
+            --gold-glow: rgba(201, 168, 76, 0.25);
+            --gold-subtle: rgba(201, 168, 76, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.06);
+            position: relative;
+        }
+        .load-logo-symbol::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .load-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
+        }
+
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN DETAILS PAGE
+        ============================================================ */
+        #main-details {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--dark);
+        }
+        #main-details.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/cXxZh1w3/20260824-014737.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+        }
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(11, 11, 11, 0.5) 0%, rgba(11, 11, 11, 0.95) 80%, #0b0b0b 100%);
+            pointer-events: none;
+        }
+
+        .details-scroll {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 0 16px 30px 16px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ============================================================
+           HEADER (Back button)
+        ============================================================ */
+        .details-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(11, 11, 11, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin: 0 -16px;
+            padding: 14px 16px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .back-btn:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .back-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .details-header .brand-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .details-header .brand-text em {
+            color: var(--gold);
+            font-style: normal;
+        }
+
+        /* ============================================================
+           HERO IMAGE
+        ============================================================ */
+        .hero-image-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-top: 16px;
+            background: var(--charcoal);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .hero-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .hero-image-wrap .image-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(11, 11, 11, 0.7) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .hero-image-wrap .status-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            background: rgba(46, 204, 113, 0.12);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .hero-image-wrap .status-badge.coming-soon {
+            background: rgba(241, 196, 15, 0.08);
+            color: #f1c40f;
+            border-color: rgba(241, 196, 15, 0.12);
+        }
+        .hero-image-wrap .status-badge.closed {
+            background: rgba(231, 76, 60, 0.06);
+            color: #e74c3c;
+            border-color: rgba(231, 76, 60, 0.1);
+        }
+
+        /* ============================================================
+           PLAN CONTENT
+        ============================================================ */
+        .plan-content-section {
+            padding: 20px 0 8px;
+        }
+
+        .plan-name {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+            color: var(--text-white);
+        }
+        .plan-name .gold {
+            color: var(--gold);
+        }
+
+        .plan-invest-amount {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin: 6px 0 14px;
+        }
+        .plan-invest-amount .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .plan-invest-amount .amount {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: -0.01em;
+        }
+        .plan-invest-amount .amount .currency {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-right: 2px;
+        }
+
+        /* ============================================================
+           STATS GRID
+        ============================================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 14px 0 18px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        .stat-card svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: inline-block;
+            opacity: 0.6;
+            margin-bottom: 4px;
+        }
+        .stat-card .stat-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .stat-card .stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-white);
+            margin-top: 2px;
+        }
+        .stat-card .stat-value.gold {
+            color: var(--gold);
+        }
+
+        /* ============================================================
+           DESCRIPTION
+        ============================================================ */
+        .description-section {
+            margin: 8px 0 18px;
+        }
+        .description-section .desc-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        .description-section .desc-text {
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           BALANCE CHECK
+        ============================================================ */
+        .balance-check {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            margin: 12px 0 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .balance-check .left .label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .balance-check .left .value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-white);
+        }
+        .balance-check .left .value.gold {
+            color: var(--gold);
+        }
+        .balance-check .status-badge-sm {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .balance-check .status-badge-sm.available {
+            background: rgba(46, 204, 113, 0.08);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.1);
+        }
+        .balance-check .status-badge-sm.insufficient {
+            background: rgba(231, 76, 60, 0.06);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.08);
+        }
+
+        /* ============================================================
+           INVEST BUTTON
+        ============================================================ */
+        .invest-action {
+            margin: 8px 0 12px;
+        }
+        .btn-invest {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            font-family: inherit;
+            background: var(--gold);
+            color: #0b0b0b;
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.12);
+            min-height: 58px;
+            position: relative;
+        }
+        .btn-invest:hover:not(:disabled) {
+            background: #dbb95c;
+            box-shadow: 0 0 60px rgba(201, 168, 76, 0.2);
+            transform: translateY(-2px);
+        }
+        .btn-invest:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-invest .spinner {
+            display: none;
+            width: 22px;
+            height: 22px;
+            border: 2.5px solid rgba(11, 11, 11, 0.15);
+            border-top-color: #0b0b0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .btn-invest.loading .spinner {
+            display: inline-block;
+        }
+        .btn-invest.loading .btn-text {
+            opacity: 0.7;
+        }
+        .btn-invest svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn-invest.disabled {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+            box-shadow: none;
+            cursor: default;
+        }
+        .btn-invest.disabled:hover {
+            transform: none;
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: none;
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.55rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.5;
+            font-weight: 300;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 8px;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           MODAL OVERLAY
+        ============================================================ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(11, 11, 11, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .modal-card {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 28px 22px 24px;
+            max-width: 460px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.35s ease;
+        }
+        @keyframes slideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-card .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 16px;
+            letter-spacing: -0.01em;
+        }
+        .modal-card .modal-title .gold {
+            color: var(--gold);
+        }
+
+        .modal-card .modal-plan-name {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 12px;
+        }
+
+        .modal-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.8rem;
+        }
+        .modal-detail-row .label {
+            color: var(--text-muted);
+        }
+        .modal-detail-row .value {
+            font-weight: 500;
+            color: var(--text-white);
+        }
+        .modal-detail-row .value.gold {
+            color: var(--gold);
+        }
+
+        .modal-pin-section {
+            margin: 16px 0 12px;
+            text-align: center;
+        }
+        .modal-pin-section .pin-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .modal-pin-section .pin-boxes {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        .modal-pin-section .pin-box {
+            width: 44px;
+            height: 52px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-white);
+            font-family: inherit;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .modal-pin-section .pin-box:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.08);
+        }
+        .modal-pin-section .pin-box.error {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.08);
+        }
+        .modal-pin-section .pin-box.hidden-pin {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+        .modal-pin-section .pin-error {
+            font-size: 0.7rem;
+            color: #e74c3c;
+            margin-top: 6px;
+            min-height: 1.2em;
+        }
+        .modal-pin-section .pin-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 6px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .modal-pin-section .pin-toggle input[type="checkbox"] {
+            accent-color: var(--gold);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .modal-actions .btn-modal {
+            padding: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            min-height: 48px;
+        }
+        .modal-actions .btn-modal.cancel {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .modal-actions .btn-modal.cancel:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .modal-actions .btn-modal.confirm {
+            background: var(--gold);
+            color: #0b0b0b;
+            box-shadow: 0 0 30px rgba(201, 168, 76, 0.1);
+        }
+        .modal-actions .btn-modal.confirm:hover:not(:disabled) {
+            background: #dbb95c;
+            box-shadow: 0 0 50px rgba(201, 168, 76, 0.15);
+        }
+        .modal-actions .btn-modal:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .modal-actions .btn-modal .spinner-sm {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(11, 11, 11, 0.15);
+            border-top-color: #0b0b0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+        .modal-actions .btn-modal.loading .spinner-sm {
+            display: inline-block;
+        }
+        .modal-actions .btn-modal.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           SUCCESS / ERROR STATES
+        ============================================================ */
+        .result-state {
+            text-align: center;
+            padding: 20px 0 10px;
+        }
+        .result-state .result-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .result-state .result-icon.success {
+            background: rgba(46, 204, 113, 0.08);
+            border: 2px solid #2ecc71;
+        }
+        .result-state .result-icon.success svg {
+            stroke: #2ecc71;
+        }
+        .result-state .result-icon.error {
+            background: rgba(231, 76, 60, 0.08);
+            border: 2px solid #e74c3c;
+        }
+        .result-state .result-icon.error svg {
+            stroke: #e74c3c;
+        }
+        .result-state .result-icon svg {
+            width: 32px;
+            height: 32px;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .result-state .result-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .result-state .result-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        .result-state .result-details {
+            margin: 12px 0 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .result-state .result-details .highlight {
+            color: var(--gold);
+            font-weight: 500;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .result-actions .btn-result {
+            padding: 10px 24px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .result-actions .btn-result.primary {
+            background: var(--gold);
+            color: #0b0b0b;
+        }
+        .result-actions .btn-result.primary:hover {
+            background: #dbb95c;
+        }
+        .result-actions .btn-result.secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .result-actions .btn-result.secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .result-actions .btn-result svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 480px) {
+            .details-scroll {
+                padding: 0 12px 20px 12px;
+            }
+            .details-header {
+                padding: 10px 12px;
+                margin: 0 -12px;
+            }
+            .plan-name {
+                font-size: 1.3rem;
+            }
+            .plan-invest-amount .amount {
+                font-size: 1.6rem;
+            }
+            .stats-grid {
+                gap: 6px;
+            }
+            .stat-card {
+                padding: 10px 6px;
+            }
+            .stat-card .stat-value {
+                font-size: 0.85rem;
+            }
+            .stat-card svg {
+                width: 16px;
+                height: 16px;
+            }
+            .balance-check {
+                padding: 12px 14px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+            }
+            .balance-check .left .value {
+                font-size: 1rem;
+            }
+            .modal-card {
+                padding: 20px 14px 18px;
+            }
+            .modal-pin-section .pin-box {
+                width: 36px;
+                height: 44px;
+                font-size: 1.2rem;
+            }
+            .modal-actions {
+                grid-template-columns: 1fr;
+            }
+            .btn-invest {
+                font-size: 0.8rem;
+                min-height: 50px;
+                padding: 14px 20px;
+            }
+            .hero-image-wrap {
+                border-radius: var(--radius-sm);
+            }
+            .plan-content-section {
+                padding: 14px 0 4px;
+            }
+            .branding-footer {
+                font-size: 0.5rem;
+                padding: 12px 0 6px;
+            }
+            .result-state .result-title {
+                font-size: 1rem;
+            }
+            .result-actions .btn-result {
+                padding: 8px 18px;
+                font-size: 0.65rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 4px;
+            }
+            .stat-card .stat-value {
+                font-size: 0.75rem;
+            }
+            .stat-card .stat-label {
+                font-size: 0.5rem;
+            }
+            .modal-pin-section .pin-box {
+                width: 30px;
+                height: 38px;
+                font-size: 1rem;
+            }
+            .plan-invest-amount .amount {
+                font-size: 1.3rem;
+            }
+            .plan-name {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .details-scroll {
+                padding: 0 32px 40px 32px;
+            }
+            .details-header {
+                padding: 16px 32px;
+                margin: 0 -32px;
+            }
+            .hero-image-wrap {
+                border-radius: var(--radius);
+            }
+            .plan-name {
+                font-size: 2rem;
+            }
+            .plan-invest-amount .amount {
+                font-size: 2.4rem;
+            }
+            .stats-grid {
+                gap: 14px;
+            }
+            .stat-card {
+                padding: 16px 12px;
+            }
+            .stat-card .stat-value {
+                font-size: 1.15rem;
+            }
+            .modal-card {
+                padding: 36px 32px 30px;
+                max-width: 500px;
+            }
+            .modal-pin-section .pin-box {
+                width: 50px;
+                height: 58px;
+                font-size: 1.6rem;
+            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        #main-details::-webkit-scrollbar {
+            width: 3px;
+        }
+        #main-details::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #main-details::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">Investment Details</div>
+        </div>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
+            </div>
+            <div class="load-msg" id="load-msg">Loading investment details...</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    MAIN DETAILS PAGE
+    ============================================================ -->
+    <div id="main-details">
+        <div class="bg-wrap" aria-hidden="true"></div>
+        <div class="bg-overlay" aria-hidden="true"></div>
+
+        <div class="details-scroll">
+
+            <!-- ===== HEADER ===== -->
+            <header class="details-header">
+                <button class="back-btn" id="back-btn" aria-label="Go back">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <span class="brand-text">Pure<em>Ore</em> Nexus</span>
+            </header>
+
+            <!-- ===== CONTENT ===== -->
+            <div id="details-content">
+
+                <!-- Plan not found / error state -->
+                <div id="not-found-state" class="hidden" style="text-align:center;padding:60px 20px;">
+                    <svg viewBox="0 0 24 24" style="width:48px;height:48px;stroke:var(--text-muted);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:0.3;display:inline-block;margin-bottom:12px;">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:4px;" id="not-found-title">Investment Plan Not Found</h2>
+                    <p style="color:var(--text-muted);font-size:0.85rem;font-weight:300;" id="not-found-message">This investment plan is no longer available.</p>
+                    <button class="btn-result primary mt-12" id="not-found-back" style="display:inline-flex;padding:10px 28px;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;border:none;border-radius:60px;cursor:pointer;font-family:inherit;background:var(--gold);color:#0b0b0b;">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                            <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Go Back
+                    </button>
+                </div>
+
+                <!-- Plan details -->
+                <div id="plan-details-state">
+                    <!-- Hero Image -->
+                    <div class="hero-image-wrap" id="hero-wrap">
+                        <img id="plan-image" src="https://placehold.co/800x450/1a1a1a/888?text=Automotive" alt="Investment plan" loading="lazy" />
+                        <div class="image-overlay"></div>
+                        <span class="status-badge" id="status-badge">ACTIVE</span>
+                    </div>
+
+                    <!-- Plan Content -->
+                    <div class="plan-content-section">
+                        <div class="plan-name" id="plan-name">NEXUS ELITE</div>
+                        <div class="plan-invest-amount">
+                            <span class="label">Invest</span>
+                            <span class="amount"><span class="currency">K</span><span id="plan-amount">0.00</span></span>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <svg viewBox="0 0 24 24"><path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <div class="stat-label">Daily Return</div>
+                                <div class="stat-value gold" id="plan-daily">K0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <div class="stat-label">Duration</div>
+                                <div class="stat-value" id="plan-duration">0 Days</div>
+                            </div>
+                            <div class="stat-card">
+                                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <div class="stat-label">Total Return</div>
+                                <div class="stat-value gold" id="plan-total">K0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="description-section">
+                            <div class="desc-label">About This Plan</div>
+                            <div class="desc-text" id="plan-description">Investment plan details are currently unavailable.</div>
+                        </div>
+
+                        <!-- Balance Check -->
+                        <div class="balance-check" id="balance-check">
+                            <div class="left">
+                                <div class="label">Available Balance</div>
+                                <div class="value" id="user-balance-display">K0.00</div>
+                            </div>
+                            <span class="status-badge-sm" id="balance-status">Checking...</span>
+                        </div>
+
+                        <!-- Invest Button -->
+                        <div class="invest-action">
+                            <button class="btn-invest" id="invest-btn">
+                                <span class="spinner"></span>
+                                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                <span class="btn-text">Invest Now</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Branding -->
+                    <div class="branding-footer">
+                        <span>@pureorecapital</span> 2025
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    MODAL — CONFIRMATION & PIN
+    ============================================================ -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-card" id="modal-card">
+            <!-- Modal content rendered by JS -->
+        </div>
+    </div>
+
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import {
+            getAuth,
+            onAuthStateChanged
+        } from 'firebase/auth';
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            query,
+            where,
+            getDocs,
+            runTransaction,
+            serverTimestamp
+        } from 'firebase/firestore';
+        import {
+            getFunctions,
+            httpsCallable
+        } from 'firebase/functions';
+
+        // ============================================================
+        // FIREBASE CONFIG
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const functions = getFunctions(app);
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainDetails = $('main-details');
+
+        const notFoundState = $('not-found-state');
+        const notFoundTitle = $('not-found-title');
+        const notFoundMessage = $('not-found-message');
+        const notFoundBack = $('not-found-back');
+
+        const planDetailsState = $('plan-details-state');
+        const planImage = $('plan-image');
+        const statusBadge = $('status-badge');
+        const planName = $('plan-name');
+        const planAmount = $('plan-amount');
+        const planDaily = $('plan-daily');
+        const planDuration = $('plan-duration');
+        const planTotal = $('plan-total');
+        const planDescription = $('plan-description');
+        const userBalanceDisplay = $('user-balance-display');
+        const balanceStatus = $('balance-status');
+        const investBtn = $('invest-btn');
+
+        const confirmModal = $('confirm-modal');
+        const modalCard = $('modal-card');
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentUser = null;
+        let planData = null;
+        let planId = null;
+        let userBalance = 0;
+        let isProcessing = false;
+        let pinVerified = false;
+
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
+            }
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Preparing your investment...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Loading investment details...';
+        }, 35);
+
+        // ============================================================
+        // FORMAT CURRENCY
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
+        }
+
+        // ============================================================
+        // SHOW DASHBOARD
+        // ============================================================
+        function showPage() {
+            loadScreen.classList.add('hidden');
+            mainDetails.classList.add('visible');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ============================================================
+        // GET URL PARAMETER
+        // ============================================================
+        function getUrlParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        // ============================================================
+        // SHOW NOT FOUND
+        // ============================================================
+        function showNotFound(title, message) {
+            planDetailsState.classList.add('hidden');
+            notFoundState.classList.remove('hidden');
+            notFoundTitle.textContent = title;
+            notFoundMessage.textContent = message;
+            showPage();
+        }
+
+        // ============================================================
+        // REFRESH PLAN STATUS (re-fetch from Firestore)
+        // ============================================================
+        async function refreshPlanStatus() {
+            if (!planId) return null;
+            try {
+                const planRef = doc(db, 'investmentPlans', planId);
+                const planSnap = await getDoc(planRef);
+                if (planSnap.exists()) {
+                    const data = planSnap.data();
+                    return data.status ? data.status.toLowerCase() : 'closed';
+                }
+                return null;
+            } catch (e) {
+                console.warn('Error refreshing plan status:', e);
+                return null;
+            }
+        }
+
+        // ============================================================
+        // LOAD PLAN
+        // ============================================================
+        async function loadPlan(uid) {
+            try {
+                planId = getUrlParam('id');
+                if (!planId) {
+                    showNotFound('Investment Plan Not Found', 'No plan was specified.');
+                    return;
+                }
+
+                // Load plan from Firestore
+                const planRef = doc(db, 'investmentPlans', planId);
+                const planSnap = await getDoc(planRef);
+
+                if (!planSnap.exists()) {
+                    showNotFound('Investment Plan Not Found', 'This investment plan is no longer available.');
+                    return;
+                }
+
+                planData = { id: planSnap.id, ...planSnap.data() };
+
+                // Load user balance
+                const userRef = doc(db, 'users', uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    userBalance = userData.walletBalance || 0;
+                }
+
+                // Also check wallet collection for more accurate balance
+                try {
+                    const walletRef = doc(db, 'wallets', uid);
+                    const walletSnap = await getDoc(walletRef);
+                    if (walletSnap.exists()) {
+                        const walletData = walletSnap.data();
+                        userBalance = walletData.walletBalance || userBalance;
+                    }
+                } catch (e) { /* ignore */ }
+
+                // Render plan
+                renderPlan();
+
+                // Show page
+                showPage();
+
+            } catch (error) {
+                console.error('Error loading plan:', error);
+                showNotFound('Error Loading Plan', 'Unable to load investment details. Please try again.');
+            }
+        }
+
+        // ============================================================
+        // RENDER PLAN
+        // ============================================================
+        function renderPlan() {
+            if (!planData) return;
+
+            const name = planData.planName || 'Unnamed Plan';
+            const image = planData.imageUrl || 'https://placehold.co/800x450/1a1a1a/888?text=Automotive';
+            const amount = planData.investmentAmount || 0;
+            const daily = planData.dailyReturn || 0;
+            const duration = planData.durationDays || planData.duration || 0;
+            const total = daily * duration;
+            const status = (planData.status || 'closed').toLowerCase();
+            const description = planData.description || 'Investment plan details are currently unavailable.';
+
+            // Status badge class
+            const statusClass = status === 'active' ? '' :
+                                status === 'coming soon' ? 'coming-soon' :
+                                status === 'closed' ? 'closed' : '';
+
+            // Render
+            planImage.src = image;
+            planImage.alt = name;
+            statusBadge.textContent = status.toUpperCase();
+            statusBadge.className = 'status-badge ' + statusClass;
+            planName.textContent = name;
+            planAmount.textContent = formatCurrency(amount);
+            planDaily.textContent = 'K' + formatCurrency(daily);
+            planDuration.textContent = duration + ' Days';
+            planTotal.textContent = 'K' + formatCurrency(total);
+            planDescription.textContent = description;
+
+            // Balance
+            userBalanceDisplay.textContent = 'K' + formatCurrency(userBalance);
+
+            // Check if user has enough balance
+            const hasEnough = userBalance >= amount;
+            const isActive = status === 'active';
+
+            if (!isActive) {
+                balanceStatus.textContent = status.toUpperCase();
+                balanceStatus.className = 'status-badge-sm insufficient';
+                investBtn.disabled = true;
+                investBtn.classList.add('disabled');
+                investBtn.querySelector('.btn-text').textContent = status.toUpperCase();
+                investBtn.querySelector('svg').style.display = 'none';
+            } else if (hasEnough) {
+                balanceStatus.textContent = 'Balance Available';
+                balanceStatus.className = 'status-badge-sm available';
+                investBtn.disabled = false;
+                investBtn.classList.remove('disabled');
+                investBtn.querySelector('.btn-text').textContent = 'Invest Now';
+                investBtn.querySelector('svg').style.display = 'inline-block';
+            } else {
+                balanceStatus.textContent = 'Insufficient Balance';
+                balanceStatus.className = 'status-badge-sm insufficient';
+                investBtn.disabled = true;
+                investBtn.classList.add('disabled');
+                investBtn.querySelector('.btn-text').textContent = 'Insufficient Balance';
+                investBtn.querySelector('svg').style.display = 'none';
+            }
+
+            // Store amount for later use
+            planData._amount = amount;
+            planData._daily = daily;
+            planData._duration = duration;
+            planData._total = total;
+            planData._status = status;
+            planData._name = name;
+        }
+
+        // ============================================================
+        // INVESTMENT FLOW
+        // ============================================================
+        async function startInvestmentFlow() {
+            if (isProcessing) return;
+            if (!planData) return;
+
+            // Re-check plan status from Firestore to ensure it's still active
+            const currentStatus = await refreshPlanStatus();
+            if (currentStatus === null) {
+                showToast('Unable to verify plan status. Please try again.', 'error');
+                return;
+            }
+            if (currentStatus !== 'active') {
+                // Update UI to reflect the new status
+                planData.status = currentStatus;
+                planData._status = currentStatus;
+                renderPlan();
+                showToast('This plan is no longer active.', 'error');
+                return;
+            }
+
+            if (userBalance < planData._amount) {
+                showToast('Insufficient balance.', 'error');
+                return;
+            }
+
+            // Show confirmation modal
+            showConfirmationModal();
+        }
+
+        // ============================================================
+        // SHOW CONFIRMATION MODAL
+        // ============================================================
+        function showConfirmationModal() {
+            const amount = planData._amount;
+            const daily = planData._daily;
+            const duration = planData._duration;
+            const total = planData._total;
+            const name = planData._name;
+
+            modalCard.innerHTML = `
+                    <div class="modal-title">Confirm <span class="gold">Investment</span></div>
+                    <div class="modal-plan-name">${name}</div>
+
+                    <div class="modal-detail-row">
+                        <span class="label">Investment</span>
+                        <span class="value gold">K${formatCurrency(amount)}</span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="label">Daily Return</span>
+                        <span class="value">K${formatCurrency(daily)}</span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="label">Duration</span>
+                        <span class="value">${duration} Days</span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="label">Estimated Total</span>
+                        <span class="value gold">K${formatCurrency(total)}</span>
+                    </div>
+                    <div class="modal-detail-row" style="border-bottom:none;padding-bottom:4px;">
+                        <span class="label">Available Balance</span>
+                        <span class="value ${userBalance >= amount ? 'gold' : ''}">K${formatCurrency(userBalance)}</span>
+                    </div>
+
+                    <div class="modal-pin-section">
+                        <div class="pin-label">Enter your 6-digit security PIN</div>
+                        <div class="pin-boxes" id="modal-pin-boxes">
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 1" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 2" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 3" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 4" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 5" />
+                            <input type="password" class="pin-box hidden-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="PIN digit 6" />
+                        </div>
+                        <div class="pin-error" id="modal-pin-error"></div>
+                        <div class="pin-toggle">
+                            <input type="checkbox" id="modal-pin-show" />
+                            <label for="modal-pin-show">Show PIN</label>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-modal cancel" id="modal-cancel">Cancel</button>
+                        <button class="btn-modal confirm" id="modal-confirm">
+                            <span class="spinner-sm"></span>
+                            <span class="btn-text">Confirm Investment</span>
+                        </button>
+                    </div>
+                `;
+
+            // Setup PIN boxes
+            const pinBoxes = modalCard.querySelectorAll('.pin-box');
+            const pinError = modalCard.querySelector('#modal-pin-error');
+            const confirmBtn = modalCard.querySelector('#modal-confirm');
+            const cancelBtn = modalCard.querySelector('#modal-cancel');
+            const showToggle = modalCard.querySelector('#modal-pin-show');
+
+            // PIN box logic
+            pinBoxes.forEach((box, idx) => {
+                box.addEventListener('input', () => {
+                    box.value = box.value.replace(/\D/g, '');
+                    if (box.value && idx < 5) {
+                        pinBoxes[idx + 1].focus();
+                    }
+                    pinError.textContent = '';
+                    pinBoxes.forEach(b => b.classList.remove('error'));
+                });
+                box.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !box.value && idx > 0) {
+                        pinBoxes[idx - 1].focus();
+                    }
+                    if (e.key === 'ArrowLeft' && idx > 0) pinBoxes[idx - 1].focus();
+                    if (e.key === 'ArrowRight' && idx < 5) pinBoxes[idx + 1].focus();
+                });
+                box.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const data = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = data.replace(/\D/g, '').slice(0, 6);
+                    if (!digits.length) return;
+                    for (let i = 0; i < Math.min(digits.length, 6); i++) {
+                        pinBoxes[i].value = digits[i];
+                    }
+                    const lastIdx = Math.min(digits.length, 6) - 1;
+                    pinBoxes[lastIdx].focus();
+                    pinError.textContent = '';
+                    pinBoxes.forEach(b => b.classList.remove('error'));
+                });
+            });
+
+            // Show/hide PIN
+            showToggle.addEventListener('change', () => {
+                pinBoxes.forEach(b => {
+                    b.type = showToggle.checked ? 'text' : 'password';
+                    b.classList.toggle('hidden-pin', !showToggle.checked);
+                });
+            });
+
+            // Cancel
+            cancelBtn.addEventListener('click', () => {
+                confirmModal.classList.remove('open');
+                document.body.style.overflow = 'auto';
+            });
+
+            // Confirm
+            confirmBtn.addEventListener('click', async () => {
+                const pin = Array.from(pinBoxes).map(b => b.value).join('');
+                if (pin.length !== 6) {
+                    pinError.textContent = 'Please enter all 6 digits.';
+                    pinBoxes.forEach(b => b.classList.add('error'));
+                    return;
+                }
+                if (!/^[0-9]{6}$/.test(pin)) {
+                    pinError.textContent = 'PIN must contain only numbers.';
+                    pinBoxes.forEach(b => b.classList.add('error'));
+                    return;
+                }
+                pinError.textContent = '';
+                pinBoxes.forEach(b => b.classList.remove('error'));
+
+                await processInvestment(pin, confirmBtn, pinBoxes);
+            });
+
+            // Open modal
+            confirmModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => pinBoxes[0].focus(), 300);
+        }
+
+        // ============================================================
+        // PROCESS INVESTMENT
+        // ============================================================
+        async function processInvestment(pin, confirmBtn, pinBoxes) {
+            if (isProcessing) return;
+            isProcessing = true;
+            confirmBtn.disabled = true;
+            confirmBtn.classList.add('loading');
+
+            try {
+                // Verify PIN via Cloud Function
+                const verifyPinFn = httpsCallable(functions, 'verifyPin');
+                const pinResult = await verifyPinFn({
+                    uid: currentUser.uid,
+                    pin: pin
+                });
+
+                if (!pinResult.data || pinResult.data.success !== true) {
+                    const errorMsg = pinResult.data?.message || 'Invalid PIN. Please try again.';
+                    document.getElementById('modal-pin-error').textContent = errorMsg;
+                    pinBoxes.forEach(b => b.classList.add('error'));
+                    pinBoxes.forEach(b => b.value = '');
+                    pinBoxes[0].focus();
+                    isProcessing = false;
+                    confirmBtn.disabled = false;
+                    confirmBtn.classList.remove('loading');
+                    return;
+                }
+
+                // Before creating investment, verify the plan is still active one final time
+                const currentStatus = await refreshPlanStatus();
+                if (currentStatus !== 'active') {
+                    showToast('This plan is no longer active.', 'error');
+                    isProcessing = false;
+                    confirmBtn.disabled = false;
+                    confirmBtn.classList.remove('loading');
+                    pinModal.classList.remove('open');
+                    document.body.style.overflow = 'auto';
+                    renderPlan(); // update UI
+                    return;
+                }
+
+                // PIN verified - now create investment via Cloud Function
+                const investFn = httpsCallable(functions, 'createInvestment');
+                const investResult = await investFn({
+                    planId: planId,
+                    amount: planData._amount
+                });
+
+                if (investResult.data && investResult.data.success === true) {
+                    // Investment successful
+                    const investmentId = investResult.data.investmentId;
+                    showSuccessScreen(investmentId);
+                } else {
+                    // Investment failed
+                    const errorMsg = investResult.data?.message || 'Investment could not be processed.';
+                    showErrorScreen(errorMsg);
+                }
+
+            } catch (error) {
+                console.error('Investment error:', error);
+                let msg = 'Unable to process investment. Please try again.';
+                if (error.message && error.message.includes('insufficient')) {
+                    msg = 'Insufficient balance. Please deposit funds and try again.';
+                } else if (error.message && error.message.includes('not found')) {
+                    msg = 'Plan no longer available.';
+                } else if (error.message && error.message.includes('not active')) {
+                    msg = 'This plan is no longer active.';
+                }
+                showErrorScreen(msg);
+            } finally {
+                isProcessing = false;
+                confirmBtn.disabled = false;
+                confirmBtn.classList.remove('loading');
+            }
+        }
+
+        // ============================================================
+        // SUCCESS SCREEN
+        // ============================================================
+        function showSuccessScreen(investmentId) {
+            const amount = planData._amount;
+            const daily = planData._daily;
+            const duration = planData._duration;
+            const total = planData._total;
+            const name = planData._name;
+
+            // Close modal and show success inline
+            confirmModal.classList.remove('open');
+            document.body.style.overflow = 'auto';
+
+            // Replace invest button with success
+            const investContainer = document.querySelector('.invest-action');
+            investContainer.innerHTML = `
+                    <div class="result-state">
+                        <div class="result-icon success">
+                            <svg viewBox="0 0 24 24">
+                                <polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="result-title">Investment Successful!</div>
+                        <div class="result-sub">${name}</div>
+                        <div class="result-details">
+                            <div>Amount: <span class="highlight">K${formatCurrency(amount)}</span></div>
+                            <div>Daily Return: <span class="highlight">K${formatCurrency(daily)}</span></div>
+                            <div>Duration: <span class="highlight">${duration} Days</span></div>
+                            <div>Total: <span class="highlight">K${formatCurrency(total)}</span></div>
+                        </div>
+                        <div class="result-actions">
+                            <a href="my-investments.html" class="btn-result primary">
+                                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                View My Investments
+                            </a>
+                            <a href="dashboard.html" class="btn-result secondary">
+                                <svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                Go to Home
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+            // Update balance display
+            userBalance -= amount;
+            userBalanceDisplay.textContent = 'K' + formatCurrency(userBalance);
+            balanceStatus.textContent = 'Balance Updated';
+            balanceStatus.className = 'status-badge-sm available';
+        }
+
+        // ============================================================
+        // ERROR SCREEN
+        // ============================================================
+        function showErrorScreen(message) {
+            confirmModal.classList.remove('open');
+            document.body.style.overflow = 'auto';
+
+            const investContainer = document.querySelector('.invest-action');
+            investContainer.innerHTML = `
+                    <div class="result-state">
+                        <div class="result-icon error">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="result-title">Investment Not Completed</div>
+                        <div class="result-sub">${message}</div>
+                        <div class="result-actions" style="margin-top:12px;">
+                            <button class="btn-result primary" onclick="location.reload()">
+                                <svg viewBox="0 0 24 24"><path d="M1 4v6h6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                Try Again
+                            </button>
+                            <a href="dashboard.html" class="btn-result secondary">
+                                <svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                Go to Home
+                            </a>
+                        </div>
+                    </div>
+                `;
+        }
+
+        // ============================================================
+        // TOAST HELPER (if not already defined)
+        // ============================================================
+        function showToast(message, type = '') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.textContent = message;
+                existingToast.className = 'toast ' + type;
+                void existingToast.offsetWidth;
+                existingToast.classList.add('show');
+                clearTimeout(existingToast._timeout);
+                existingToast._timeout = setTimeout(() => {
+                    existingToast.classList.remove('show');
+                }, 3000);
+                return;
+            }
+            // Fallback: create toast element
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(20,20,20,0.95);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius-sm);padding:10px 20px;font-size:0.75rem;color:var(--text-white);z-index:200;opacity:0;transition:all 0.4s ease;pointer-events:none;max-width:90%;text-align:center;';
+            if (type) toast.style.borderColor = type === 'success' ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)';
+            document.body.appendChild(toast);
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(20px)';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // ============================================================
+        // AUTHENTICATION CHECK
+        // ============================================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+            loadPlan(user.uid);
+        });
+
+        // ============================================================
+        // BACK BUTTON
+        // ============================================================
+        document.getElementById('back-btn').addEventListener('click', () => {
+            window.history.back();
+        });
+
+        notFoundBack.addEventListener('click', () => {
+            window.history.back();
+        });
+
+        // ============================================================
+        // INVEST BUTTON
+        // ============================================================
+        investBtn.addEventListener('click', startInvestmentFlow);
+
+        // ============================================================
+        // KEYBOARD ENTER FOR INVEST
+        // ============================================================
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !investBtn.disabled && !investBtn.classList.contains('disabled')) {
+                investBtn.click();
+            }
+        });
+
+        console.log('PureOre Nexus — Investment Details ready.');
+    </script>
+
+</body>
+</html>

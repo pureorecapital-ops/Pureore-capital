@@ -2,1399 +2,1309 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>History – Sajvera Capital</title>
-    <link rel="preconnect" href="https://www.gstatic.com" />
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Transaction History | PureOre Nexus</title>
+    <meta name="description" content="View your complete financial transaction history on PureOre Nexus." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js"
+            }
+        }
     </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
-    </script>
+
     <style>
-        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
-        * {
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            min-height: 100vh;
-            padding-top: 80px;
-            padding-bottom: 40px;
-            display: flex;
-            flex-direction: column;
-            color: #ffffff;
-            position: relative;
-            background: #000;
-            overflow-x: hidden;
+        :root {
+            --gold: #c9a84c;
+            --gold-glow: rgba(201, 168, 76, 0.25);
+            --gold-subtle: rgba(201, 168, 76, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
-        .hero-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+        html,
+        body {
             height: 100%;
-            z-index: -1;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             overflow: hidden;
         }
 
-        .hero-bg::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
-            background-size: cover;
-            background-position: center;
-            filter: blur(14px) brightness(0.25) saturate(0.7);
-            transform: scale(1.1);
-        }
-
-        .hero-bg::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.65);
-        }
-
-        /* ----- HEADER (DARK GLASS) ----- */
-        .header {
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0.8rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.50);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .header-left {
+            inset: 0;
+            z-index: 9999;
             display: flex;
             flex-direction: column;
-            gap: 0;
-        }
-
-        .logo-text {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: -0.4px;
-        }
-        .logo-text .vc {
-            color: #60a5fa;
-        }
-
-        .logo-sub {
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 0.3px;
-            font-weight: 400;
-            margin-top: -2px;
-        }
-        .logo-sub .highlight {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-
-        .back-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.4);
-            padding: 0.4rem 1rem;
-            border-radius: 40px;
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-        }
-        .back-btn svg {
-            width: 16px;
-            height: 16px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-        }
-
-        .hamburger {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .hamburger:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-        .hamburger span {
-            display: block;
-            width: 24px;
-            height: 2px;
-            background: #f1f5f9;
-            border-radius: 4px;
-            transition: 0.3s;
-        }
-        .hamburger.active span:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-        .hamburger.active span:nth-child(2) {
-            opacity: 0;
-        }
-        .hamburger.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(5px, -5px);
-        }
-
-        /* ----- SLIDE MENU PANEL (GLASS) ----- */
-        .menu-panel {
-            position: fixed;
-            top: 0;
-            right: -380px;
-            width: 340px;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
-            padding: 2rem 1.8rem;
-            transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-            z-index: 200;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-            color: #f1f5f9;
-            border-left: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .menu-panel.open {
-            right: 0;
-        }
-
-        .menu-panel .close-btn {
-            align-self: flex-end;
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 2rem;
-            cursor: pointer;
-            padding: 0 0.5rem;
-            transition: 0.2s;
-        }
-        .menu-panel .close-btn:hover {
-            color: #ffffff;
-        }
-
-        .menu-panel .panel-header {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            padding-bottom: 0.8rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .menu-panel .panel-header .panel-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .menu-panel .panel-header .panel-email {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 0.7rem 0.8rem;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            text-decoration: none;
-            color: rgba(255, 255, 255, 0.5);
-            border: none;
-            background: transparent;
-            width: 100%;
-            font-family: inherit;
-            font-size: 0.95rem;
-        }
-
-        .menu-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            color: #ffffff;
-            transform: translateX(4px);
-        }
-
-        .menu-item .mi-icon {
-            width: 32px;
-            height: 32px;
-            display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
         }
-
-        .menu-item .mi-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: currentColor;
-            stroke-width: 1.8;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .menu-item .mi-label {
-            flex: 1;
-        }
-
-        .menu-item .mi-arrow {
-            color: rgba(255, 255, 255, 0.15);
-        }
-        .menu-item .mi-arrow svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .menu-divider {
-            height: 1px;
-            background: rgba(255, 255, 255, 0.04);
-            margin: 0.2rem 0.8rem;
-        }
-
-        /* ----- CONTAINER ----- */
-        .container {
-            max-width: 560px;
-            margin: 0 auto;
-            padding: 0 1.2rem;
-            flex: 1;
-            width: 100%;
-        }
-
-        /* ----- PAGE HEADER ----- */
-        .page-header {
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        .page-header h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .page-header h1 span {
-            color: #60a5fa;
-        }
-
-        .page-header p {
-            color: rgba(255, 255, 255, 0.25);
-            font-size: 0.85rem;
-            margin-top: 2px;
-        }
-
-        /* ----- TABS (GLASS) ----- */
-        .tabs {
-            display: flex;
-            gap: 0.4rem;
-            margin-bottom: 1.2rem;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 0.3rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 0.5rem 0.3rem;
-            border-radius: 16px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.2);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-            text-align: center;
-            min-width: 50px;
-            white-space: nowrap;
-        }
-
-        .tab-btn.active {
-            background: rgba(96, 165, 250, 0.06);
-            color: #60a5fa;
-            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.04);
-        }
-
-        .tab-btn:hover:not(.active) {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .tab-btn .badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 30px;
-            padding: 0 6px;
-            font-size: 0.55rem;
-            font-weight: 700;
-            margin-left: 2px;
-            color: rgba(255, 255, 255, 0.15);
-        }
-
-        .tab-btn.active .badge {
-            background: rgba(96, 165, 250, 0.06);
-            color: #60a5fa;
-        }
-
-        /* ----- TAB CONTENT ----- */
-        .tab-content {
-            display: none;
-            animation: fadeUp 0.3s ease forwards;
-        }
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ----- TRANSACTION CARD (GLASS) ----- */
-        .tx-card {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 28px;
-            padding: 1rem 1.2rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            margin-bottom: 0.8rem;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .tx-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
             pointer-events: none;
         }
 
-        .tx-card:hover {
-            border-color: rgba(255, 255, 255, 0.08);
-            transform: translateY(-3px);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.06);
+            position: relative;
+        }
+        .load-logo-symbol::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .load-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
         }
 
-        .tx-card .tx-top {
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN PAGE
+        ============================================================ */
+        #main-page {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--dark);
+        }
+        #main-page.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/cXxZh1w3/20260824-014737.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.1;
+        }
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(11, 11, 11, 0.5) 0%, rgba(11, 11, 11, 0.95) 80%, #0b0b0b 100%);
+            pointer-events: none;
+        }
+
+        .page-scroll {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 0 16px 30px 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ============================================================
+           HEADER
+        ============================================================ */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(11, 11, 11, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin: 0 -16px;
+            padding: 14px 16px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .back-btn:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .back-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .page-header .title {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--text-white);
+        }
+        .page-header .title em {
+            color: var(--gold);
+            font-style: normal;
+        }
+
+        /* ============================================================
+           PAGE TITLE
+        ============================================================ */
+        .page-title-section {
+            padding: 16px 0 8px;
+        }
+        .page-title-section h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .page-title-section .sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-top: 2px;
+        }
+
+        /* ============================================================
+           SUMMARY
+        ============================================================ */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 12px 0 16px;
+        }
+        .summary-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 10px 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .summary-card:hover {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        .summary-card .label {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .summary-card .value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-top: 2px;
+            color: var(--text-white);
+        }
+        .summary-card .value.gold {
+            color: var(--gold);
+        }
+
+        @media (max-width: 480px) {
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+        }
+
+        /* ============================================================
+           FILTERS
+        ============================================================ */
+        .filter-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 10px;
+        }
+        .filter-tab {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.65rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 4px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+        .filter-tab:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .filter-tab.active {
+            color: var(--gold);
+            background: rgba(201, 168, 76, 0.06);
+            border: 1px solid rgba(201, 168, 76, 0.1);
+        }
+
+        /* ============================================================
+           TRANSACTION LIST
+        ============================================================ */
+        .transaction-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            transition: all 0.25s ease;
+            cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
         }
-
-        .tx-card .tx-left {
+        .transaction-item:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .transaction-item .left {
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
         }
-
-        .tx-card .tx-icon {
-            width: 40px;
-            height: 40px;
+        .transaction-item .left .icon-wrap {
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(201, 168, 76, 0.06);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(201, 168, 76, 0.06);
         }
-
-        .tx-card .tx-icon svg {
-            width: 20px;
-            height: 20px;
-            stroke: #60a5fa;
-            stroke-width: 1.8;
+        .transaction-item .left .icon-wrap svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--gold);
             fill: none;
+            stroke-width: 1.8;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
-
-        .tx-card .tx-amount {
-            font-size: 1.1rem;
-            font-weight: 700;
+        .transaction-item .info {
+            flex: 1;
+            min-width: 0;
         }
-
-        .tx-card .tx-amount.positive {
-            color: #4ade80;
-        }
-        .tx-card .tx-amount.negative {
-            color: #f87171;
-        }
-
-        .tx-card .tx-status {
-            padding: 0.15rem 0.7rem;
-            border-radius: 30px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            border: 1px solid transparent;
-        }
-
-        .tx-card .tx-status.pending {
-            background: rgba(250, 204, 21, 0.06);
-            color: #fbbf24;
-            border-color: rgba(250, 204, 21, 0.06);
-        }
-
-        .tx-card .tx-status.completed {
-            background: rgba(74, 222, 128, 0.06);
-            color: #4ade80;
-            border-color: rgba(74, 222, 128, 0.06);
-        }
-
-        .tx-card .tx-status.rejected {
-            background: rgba(239, 68, 68, 0.06);
-            color: #f87171;
-            border-color: rgba(239, 68, 68, 0.06);
-        }
-
-        .tx-card .tx-status.active {
-            background: rgba(96, 165, 250, 0.06);
-            color: #60a5fa;
-            border-color: rgba(96, 165, 250, 0.06);
-        }
-
-        .tx-card .tx-status.paid {
-            background: rgba(74, 222, 128, 0.06);
-            color: #4ade80;
-            border-color: rgba(74, 222, 128, 0.06);
-        }
-
-        .tx-card .tx-status.overdue {
-            background: rgba(239, 68, 68, 0.06);
-            color: #f87171;
-            border-color: rgba(239, 68, 68, 0.06);
-        }
-
-        .tx-card .tx-details {
-            margin-top: 0.4rem;
+        .transaction-item .info .type {
             font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.15);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-            line-height: 1.5;
+            font-weight: 500;
+            color: var(--text-white);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-
-        .tx-card .tx-details span {
-            display: flex;
-            align-items: center;
-            gap: 4px;
+        .transaction-item .info .desc {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-
-        .tx-card .tx-details svg {
-            width: 14px;
-            height: 14px;
-            stroke: currentColor;
-            stroke-width: 1.8;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+        .transaction-item .right {
+            text-align: right;
+            flex-shrink: 0;
+            margin-left: 10px;
         }
-
-        .tx-card .tx-details .highlight {
-            color: #ffffff;
+        .transaction-item .right .amount {
+            font-size: 0.85rem;
             font-weight: 600;
         }
-
-        .tx-card .tx-type-badge {
+        .transaction-item .right .amount.credit {
+            color: #2ecc71;
+        }
+        .transaction-item .right .amount.debit {
+            color: #e74c3c;
+        }
+        .transaction-item .right .status {
             font-size: 0.5rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: rgba(255, 255, 255, 0.02);
-            padding: 0.1rem 0.5rem;
-            border-radius: 30px;
-            color: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            letter-spacing: 0.04em;
+            display: block;
+            margin-top: 2px;
+            color: var(--text-muted);
+        }
+        .transaction-item .right .status.completed {
+            color: #2ecc71;
+        }
+        .transaction-item .right .status.pending {
+            color: #f1c40f;
+        }
+        .transaction-item .right .status.failed {
+            color: #e74c3c;
+        }
+        .transaction-item .right .status.cancelled {
+            color: #95a5a6;
         }
 
-        /* ----- EMPTY STATE (GLASS) ----- */
+        /* ============================================================
+           LOAD MORE
+        ============================================================ */
+        .load-more-wrap {
+            text-align: center;
+            padding: 12px 0 8px;
+        }
+        .load-more-btn {
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 10px 30px;
+            border-radius: 60px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .load-more-btn:hover:not(:disabled) {
+            border-color: var(--gold);
+            color: var(--text-white);
+            background: rgba(201, 168, 76, 0.04);
+        }
+        .load-more-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .load-more-btn .spinner-sm {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.15);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+        .load-more-btn.loading .spinner-sm {
+            display: inline-block;
+        }
+        .load-more-btn.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           EMPTY STATE
+        ============================================================ */
         .empty-state {
             text-align: center;
-            padding: 2.5rem 1rem;
-            color: rgba(255, 255, 255, 0.15);
+            padding: 40px 20px;
+            color: var(--text-muted);
         }
-
         .empty-state svg {
             width: 48px;
             height: 48px;
             stroke: currentColor;
-            stroke-width: 1.5;
             fill: none;
+            stroke-width: 1.5;
             stroke-linecap: round;
             stroke-linejoin: round;
-            margin-bottom: 0.8rem;
+            opacity: 0.3;
+            display: inline-block;
+            margin-bottom: 12px;
         }
-
-        .empty-state .title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .empty-state .sub {
+        .empty-state p {
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.1);
-            margin-top: 0.2rem;
+            font-weight: 300;
+            max-width: 360px;
+            margin: 0 auto;
+            line-height: 1.6;
         }
 
-        /* ----- TOAST (GLASS) ----- */
-        .toast {
+        /* ============================================================
+           DETAIL MODAL
+        ============================================================ */
+        .modal-overlay {
             position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
+            inset: 0;
+            z-index: 100;
+            background: rgba(11, 11, 11, 0.85);
             backdrop-filter: blur(16px);
-            color: #f1f5f9;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            z-index: 1001;
-            animation: toastFade 4.5s ease forwards;
-            max-width: 90%;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            -webkit-backdrop-filter: blur(16px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: fadeIn 0.3s ease;
         }
-
-        .toast.error {
-            border-color: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
+        .modal-overlay.open {
+            display: flex;
         }
-        .toast.success {
-            border-color: rgba(74, 222, 128, 0.15);
-            color: #6ee7b7;
-        }
-
-        @keyframes toastFade {
+        @keyframes fadeIn {
             0% {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px) scale(0.95);
-            }
-            15% {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0) scale(1);
-            }
-            80% {
-                opacity: 1;
             }
             100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px) scale(0.95);
+                opacity: 1;
             }
         }
 
-        /* ----- RESPONSIVE ----- */
-        @media (max-width: 500px) {
-            .header {
-                padding: 0.6rem 1rem;
+        .modal-card {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px 20px 20px;
+            max-width: 420px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.35s ease;
+        }
+        @keyframes slideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
             }
-            .logo-text {
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-card .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 12px;
+            color: var(--text-white);
+        }
+        .modal-card .modal-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.8rem;
+        }
+        .modal-card .modal-detail-row .label {
+            color: var(--text-muted);
+        }
+        .modal-card .modal-detail-row .value {
+            font-weight: 500;
+            color: var(--text-white);
+        }
+        .modal-card .modal-detail-row .value.gold {
+            color: var(--gold);
+        }
+        .modal-card .modal-close {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 60px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .modal-card .modal-close:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-white);
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.55rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.5;
+            font-weight: 300;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 16px;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 480px) {
+            .page-scroll {
+                padding: 0 12px 20px 12px;
+            }
+            .page-header {
+                padding: 10px 12px;
+                margin: 0 -12px;
+            }
+            .transaction-item {
+                padding: 10px 12px;
+            }
+            .transaction-item .left .icon-wrap {
+                width: 30px;
+                height: 30px;
+            }
+            .transaction-item .left .icon-wrap svg {
+                width: 16px;
+                height: 16px;
+            }
+            .transaction-item .info .type {
+                font-size: 0.7rem;
+            }
+            .transaction-item .right .amount {
+                font-size: 0.75rem;
+            }
+            .modal-card {
+                padding: 18px 14px 16px;
+            }
+            .filter-tab {
+                font-size: 0.6rem;
+                padding: 3px 10px;
+            }
+            .page-title-section h1 {
                 font-size: 1.2rem;
             }
-            .logo-sub {
+            .branding-footer {
                 font-size: 0.5rem;
-            }
-            .hamburger span {
-                width: 22px;
-                height: 2px;
-            }
-            .back-btn {
-                font-size: 0.7rem;
-                padding: 0.3rem 0.7rem;
-            }
-            .menu-panel {
-                width: 280px;
-                right: -300px;
-                padding: 1.5rem;
-            }
-            .container {
-                padding: 0 0.8rem;
-            }
-            .page-header h1 {
-                font-size: 1.4rem;
-            }
-            .tx-card .tx-amount {
-                font-size: 0.95rem;
-            }
-            .tx-card .tx-details {
-                font-size: 0.7rem;
-                gap: 0.4rem;
-            }
-            .tab-btn {
-                font-size: 0.65rem;
-                padding: 0.4rem 0.2rem;
-                min-width: 40px;
-            }
-            .tx-card .tx-icon {
-                width: 34px;
-                height: 34px;
-            }
-            .tx-card .tx-icon svg {
-                width: 17px;
-                height: 17px;
+                padding: 12px 0 6px;
             }
         }
 
-        @media (max-width: 400px) {
-            .tabs {
-                gap: 0.2rem;
-                padding: 0.2rem;
+        @media (min-width: 768px) {
+            .page-scroll {
+                padding: 0 32px 40px 32px;
             }
-            .tab-btn {
-                font-size: 0.55rem;
-                padding: 0.3rem 0.1rem;
-                min-width: 35px;
+            .page-header {
+                padding: 16px 32px;
+                margin: 0 -32px;
             }
+            .summary-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 14px;
+            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        #main-page::-webkit-scrollbar {
+            width: 3px;
+        }
+        #main-page::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #main-page::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
-    <div class="hero-bg"></div>
-
-    <!-- ===== HEADER ===== -->
-    <header class="header">
-        <div class="header-left">
-            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
-            <span class="logo-sub">powered by <span class="highlight">Pureore Capital</span></span>
-        </div>
-        <div class="header-right">
-            <a href="dashboard.html" class="back-btn">
-                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-                Back
-            </a>
-            <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
-                <span></span><span></span><span></span>
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
             </div>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">Transaction History</div>
         </div>
-    </header>
-
-    <!-- ===== SLIDE MENU PANEL (GLASS) ===== -->
-    <div class="menu-panel" id="menuPanel">
-        <button class="close-btn" id="closeMenu">✕</button>
-        <div class="panel-header">
-            <div class="panel-name" id="panelName">Loading...</div>
-            <div class="panel-email" id="panelEmail">Loading...</div>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
+            </div>
+            <div class="load-msg" id="load-msg">Loading your history...</div>
         </div>
-
-        <button class="menu-item" onclick="window.location.href='dashboard.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
-            <span class="mi-label">Dashboard</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" onclick="window.location.href='income.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
-            <span class="mi-label">Income</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" onclick="window.location.href='chat.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-            <span class="mi-label">Chat</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" onclick="window.location.href='news.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></span>
-            <span class="mi-label">News</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" id="changePasswordBtn">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-            <span class="mi-label">Change Password</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <button class="menu-item" onclick="window.location.href='support.html'">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
-            <span class="mi-label">Customer Service</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
-
-        <div class="menu-divider"></div>
-
-        <button class="menu-item" id="logoutBtn" style="color:#f87171;">
-            <span class="mi-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
-            <span class="mi-label">Logout</span>
-            <span class="mi-arrow"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
-        </button>
     </div>
 
-    <!-- ===== MAIN CONTENT ===== -->
-    <main class="container">
+    <!-- ============================================================
+    MAIN PAGE
+    ============================================================ -->
+    <div id="main-page">
+        <div class="bg-wrap" aria-hidden="true"></div>
+        <div class="bg-overlay" aria-hidden="true"></div>
 
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1>📜 <span>History</span></h1>
-            <p>View all your transactions</p>
-        </div>
+        <div class="page-scroll">
 
-        <!-- Tabs -->
-        <div class="tabs" id="tabContainer">
-            <button class="tab-btn active" data-tab="all">All <span class="badge" id="allBadge">0</span></button>
-            <button class="tab-btn" data-tab="deposits">Deposits <span class="badge" id="depositsBadge">0</span></button>
-            <button class="tab-btn" data-tab="withdrawals">Withdrawals <span class="badge" id="withdrawalsBadge">0</span></button>
-            <button class="tab-btn" data-tab="loans">Loans <span class="badge" id="loansBadge">0</span></button>
-            <button class="tab-btn" data-tab="bonuses">Bonuses <span class="badge" id="bonusesBadge">0</span></button>
-            <button class="tab-btn" data-tab="savings">Savings <span class="badge" id="savingsBadge">0</span></button>
-        </div>
+            <!-- ===== HEADER ===== -->
+            <header class="page-header">
+                <button class="back-btn" id="back-btn" aria-label="Go back">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <span class="title">Transaction <em>History</em></span>
+            </header>
 
-        <!-- Tab Content -->
-        <div id="allTab" class="tab-content active">
-            <div id="allList"></div>
-        </div>
-        <div id="depositsTab" class="tab-content">
-            <div id="depositsList"></div>
-        </div>
-        <div id="withdrawalsTab" class="tab-content">
-            <div id="withdrawalsList"></div>
-        </div>
-        <div id="loansTab" class="tab-content">
-            <div id="loansList"></div>
-        </div>
-        <div id="bonusesTab" class="tab-content">
-            <div id="bonusesList"></div>
-        </div>
-        <div id="savingsTab" class="tab-content">
-            <div id="savingsList"></div>
-        </div>
+            <!-- ===== PAGE TITLE ===== -->
+            <div class="page-title-section">
+                <h1>Transaction History</h1>
+                <div class="sub">View your deposits, withdrawals, investments and income activity.</div>
+            </div>
 
-    </main>
+            <!-- ===== SUMMARY ===== -->
+            <div class="summary-grid" id="summary-grid">
+                <div class="summary-card">
+                    <div class="label">Total Transactions</div>
+                    <div class="value" id="total-count">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Completed</div>
+                    <div class="value gold" id="completed-count">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Pending</div>
+                    <div class="value" id="pending-count">0</div>
+                </div>
+            </div>
 
-    <script>
-        // ================================================================
+            <!-- ===== FILTERS ===== -->
+            <div class="filter-tabs" id="filter-tabs">
+                <button class="filter-tab active" data-filter="all">All</button>
+                <button class="filter-tab" data-filter="deposit">Deposits</button>
+                <button class="filter-tab" data-filter="withdrawal">Withdrawals</button>
+                <button class="filter-tab" data-filter="investment">Investments</button>
+                <button class="filter-tab" data-filter="income">Income</button>
+                <button class="filter-tab" data-filter="bonus">Bonuses</button>
+            </div>
+
+            <!-- ===== TRANSACTION LIST ===== -->
+            <div id="transaction-list">
+                <!-- Rendered by JS -->
+            </div>
+
+            <!-- ===== LOAD MORE ===== -->
+            <div class="load-more-wrap" id="load-more-wrap">
+                <button class="load-more-btn" id="load-more-btn">
+                    <span class="spinner-sm"></span>
+                    <span class="btn-text">Load More</span>
+                </button>
+            </div>
+
+            <!-- ===== BRANDING ===== -->
+            <div class="branding-footer">
+                <span>@pureorecapital</span> 2025
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+    DETAIL MODAL
+    ============================================================ -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal-card" id="modal-card">
+            <!-- Dynamic content -->
+        </div>
+    </div>
+
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, collection, query, where, getDocs, orderBy, limit, startAfter, getDoc, doc, Timestamp } from 'firebase/firestore';
+
+        // ============================================================
         // FIREBASE CONFIG
-        // ================================================================
-        var firebaseConfig = {
-            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
-            authDomain: "pureore-capital-zambia.firebaseapp.com",
-            projectId: "pureore-capital-zambia",
-            storageBucket: "pureore-capital-zambia.appspot.com",
-            messagingSenderId: "78967797858",
-            appId: "1:78967797858:web:379b9692951429c345793b",
-            measurementId: "G-FQKC29NYE9"
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        var auth = firebase.auth();
-        var db = firebase.firestore();
-        db.settings({ persistence: false });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
-        // ================================================================
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainPage = $('main-page');
+
+        const totalCountEl = $('total-count');
+        const completedCountEl = $('completed-count');
+        const pendingCountEl = $('pending-count');
+        const transactionList = $('transaction-list');
+        const loadMoreBtn = $('load-more-btn');
+        const loadMoreWrap = $('load-more-wrap');
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        const detailModal = $('detail-modal');
+        const modalCard = $('modal-card');
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let allTransactions = [];
+        let filteredTransactions = [];
+        let currentFilter = 'all';
+        let isLoading = false;
+        let hasMore = true;
+        let lastDoc = null;
+        const PAGE_SIZE = 15;
+        let currentUser = null;
+
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += 2.5;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
+            }
+            loadBar.style.width = loadProgress + '%';
+            if (loadProgress > 70) loadMsg.textContent = 'Almost ready...';
+            else if (loadProgress > 40) loadMsg.textContent = 'Fetching your records...';
+        }, 35);
+
+        // ============================================================
         // HELPERS
-        // ================================================================
-        function formatMoney(amount) {
-            return 'K' + parseFloat(amount).toFixed(2);
-        }
-
-        function formatDateTime(timestamp) {
-            if (!timestamp) return 'N/A';
-            var date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            return date.toLocaleString('en-GB', { hour12: false });
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
         }
 
         function formatDate(timestamp) {
-            if (!timestamp) return 'N/A';
-            var date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            return date.toLocaleDateString('en-GB');
+            if (!timestamp) return '';
+            try {
+                const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return d.toLocaleDateString('en-ZM', { day: '2-digit', month: 'short', year: 'numeric' }) +
+                    ' ' + d.toLocaleTimeString('en-ZM', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return '';
+            }
         }
 
-        function getTxIcon(type) {
-            if (type === 'deposit') {
-                return `<svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`;
-            } else if (type === 'withdrawal') {
-                return `<svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`;
-            } else if (type === 'loan') {
-                return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
-            } else if (type === 'bonus') {
-                return `<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
-            } else if (type === 'savings') {
-                return `<svg viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/><path d="M7 12v-2"/><path d="M17 12v-2"/></svg>`;
-            }
-            return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
+        function getTypeLabel(type) {
+            const map = {
+                deposit: 'Deposit',
+                withdrawal: 'Withdrawal',
+                investment: 'Investment',
+                income: 'Income Claim',
+                bonus: 'Referral Bonus'
+            };
+            return map[type] || type.charAt(0).toUpperCase() + type.slice(1);
         }
 
         function getStatusClass(status) {
-            var s = (status || '').toLowerCase();
-            if (s === 'pending' || s === 'pending_review' || s === 'under_review') return 'pending';
-            if (s === 'completed' || s === 'paid' || s === 'approved') return 'completed';
-            if (s === 'rejected' || s === 'failed') return 'rejected';
-            if (s === 'active') return 'active';
-            if (s === 'overdue') return 'overdue';
+            const s = (status || '').toLowerCase();
+            if (s === 'completed' || s === 'approved') return 'completed';
+            if (s === 'pending') return 'pending';
+            if (s === 'failed' || s === 'rejected') return 'failed';
+            if (s === 'cancelled') return 'cancelled';
             return '';
         }
 
-        function getTypeBadge(type) {
-            var map = {
-                deposit: 'Deposit',
-                withdrawal: 'Withdrawal',
-                loan: 'Loan',
-                bonus: 'Bonus',
-                savings: 'Savings'
+        function getIconForType(type) {
+            const svg = {
+                deposit: `<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+                withdrawal: `<svg viewBox="0 0 24 24"><path d="M12 19V5M5 12h14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+                investment: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+                income: `<svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+                bonus: `<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
             };
-            return map[type] || type;
+            return svg[type] || `<svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
         }
 
-        // ── Calculate due date from createdAt + repaymentDays ──
-        function calculateDueDate(item) {
-            if (item.dueDate) return item.dueDate;
-            if (item.repaymentDays && (item.createdAt || item.submittedAt)) {
-                var date = item.createdAt?.toDate ? item.createdAt.toDate() : (item.submittedAt?.toDate ? item
-                    .submittedAt.toDate() : new Date(item.createdAt || item.submittedAt));
-                if (date && !isNaN(date)) {
-                    var due = new Date(date);
-                    due.setDate(due.getDate() + parseInt(item.repaymentDays));
-                    return due;
-                }
-            }
-            return null;
+        // ============================================================
+        // SHOW PAGE
+        // ============================================================
+        function showPage() {
+            loadScreen.classList.add('hidden');
+            mainPage.classList.add('visible');
+            document.body.style.overflow = 'auto';
         }
 
-        function renderTransaction(item, type) {
-            var isPositive = (type === 'deposit' || type === 'bonus' || type === 'savings');
-            var amountClass = isPositive ? 'positive' : 'negative';
-            var sign = isPositive ? '+' : '-';
-            var statusClass = getStatusClass(item.status);
-            var iconSvg = getTxIcon(type);
-
-            var detailsHtml = '';
-            if (type === 'deposit') {
-                detailsHtml = `
-                    <span><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> ${item.paymentMethod || 'N/A'}</span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ${item.phone || item.cardNumber || 'N/A'}</span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt)}</span>
-                `;
-            } else if (type === 'withdrawal') {
-                var netAmount = item.netAmount || item.amount;
-                detailsHtml = `
-                    <span><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.5"/><path d="M8 2v20"/><path d="M16 2v20"/><path d="M2 8h20"/><path d="M2 16h20"/></svg> ${item.network || 'N/A'}</span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ${item.phone || item.cardNumber || 'N/A'}</span>
-                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Received: <span class="highlight">${formatMoney(netAmount)}</span></span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt)}</span>
-                `;
-            } else if (type === 'loan') {
-                // Use totalRepayment from loan document, or fallback
-                var totalRepay = item.totalRepayment || item.totalRepay || item.repayTotal || (item.amount * 1.2);
-                var dueDate = calculateDueDate(item);
-                var dueDateStr = dueDate ? formatDate(dueDate) : 'N/A';
-                var branchDisplay = item.branchName || item.loanBranch || item.branch || '—';
-                var providerDisplay = item.provider || '—';
-
-                detailsHtml = `
-                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Branch: <span class="highlight">${branchDisplay}</span></span>
-                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Provider: <span class="highlight">${providerDisplay}</span></span>
-                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> To repay: <span class="highlight">${formatMoney(totalRepay)}</span></span>
-                    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Due: ${dueDateStr}</span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt || item.submittedAt)}</span>
-                `;
-                // Include level if available
-                if (item.loanLevel || item.level) {
-                    var levelDisplay = item.loanLevel || item.level;
-                    detailsHtml += `
-                        <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Level: <span class="highlight">${levelDisplay}</span></span>
-                    `;
-                }
-            } else if (type === 'bonus') {
-                detailsHtml = `
-                    <span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${item.description || 'Bonus'}</span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.createdAt)}</span>
-                `;
-            } else if (type === 'savings') {
-                var branchName = item.branch || 'Wealth';
-                var branchLabel = branchName.charAt(0).toUpperCase() + branchName.slice(1);
-                var goalLabel = item.goalName || item.savingReason || 'Savings';
-                detailsHtml = `
-                    <span><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Branch: <span class="highlight">${branchLabel}</span></span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ${goalLabel}</span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${formatDateTime(item.submittedAt || item.createdAt)}</span>
-                `;
-                if (item.period) {
-                    detailsHtml += `
-                        <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${item.period} Days</span>
-                    `;
-                }
+        // ============================================================
+        // LOAD TRANSACTIONS
+        // ============================================================
+        async function loadTransactions(uid, reset = true) {
+            if (isLoading) return;
+            isLoading = true;
+            if (reset) {
+                allTransactions = [];
+                lastDoc = null;
+                hasMore = true;
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.querySelector('.btn-text').textContent = 'Load More';
             }
 
-            return `
-                <div class="tx-card">
-                    <div class="tx-top">
-                        <div class="tx-left">
-                            <div class="tx-icon">${iconSvg}</div>
-                            <span class="tx-amount ${amountClass}">${sign}${formatMoney(item.amount)}</span>
-                            <span class="tx-status ${statusClass}">${(item.status || 'completed').toUpperCase()}</span>
-                        </div>
-                        <span class="tx-type-badge">${getTypeBadge(type)}</span>
-                    </div>
-                    <div class="tx-details">
-                        ${detailsHtml}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderEmpty(message) {
-            return `
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    <div class="title">${message}</div>
-                    <div class="sub">No records found</div>
-                </div>
-            `;
-        }
-
-        // ================================================================
-        // STATE
-        // ================================================================
-        var allData = {
-            deposits: [],
-            withdrawals: [],
-            loans: [],
-            bonuses: [],
-            savings: []
-        };
-
-        var unsubs = {
-            deposits: null,
-            withdrawals: null,
-            loans: null,
-            bonuses: null,
-            savings: null
-        };
-
-        // ================================================================
-        // TOAST
-        // ================================================================
-        function showToast(msg, isError) {
-            var existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (isError ? ' error' : ' success');
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
-        }
-
-        // ================================================================
-        // BLOCK LISTENER
-        // ================================================================
-        var blockUnsub = null;
-
-        function watchBlockStatus(userId) {
-            if (blockUnsub) blockUnsub();
-            blockUnsub = db.collection('users').doc(userId).onSnapshot(function(doc) {
-                if (doc.exists && doc.data().isBlocked === true) {
-                    showToast('⚠️ Your account has been blocked. Redirecting...', true);
-                    setTimeout(function() {
-                        auth.signOut().then(function() { window.location.href = 'login.html'; });
-                    }, 2000);
-                }
-            }, function(err) { console.warn('Block listener error:', err); });
-        }
-        window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
-
-        // ================================================================
-        // RENDER FUNCTIONS
-        // ================================================================
-        function renderAll() {
-            var container = document.getElementById('allList');
-            var items = [];
-            allData.deposits.forEach(function(d) { items.push({ ...d, _type: 'deposit' }); });
-            allData.withdrawals.forEach(function(w) { items.push({ ...w, _type: 'withdrawal' }); });
-            allData.loans.forEach(function(l) { items.push({ ...l, _type: 'loan' }); });
-            allData.bonuses.forEach(function(b) { items.push({ ...b, _type: 'bonus' }); });
-            allData.savings.forEach(function(s) { items.push({ ...s, _type: 'savings' }); });
-            items.sort(function(a, b) {
-                var aTime = a.createdAt?.toMillis?.() || a.submittedAt?.toMillis?.() || 0;
-                var bTime = b.createdAt?.toMillis?.() || b.submittedAt?.toMillis?.() || 0;
-                return bTime - aTime;
-            });
-
-            if (!items.length) {
-                container.innerHTML = renderEmpty('No transactions yet');
-                return;
-            }
-
-            var html = '';
-            for (var i = 0; i < items.length; i++) {
-                html += renderTransaction(items[i], items[i]._type);
-            }
-            container.innerHTML = html;
-        }
-
-        function renderDeposits() {
-            var container = document.getElementById('depositsList');
-            if (!allData.deposits.length) {
-                container.innerHTML = renderEmpty('No deposits');
-                return;
-            }
-            var html = '';
-            var sorted = allData.deposits.slice().sort(function(a, b) {
-                return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
-            });
-            for (var i = 0; i < sorted.length; i++) {
-                html += renderTransaction(sorted[i], 'deposit');
-            }
-            container.innerHTML = html;
-        }
-
-        function renderWithdrawals() {
-            var container = document.getElementById('withdrawalsList');
-            if (!allData.withdrawals.length) {
-                container.innerHTML = renderEmpty('No withdrawals');
-                return;
-            }
-            var html = '';
-            var sorted = allData.withdrawals.slice().sort(function(a, b) {
-                return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
-            });
-            for (var i = 0; i < sorted.length; i++) {
-                html += renderTransaction(sorted[i], 'withdrawal');
-            }
-            container.innerHTML = html;
-        }
-
-        function renderLoans() {
-            var container = document.getElementById('loansList');
-            if (!allData.loans.length) {
-                container.innerHTML = renderEmpty('No loans');
-                return;
-            }
-            var html = '';
-            var sorted = allData.loans.slice().sort(function(a, b) {
-                return (b.createdAt?.toMillis?.() || b.submittedAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || a
-                    .submittedAt?.toMillis?.() || 0);
-            });
-            for (var i = 0; i < sorted.length; i++) {
-                html += renderTransaction(sorted[i], 'loan');
-            }
-            container.innerHTML = html;
-        }
-
-        function renderBonuses() {
-            var container = document.getElementById('bonusesList');
-            if (!allData.bonuses.length) {
-                container.innerHTML = renderEmpty('No bonuses');
-                return;
-            }
-            var html = '';
-            var sorted = allData.bonuses.slice().sort(function(a, b) {
-                return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
-            });
-            for (var i = 0; i < sorted.length; i++) {
-                html += renderTransaction(sorted[i], 'bonus');
-            }
-            container.innerHTML = html;
-        }
-
-        function renderSavings() {
-            var container = document.getElementById('savingsList');
-            if (!allData.savings.length) {
-                container.innerHTML = renderEmpty('No savings transactions');
-                return;
-            }
-            var html = '';
-            var sorted = allData.savings.slice().sort(function(a, b) {
-                var aTime = a.submittedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
-                var bTime = b.submittedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
-                return bTime - aTime;
-            });
-            for (var i = 0; i < sorted.length; i++) {
-                html += renderTransaction(sorted[i], 'savings');
-            }
-            container.innerHTML = html;
-        }
-
-        function updateBadges() {
-            var total = allData.deposits.length + allData.withdrawals.length + allData.loans.length + allData.bonuses.length + allData
-                .savings.length;
-            document.getElementById('allBadge').textContent = total;
-            document.getElementById('depositsBadge').textContent = allData.deposits.length;
-            document.getElementById('withdrawalsBadge').textContent = allData.withdrawals.length;
-            document.getElementById('loansBadge').textContent = allData.loans.length;
-            document.getElementById('bonusesBadge').textContent = allData.bonuses.length;
-            document.getElementById('savingsBadge').textContent = allData.savings.length;
-        }
-
-        // ================================================================
-        // LISTENERS
-        // ================================================================
-        function listenDeposits(userId) {
-            if (unsubs.deposits) unsubs.deposits();
-            var q = db.collection('deposits').where('userId', '==', userId);
-            unsubs.deposits = q.onSnapshot(function(snapshot) {
-                var docs = [];
-                snapshot.forEach(function(doc) { docs.push({ id: doc.id, ...doc.data() }); });
-                allData.deposits = docs;
-                renderDeposits();
-                renderAll();
-                updateBadges();
-            }, function(err) {
-                console.error('Deposit listener error:', err);
-                document.getElementById('depositsList').innerHTML = renderEmpty('Error loading deposits');
-            });
-        }
-
-        function listenWithdrawals(userId) {
-            if (unsubs.withdrawals) unsubs.withdrawals();
-            var q = db.collection('withdrawals').where('userId', '==', userId);
-            unsubs.withdrawals = q.onSnapshot(function(snapshot) {
-                var docs = [];
-                snapshot.forEach(function(doc) { docs.push({ id: doc.id, ...doc.data() }); });
-                allData.withdrawals = docs;
-                renderWithdrawals();
-                renderAll();
-                updateBadges();
-            }, function(err) {
-                console.error('Withdrawal listener error:', err);
-                document.getElementById('withdrawalsList').innerHTML = renderEmpty('Error loading withdrawals');
-            });
-        }
-
-        function listenLoans(userId) {
-            if (unsubs.loans) unsubs.loans();
-            var q = db.collection('loans').where('userId', '==', userId);
-            unsubs.loans = q.onSnapshot(function(snapshot) {
-                var docs = [];
-                snapshot.forEach(function(doc) {
-                    var data = doc.data();
-                    data.id = doc.id;
-                    // Ensure status is set
-                    if (!data.status) data.status = 'pending';
-                    docs.push(data);
-                });
-                allData.loans = docs;
-                renderLoans();
-                renderAll();
-                updateBadges();
-            }, function(err) {
-                console.error('Loan listener error:', err);
-                document.getElementById('loansList').innerHTML = renderEmpty('Error loading loans');
-            });
-        }
-
-        function listenBonuses(userId) {
-            if (unsubs.bonuses) unsubs.bonuses();
-            var q = db.collection('transactions')
-                .where('userId', '==', userId)
-                .where('type', '==', 'bonus');
-            unsubs.bonuses = q.onSnapshot(function(snapshot) {
-                var docs = [];
-                snapshot.forEach(function(doc) {
-                    var data = doc.data();
-                    data.id = doc.id;
-                    if (!data.status) data.status = 'completed';
-                    docs.push(data);
-                });
-                allData.bonuses = docs;
-                renderBonuses();
-                renderAll();
-                updateBadges();
-            }, function(err) {
-                console.error('Bonus listener error:', err);
-                document.getElementById('bonusesList').innerHTML = renderEmpty('Error loading bonuses');
-            });
-        }
-
-        function listenSavings(userId) {
-            if (unsubs.savings) unsubs.savings();
-            var savingsRef = db.collection('users').doc(userId).collection('savings');
-            unsubs.savings = savingsRef.onSnapshot(function(snapshot) {
-                var docs = [];
-                snapshot.forEach(function(doc) {
-                    var data = doc.data();
-                    data.id = doc.id;
-                    docs.push(data);
-                });
-                allData.savings = docs;
-                renderSavings();
-                renderAll();
-                updateBadges();
-            }, function(err) {
-                console.error('Savings listener error:', err);
-                document.getElementById('savingsList').innerHTML = renderEmpty('Error loading savings');
-            });
-        }
-
-        // ================================================================
-        // TABS
-        // ================================================================
-        var tabBtns = document.querySelectorAll('.tab-btn');
-        var tabContents = {
-            all: document.getElementById('allTab'),
-            deposits: document.getElementById('depositsTab'),
-            withdrawals: document.getElementById('withdrawalsTab'),
-            loans: document.getElementById('loansTab'),
-            bonuses: document.getElementById('bonusesTab'),
-            savings: document.getElementById('savingsTab')
-        };
-
-        tabBtns.forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var tabId = this.dataset.tab;
-                tabBtns.forEach(function(b) { b.classList.remove('active'); });
-                this.classList.add('active');
-                Object.keys(tabContents).forEach(function(key) {
-                    tabContents[key].classList.remove('active');
-                });
-                if (tabContents[tabId]) tabContents[tabId].classList.add('active');
-            });
-        });
-
-        // ================================================================
-        // HAMBURGER MENU
-        // ================================================================
-        var hamburger = document.getElementById('hamburger');
-        var menuPanel = document.getElementById('menuPanel');
-        var closeMenu = document.getElementById('closeMenu');
-
-        function toggleMenu() {
-            var open = menuPanel.classList.toggle('open');
-            hamburger.classList.toggle('active', open);
-            document.body.style.overflow = open ? 'hidden' : '';
-        }
-        hamburger.addEventListener('click', toggleMenu);
-        closeMenu.addEventListener('click', toggleMenu);
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && menuPanel.classList.contains('open')) toggleMenu();
-        });
-
-        // ================================================================
-        // AUTH STATE
-        // ================================================================
-        let authResolved = false;
-        let redirectTimeout = null;
-
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                authResolved = true;
-                if (redirectTimeout) {
-                    clearTimeout(redirectTimeout);
-                    redirectTimeout = null;
-                }
-                watchBlockStatus(user.uid);
-                listenDeposits(user.uid);
-                listenWithdrawals(user.uid);
-                listenLoans(user.uid);
-                listenBonuses(user.uid);
-                listenSavings(user.uid);
-
-                db.collection('users').doc(user.uid).get().then(function(doc) {
-                    if (doc.exists) {
-                        var data = doc.data();
-                        var fullName = data.fullName || 'User';
-                        var email = data.email || user.email;
-                        document.getElementById('panelName').textContent = fullName;
-                        document.getElementById('panelEmail').textContent = email;
-                    }
-                }).catch(console.warn);
+            // Build query
+            let q;
+            if (reset) {
+                q = query(
+                    collection(db, 'transactions'),
+                    where('userId', '==', uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(PAGE_SIZE)
+                );
             } else {
-                if (!authResolved) {
-                    if (!redirectTimeout) {
-                        redirectTimeout = setTimeout(function() {
-                            if (!auth.currentUser) {
-                                window.location.href = 'login.html';
-                            }
-                        }, 2000);
-                    }
-                } else {
-                    window.location.href = 'login.html';
+                if (!lastDoc) {
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.querySelector('.btn-text').textContent = 'No More Transactions';
+                    isLoading = false;
+                    return;
                 }
+                q = query(
+                    collection(db, 'transactions'),
+                    where('userId', '==', uid),
+                    orderBy('createdAt', 'desc'),
+                    startAfter(lastDoc),
+                    limit(PAGE_SIZE)
+                );
             }
-        }, function(error) {
-            console.error('Auth state error:', error);
-            window.location.href = 'login.html';
-        });
 
-        // ================================================================
-        // LOGOUT
-        // ================================================================
-        document.getElementById('logoutBtn')?.addEventListener('click', function() {
-            auth.signOut().then(function() {
-                window.location.href = 'login.html';
-            }).catch(function(err) {
-                console.warn('Logout error:', err);
-                window.location.href = 'login.html';
+            try {
+                const snapshot = await getDocs(q);
+                const fetched = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Determine type from data or infer from collection?
+                    // We'll use a 'type' field if present, otherwise infer from source
+                    let type = data.type || 'other';
+                    // If no type, try to infer
+                    if (!data.type) {
+                        if (data.planId) type = 'investment';
+                        else if (data.depositMethod) type = 'deposit';
+                        else if (data.withdrawalMethod) type = 'withdrawal';
+                        else if (data.incomeId) type = 'income';
+                        else if (data.referralId) type = 'bonus';
+                    }
+                    // Ensure we have a status
+                    const status = data.status || 'completed';
+                    // Determine amount direction
+                    let amount = Number(data.amount) || 0;
+                    // For investments and withdrawals, amount is debit; deposits, income, bonus are credit
+                    const isCredit = (type === 'deposit' || type === 'income' || type === 'bonus');
+                    // For display, we'll store both amount and direction
+                    fetched.push({
+                        id: doc.id,
+                        ...data,
+                        type: type,
+                        status: status,
+                        amount: amount,
+                        isCredit: isCredit,
+                        description: data.description || data.planName || '',
+                        timestamp: data.createdAt || data.timestamp || null
+                    });
+                });
+
+                if (fetched.length < PAGE_SIZE) {
+                    hasMore = false;
+                }
+                if (fetched.length > 0) {
+                    lastDoc = snapshot.docs[snapshot.docs.length - 1];
+                } else {
+                    hasMore = false;
+                }
+
+                if (reset) {
+                    allTransactions = fetched;
+                } else {
+                    allTransactions = allTransactions.concat(fetched);
+                }
+
+                // Apply filter and render
+                applyFilter();
+                updateSummary();
+                renderTransactions();
+
+                // Update load more button
+                if (!hasMore) {
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.querySelector('.btn-text').textContent = 'No More Transactions';
+                } else {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.querySelector('.btn-text').textContent = 'Load More';
+                }
+
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+                transactionList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <p>Unable to load history. Please check your connection and try again.</p>
+                            <button onclick="location.reload()" style="display:inline-block;margin-top:12px;color:var(--gold);background:none;border:1px solid var(--gold);padding:8px 24px;border-radius:20px;font-family:inherit;font-size:0.75rem;cursor:pointer;">Try Again</button>
+                        </div>
+                    `;
+                loadMoreWrap.classList.add('hidden');
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        // ============================================================
+        // FILTER
+        // ============================================================
+        function applyFilter() {
+            if (currentFilter === 'all') {
+                filteredTransactions = [...allTransactions];
+            } else {
+                filteredTransactions = allTransactions.filter(tx => tx.type === currentFilter);
+            }
+            // Sort by timestamp descending (already sorted from query, but ensure)
+            filteredTransactions.sort((a, b) => {
+                const ta = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : 0;
+                const tb = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : 0;
+                return tb - ta;
+            });
+        }
+
+        // ============================================================
+        // UPDATE SUMMARY
+        // ============================================================
+        function updateSummary() {
+            const total = allTransactions.length;
+            const completed = allTransactions.filter(tx => tx.status === 'completed' || tx.status === 'approved').length;
+            const pending = allTransactions.filter(tx => tx.status === 'pending').length;
+            totalCountEl.textContent = total;
+            completedCountEl.textContent = completed;
+            pendingCountEl.textContent = pending;
+        }
+
+        // ============================================================
+        // RENDER TRANSACTIONS
+        // ============================================================
+        function renderTransactions() {
+            if (filteredTransactions.length === 0) {
+                const filterLabel = currentFilter === 'all' ? '' : getTypeLabel(currentFilter);
+                transactionList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M4 7h16M4 12h12M4 17h8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M20 7l-4 5 4 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p>${filterLabel ? 'No ' + filterLabel + ' activity' : 'No transactions yet'}</p>
+                            ${!filterLabel ? '<p style="font-size:0.7rem;margin-top:4px;">Your financial activity will appear here once you make a deposit, investment, withdrawal, or income claim.</p>' : ''}
+                        </div>
+                    `;
+                return;
+            }
+
+            transactionList.innerHTML = filteredTransactions.map(tx => {
+                const statusClass = getStatusClass(tx.status);
+                const direction = tx.isCredit ? 'credit' : 'debit';
+                const sign = tx.isCredit ? '+' : '-';
+                const iconSvg = getIconForType(tx.type);
+                return `
+                        <div class="transaction-item" data-id="${tx.id}">
+                            <div class="left">
+                                <div class="icon-wrap">${iconSvg}</div>
+                                <div class="info">
+                                    <div class="type">${getTypeLabel(tx.type)}</div>
+                                    <div class="desc">${tx.description || ''}</div>
+                                </div>
+                            </div>
+                            <div class="right">
+                                <div class="amount ${direction}">${sign}K${formatCurrency(tx.amount)}</div>
+                                <span class="status ${statusClass}">${tx.status || 'Completed'}</span>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+
+            // Attach click listeners
+            document.querySelectorAll('.transaction-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = el.dataset.id;
+                    const tx = filteredTransactions.find(t => t.id === id);
+                    if (tx) openDetailModal(tx);
+                });
+            });
+        }
+
+        // ============================================================
+        // DETAIL MODAL
+        // ============================================================
+        function openDetailModal(tx) {
+            const typeLabel = getTypeLabel(tx.type);
+            const statusClass = getStatusClass(tx.status);
+            const direction = tx.isCredit ? 'Credit' : 'Debit';
+            const sign = tx.isCredit ? '+' : '-';
+            const amountDisplay = `${sign}K${formatCurrency(tx.amount)}`;
+            const date = formatDate(tx.timestamp);
+            const id = tx.id || '—';
+
+            modalCard.innerHTML = `
+                    <div class="modal-title">Transaction Details</div>
+                    <div class="modal-detail-row">
+                        <span class="label">Type</span>
+                        <span class="value gold">${typeLabel}</span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="label">Amount</span>
+                        <span class="value" style="color:${tx.isCredit ? '#2ecc71' : '#e74c3c'};">${amountDisplay}</span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="label">Direction</span>
+                        <span class="value">${direction}</span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="label">Status</span>
+                        <span class="value" style="color:${statusClass === 'completed' ? '#2ecc71' : statusClass === 'pending' ? '#f1c40f' : '#e74c3c'};">${tx.status || 'Completed'}</span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="label">Date</span>
+                        <span class="value">${date}</span>
+                    </div>
+                    ${tx.description ? `<div class="modal-detail-row"><span class="label">Description</span><span class="value">${tx.description}</span></div>` : ''}
+                    ${tx.planName ? `<div class="modal-detail-row"><span class="label">Plan</span><span class="value">${tx.planName}</span></div>` : ''}
+                    <div class="modal-detail-row">
+                        <span class="label">Transaction ID</span>
+                        <span class="value" style="font-size:0.6rem;opacity:0.6;">${id}</span>
+                    </div>
+                    <button class="modal-close" id="modal-close-btn">Close</button>
+                `;
+
+            detailModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+            // Close on overlay click
+            detailModal.addEventListener('click', (e) => {
+                if (e.target === detailModal) closeModal();
+            });
+        }
+
+        function closeModal() {
+            detailModal.classList.remove('open');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ============================================================
+        // FILTER HANDLING
+        // ============================================================
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                filterTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentFilter = tab.dataset.filter;
+                applyFilter();
+                renderTransactions();
             });
         });
 
-        console.log('✅ history.html · Sajvera Capital · Blue glassmorphism design');
-        console.log('📜 All transactions including deposits, withdrawals, loans, bonuses, savings');
-        console.log('💰 Loans tab now displays: branch, provider, total repayment, due date, level');
-        console.log('✅ Loan status: pending, approved, rejected, active, paid, overdue');
-        console.log('⬅️ Back button to dashboard · No bottom nav');
+        // ============================================================
+        // LOAD MORE
+        // ============================================================
+        loadMoreBtn.addEventListener('click', () => {
+            if (isLoading || !hasMore) return;
+            loadMoreBtn.classList.add('loading');
+            loadMoreBtn.querySelector('.btn-text').textContent = 'Loading...';
+            loadTransactions(currentUser.uid, false).finally(() => {
+                loadMoreBtn.classList.remove('loading');
+            });
+        });
+
+        // ============================================================
+        // BACK BUTTON
+        // ============================================================
+        document.getElementById('back-btn').addEventListener('click', () => {
+            window.history.back();
+        });
+
+        // ============================================================
+        // AUTHENTICATION
+        // ============================================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+            loadTransactions(user.uid, true).then(() => {
+                showPage();
+            });
+        });
+
+        console.log('PureOre Nexus — History page ready.');
     </script>
+
 </body>
 </html>

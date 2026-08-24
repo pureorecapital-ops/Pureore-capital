@@ -2,948 +2,2601 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Dashboard – Sajvera Capital</title>
-    <link rel="preconnect" href="https://www.gstatic.com" />
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Dashboard | PureOre Nexus</title>
+    <meta name="description" content="Your PureOre Nexus automotive investment dashboard." />
+
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js",
+                "firebase/functions": "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js"
+            }
+        }
     </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
-    </script>
+
     <style>
-        /* ----- RESET & BASE (BLUE THEME) ----- */
-        * {
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *,
+        *::before,
+        *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            min-height: 100vh;
-            padding-top: 76px;
-            padding-bottom: 76px;
-            display: flex;
-            flex-direction: column;
-            color: #ffffff;
-            background: #0a1628;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+        :root {
+            --gold: #c9a84c;
+            --gold-glow: rgba(201, 168, 76, 0.25);
+            --gold-subtle: rgba(201, 168, 76, 0.08);
+            --charcoal: #1a1a1a;
+            --dark: #0b0b0b;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-white: #f5f3f0;
+            --text-muted: rgba(245, 243, 240, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND ----- */
-        .hero-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+        html,
+        body {
             height: 100%;
-            z-index: -1;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--dark);
+            color: var(--text-white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             overflow: hidden;
         }
 
-        .hero-bg::before {
-            content: "";
+        /* ============================================================
+           LOADING SCREEN
+        ============================================================ */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0b0b0b;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .load-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .load-logo-symbol {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.06);
+            position: relative;
+        }
+        .load-logo-symbol::after {
+            content: '';
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .load-logo-symbol svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .load-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-white);
+        }
+        .load-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 0.2rem;
+        }
+
+        .load-progress-wrap {
+            width: 200px;
+            max-width: 60vw;
+            margin-top: 1.8rem;
+        }
+        .load-progress-track {
             width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .load-progress-bar {
             height: 100%;
-            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
+            width: 0%;
+            background: var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 16px var(--gold-glow);
+            transition: width 0.15s linear;
+        }
+        .load-msg {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN DASHBOARD
+        ============================================================ */
+        #main-dashboard {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(1.02);
+            transition: opacity 0.9s ease, transform 1s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--dark);
+        }
+        #main-dashboard.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/cXxZh1w3/20260824-014737.jpg');
             background-size: cover;
             background-position: center;
-            filter: blur(8px) brightness(0.3) saturate(0.6);
-            transform: scale(1.05);
+            background-repeat: no-repeat;
+            opacity: 0.3;
+        }
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(11, 11, 11, 0.5) 0%, rgba(11, 11, 11, 0.92) 80%, #0b0b0b 100%);
+            pointer-events: none;
         }
 
-        .hero-bg::after {
-            content: "";
+        .dashboard-scroll {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 0 16px 90px 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ============================================================
+           HEADER
+        ============================================================ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(11, 11, 11, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin: 0 -16px;
+            padding: 14px 16px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-white);
+        }
+        .header-brand svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 1.8;
+            flex-shrink: 0;
+        }
+        .header-brand span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        .header-brand span em {
+            color: var(--gold);
+            font-style: normal;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.25s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .header-btn:hover {
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .header-btn .badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 18px;
+            height: 18px;
+            background: #e74c3c;
+            border-radius: 50%;
+            font-size: 0.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            border: 2px solid var(--dark);
+        }
+        .header-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ============================================================
+           WELCOME SECTION
+        ============================================================ */
+        .welcome-section {
+            padding: 18px 0 10px;
+        }
+        .welcome-section .greeting {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+        .welcome-section h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2px;
+            letter-spacing: -0.01em;
+        }
+        .welcome-section .sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-top: 2px;
+        }
+
+        /* ============================================================
+           ADVERTISEMENT
+        ============================================================ */
+        #ad-container {
+            display: none;
+            margin: 12px 0 16px;
+        }
+        #ad-container a {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+        #ad-container .ad-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        #ad-container .ad-card:hover {
+            border-color: rgba(212, 175, 55, 0.15);
+            transform: translateY(-2px);
+        }
+        #ad-container .ad-card img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            display: block;
+            background: var(--charcoal);
+        }
+        #ad-container .ad-card .ad-body {
+            padding: 14px 16px;
+        }
+        #ad-container .ad-card .ad-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-white);
+        }
+        #ad-container .ad-card .ad-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin: 4px 0 8px;
+        }
+        #ad-container .ad-card .ad-btn {
+            display: inline-block;
+            padding: 6px 16px;
+            background: var(--gold);
+            color: #0b0b0b;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.25s ease;
+        }
+        #ad-container .ad-card .ad-btn:hover {
+            background: #dbb95c;
+        }
+
+        /* ============================================================
+           BALANCE CARDS
+        ============================================================ */
+        .balance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 14px 0 18px;
+        }
+
+        .balance-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 14px 12px 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .balance-card::before {
+            content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 22, 40, 0.60);
+            right: 0;
+            height: 2px;
+            opacity: 0.4;
+        }
+        .balance-card.deposit::before {
+            background: linear-gradient(90deg, transparent, #3498db, transparent);
+        }
+        .balance-card.wallet::before {
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .balance-card.activity::before {
+            background: linear-gradient(90deg, transparent, #2ecc71, transparent);
         }
 
-        /* ----- HEADER (NO HAMBURGER) ----- */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0.6rem 1.2rem;
+        .balance-card .label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .balance-card .amount {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 4px 0 2px;
+            letter-spacing: -0.01em;
+        }
+        .balance-card .amount .currency {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-right: 2px;
+        }
+        .balance-card .desc {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        .balance-card .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            padding: 4px 14px;
+            font-size: 0.55rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.25s ease;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .balance-card .action-btn svg {
+            width: 12px;
+            height: 12px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .balance-card .action-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(201, 168, 76, 0.06);
+        }
+
+        /* ============================================================
+           QUICK ACTIONS
+        ============================================================ */
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: -0.01em;
+        }
+        .section-sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-bottom: 12px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .quick-action {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 6px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-white);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .quick-action:hover {
+            background: rgba(201, 168, 76, 0.04);
+            border-color: rgba(201, 168, 76, 0.15);
+            transform: translateY(-2px);
+        }
+        .quick-action svg {
+            width: 26px;
+            height: 26px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+        .quick-action:hover svg {
+            color: var(--gold);
+        }
+        .quick-action .label {
+            font-size: 0.6rem;
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+        }
+
+        /* ============================================================
+           CARDS (Investment, Daily Check, Referral)
+        ============================================================ */
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .card-grid.single {
+            grid-template-columns: 1fr;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 16px 14px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .card .card-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .card .card-value {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        .card .card-desc {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            line-height: 1.4;
+        }
+        .card .card-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 6px 18px;
+            font-size: 0.6rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: 1px solid var(--gold);
+            border-radius: 20px;
+            color: var(--gold);
+            text-decoration: none;
+            transition: all 0.25s ease;
+            background: transparent;
+            cursor: pointer;
+        }
+        .card .card-action svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .card .card-action:hover {
+            background: rgba(201, 168, 76, 0.08);
+            box-shadow: 0 0 30px rgba(201, 168, 76, 0.04);
+        }
+        .card .card-action.primary {
+            background: var(--gold);
+            color: #0b0b0b;
+            border-color: var(--gold);
+        }
+        .card .card-action.primary:hover {
+            background: #dbb95c;
+            border-color: #dbb95c;
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.12);
+        }
+
+        .card .referral-code {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0 4px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .card .referral-code code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gold);
+            letter-spacing: 0.06em;
+            flex: 1;
+        }
+        .card .referral-code .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            transition: color 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .card .referral-code .copy-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .card .referral-code .copy-btn:hover {
+            color: var(--gold);
+        }
+
+        /* ============================================================
+           INVESTMENT PLAN CARDS
+        ============================================================ */
+        .plan-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            transition: all 0.25s ease;
+        }
+        .plan-card:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .plan-card .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+        .plan-card .plan-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .plan-card .plan-status {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: rgba(46, 204, 113, 0.12);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.15);
+            font-weight: 500;
+            letter-spacing: 0.04em;
+        }
+        .plan-card .plan-status.inactive {
+            background: rgba(231, 76, 60, 0.08);
+            color: #e74c3c;
+            border-color: rgba(231, 76, 60, 0.12);
+        }
+        .plan-card .plan-details {
+            display: flex;
+            gap: 16px;
+            margin: 6px 0 8px;
+            flex-wrap: wrap;
+        }
+        .plan-card .plan-details span {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .plan-card .plan-details span svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .plan-card .plan-details strong {
+            color: var(--text-white);
+            font-weight: 500;
+        }
+        .plan-card .plan-action {
+            font-size: 0.6rem;
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            transition: color 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .plan-card .plan-action svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .plan-card .plan-action:hover {
+            color: #dbb95c;
+            text-decoration: underline;
+        }
+
+        /* ============================================================
+           MY INVESTMENTS
+        ============================================================ */
+        .investment-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
-            background: rgba(10, 22, 40, 0.60);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
-
-        .header-left {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
+        .investment-item:last-child {
+            border-bottom: none;
         }
-
-        .logo-text {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: -0.3px;
+        .investment-item .info .name {
+            font-size: 0.8rem;
+            font-weight: 500;
         }
-        .logo-text .vc {
-            color: #60a5fa;
-        }
-
-        .logo-sub {
-            font-size: 0.5rem;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 0.3px;
-            font-weight: 400;
-            margin-top: -1px;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        /* ----- CONTAINER ----- */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0.8rem 1rem;
-            flex: 1;
-            width: 100%;
-        }
-
-        /* ----- GREETING ----- */
-        .greeting-area {
-            margin-bottom: 1.2rem;
-            text-align: center;
-        }
-
-        .greeting-text {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.2px;
-        }
-
-        .greeting-text span {
-            color: #60a5fa;
-        }
-
-        .greeting-sub {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.25);
-            margin-top: 2px;
-        }
-
-        /* ----- SLIDESHOW ----- */
-        .hero-slideshow {
-            position: relative;
-            width: 100%;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-            aspect-ratio: 16 / 9;
-            background: rgba(10, 22, 40, 0.30);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .hero-slideshow .slides-wrapper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        .hero-slideshow .slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            transition: opacity 0.8s ease;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .hero-slideshow .slide.active {
-            opacity: 1;
-        }
-
-        .hero-slideshow .slide-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(10, 22, 40, 0.50) 0%, rgba(10, 22, 40, 0.10) 60%);
-            z-index: 1;
-        }
-
-        .hero-slideshow .slide-content {
-            position: absolute;
-            bottom: 18%;
-            left: 6%;
-            z-index: 2;
-            max-width: 70%;
-            color: #fff;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-        }
-
-        .hero-slideshow .slide-content h2 {
-            font-size: clamp(1.2rem, 3vw, 2.2rem);
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .hero-slideshow .slide-content p {
-            font-size: clamp(0.7rem, 1vw, 1rem);
-            opacity: 0.8;
-            margin-top: 2px;
-        }
-
-        .hero-slideshow .indicators {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 3;
-            display: flex;
-            gap: 8px;
-        }
-
-        .hero-slideshow .indicators .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            padding: 0;
-        }
-
-        .hero-slideshow .indicators .dot.active {
-            background: #60a5fa;
-            transform: scale(1.2);
-            box-shadow: 0 0 16px rgba(96, 165, 250, 0.15);
-        }
-
-        /* ----- QUICK ACCESS ----- */
-        .quick-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.8rem;
-            margin-bottom: 1.5rem;
-        }
-
-        @media (max-width: 500px) {
-            .quick-row {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.5rem;
-            }
-        }
-
-        .quick-item {
-            background: rgba(10, 22, 40, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 20px;
-            padding: 1rem 0.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        }
-
-        .quick-item:hover {
-            transform: translateY(-4px);
-            border-color: rgba(96, 165, 250, 0.10);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .quick-item .qi-icon {
-            width: 44px;
-            height: 44px;
-            margin: 0 auto 4px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.02);
-        }
-
-        .quick-item:hover .qi-icon {
-            background: rgba(96, 165, 250, 0.04);
-            border-color: rgba(96, 165, 250, 0.06);
-        }
-
-        .quick-item .qi-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: rgba(255, 255, 255, 0.15);
-            stroke-width: 1.8;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            transition: 0.2s;
-        }
-
-        .quick-item:hover .qi-icon svg {
-            stroke: #60a5fa;
-        }
-
-        .quick-item .qi-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        /* ----- MARKETPLACE CARD ----- */
-        .marketplace-card {
-            background: rgba(10, 22, 40, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 20px;
-            padding: 2rem 1.5rem;
-            text-align: center;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            margin-bottom: 1.5rem;
-            cursor: pointer;
-            transition: all 0.25s ease;
-        }
-
-        .marketplace-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(96, 165, 250, 0.10);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .marketplace-card .marketplace-icon {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 0.6rem;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 24px rgba(37, 99, 235, 0.12);
-        }
-
-        .marketplace-card .marketplace-icon svg {
-            width: 36px;
-            height: 36px;
-            stroke: #fff;
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .marketplace-card h3 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.2rem;
-        }
-
-        .marketplace-card p {
-            color: rgba(255, 255, 255, 0.15);
-            font-size: 0.9rem;
-        }
-
-        .marketplace-card .badge-new {
-            display: inline-block;
-            background: rgba(96, 165, 250, 0.06);
-            color: #60a5fa;
-            font-size: 0.65rem;
-            font-weight: 600;
-            padding: 0.15rem 0.7rem;
-            border-radius: 30px;
-            margin-top: 0.4rem;
-            border: 1px solid rgba(96, 165, 250, 0.06);
-        }
-
-        /* ----- FOOTER LINKS ----- */
-        .footer-links {
-            text-align: center;
-            margin-top: 1.2rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.8rem 1.5rem;
-        }
-
-        .footer-links a {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.08);
-            text-decoration: none;
-            transition: 0.2s;
-        }
-
-        .footer-links a:hover {
-            color: #60a5fa;
-        }
-
-        .footer-links .copyright {
+        .investment-item .info .meta {
             font-size: 0.6rem;
-            color: rgba(255, 255, 255, 0.04);
-            width: 100%;
-            text-align: center;
-            margin-top: 0.1rem;
+            color: var(--text-muted);
+        }
+        .investment-item .right {
+            text-align: right;
+        }
+        .investment-item .right .amount {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .investment-item .right .status {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 2px;
+        }
+        .investment-item .right .status.active {
+            background: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+        .investment-item .right .status.matured {
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--gold);
+        }
+        .investment-item .right .status.pending {
+            background: rgba(241, 196, 15, 0.08);
+            color: #f1c40f;
         }
 
-        /* ----- BOTTOM NAV ----- */
+        /* ============================================================
+           TRANSACTIONS
+        ============================================================ */
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+        .transaction-item .info .type {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .transaction-item .info .date {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+        }
+        .transaction-item .right .amount {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .transaction-item .right .amount.positive {
+            color: #2ecc71;
+        }
+        .transaction-item .right .amount.negative {
+            color: #e74c3c;
+        }
+        .transaction-item .right .status {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: block;
+            text-align: right;
+        }
+        .transaction-item .right .status.completed {
+            color: #2ecc71;
+        }
+        .transaction-item .right .status.pending {
+            color: #f1c40f;
+        }
+
+        /* ============================================================
+           ANNOUNCEMENTS
+        ============================================================ */
+        .announcement {
+            background: rgba(201, 168, 76, 0.04);
+            border: 1px solid rgba(201, 168, 76, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+        .announcement .title {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .announcement .title svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .announcement .message {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+        .announcement .date {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            opacity: 0.6;
+        }
+
+        /* ============================================================
+           EMPTY STATE
+        ============================================================ */
+        .empty-state {
+            text-align: center;
+            padding: 18px 0;
+            color: var(--text-muted);
+        }
+        .empty-state svg {
+            width: 40px;
+            height: 40px;
+            stroke: var(--text-muted);
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.3;
+            margin-bottom: 6px;
+            display: inline-block;
+        }
+        .empty-state p {
+            font-size: 0.75rem;
+            font-weight: 300;
+        }
+        .empty-state a {
+            display: inline-block;
+            margin-top: 8px;
+            color: var(--gold);
+            font-size: 0.7rem;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .empty-state a:hover {
+            text-decoration: underline;
+        }
+
+        /* ============================================================
+           BRANDING FOOTER
+        ============================================================ */
+        .branding-footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.55rem;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            opacity: 0.5;
+            font-weight: 300;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 16px;
+        }
+        .branding-footer span {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        /* ============================================================
+           BOTTOM NAVIGATION (Mobile)
+        ============================================================ */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
-            width: 100%;
-            background: rgba(10, 22, 40, 0.60);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            right: 0;
+            z-index: 20;
+            background: rgba(11, 11, 11, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 4px 4px 10px;
-            z-index: 30;
-            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+            padding: 6px 0 env(safe-area-inset-bottom, 8px) 0;
+            height: 68px;
         }
-
-        .nav-item {
+        .bottom-nav a {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1px;
-            cursor: pointer;
-            transition: all 0.25s;
-            flex: 1;
-            text-align: center;
-            padding: 3px 2px;
-            border-radius: 12px;
-            border: none;
-            background: transparent;
-            font-family: inherit;
-            color: rgba(255, 255, 255, 0.15);
+            gap: 2px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.5rem;
+            letter-spacing: 0.04em;
+            transition: color 0.25s ease;
+            padding: 4px 12px;
+            position: relative;
+            min-width: 48px;
         }
-
-        .nav-item .nav-icon {
-            width: 22px;
-            height: 22px;
+        .bottom-nav a svg {
+            width: 24px;
+            height: 24px;
             stroke: currentColor;
-            stroke-width: 1.8;
             fill: none;
+            stroke-width: 1.8;
             stroke-linecap: round;
             stroke-linejoin: round;
-            transition: all 0.25s;
+            transition: stroke 0.25s ease;
         }
-
-        .nav-item.active .nav-icon {
-            stroke: #60a5fa;
-            transform: scale(1.05);
+        .bottom-nav a.active {
+            color: var(--gold);
         }
-
-        .nav-item .nav-label {
-            font-size: 0.4rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.12);
-            transition: 0.25s;
-            letter-spacing: 0.2px;
+        .bottom-nav a.active svg {
+            stroke: var(--gold);
         }
-
-        .nav-item.active .nav-label {
-            color: #60a5fa;
-        }
-
-        .nav-item:hover .nav-icon {
-            stroke: #60a5fa;
-        }
-
-        .nav-item.marketplace .nav-icon {
-            width: 30px;
-            height: 30px;
-            stroke-width: 2;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        .bottom-nav a .badge {
+            position: absolute;
+            top: 0;
+            right: 4px;
+            width: 16px;
+            height: 16px;
+            background: #e74c3c;
             border-radius: 50%;
-            padding: 4px;
-            stroke: #fff;
-            margin-bottom: 1px;
+            font-size: 0.45rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            border: 2px solid var(--dark);
         }
 
-        .nav-item.marketplace.active .nav-icon {
-            transform: scale(1.08);
-            box-shadow: 0 0 24px rgba(37, 99, 235, 0.10);
+        /* ============================================================
+           BLOCKED / ERROR STATES
+        ============================================================ */
+        .blocked-screen,
+        .error-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            text-align: center;
+            padding: 32px 24px;
+        }
+        .blocked-screen svg,
+        .error-screen svg {
+            width: 56px;
+            height: 56px;
+            stroke: var(--text-muted);
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            margin-bottom: 16px;
+            opacity: 0.4;
+        }
+        .blocked-screen h2,
+        .error-screen h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .blocked-screen p,
+        .error-screen p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            max-width: 360px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .blocked-screen .btn,
+        .error-screen .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 32px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: 1.5px solid var(--gold);
+            border-radius: 60px;
+            color: var(--gold);
+            text-decoration: none;
+            background: transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .blocked-screen .btn svg,
+        .error-screen .btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            margin-bottom: 0;
+            opacity: 1;
+        }
+        .blocked-screen .btn:hover,
+        .error-screen .btn:hover {
+            background: rgba(201, 168, 76, 0.06);
+            box-shadow: 0 0 40px rgba(201, 168, 76, 0.04);
         }
 
-        .nav-item.marketplace .nav-label {
-            color: #60a5fa;
-            font-weight: 700;
-        }
-
-        /* ----- RESPONSIVE ----- */
-        @media (max-width: 500px) {
-            .header {
-                padding: 0.5rem 0.8rem;
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 480px) {
+            .balance-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 6px;
             }
-            .logo-text {
-                font-size: 1.1rem;
+            .balance-card {
+                padding: 10px 8px 10px;
             }
-            .logo-sub {
-                font-size: 0.45rem;
+            .balance-card .amount {
+                font-size: 0.95rem;
             }
-            .container {
-                padding: 0.6rem;
+            .balance-card .label {
+                font-size: 0.5rem;
             }
-            .greeting-text {
-                font-size: 1.3rem;
+            .balance-card .desc {
+                font-size: 0.5rem;
             }
-            .marketplace-card {
-                padding: 1.5rem 1rem;
+            .balance-card .action-btn {
+                font-size: 0.5rem;
+                padding: 3px 10px;
+                margin-top: 6px;
             }
-            .marketplace-card .marketplace-icon {
-                width: 58px;
-                height: 58px;
+            .quick-actions {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 6px;
             }
-            .marketplace-card .marketplace-icon svg {
-                width: 28px;
-                height: 28px;
+            .quick-action {
+                padding: 10px 4px;
             }
-            .quick-row {
-                gap: 0.5rem;
-            }
-            .quick-item {
-                padding: 0.8rem 0.3rem;
-            }
-            .quick-item .qi-icon {
-                width: 36px;
-                height: 36px;
-            }
-            .quick-item .qi-icon svg {
-                width: 18px;
-                height: 18px;
-            }
-            .nav-item .nav-icon {
+            .quick-action svg {
                 width: 20px;
                 height: 20px;
             }
-            .nav-item.marketplace .nav-icon {
-                width: 26px;
-                height: 26px;
+            .quick-action .label {
+                font-size: 0.5rem;
+            }
+            .card-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .welcome-section h1 {
+                font-size: 1.2rem;
+            }
+            .header-brand span {
+                font-size: 0.7rem;
+                letter-spacing: 0.15em;
+            }
+            .dashboard-scroll {
+                padding: 0 12px 80px 12px;
+            }
+            .header {
+                padding: 10px 12px;
+                margin: 0 -12px;
+            }
+            .header-btn {
+                width: 36px;
+                height: 36px;
+                padding: 6px;
+            }
+            .header-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+            .plan-card .plan-details {
+                gap: 10px;
+            }
+            .plan-card .plan-details span {
+                font-size: 0.55rem;
+            }
+            .bottom-nav {
+                height: 62px;
+                padding: 4px 0 env(safe-area-inset-bottom, 6px) 0;
+            }
+            .bottom-nav a {
+                font-size: 0.45rem;
+                padding: 2px 8px;
+                min-width: 40px;
+            }
+            .bottom-nav a svg {
+                width: 20px;
+                height: 20px;
+            }
+            .branding-footer {
+                font-size: 0.5rem;
+                padding: 12px 0 6px;
+            }
+            #ad-container .ad-card .ad-body {
+                padding: 12px 14px;
+            }
+            #ad-container .ad-card .ad-title {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .balance-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 4px;
+            }
+            .balance-card .amount {
+                font-size: 0.8rem;
+            }
+            .balance-card .label {
+                font-size: 0.45rem;
+            }
+            .balance-card .action-btn {
+                font-size: 0.45rem;
+                padding: 2px 8px;
+            }
+            .quick-actions {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 4px;
+            }
+            .quick-action svg {
+                width: 18px;
+                height: 18px;
+            }
+            .quick-action .label {
+                font-size: 0.45rem;
+            }
+            .bottom-nav a svg {
+                width: 18px;
+                height: 18px;
+            }
+            .branding-footer {
+                font-size: 0.45rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-scroll {
+                padding: 0 32px 40px 32px;
+            }
+            .header {
+                padding: 16px 32px;
+                margin: 0 -32px;
+            }
+            .balance-grid {
+                gap: 16px;
+            }
+            .balance-card {
+                padding: 18px 20px 16px;
+            }
+            .balance-card .amount {
+                font-size: 1.6rem;
+            }
+            .quick-actions {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 14px;
+            }
+            .card-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+            .card-grid.single {
+                grid-template-columns: 1fr;
+                max-width: 600px;
+            }
+            .bottom-nav {
+                display: none;
+            }
+            .dashboard-scroll {
+                padding-bottom: 40px;
+            }
+            .branding-footer {
+                margin-top: 24px;
+                padding: 20px 0 10px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .balance-grid {
+                gap: 20px;
+            }
+            .balance-card .amount {
+                font-size: 1.8rem;
+            }
+            .quick-actions {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 18px;
+            }
+            .quick-action svg {
+                width: 30px;
+                height: 30px;
+            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        #main-dashboard::-webkit-scrollbar {
+            width: 3px;
+        }
+        #main-dashboard::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #main-dashboard::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.2);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           UTILITY
+        ============================================================ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .text-gold {
+            color: var(--gold);
+        }
+        .text-muted {
+            color: var(--text-muted);
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-12 {
+            margin-bottom: 12px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .section-header .view-all {
+            font-size: 0.6rem;
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .section-header .view-all svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .section-header .view-all:hover {
+            text-decoration: underline;
+        }
+
+        .divider-light {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+            margin: 14px 0;
+        }
+
+        /* ============================================================
+           TOAST NOTIFICATION
+        ============================================================ */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 10px 20px;
+            font-size: 0.75rem;
+            color: var(--text-white);
+            z-index: 50;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toast svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            border-color: rgba(46, 204, 113, 0.2);
+        }
+        .toast.success svg {
+            stroke: #2ecc71;
+        }
+        .toast.error {
+            border-color: rgba(231, 76, 60, 0.2);
+        }
+        .toast.error svg {
+            stroke: #e74c3c;
+        }
+
+        @media (min-width: 768px) {
+            .toast {
+                bottom: 30px;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
-    <div class="hero-bg"></div>
-
-    <!-- ===== HEADER (NO HAMBURGER) ===== -->
-    <header class="header">
-        <div class="header-left">
-            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
-            <span class="logo-sub">powered by Pureore Capital</span>
-        </div>
-        <div class="header-right">
-            <!-- NO HAMBURGER – header is clean -->
-        </div>
-    </header>
-
-    <!-- ===== MAIN CONTENT ===== -->
-    <main class="container">
-
-        <!-- Greeting -->
-        <div class="greeting-area">
-            <div class="greeting-text">Welcome back, <span id="userNameDisplay">Investor</span> 👋</div>
-            <div class="greeting-sub" id="greetingSub">Let's grow your portfolio today</div>
-        </div>
-
-        <!-- SLIDESHOW -->
-        <div class="hero-slideshow" id="heroSlideshow">
-            <div class="slides-wrapper">
-                <div class="slide active" style="background-image: url('https://i.ibb.co/BKQJsR4L/file-00000000d73881f482171aab413d03c3.png');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <h2>Welcome to Sajvera Capital</h2>
-                        <p>Your journey to financial freedom starts here</p>
-                    </div>
-                </div>
-                <div class="slide" style="background-image: url('https://i.ibb.co/tMH4F5b0/IMG-20260731-WA4226.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <h2>Smart Investments</h2>
-                        <p>Secure, transparent, and high-yield opportunities</p>
-                    </div>
-                </div>
-                <div class="slide" style="background-image: url('https://i.ibb.co/9mL84qPz/IMG-20260731-WA4127.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <h2>Diversify Your Portfolio</h2>
-                        <p>Explore multiple investment plans</p>
-                    </div>
-                </div>
-                <div class="slide" style="background-image: url('https://i.ibb.co/4wQgzQZZ/IMG-20260731-WA1244.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <h2>Start Earning Today</h2>
-                        <p>Join thousands of satisfied investors</p>
-                    </div>
-                </div>
-                <div class="slide" style="background-image: url('https://i.ibb.co/1GLg2KDM/IMG-20260805-071201.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <h2>Growing Together</h2>
-                        <p>Building wealth through smart partnerships</p>
-                    </div>
-                </div>
-                <div class="slide" style="background-image: url('https://i.ibb.co/V0KGbh4k/IMG-20260805-071146.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <h2>Vision in Action</h2>
-                        <p>Turning opportunities into reality</p>
-                    </div>
-                </div>
-                <div class="slide" style="background-image: url('https://i.ibb.co/rKvztVZg/IMG-20260805-071126.jpg');">
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <h2>Your Future Starts Now</h2>
-                        <p>Invest with confidence, grow with purpose</p>
-                    </div>
-                </div>
-            </div>
-            <div class="indicators" id="slideIndicators">
-                <button class="dot active" data-index="0"></button>
-                <button class="dot" data-index="1"></button>
-                <button class="dot" data-index="2"></button>
-                <button class="dot" data-index="3"></button>
-                <button class="dot" data-index="4"></button>
-                <button class="dot" data-index="5"></button>
-                <button class="dot" data-index="6"></button>
-            </div>
-        </div>
-
-        <!-- QUICK ACCESS -->
-        <div class="quick-row">
-            <!-- Loan -->
-            <div class="quick-item" onclick="location.href='loan.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                </div>
-                <div class="qi-label">Loan</div>
-            </div>
-
-            <!-- Voucher -->
-            <div class="quick-item" onclick="location.href='voucher.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
-                </div>
-                <div class="qi-label">Voucher</div>
-            </div>
-
-            <!-- Treasure -->
-            <div class="quick-item" onclick="location.href='treasure.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                </div>
-                <div class="qi-label">Treasure</div>
-            </div>
-
-            <!-- Daily Check -->
-            <div class="quick-item" onclick="location.href='daily-check.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="12 14 12 18 16 18"/></svg>
-                </div>
-                <div class="qi-label">Daily Check</div>
-            </div>
-
-            <!-- Saving Money -->
-            <div class="quick-item" onclick="location.href='saving.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/><path d="M7 12v-2"/><path d="M17 12v-2"/></svg>
-                </div>
-                <div class="qi-label">Saving Money</div>
-            </div>
-
-            <!-- Job Apply (FIXED: now links to jobs.html) -->
-            <div class="quick-item" onclick="location.href='jobs.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M8 12h8"/></svg>
-                </div>
-                <div class="qi-label">Job Apply</div>
-            </div>
-        </div>
-
-        <!-- MARKETPLACE CARD -->
-        <div class="marketplace-card" id="marketplaceCard">
-            <div class="marketplace-icon">
+    <!-- ============================================================
+    LOADING SCREEN
+    ============================================================ -->
+    <div id="loading-screen" role="status" aria-label="Loading">
+        <div class="load-logo">
+            <div class="load-logo-symbol" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <path d="M16 10a4 4 0 0 1-8 0" />
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </div>
-            <h3>Marketplace</h3>
-            <p>Browse investment opportunities and exclusive deals</p>
-            <span class="badge-new">🔥 New plans available</span>
+            <div class="load-title">PureOre Nexus</div>
+            <div class="load-sub">Automotive Investment Network</div>
         </div>
-
-        <!-- Footer -->
-        <div class="footer-links">
-            <a href="term.html">Terms of Service</a>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="risk-disclaimer.html">Risk Disclaimer</a>
-            <div class="copyright">© Sajvera Capital 2026</div>
+        <div class="load-progress-wrap">
+            <div class="load-progress-track">
+                <div class="load-progress-bar" id="load-bar" style="width:0%;"></div>
+            </div>
+            <div class="load-msg" id="load-msg">Securing your account...</div>
         </div>
-
-    </main>
-
-    <!-- ===== BOTTOM NAV ===== -->
-    <div class="bottom-nav">
-        <button class="nav-item active" data-page="dashboard.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            <span class="nav-label">Home</span>
-        </button>
-        <button class="nav-item" data-page="income.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-            <span class="nav-label">Income</span>
-        </button>
-        <button class="nav-item marketplace" data-page="marketplace.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            <span class="nav-label">Market</span>
-        </button>
-        <button class="nav-item" data-page="team.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span class="nav-label">Team</span>
-        </button>
-        <button class="nav-item" data-page="me.html">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span class="nav-label">Me</span>
-        </button>
     </div>
 
-    <script>
-        // ================================================================
+    <!-- ============================================================
+    MAIN DASHBOARD
+    ============================================================ -->
+    <div id="main-dashboard">
+        <div class="bg-wrap" aria-hidden="true"></div>
+        <div class="bg-overlay" aria-hidden="true"></div>
+
+        <div class="dashboard-scroll">
+
+            <!-- ===== HEADER ===== -->
+            <header class="header" role="banner">
+                <a href="#" class="header-brand" aria-label="PureOre Nexus">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Pure<em>Ore</em> Nexus</span>
+                </a>
+
+                <div class="header-actions">
+                    <button class="header-btn" id="notif-btn" aria-label="Notifications">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span class="badge hidden" id="notif-badge">0</span>
+                    </button>
+                    <button class="header-btn" id="profile-btn" aria-label="Profile">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button class="header-btn" id="menu-btn" aria-label="Menu">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ===== DASHBOARD CONTENT ===== -->
+            <div id="dashboard-content">
+
+                <!-- Welcome -->
+                <section class="welcome-section">
+                    <div class="greeting">Welcome back,</div>
+                    <h1 id="user-name">—</h1>
+                    <div class="sub">Your Nexus is ready.</div>
+                </section>
+
+                <!-- ===== ADVERTISEMENT ===== -->
+                <div id="ad-container">
+                    <a href="#" id="ad-link" target="_blank" rel="noopener noreferrer">
+                        <div class="ad-card">
+                            <img id="ad-image-display" src="" alt="Advertisement" />
+                            <div class="ad-body">
+                                <div class="ad-title" id="ad-title-display"></div>
+                                <div class="ad-desc" id="ad-desc-display"></div>
+                                <span class="ad-btn" id="ad-btn-display">Learn More</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Balance Cards -->
+                <div class="balance-grid" id="balance-grid">
+                    <div class="balance-card deposit">
+                        <div class="label">Deposit Balance</div>
+                        <div class="amount"><span class="currency">K</span> <span id="deposit-balance">0.00</span></div>
+                        <div class="desc">Available for investment</div>
+                        <a href="investments.html" class="action-btn">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Invest
+                        </a>
+                    </div>
+                    <div class="balance-card wallet">
+                        <div class="label">Wallet Balance</div>
+                        <div class="amount"><span class="currency">K</span> <span id="wallet-balance">0.00</span></div>
+                        <div class="desc">Available wallet funds</div>
+                        <a href="wallet.html" class="action-btn">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M2 7h20v12H2z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M16 11a2 2 0 0 0 0 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            View Wallet
+                        </a>
+                    </div>
+                    <div class="balance-card activity">
+                        <div class="label">Activity Balance</div>
+                        <div class="amount"><span class="currency">K</span> <span id="activity-balance">0.00</span></div>
+                        <div class="desc">Activity &amp; referral rewards</div>
+                        <a href="daily-check.html" class="action-btn">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Activity
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <section>
+                    <div class="quick-actions">
+                        <a href="investments.html" class="quick-action" aria-label="Invest">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span class="label">Invest</span>
+                        </a>
+                        <a href="deposit.html" class="quick-action" aria-label="Deposit">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span class="label">Deposit</span>
+                        </a>
+                        <a href="withdraw.html" class="quick-action" aria-label="Withdraw">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 19V5M5 12h14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span class="label">Withdraw</span>
+                        </a>
+                        <a href="wallet.html" class="quick-action" aria-label="Wallet">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M16 10a2 2 0 0 0 0 4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span class="label">Wallet</span>
+                        </a>
+                        <a href="transactions.html" class="quick-action" aria-label="Transactions">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M4 7h16M4 12h12M4 17h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M20 7l-4 5 4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span class="label">Transactions</span>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Card Grid: Daily Check + Referral -->
+                <div class="card-grid">
+                    <!-- Daily Check -->
+                    <div class="card" id="daily-check-card">
+                        <div class="card-title">Daily Check</div>
+                        <div class="card-value" id="daily-day">Day 0 of 7</div>
+                        <div class="card-desc">Keep your activity going.</div>
+                        <a href="daily-check.html" class="card-action">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Check In
+                        </a>
+                    </div>
+
+                    <!-- Referral -->
+                    <div class="card" id="referral-card">
+                        <div class="card-title">Invite &amp; Earn</div>
+                        <div class="referral-code">
+                            <code id="referral-code-display">——</code>
+                            <button class="copy-btn" id="copy-referral" aria-label="Copy referral code">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <div class="card-desc">Share your code and earn rewards.</div>
+                        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                            <button class="card-action" id="share-referral">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                    <polyline points="16 6 12 2 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                    <line x1="12" y1="2" x2="12" y2="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Share
+                            </button>
+                            <a href="referrals.html" class="card-action" style="border-color:rgba(255,255,255,0.08);color:var(--text-muted);">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                View Referrals
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automotive Opportunities -->
+                <section>
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">Automotive Opportunities</div>
+                            <div class="section-sub">Explore available investment opportunities.</div>
+                        </div>
+                        <a href="investments.html" class="view-all">
+                            View All
+                            <svg viewBox="0 0 24 24">
+                                <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </a>
+                    </div>
+                    <div id="investment-plans-container">
+                        <!-- Dynamically rendered -->
+                    </div>
+                </section>
+
+                <!-- My Investments -->
+                <section class="mt-12">
+                    <div class="section-header">
+                        <div class="section-title">Your Investments</div>
+                        <a href="my-investments.html" class="view-all">
+                            View All
+                            <svg viewBox="0 0 24 24">
+                                <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </a>
+                    </div>
+                    <div id="my-investments-container">
+                        <!-- Dynamically rendered -->
+                    </div>
+                </section>
+
+                <!-- Recent Transactions -->
+                <section class="mt-12">
+                    <div class="section-header">
+                        <div class="section-title">Recent Activity</div>
+                        <a href="transactions.html" class="view-all">
+                            View All
+                            <svg viewBox="0 0 24 24">
+                                <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </a>
+                    </div>
+                    <div id="transactions-container">
+                        <!-- Dynamically rendered -->
+                    </div>
+                </section>
+
+                <!-- Announcements -->
+                <section class="mt-12" id="announcements-section">
+                    <div class="section-title" style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Announcements</div>
+                    <div id="announcements-container">
+                        <!-- Dynamically rendered -->
+                    </div>
+                </section>
+
+                <div class="divider-light"></div>
+
+                <!-- Profile quick link -->
+                <div style="display:flex;justify-content:center;gap:16px;padding:4px 0 8px;flex-wrap:wrap;">
+                    <a href="profile.html" style="color:var(--text-muted);font-size:0.65rem;text-decoration:none;transition:color 0.25s ease;display:inline-flex;align-items:center;gap:4px;">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Profile
+                    </a>
+                    <a href="settings.html" style="color:var(--text-muted);font-size:0.65rem;text-decoration:none;transition:color 0.25s ease;display:inline-flex;align-items:center;gap:4px;">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Settings
+                    </a>
+                    <a href="support.html" style="color:var(--text-muted);font-size:0.65rem;text-decoration:none;transition:color 0.25s ease;display:inline-flex;align-items:center;gap:4px;">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Support
+                    </a>
+                    <button id="logout-btn" style="background:none;border:none;color:#e74c3c;font-size:0.65rem;cursor:pointer;font-family:inherit;transition:color 0.25s ease;display:inline-flex;align-items:center;gap:4px;">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+
+                <!-- ===== BRANDING FOOTER ===== -->
+                <div class="branding-footer">
+                    <span>@pureorecapital</span> 2025
+                </div>
+
+            </div>
+
+            <!-- Blocked / Error states (hidden by default) -->
+            <div id="blocked-state" class="hidden">
+                <div class="blocked-screen">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <h2>Account Restricted</h2>
+                    <p>Your account has been restricted. Please contact support for assistance.</p>
+                    <a href="support.html" class="btn">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Contact Support
+                    </a>
+                </div>
+            </div>
+
+            <div id="error-state" class="hidden">
+                <div class="error-screen">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <h2 id="error-title">Something went wrong</h2>
+                    <p id="error-message">Unable to load your dashboard. Please try again.</p>
+                    <button class="btn" id="error-retry">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M1 4v6h6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Retry
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+    BOTTOM NAVIGATION (Mobile)
+    ============================================================ -->
+    <nav class="bottom-nav" aria-label="Mobile navigation">
+        <a href="dashboard.html" class="active" aria-label="Home">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Home
+        </a>
+        <a href="investments.html" aria-label="Invest">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Invest
+        </a>
+        <a href="wallet.html" aria-label="Wallet">
+            <svg viewBox="0 0 24 24">
+                <rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 10a2 2 0 0 0 0 4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Wallet
+        </a>
+        <a href="daily-check.html" aria-label="Activity">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Activity
+        </a>
+        <a href="profile.html" aria-label="Profile">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Profile
+        </a>
+    </nav>
+
+    <!-- ============================================================
+    TOAST
+    ============================================================ -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span id="toast-message">Success</span>
+    </div>
+
+    <!-- ============================================================
+    FIREBASE + APPLICATION LOGIC
+    ============================================================ -->
+    <script type="module">
+        // ============================================================
+        // IMPORTS
+        // ============================================================
+        import { initializeApp } from 'firebase/app';
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signOut
+        } from 'firebase/auth';
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            query,
+            where,
+            orderBy,
+            limit,
+            getDocs,
+            onSnapshot
+        } from 'firebase/firestore';
+        import {
+            getFunctions,
+            httpsCallable
+        } from 'firebase/functions';
+
+        // ============================================================
         // FIREBASE CONFIG
-        // ================================================================
-        var firebaseConfig = {
-            apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
-            authDomain: "pureore-capital-zambia.firebaseapp.com",
-            projectId: "pureore-capital-zambia",
-            storageBucket: "pureore-capital-zambia.appspot.com",
-            messagingSenderId: "78967797858",
-            appId: "1:78967797858:web:379b9692951429c345793b",
-            measurementId: "G-FQKC29NYE9"
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2nHDM2ebNv9pUUoIhsfJUCSLlffWYW1w",
+            authDomain: "pureore-nexus.firebaseapp.com",
+            projectId: "pureore-nexus",
+            storageBucket: "pureore-nexus.firebasestorage.app",
+            messagingSenderId: "555338198187",
+            appId: "1:555338198187:web:0c510ca507fa4c835a5bee",
+            measurementId: "G-L2B5FEMH2C"
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        var auth = firebase.auth();
-        var db = firebase.firestore();
-        db.settings({ persistence: true });
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e) {
-            console.warn('Persistence error:', e);
-        });
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const functions = getFunctions(app);
 
-        // ================================================================
+        // ============================================================
         // DOM REFS
-        // ================================================================
-        function getEl(id) {
-            var el = document.getElementById(id);
-            if (!el) console.warn('Element not found:', id);
-            return el;
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const loadScreen = $('loading-screen');
+        const loadBar = $('load-bar');
+        const loadMsg = $('load-msg');
+        const mainDash = $('main-dashboard');
+        const dashContent = $('dashboard-content');
+        const blockedState = $('blocked-state');
+        const errorState = $('error-state');
+        const errorTitle = $('error-title');
+        const errorMessage = $('error-message');
+        const errorRetry = $('error-retry');
+
+        const userName = $('user-name');
+        const depositBalance = $('deposit-balance');
+        const walletBalance = $('wallet-balance');
+        const activityBalance = $('activity-balance');
+        const dailyDay = $('daily-day');
+        const referralCodeDisplay = $('referral-code-display');
+        const notifBadge = $('notif-badge');
+
+        const toast = $('toast');
+        const toastMessage = $('toast-message');
+
+        let toastTimeout = null;
+
+        // ============================================================
+        // LOADING SCREEN
+        // ============================================================
+        let loadProgress = 0;
+        const loadMessages = [
+            'Securing your account...',
+            'Checking your profile...',
+            'Loading your Nexus...'
+        ];
+        let msgIndex = 0;
+
+        const loadInterval = setInterval(() => {
+            loadProgress += 1.8;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                clearInterval(loadInterval);
+                loadBar.style.width = '100%';
+                loadMsg.textContent = 'Ready';
+                return;
+            }
+            loadBar.style.width = loadProgress + '%';
+            const idx = Math.min(Math.floor(loadProgress / 35), 2);
+            if (idx !== msgIndex) {
+                msgIndex = idx;
+                loadMsg.textContent = loadMessages[msgIndex] || loadMessages[0];
+            }
+        }, 35);
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+        function showToast(message, type = '') {
+            toastMessage.textContent = message;
+            toast.className = 'toast ' + type;
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
 
-        var logoutBtn = getEl('logoutBtn');
-        var userNameDisplay = getEl('userNameDisplay');
-        var greetingSub = getEl('greetingSub');
-        var marketplaceCard = getEl('marketplaceCard');
+        // ============================================================
+        // FORMAT CURRENCY
+        // ============================================================
+        function formatCurrency(amount) {
+            if (amount === undefined || amount === null) return '0.00';
+            return Number(amount).toFixed(2);
+        }
 
-        // ================================================================
-        // AUTH STATE
-        // ================================================================
-        var authResolved = false;
-        var redirectTimeout = null;
+        // ============================================================
+        // FORMAT DATE
+        // ============================================================
+        function formatDate(timestamp) {
+            if (!timestamp) return '—';
+            try {
+                const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return d.toLocaleDateString('en-ZM', { day: '2-digit', month: 'short', year: 'numeric' });
+            } catch (e) {
+                return '—';
+            }
+        }
 
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                authResolved = true;
-                if (redirectTimeout) {
-                    clearTimeout(redirectTimeout);
-                    redirectTimeout = null;
+        function formatDateShort(timestamp) {
+            if (!timestamp) return '—';
+            try {
+                const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return d.toLocaleDateString('en-ZM', { day: '2-digit', month: 'short' });
+            } catch (e) {
+                return '—';
+            }
+        }
+
+        // ============================================================
+        // SHOW DASHBOARD
+        // ============================================================
+        function showDashboard() {
+            loadScreen.classList.add('hidden');
+            mainDash.classList.add('visible');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ============================================================
+        // SHOW BLOCKED
+        // ============================================================
+        function showBlocked() {
+            dashContent.classList.add('hidden');
+            blockedState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            showDashboard();
+        }
+
+        // ============================================================
+        // SHOW ERROR
+        // ============================================================
+        function showError(title, message) {
+            dashContent.classList.add('hidden');
+            blockedState.classList.add('hidden');
+            errorState.classList.remove('hidden');
+            errorTitle.textContent = title;
+            errorMessage.textContent = message;
+            showDashboard();
+        }
+
+        // ============================================================
+        // RENDER FUNCTIONS
+        // ============================================================
+        function renderUser(userData) {
+            userName.textContent = userData.fullName || 'User';
+            depositBalance.textContent = formatCurrency(userData.depositBalance || 0);
+            walletBalance.textContent = formatCurrency(userData.walletBalance || 0);
+            activityBalance.textContent = formatCurrency(userData.activityBalance || 0);
+            referralCodeDisplay.textContent = userData.referralCode || '——';
+        }
+
+        function renderDailyCheck(dailyData) {
+            const day = dailyData?.currentDay || 0;
+            dailyDay.textContent = `Day ${day} of 7`;
+        }
+
+        function renderInvestmentPlans(plans) {
+            const container = $('investment-plans-container');
+            if (!plans || plans.length === 0) {
+                container.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p>Investment opportunities will appear here when available.</p>
+                        </div>
+                    `;
+                return;
+            }
+            container.innerHTML = plans.slice(0, 3).map(plan => `
+                    <div class="plan-card">
+                        <div class="plan-header">
+                            <div class="plan-name">${plan.name || 'Unnamed Plan'}</div>
+                            <span class="plan-status ${plan.isActive ? '' : 'inactive'}">${plan.isActive ? 'Active' : 'Inactive'}</span>
+                        </div>
+                        <div class="plan-details">
+                            <span>
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Min: <strong>K ${formatCurrency(plan.minInvestment || 0)}</strong>
+                            </span>
+                            <span>
+                                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                ${plan.duration || '—'}
+                            </span>
+                            ${plan.status ? `<span>${plan.status}</span>` : ''}
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                            <span style="font-size:0.6rem;color:var(--text-muted);">${plan.description || ''}</span>
+                            <a href="investment-details.html?id=${plan.id}" class="plan-action">
+                                View Details
+                                <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            </a>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function renderMyInvestments(investments) {
+            const container = $('my-investments-container');
+            if (!investments || investments.length === 0) {
+                container.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p>You don't have any active investments yet.</p>
+                            <a href="investments.html">Explore Investments →</a>
+                        </div>
+                    `;
+                return;
+            }
+            container.innerHTML = investments.slice(0, 3).map(inv => {
+                const statusClass = inv.status === 'active' ? 'active' :
+                    inv.status === 'matured' ? 'matured' : 'pending';
+                return `
+                        <div class="investment-item">
+                            <div class="info">
+                                <div class="name">${inv.planName || 'Investment'}</div>
+                                <div class="meta">${formatDateShort(inv.startDate)} — ${formatDateShort(inv.endDate)}</div>
+                            </div>
+                            <div class="right">
+                                <div class="amount">K ${formatCurrency(inv.amount || 0)}</div>
+                                <span class="status ${statusClass}">${inv.status || 'Pending'}</span>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        function renderTransactions(transactions) {
+            const container = $('transactions-container');
+            if (!transactions || transactions.length === 0) {
+                container.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M4 7h16M4 12h12M4 17h8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M20 7l-4 5 4 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p>No transactions yet.</p>
+                        </div>
+                    `;
+                return;
+            }
+            container.innerHTML = transactions.slice(0, 5).map(tx => {
+                const isPositive = tx.type === 'deposit' || tx.type === 'interest' || tx.type === 'bonus' || tx.type === 'referral';
+                const sign = isPositive ? '+' : '';
+                const amountClass = isPositive ? 'positive' : 'negative';
+                const typeLabels = {
+                    deposit: 'Deposit',
+                    withdraw: 'Withdrawal',
+                    investment: 'Investment',
+                    interest: 'Interest',
+                    bonus: 'Bonus',
+                    referral: 'Referral'
+                };
+                return `
+                        <div class="transaction-item">
+                            <div class="info">
+                                <div class="type">${typeLabels[tx.type] || tx.type || 'Transaction'}</div>
+                                <div class="date">${formatDate(tx.createdAt)}</div>
+                            </div>
+                            <div class="right">
+                                <div class="amount ${amountClass}">${sign}K ${formatCurrency(tx.amount || 0)}</div>
+                                <span class="status ${tx.status || 'pending'}">${tx.status || 'Pending'}</span>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        function renderAnnouncements(announcements) {
+            const container = $('announcements-container');
+            const section = $('announcements-section');
+            if (!announcements || announcements.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = 'block';
+            container.innerHTML = announcements.slice(0, 2).map(a => `
+                    <div class="announcement">
+                        <div class="title">
+                            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            ${a.title || 'Announcement'}
+                        </div>
+                        <div class="message">${a.message || ''}</div>
+                        <div class="date">${formatDate(a.createdAt)}</div>
+                    </div>
+                `).join('');
+        }
+
+        // ============================================================
+        // LOAD ADVERTISEMENT
+        // ============================================================
+        async function loadAd() {
+            try {
+                const adRef = doc(db, 'systemSettings', 'ads');
+                const adSnap = await getDoc(adRef);
+                const container = document.getElementById('ad-container');
+                if (adSnap.exists()) {
+                    const ad = adSnap.data();
+                    if (ad.enabled) {
+                        container.style.display = 'block';
+                        document.getElementById('ad-image-display').src = ad.imageUrl || 'https://placehold.co/600x400/1a1a1a/888?text=Ad';
+                        document.getElementById('ad-title-display').textContent = ad.title || '';
+                        document.getElementById('ad-desc-display').textContent = ad.description || '';
+                        document.getElementById('ad-btn-display').textContent = ad.buttonText || 'Learn More';
+                        document.getElementById('ad-link').href = ad.destinationUrl || '#';
+                    } else {
+                        container.style.display = 'none';
+                    }
+                } else {
+                    container.style.display = 'none';
                 }
+            } catch (e) {
+                console.warn('Ad not configured:', e);
+                const container = document.getElementById('ad-container');
+                if (container) container.style.display = 'none';
+            }
+        }
 
-                var uid = user.uid;
-                if (!uid) {
-                    window.location.href = 'login.html';
+        // ============================================================
+        // LOAD DASHBOARD DATA
+        // ============================================================
+        async function loadDashboardData(user) {
+            try {
+                const uid = user.uid;
+
+                // Load user document
+                const userRef = doc(db, 'users', uid);
+                const userSnap = await getDoc(userRef);
+
+                if (!userSnap.exists()) {
+                    showError('Account Not Found', 'Your account information could not be found. Please register or contact support.');
                     return;
                 }
 
-                db.collection('users').doc(uid).get()
-                    .then(function(doc) {
-                        if (!doc.exists) {
-                            auth.signOut().catch(function() {});
-                            window.location.href = 'login.html';
-                            return;
-                        }
-                        var data = doc.data();
-                        var name = data.fullName || data.displayName || 'Investor';
-                        if (userNameDisplay) userNameDisplay.textContent = name;
-                    })
-                    .catch(function(e) {
-                        console.warn('User load error:', e);
-                    });
-            } else {
-                if (!authResolved) {
-                    if (!redirectTimeout) {
-                        redirectTimeout = setTimeout(function() {
-                            if (!auth.currentUser) {
-                                window.location.href = 'login.html';
-                            }
-                        }, 2000);
-                    }
+                const userData = userSnap.data();
+
+                if (userData.isBlocked === true) {
+                    showBlocked();
+                    return;
+                }
+
+                renderUser(userData);
+
+                // Load wallet
+                const walletRef = doc(db, 'wallets', uid);
+                const walletSnap = await getDoc(walletRef);
+                if (walletSnap.exists()) {
+                    const walletData = walletSnap.data();
+                    depositBalance.textContent = formatCurrency(walletData.depositBalance || userData.depositBalance || 0);
+                    walletBalance.textContent = formatCurrency(walletData.walletBalance || userData.walletBalance || 0);
+                    activityBalance.textContent = formatCurrency(walletData.activityBalance || userData.activityBalance || 0);
+                }
+
+                // Load daily check
+                const dailyRef = doc(db, 'dailyChecks', uid);
+                const dailySnap = await getDoc(dailyRef);
+                if (dailySnap.exists()) {
+                    renderDailyCheck(dailySnap.data());
+                }
+
+                // Load investment plans
+                const plansQuery = query(
+                    collection(db, 'investmentPlans'),
+                    where('isActive', '==', true),
+                    limit(6)
+                );
+                const plansSnap = await getDocs(plansQuery);
+                const plans = [];
+                plansSnap.forEach(doc => {
+                    plans.push({ id: doc.id, ...doc.data() });
+                });
+                renderInvestmentPlans(plans);
+
+                // Load user's investments
+                const investmentsQuery = query(
+                    collection(db, 'investments'),
+                    where('userId', '==', uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(5)
+                );
+                const investmentsSnap = await getDocs(investmentsQuery);
+                const investments = [];
+                investmentsSnap.forEach(doc => {
+                    investments.push({ id: doc.id, ...doc.data() });
+                });
+                renderMyInvestments(investments);
+
+                // Load transactions
+                const txQuery = query(
+                    collection(db, 'transactions'),
+                    where('userId', '==', uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(10)
+                );
+                const txSnap = await getDocs(txQuery);
+                const transactions = [];
+                txSnap.forEach(doc => {
+                    transactions.push({ id: doc.id, ...doc.data() });
+                });
+                renderTransactions(transactions);
+
+                // Load announcements
+                const annQuery = query(
+                    collection(db, 'announcements'),
+                    where('isActive', '==', true),
+                    orderBy('createdAt', 'desc'),
+                    limit(3)
+                );
+                const annSnap = await getDocs(annQuery);
+                const announcements = [];
+                annSnap.forEach(doc => {
+                    announcements.push({ id: doc.id, ...doc.data() });
+                });
+                renderAnnouncements(announcements);
+
+                // Load notifications count
+                const notifQuery = query(
+                    collection(db, 'notifications'),
+                    where('userId', '==', uid),
+                    where('read', '==', false),
+                    limit(100)
+                );
+                const notifSnap = await getDocs(notifQuery);
+                const unreadCount = notifSnap.size;
+                if (unreadCount > 0) {
+                    notifBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    notifBadge.classList.remove('hidden');
                 } else {
-                    window.location.href = 'login.html';
+                    notifBadge.classList.add('hidden');
                 }
+
+                // Load ad
+                await loadAd();
+
+                showDashboard();
+
+            } catch (error) {
+                console.error('Load dashboard error:', error);
+                showError('Unable to Load Dashboard', 'Please check your connection and try again.');
             }
-        }, function(error) {
-            console.error('Auth state error:', error);
-            window.location.href = 'login.html';
-        });
-
-        // ================================================================
-        // SLIDESHOW
-        // ================================================================
-        var slides = document.querySelectorAll('.slide');
-        var dots = document.querySelectorAll('.dot');
-        var currentSlide = 0;
-        var totalSlides = slides.length;
-        var slideInterval = null;
-
-        function goToSlide(index) {
-            if (!slides.length || !dots.length) return;
-            index = (index + totalSlides) % totalSlides;
-            slides.forEach(function(s) { s.classList.remove('active'); });
-            dots.forEach(function(d) { d.classList.remove('active'); });
-            slides[index].classList.add('active');
-            dots[index].classList.add('active');
-            currentSlide = index;
         }
 
-        function nextSlide() {
-            goToSlide(currentSlide + 1);
-        }
-
-        function startSlideshow() {
-            if (!slides.length) return;
-            goToSlide(0);
-            if (slideInterval) clearInterval(slideInterval);
-            slideInterval = setInterval(nextSlide, 4000);
-        }
-
-        dots.forEach(function(dot) {
-            dot.addEventListener('click', function() {
-                var idx = parseInt(this.getAttribute('data-index'), 10);
-                if (isNaN(idx)) return;
-                goToSlide(idx);
-                if (slideInterval) {
-                    clearInterval(slideInterval);
-                    slideInterval = setInterval(nextSlide, 4000);
-                }
-            });
-        });
-
-        var hero = document.getElementById('heroSlideshow');
-        if (hero) {
-            hero.addEventListener('mouseenter', function() {
-                if (slideInterval) clearInterval(slideInterval);
-            });
-            hero.addEventListener('mouseleave', function() {
-                if (slideInterval) clearInterval(slideInterval);
-                slideInterval = setInterval(nextSlide, 4000);
-            });
-        }
-
-        startSlideshow();
-
-        // ================================================================
-        // MARKETPLACE CARD CLICK
-        // ================================================================
-        if (marketplaceCard) {
-            marketplaceCard.addEventListener('click', function() {
-                window.location.href = 'marketplace.html';
-            });
-        }
-
-        // ================================================================
-        // BOTTOM NAV
-        // ================================================================
-        var navItems = document.querySelectorAll('.nav-item');
-        var currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
-
-        navItems.forEach(function(item) {
-            var target = item.getAttribute('data-page');
-            if (target && currentPage === target) {
-                item.classList.add('active');
+        // ============================================================
+        // AUTHENTICATION CHECK
+        // ============================================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
             }
-            item.addEventListener('click', function() {
-                var t = this.getAttribute('data-page');
-                if (t && !window.location.pathname.includes(t)) {
-                    window.location.href = t;
-                }
-            });
+            loadDashboardData(user);
         });
 
-        // ================================================================
-        // DYNAMIC GREETING
-        // ================================================================
-        if (greetingSub) {
-            var hour = new Date().getHours();
-            var msgs = [
-                'Start your day with smart investing',
-                'Keep growing your portfolio',
-                'Evening is a great time to review your earnings',
-                'Rest well, tomorrow is another opportunity'
-            ];
-            var msg = hour < 12 ? msgs[0] :
-                hour < 17 ? msgs[1] :
-                hour < 21 ? msgs[2] : msgs[3];
-            greetingSub.textContent = msg;
-        }
-
-        // ================================================================
+        // ============================================================
         // LOGOUT
-        // ================================================================
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function() {
-                auth.signOut()
-                    .then(function() {
-                        window.location.href = 'login.html';
-                    })
-                    .catch(function(err) {
-                        console.warn('Logout error:', err);
-                        window.location.href = 'login.html';
-                    });
+        // ============================================================
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                showToast('Failed to logout. Please try again.', 'error');
+            }
+        });
+
+        // ============================================================
+        // COPY REFERRAL CODE
+        // ============================================================
+        document.getElementById('copy-referral').addEventListener('click', () => {
+            const code = referralCodeDisplay.textContent;
+            if (!code || code === '——') {
+                showToast('No referral code available.', 'error');
+                return;
+            }
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Referral code copied!', 'success');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('Referral code copied!', 'success');
+            });
+        });
+
+        // ============================================================
+        // SHARE REFERRAL
+        // ============================================================
+        document.getElementById('share-referral').addEventListener('click', () => {
+            const code = referralCodeDisplay.textContent;
+            if (!code || code === '——') {
+                showToast('No referral code available.', 'error');
+                return;
+            }
+            const url = `${window.location.origin}/register.html?ref=${code}`;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Join PureOre Nexus',
+                    text: `Join PureOre Nexus using my referral code: ${code}`,
+                    url: url
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Referral link copied to clipboard!', 'success');
+                }).catch(() => {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = url;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    showToast('Referral link copied!', 'success');
+                });
+            }
+        });
+
+        // ============================================================
+        // NOTIFICATIONS BUTTON
+        // ============================================================
+        document.getElementById('notif-btn').addEventListener('click', () => {
+            window.location.href = 'notifications.html';
+        });
+
+        // ============================================================
+        // PROFILE BUTTON
+        // ============================================================
+        document.getElementById('profile-btn').addEventListener('click', () => {
+            window.location.href = 'profile.html';
+        });
+
+        // ============================================================
+        // MENU BUTTON
+        // ============================================================
+        document.getElementById('menu-btn').addEventListener('click', () => {
+            window.location.href = 'profile.html';
+        });
+
+        // ============================================================
+        // ERROR RETRY
+        // ============================================================
+        errorRetry.addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        // ============================================================
+        // REAL-TIME UPDATES
+        // ============================================================
+        function listenToUserUpdates(uid) {
+            const userRef = doc(db, 'users', uid);
+            return onSnapshot(userRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.isBlocked === true) {
+                        showBlocked();
+                        return;
+                    }
+                    depositBalance.textContent = formatCurrency(data.depositBalance || 0);
+                    walletBalance.textContent = formatCurrency(data.walletBalance || 0);
+                    activityBalance.textContent = formatCurrency(data.activityBalance || 0);
+                    userName.textContent = data.fullName || 'User';
+                    referralCodeDisplay.textContent = data.referralCode || '——';
+                }
+            }, (error) => {
+                console.error('User listener error:', error);
             });
         }
 
-        console.log('✅ Sajvera Capital · Dashboard (clean, no video, no hamburger)');
-        console.log('❌ Video player removed');
-        console.log('❌ Hamburger menu removed');
-        console.log('➕ Added Saving Money and Job Apply quick buttons');
-        console.log('✅ Job Apply now links to jobs.html (fixed 404)');
+        // Override loadDashboardData to set up listener
+        const originalLoad = loadDashboardData;
+        loadDashboardData = async function(user) {
+            try {
+                const uid = user.uid;
+
+                const userRef = doc(db, 'users', uid);
+                const userSnap = await getDoc(userRef);
+
+                if (!userSnap.exists()) {
+                    showError('Account Not Found', 'Your account information could not be found. Please register or contact support.');
+                    return;
+                }
+
+                const userData = userSnap.data();
+
+                if (userData.isBlocked === true) {
+                    showBlocked();
+                    return;
+                }
+
+                renderUser(userData);
+
+                const walletRef = doc(db, 'wallets', uid);
+                const walletSnap = await getDoc(walletRef);
+                if (walletSnap.exists()) {
+                    const walletData = walletSnap.data();
+                    depositBalance.textContent = formatCurrency(walletData.depositBalance || userData.depositBalance || 0);
+                    walletBalance.textContent = formatCurrency(walletData.walletBalance || userData.walletBalance || 0);
+                    activityBalance.textContent = formatCurrency(walletData.activityBalance || userData.activityBalance || 0);
+                }
+
+                const dailyRef = doc(db, 'dailyChecks', uid);
+                const dailySnap = await getDoc(dailyRef);
+                if (dailySnap.exists()) {
+                    renderDailyCheck(dailySnap.data());
+                }
+
+                const plansQuery = query(
+                    collection(db, 'investmentPlans'),
+                    where('isActive', '==', true),
+                    limit(6)
+                );
+                const plansSnap = await getDocs(plansQuery);
+                const plans = [];
+                plansSnap.forEach(doc => {
+                    plans.push({ id: doc.id, ...doc.data() });
+                });
+                renderInvestmentPlans(plans);
+
+                const investmentsQuery = query(
+                    collection(db, 'investments'),
+                    where('userId', '==', uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(5)
+                );
+                const investmentsSnap = await getDocs(investmentsQuery);
+                const investments = [];
+                investmentsSnap.forEach(doc => {
+                    investments.push({ id: doc.id, ...doc.data() });
+                });
+                renderMyInvestments(investments);
+
+                const txQuery = query(
+                    collection(db, 'transactions'),
+                    where('userId', '==', uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(10)
+                );
+                const txSnap = await getDocs(txQuery);
+                const transactions = [];
+                txSnap.forEach(doc => {
+                    transactions.push({ id: doc.id, ...doc.data() });
+                });
+                renderTransactions(transactions);
+
+                const annQuery = query(
+                    collection(db, 'announcements'),
+                    where('isActive', '==', true),
+                    orderBy('createdAt', 'desc'),
+                    limit(3)
+                );
+                const annSnap = await getDocs(annQuery);
+                const announcements = [];
+                annSnap.forEach(doc => {
+                    announcements.push({ id: doc.id, ...doc.data() });
+                });
+                renderAnnouncements(announcements);
+
+                const notifQuery = query(
+                    collection(db, 'notifications'),
+                    where('userId', '==', uid),
+                    where('read', '==', false),
+                    limit(100)
+                );
+                const notifSnap = await getDocs(notifQuery);
+                const unreadCount = notifSnap.size;
+                if (unreadCount > 0) {
+                    notifBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    notifBadge.classList.remove('hidden');
+                } else {
+                    notifBadge.classList.add('hidden');
+                }
+
+                // Load ad
+                await loadAd();
+
+                listenToUserUpdates(uid);
+                showDashboard();
+
+            } catch (error) {
+                console.error('Load dashboard error:', error);
+                showError('Unable to Load Dashboard', 'Please check your connection and try again.');
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (!mainDash.classList.contains('visible')) {
+                loadDashboardData(user);
+            }
+        });
+
+        console.log('PureOre Nexus — Dashboard ready.');
     </script>
+
 </body>
 </html>
