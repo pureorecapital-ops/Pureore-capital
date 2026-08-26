@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BASE (DARK BLUE THEME) ----- */
+        /* ----- RESET & BASE ----- */
         * {
             margin: 0;
             padding: 0;
@@ -31,7 +31,6 @@
             background: #000;
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND IMAGE ----- */
         .hero-bg {
             position: fixed;
             top: 0;
@@ -66,7 +65,7 @@
             background: rgba(0, 0, 0, 0.65);
         }
 
-        /* ----- HEADER (DARK GLASS) ----- */
+        /* ----- HEADER ----- */
         .header {
             position: fixed;
             top: 0;
@@ -287,6 +286,28 @@
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
+        }
+
+        /* Time notice */
+        .time-notice {
+            background: rgba(96, 165, 250, 0.04);
+            border: 1px solid rgba(96, 165, 250, 0.06);
+            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.40);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .time-notice svg {
+            width: 16px;
+            height: 16px;
+            stroke: #60a5fa;
+            stroke-width: 2;
+            fill: none;
+            flex-shrink: 0;
         }
 
         /* ----- STEP CONTAINER ----- */
@@ -806,7 +827,7 @@
             }
         }
 
-        /* ─── NEW: WITHDRAWAL TYPE TOGGLE & SAVING BRANCH ─── */
+        /* ─── WITHDRAWAL TYPE TOGGLE ─── */
         .type-toggle {
             display: flex;
             gap: 0.5rem;
@@ -1014,13 +1035,19 @@
                     <span id="step1Title">Withdrawal Info</span>
                 </div>
 
-                <!-- ─── NEW: Withdrawal Type Toggle ─── -->
+                <!-- ─── TIME NOTICE ─── -->
+                <div class="time-notice">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Withdrawals allowed between <strong>09:00</strong> and <strong>17:00</strong> daily.
+                </div>
+
+                <!-- ─── WITHDRAWAL TYPE TOGGLE ─── -->
                 <div class="type-toggle" id="withdrawalTypeToggle">
                     <button class="active" data-type="normal">Normal</button>
                     <button data-type="saving">Saving</button>
                 </div>
 
-                <!-- ─── NEW: Branch selector (visible only when Saving is selected) ─── -->
+                <!-- ─── BRANCH SELECTOR (visible only when Saving is selected) ─── -->
                 <div class="branch-selector" id="branchSelector">
                     <div class="form-group">
                         <label>🏦 Select Saving Branch</label>
@@ -1124,7 +1151,7 @@
         </div>
 
         <!-- ========================================================== -->
-        <!-- ===== STEP 2: ENTER AMOUNT (no minimum, 10% fee) ===== -->
+        <!-- ===== STEP 2: ENTER AMOUNT ===== -->
         <!-- ========================================================== -->
         <div class="step-container hidden" id="step2">
             <div class="glass-card">
@@ -1207,7 +1234,6 @@
                         <span class="summary-label">⏳ Estimated Processing</span>
                         <span class="summary-value" id="confirmEta" style="color:#60a5fa; font-weight:700;">—</span>
                     </div>
-                    <!-- NEW: Show type and branch if saving -->
                     <div class="summary-row" id="confirmTypeRow" style="display:none;">
                         <span class="summary-label">Type</span>
                         <span class="summary-value" id="confirmType">Normal</span>
@@ -1277,7 +1303,7 @@
     </main>
 
     <!-- ================================================================
-    JAVASCRIPT – FIREBASE & LOGIC (with saving withdrawal added)
+    JAVASCRIPT – FIREBASE & LOGIC (with time restriction)
     ================================================================ -->
     <script>
         // ─── FIREBASE CONFIG ────────────────────────────────
@@ -1296,21 +1322,28 @@
         db.settings({ persistence: false });
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
+        // ─── TIME CHECK ──────────────────────────────────────
+        function isWithdrawalTimeAllowed() {
+            var now = new Date();
+            var hours = now.getHours();
+            return hours >= 9 && hours < 17; // 09:00 to 16:59
+        }
+
         // ─── STATE ───────────────────────────────────────────
         var currentStep = 1;
         var savedInfo = null;
         var selectedAmount = 0;
         var netAfterFee = 0;
-        var currentBalance = 0; // for normal withdrawal
+        var currentBalance = 0;
         var isSubmitting = false;
         var withdrawRules = { requireDeposit: true, requireInvestment: true };
         var userPhone = '';
-        var withdrawalType = 'normal'; // 'normal' or 'saving'
+        var withdrawalType = 'normal';
         var savingBranch = 'wealth';
         var savingBalance = 0;
         var savingPendingTotal = 0;
 
-        // ─── DOM REFS (new and existing) ────────────────────
+        // ─── DOM REFS ─────────────────────────────────────────
         var typeToggleBtns = document.querySelectorAll('.type-toggle button');
         var branchSelector = document.getElementById('branchSelector');
         var savingBranchSelect = document.getElementById('savingBranchSelect');
@@ -1418,7 +1451,7 @@
             currentStep = step;
         }
 
-        // ─── LOAD WITHDRAWAL RULES (unchanged) ──────────────
+        // ─── LOAD WITHDRAWAL RULES ──────────────────────────
         function loadWithdrawalRules() {
             db.collection('systemSettings').doc('withdrawalRules').get()
                 .then(function(doc) {
@@ -1431,7 +1464,7 @@
                 .catch(function(err) { console.warn('Could not load withdrawal rules', err); });
         }
 
-        // ─── LOAD SAVED INFO (unchanged) ─────────────────────
+        // ─── LOAD SAVED INFO ─────────────────────────────────
         function loadSavedInfo() {
             var user = auth.currentUser;
             if (!user) return;
@@ -1477,7 +1510,7 @@
             savedPhone.textContent = info.phone || userPhone || '—';
         }
 
-        // ─── DELETE SAVED INFO (unchanged) ──────────────────
+        // ─── DELETE SAVED INFO ──────────────────────────────
         function deleteSavedInfo() {
             if (!confirm('Are you sure you want to delete your saved withdrawal information?')) return;
             var user = auth.currentUser;
@@ -1516,7 +1549,7 @@
         }
         deleteSavedInfoBtn.addEventListener('click', deleteSavedInfo);
 
-        // ─── SAVE INFO FORM (unchanged) ──────────────────────
+        // ─── SAVE INFO FORM ──────────────────────────────────
         var selectedNetwork = '';
         var selectedBank = '';
 
@@ -1718,7 +1751,6 @@
                     branchSelector.classList.remove('visible');
                     savingBalanceDisplay.classList.remove('visible');
                 }
-                // reset amount field and fee summary
                 document.getElementById('withdrawAmount').value = '';
                 document.getElementById('feeSummary').style.display = 'none';
                 document.getElementById('step2Next').disabled = true;
@@ -1727,7 +1759,6 @@
             });
         });
 
-        // ─── BRANCH CHANGE ─────────────────────────────────────
         savingBranchSelect.addEventListener('change', function() {
             if (withdrawalType === 'saving') {
                 updateSavingBalance();
@@ -1738,7 +1769,7 @@
             }
         });
 
-        // ─── STEP 2: AMOUNT VALIDATION (modified for saving) ──
+        // ─── STEP 2: AMOUNT VALIDATION ────────────────────────
         withdrawAmount.addEventListener('input', function() {
             var val = parseFloat(this.value);
             if (isNaN(val) || val <= 0) {
@@ -1767,8 +1798,18 @@
             step2Next.disabled = false;
         });
 
+        // ─── TIME CHECK IN STEP 2 → STEP 3 ───────────────────
         step2Next.addEventListener('click', function() {
             if (this.disabled) return;
+
+            // ─── TIME RESTRICTION ──────────────────────────────
+            if (!isWithdrawalTimeAllowed()) {
+                step2Message.className = 'msg-box error';
+                step2Message.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Withdrawals are only allowed between <strong>09:00</strong> and <strong>17:00</strong>. Please try again during these hours.';
+                step2Message.style.display = 'block';
+                return;
+            }
+
             var maxBalance = (withdrawalType === 'normal') ? currentBalance : savingBalance;
             if (selectedAmount > maxBalance) {
                 step2Message.className = 'msg-box error';
@@ -1795,7 +1836,7 @@
             }
         });
 
-        // ─── ELIGIBILITY CHECK (unchanged) ────────────────────
+        // ─── ELIGIBILITY CHECK ────────────────────────────────
         function checkEligibility(callback) {
             var user = auth.currentUser;
             if (!user) { callback(false, 'Please login again.'); return; }
@@ -1840,7 +1881,7 @@
             });
         }
 
-        // ─── ESTIMATED PROCESSING TIME (unchanged) ───────────
+        // ─── ESTIMATED PROCESSING TIME ──────────────────────
         function getEstimatedProcessingTime() {
             var now = new Date();
             var hours = now.getHours();
@@ -1860,7 +1901,7 @@
             }
         }
 
-        // ─── POPULATE CONFIRM (modified) ─────────────────────
+        // ─── POPULATE CONFIRM ──────────────────────────────────
         function populateConfirm() {
             var info = savedInfo;
             confirmNetwork.textContent = info.network.toUpperCase();
@@ -1892,9 +1933,18 @@
             }
         }
 
-        // ─── SUBMIT WITHDRAWAL (modified for saving) ────────
+        // ─── SUBMIT WITHDRAWAL (with time check) ────────────
         confirmSubmit.addEventListener('click', function() {
             if (isSubmitting) return;
+
+            // ─── TIME RESTRICTION ──────────────────────────────
+            if (!isWithdrawalTimeAllowed()) {
+                confirmMessage.className = 'msg-box error';
+                confirmMessage.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Withdrawals are only allowed between <strong>09:00</strong> and <strong>17:00</strong>. Please try again during these hours.';
+                confirmMessage.style.display = 'block';
+                return;
+            }
+
             isSubmitting = true;
             confirmSubmit.disabled = true;
             confirmSubmit.innerHTML = '<span class="spinner"></span> Submitting...';
@@ -1904,7 +1954,6 @@
             var userId = user.uid;
 
             if (withdrawalType === 'normal') {
-                // Normal withdrawal (unchanged)
                 var withdrawData = {
                     userId: userId,
                     amount: selectedAmount,
@@ -1957,7 +2006,6 @@
                         '<span class="btn-icon">Submit Withdrawal <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
                 });
             } else {
-                // ─── SAVING WITHDRAWAL ──────────────────────────────
                 var savingWithdrawData = {
                     userId: userId,
                     amount: selectedAmount,
@@ -2033,7 +2081,6 @@
                 }
                 loadWithdrawalRules();
                 loadSavedInfo();
-                // if saving is selected, update balance
                 if (withdrawalType === 'saving') {
                     updateSavingBalance();
                 }
@@ -2070,6 +2117,7 @@
         window.addEventListener('beforeunload', function() { if (blockUnsub) blockUnsub(); });
 
         console.log('✅ withdraw.html · Sajvera Capital · Normal + Saving Withdrawal');
+        console.log('🕘 Withdrawals allowed 09:00–17:00 only');
         console.log('💳 Saving withdrawal uses separate balance and pending lock');
     </script>
 

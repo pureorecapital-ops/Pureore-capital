@@ -199,6 +199,41 @@
             line-height: 1.5;
         }
 
+        /* ----- WEEKEND BLOCK NOTICE ----- */
+        .weekend-notice {
+            background: rgba(239, 68, 68, 0.04);
+            border: 1px solid rgba(239, 68, 68, 0.06);
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            margin: 0.8rem 0 1.2rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.25);
+            line-height: 1.6;
+            display: none;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .weekend-notice.visible {
+            display: flex;
+        }
+        .weekend-notice svg {
+            width: 20px;
+            height: 20px;
+            stroke: #f87171;
+            stroke-width: 2;
+            fill: none;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .weekend-notice strong {
+            color: #f87171;
+            font-weight: 600;
+        }
+        .weekend-notice .weekend-day {
+            color: #facc15;
+            font-weight: 600;
+        }
+
         /* ----- INPUT WRAP ----- */
         .input-wrap {
             margin-bottom: 0.3rem;
@@ -324,7 +359,17 @@
             box-shadow: none !important;
         }
 
-        /* ===== LOADING OVERLAY (GLASS, SHOWS USER NAME) ===== */
+        .btn-primary.blocked {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            box-shadow: none;
+        }
+        .btn-primary.blocked:hover:not(:disabled) {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== LOADING OVERLAY ===== */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -561,6 +606,10 @@
                 font-size: 0.65rem;
                 padding: 0.3rem 0.8rem;
             }
+            .weekend-notice {
+                font-size: 0.7rem;
+                padding: 0.6rem 0.8rem;
+            }
         }
 
         @media (max-width: 400px) {
@@ -574,6 +623,10 @@
             .notice-card {
                 font-size: 0.7rem;
                 padding: 0.6rem 0.8rem;
+            }
+            .weekend-notice {
+                font-size: 0.65rem;
+                padding: 0.5rem 0.6rem;
             }
         }
     </style>
@@ -600,6 +653,16 @@
             <div class="card-title">💰 <span>Deposit</span> Funds</div>
             <div class="card-sub">Enter the amount you wish to deposit.</div>
 
+            <!-- ─── WEEKEND BLOCK NOTICE ─── -->
+            <div class="weekend-notice" id="weekendNotice">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div>
+                    <strong>Deposits are not available on weekends.</strong><br />
+                    Today is <span class="weekend-day" id="weekendDay">Saturday</span>.<br />
+                    Please come back on a weekday (Monday–Friday) to make a deposit.
+                </div>
+            </div>
+
             <div class="input-wrap">
                 <label for="amountInput">Amount (ZMW)</label>
                 <input type="number" id="amountInput" placeholder="0.00" min="0.01" step="0.01" autofocus />
@@ -615,7 +678,7 @@
         </div>
     </main>
 
-    <!-- ===== LOADING OVERLAY (SHOWS USER NAME + PAYMENT STATUS) ===== -->
+    <!-- ===== LOADING OVERLAY ===== -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-card">
             <div class="loader-icon"></div>
@@ -669,6 +732,21 @@
         }
 
         // ================================================================
+        // ─── WEEKEND CHECK ──────────────────────────────────────
+        // ================================================================
+        function isWeekend() {
+            var now = new Date();
+            var day = now.getDay(); // 0 = Sunday, 6 = Saturday
+            return day === 0 || day === 6;
+        }
+
+        function getWeekendDayName() {
+            var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            var now = new Date();
+            return days[now.getDay()];
+        }
+
+        // ================================================================
         // DOM REFS
         // ================================================================
         var amountInput = document.getElementById('amountInput');
@@ -679,19 +757,47 @@
         var loaderEmail = document.getElementById('loaderEmail');
         var loaderAmount = document.getElementById('loaderAmount');
         var loaderStatus = document.getElementById('loaderStatus');
+        var weekendNotice = document.getElementById('weekendNotice');
+        var weekendDay = document.getElementById('weekendDay');
 
         var currentUser = null;
         var userData = null;
+        var isDepositBlocked = false;
 
         // ================================================================
-        // FIXED: AUTH STATE WITH PROPER INITIALIZATION HANDLING
+        // ─── CHECK WEEKEND AND UPDATE UI ──────────────────────────────
+        // ================================================================
+        function checkWeekendAndUpdate() {
+            if (isWeekend()) {
+                isDepositBlocked = true;
+                weekendNotice.classList.add('visible');
+                weekendDay.textContent = getWeekendDayName();
+                continueBtn.disabled = true;
+                continueBtn.textContent = '🚫 Deposits Blocked on Weekends';
+                continueBtn.classList.add('blocked');
+                amountInput.disabled = true;
+                amountInput.style.opacity = '0.4';
+                amountInput.placeholder = 'Deposits unavailable on weekends';
+            } else {
+                isDepositBlocked = false;
+                weekendNotice.classList.remove('visible');
+                continueBtn.classList.remove('blocked');
+                amountInput.disabled = false;
+                amountInput.style.opacity = '1';
+                amountInput.placeholder = '0.00';
+                // Re-run validation to enable button if amount is valid
+                validateAmount();
+            }
+        }
+
+        // ================================================================
+        // AUTH STATE
         // ================================================================
         let authResolved = false;
         let redirectTimeout = null;
 
         auth.onAuthStateChanged(function(user) {
             if (user) {
-                // User is authenticated – clear any pending redirect timeout
                 authResolved = true;
                 if (redirectTimeout) {
                     clearTimeout(redirectTimeout);
@@ -725,20 +831,19 @@
                     }
                 }, function(err) { console.warn('Block listener error:', err); });
 
+                // ─── Check weekend after auth ──────────────────────
+                checkWeekendAndUpdate();
+
             } else {
-                // user is null
                 if (!authResolved) {
-                    // First callback: still initializing; set a safety timeout
                     if (!redirectTimeout) {
                         redirectTimeout = setTimeout(function() {
-                            // After 2 seconds, if still no user, redirect to login
                             if (!auth.currentUser) {
                                 window.location.href = 'login.html';
                             }
                         }, 2000);
                     }
                 } else {
-                    // User was previously logged in and now signed out (or session lost)
                     window.location.href = 'login.html';
                 }
             }
@@ -751,6 +856,12 @@
         // VALIDATE AMOUNT
         // ================================================================
         function validateAmount() {
+            // If deposits are blocked on weekends, keep button disabled
+            if (isDepositBlocked) {
+                continueBtn.disabled = true;
+                return false;
+            }
+
             var val = parseFloat(amountInput.value);
             if (isNaN(val) || val <= 0) {
                 amountError.innerText = 'Please enter a valid amount';
@@ -770,10 +881,16 @@
         amountInput.addEventListener('input', validateAmount);
 
         // ================================================================
-        // CONTINUE BUTTON – SHOW LOADING WITH USER NAME
+        // CONTINUE BUTTON
         // ================================================================
         continueBtn.addEventListener('click', function() {
             if (this.disabled) return;
+
+            // Double-check weekend block
+            if (isWeekend()) {
+                showToast('🚫 Deposits are not available on weekends. Please come back on a weekday.', true);
+                return;
+            }
 
             var amount = parseFloat(amountInput.value);
             if (isNaN(amount) || amount <= 0) {
@@ -811,14 +928,12 @@
                     statusIndex++;
                     setTimeout(updateStatus, 1800);
                 } else {
-                    // All done - redirect to step 2 or complete
                     setTimeout(function() {
                         window.location.href = 'deposit-step2.html';
                     }, 800);
                 }
             }
 
-            // Start status updates after a brief delay
             setTimeout(updateStatus, 600);
         });
 
@@ -834,10 +949,14 @@
         // ================================================================
         // FOCUS
         // ================================================================
-        setTimeout(function() { amountInput.focus(); }, 400);
+        setTimeout(function() {
+            if (!isWeekend()) {
+                amountInput.focus();
+            }
+        }, 400);
 
         // ================================================================
-        // CLOSE LOADING IF USER LEAVES (cleanup)
+        // CLOSE LOADING IF USER LEAVES
         // ================================================================
         window.addEventListener('beforeunload', function() {
             loadingOverlay.classList.remove('active');
@@ -845,9 +964,9 @@
         });
 
         console.log('💰 Deposit · Sajvera Capital · Glassmorphism design');
+        console.log('🚫 Weekend deposit block active (Saturday & Sunday)');
         console.log('👤 Loading overlay shows user name during payment processing');
         console.log('🔐 Login check and block monitoring active');
-        console.log('✅ Fixed: auth state now waits 2s before redirecting to login');
     </script>
 
 </body>

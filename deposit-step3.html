@@ -411,6 +411,16 @@
             box-shadow: none !important;
         }
 
+        .btn-primary.coming-soon {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            box-shadow: none;
+        }
+        .btn-primary.coming-soon:hover:not(:disabled) {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            transform: none;
+            box-shadow: none;
+        }
+
         /* ----- SMS SECTION ----- */
         .hidden-section {
             display: none;
@@ -873,18 +883,16 @@
         // ================================================================
         // LOAD AGENTS FROM FIRESTORE (systemSettings/depositAgents)
         // ================================================================
-        // Fallback hardcoded agents (if Firestore fails)
+        // Fallback hardcoded agents (Zamtel removed – "Coming soon" will be shown)
         var hardcodedAgents = {
             mtn: [
                 { number: '0960338304', name: 'Getrude Sompo' },
                 { number: '0963070992', name: 'John Kabwe' }
             ],
-            zamtel: [
-                { number: '0951359357', name: 'Jeremiah Ilunga' }
-            ],
             airtel: [
                 { number: '0571518417', name: 'John Kabwe' }
             ]
+            // Zamtel intentionally omitted → "Coming soon"
         };
 
         function loadAgentDetails() {
@@ -893,6 +901,7 @@
             accountNameEl.textContent = 'Loading...';
             confirmBtn.disabled = true;
             confirmBtn.textContent = '⏳ Loading...';
+            confirmBtn.classList.remove('coming-soon');
 
             // Try to fetch from Firestore
             db.collection('systemSettings').doc('depositAgents').get()
@@ -916,10 +925,11 @@
 
                             confirmBtn.disabled = false;
                             confirmBtn.textContent = '✅ I Have Made the Payment';
+                            confirmBtn.classList.remove('coming-soon');
                             console.log('✅ Agent loaded from Firestore:', agent);
                             return;
                         } else {
-                            // No agents for this network in Firestore – try fallback
+                            // No agents for this network in Firestore – use fallback
                             console.log('⚠️ No agents in Firestore for network ' + depositNetwork +
                                 ', using fallback.');
                             useFallbackAgents();
@@ -938,6 +948,24 @@
         }
 
         function useFallbackAgents() {
+            // Special case: Zamtel → "Coming soon"
+            if (depositNetwork === 'zamtel') {
+                agentNumber = 'Coming Soon';
+                accountName = 'Zamtel deposits will be available soon';
+                currentAgentId = '';
+
+                agentNumberEl.textContent = '🚀 Coming Soon';
+                accountNameEl.textContent = 'Zamtel deposits will be available soon';
+                smsTemplate.innerHTML = 'Zamtel deposits are not yet available. Please choose MTN or Airtel.';
+
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = '🚫 Coming Soon';
+                confirmBtn.classList.add('coming-soon');
+                smsSection.classList.remove('visible');
+                showToast('Zamtel deposits are coming soon. Please select another network.', true);
+                return;
+            }
+
             var agents = hardcodedAgents[depositNetwork] || [];
             if (agents.length > 0) {
                 var randomIdx = Math.floor(Math.random() * agents.length);
@@ -953,6 +981,7 @@
 
                 confirmBtn.disabled = false;
                 confirmBtn.textContent = '✅ I Have Made the Payment';
+                confirmBtn.classList.remove('coming-soon');
                 console.log('✅ Using fallback agent:', agent);
             } else {
                 // No agents at all
@@ -962,6 +991,7 @@
                     '. Please select another network.';
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = '🚫 Unavailable';
+                confirmBtn.classList.add('coming-soon');
                 smsSection.classList.remove('visible');
                 showToast('No agents available for ' + depositNetwork.toUpperCase() +
                     '. Please go back and choose another network.', true);
@@ -975,8 +1005,9 @@
         copyNameBtn.addEventListener('click', function() { copyText(accountName, this); });
 
         function copyText(text, btn) {
-            if (text === '⚠️ No Agent Available' || text === 'Loading...') {
-                showToast('No agent to copy yet.', true);
+            if (text === '⚠️ No Agent Available' || text === 'Loading...' || text === 'Coming Soon' || text ===
+                '🚀 Coming Soon') {
+                showToast('Nothing to copy yet.', true);
                 return;
             }
             navigator.clipboard.writeText(text).then(function() {
@@ -1020,12 +1051,13 @@
 
             // ─── ALWAYS CHECK: Agent Number (specific to this deposit) ───
             var agentNumberClean = agentNumber.replace(/\D/g, '');
-            if (!lowerSms.includes(agentNumberClean)) {
+            if (agentNumberClean && !lowerSms.includes(agentNumberClean)) {
                 errors.push('Agent number (' + agentNumber + ') not found in SMS.');
             }
 
             // ─── RULE: Agent Name (if enabled) ───
-            if (depositRules.requireAgentName) {
+            if (depositRules.requireAgentName && accountName !== 'Coming Soon' && accountName !==
+                'Zamtel deposits will be available soon') {
                 var nameParts = accountName.toLowerCase().split(' ');
                 var nameInSms = nameParts.some(function(part) {
                     return part.length > 2 && lowerSms.includes(part);
@@ -1207,11 +1239,12 @@
         console.log('✅ deposit-step3.html · Sajvera Capital · Dark glass design');
         console.log('🔄 Agents loaded from Firestore (systemSettings/depositAgents)');
         console.log('📋 Deposit rules loaded from Firestore (systemSettings/depositRules)');
-        console.log('🔹 Fallback hardcoded agents if Firestore fails');
+        console.log('🔹 Fallback hardcoded agents (Zamtel removed → Coming Soon)');
         console.log('✅ Fully integrated with admin dashboard configuration');
         console.log('✅ Rules: AmountMatch=' + depositRules.requireAmountMatch + ', AgentName=' + depositRules
             .requireAgentName + ', NetworkKeyword=' + depositRules.requireNetworkKeyword + ', TxKeyword=' + depositRules
             .requireTxKeyword + ', FutureDate=' + depositRules.requireFutureDate);
     </script>
+
 </body>
 </html>

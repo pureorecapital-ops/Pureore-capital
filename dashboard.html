@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Dashboard – Sajvera Capital</title>
     <link rel="preconnect" href="https://www.gstatic.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
@@ -12,101 +14,94 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BASE (BLUE THEME) ----- */
+        /* ================================================================
+                   RESET & BASE
+                   ================================================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            min-height: 100vh;
-            padding-top: 76px;
-            padding-bottom: 76px;
-            display: flex;
-            flex-direction: column;
-            color: #ffffff;
-            background: #0a1628;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+        html {
+            overscroll-behavior: none;
         }
 
-        /* ----- FULL SCREEN BLURRED BACKGROUND ----- */
-        .hero-bg {
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #071C12;
+            min-height: 100vh;
+            color: #F7F4E9;
+            padding-bottom: 76px;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+
+        .dashboard-bg {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            background: radial-gradient(ellipse at 20% 50%, #0f2e1a 0%, #071C12 70%);
         }
 
-        .hero-bg::before {
-            content: "";
+        .dashboard-bg::after {
+            content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://i.ibb.co/TMS5Sxbd/file-00000000ec2c820c9d79849d4a3d6b82.png');
-            background-size: cover;
-            background-position: center;
-            filter: blur(8px) brightness(0.3) saturate(0.6);
-            transform: scale(1.05);
+            background: radial-gradient(ellipse at 80% 20%, rgba(212, 167, 44, 0.02) 0%, transparent 60%);
+            pointer-events: none;
         }
 
-        .hero-bg::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 22, 40, 0.60);
-        }
-
-        /* ----- HEADER (NO HAMBURGER) ----- */
+        /* ================================================================
+                   HEADER — NO LOGOUT BUTTON
+                   ================================================================ */
         .header {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
+            z-index: 100;
             padding: 0.6rem 1.2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
-            background: rgba(10, 22, 40, 0.60);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(7, 28, 18, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(212, 167, 44, 0.06);
         }
 
         .header-left {
             display: flex;
             flex-direction: column;
             gap: 0;
+            line-height: 1.2;
         }
 
         .logo-text {
             font-size: 1.3rem;
-            font-weight: 700;
-            color: #ffffff;
+            font-weight: 800;
+            color: #F7F4E9;
             text-decoration: none;
-            letter-spacing: -0.3px;
+            letter-spacing: -0.4px;
         }
-        .logo-text .vc {
-            color: #60a5fa;
+
+        .logo-text .accent {
+            color: #D4A72C;
         }
 
         .logo-sub {
-            font-size: 0.5rem;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 0.3px;
+            font-size: 0.45rem;
+            letter-spacing: 0.5px;
             font-weight: 400;
-            margin-top: -1px;
+            color: rgba(247, 244, 233, 0.15);
+            text-transform: uppercase;
         }
 
         .header-right {
@@ -115,49 +110,93 @@
             gap: 0.6rem;
         }
 
-        /* ----- CONTAINER ----- */
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px 4px 8px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .header-user .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #22C55E, #14532D);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #F7F4E9;
+            flex-shrink: 0;
+        }
+
+        .header-user .greeting {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(247, 244, 233, 0.60);
+        }
+
+        .header-user .greeting span {
+            color: #F7F4E9;
+        }
+
+        /* ================================================================
+                   MAIN CONTAINER
+                   ================================================================ */
         .container {
+            position: relative;
+            z-index: 1;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0.8rem 1rem;
-            flex: 1;
+            padding: 4.8rem 1rem 1rem 1rem;
             width: 100%;
         }
 
-        /* ----- GREETING ----- */
+        /* ================================================================
+                   GREETING
+                   ================================================================ */
         .greeting-area {
             margin-bottom: 1.2rem;
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 0.3rem;
         }
 
         .greeting-text {
-            font-size: 1.6rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            color: #ffffff;
+            color: #F7F4E9;
             letter-spacing: -0.2px;
         }
 
         .greeting-text span {
-            color: #60a5fa;
+            color: #22C55E;
         }
 
         .greeting-sub {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.25);
-            margin-top: 2px;
+            font-size: 0.75rem;
+            color: rgba(247, 244, 233, 0.20);
         }
 
-        /* ----- SLIDESHOW ----- */
+        /* ================================================================
+                   SCROLLING IMAGE SECTION
+                   ================================================================ */
         .hero-slideshow {
-            position: relative;
             width: 100%;
             border-radius: 20px;
             overflow: hidden;
             margin-bottom: 1.5rem;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             aspect-ratio: 16 / 9;
-            background: rgba(10, 22, 40, 0.30);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(7, 28, 18, 0.30);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            position: relative;
         }
 
         .hero-slideshow .slides-wrapper {
@@ -185,47 +224,47 @@
         .hero-slideshow .slide-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(10, 22, 40, 0.50) 0%, rgba(10, 22, 40, 0.10) 60%);
+            background: linear-gradient(135deg, rgba(7, 28, 18, 0.50) 0%, rgba(7, 28, 18, 0.05) 60%);
             z-index: 1;
         }
 
         .hero-slideshow .slide-content {
             position: absolute;
-            bottom: 18%;
+            bottom: 16%;
             left: 6%;
             z-index: 2;
             max-width: 70%;
-            color: #fff;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+            color: #F7F4E9;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
         }
 
         .hero-slideshow .slide-content h2 {
-            font-size: clamp(1.2rem, 3vw, 2.2rem);
+            font-size: clamp(1rem, 2.5vw, 1.8rem);
             font-weight: 700;
             line-height: 1.2;
         }
 
         .hero-slideshow .slide-content p {
-            font-size: clamp(0.7rem, 1vw, 1rem);
-            opacity: 0.8;
+            font-size: clamp(0.6rem, 0.9vw, 0.85rem);
+            opacity: 0.7;
             margin-top: 2px;
         }
 
         .hero-slideshow .indicators {
             position: absolute;
-            bottom: 12px;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 3;
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         .hero-slideshow .indicators .dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.10);
             border: none;
             cursor: pointer;
             transition: all 0.3s;
@@ -233,44 +272,205 @@
         }
 
         .hero-slideshow .indicators .dot.active {
-            background: #60a5fa;
-            transform: scale(1.2);
-            box-shadow: 0 0 16px rgba(96, 165, 250, 0.15);
+            background: #D4A72C;
+            transform: scale(1.3);
+            box-shadow: 0 0 16px rgba(212, 167, 44, 0.10);
         }
 
-        /* ----- QUICK ACCESS ----- */
-        .quick-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.8rem;
+        /* ================================================================
+                   WITHDRAWAL ACTIVITY CARD — replaces balance card
+                   ================================================================ */
+        .withdrawal-card {
+            background: rgba(7, 28, 18, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 1.2rem 1.2rem 0.6rem 1.2rem;
             margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
         }
 
-        @media (max-width: 500px) {
-            .quick-row {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.5rem;
+        .withdrawal-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .withdrawal-card .card-header .title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: rgba(247, 244, 233, 0.50);
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .withdrawal-card .card-header .title svg {
+            width: 16px;
+            height: 16px;
+            stroke: #D4A72C;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .withdrawal-card .card-header .live-dot {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.55rem;
+            font-weight: 600;
+            color: rgba(34, 197, 94, 0.40);
+        }
+
+        .withdrawal-card .card-header .live-dot .pulse {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22C55E;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.3;
+                transform: scale(0.6);
             }
         }
 
-        .quick-item {
-            background: rgba(10, 22, 40, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 20px;
-            padding: 1rem 0.5rem;
+        .withdrawal-scroll {
+            max-height: 170px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .withdrawal-scroll .scroll-inner {
+            animation: scroll-up 18s linear infinite;
+        }
+
+        .withdrawal-scroll .scroll-inner.paused {
+            animation-play-state: paused;
+        }
+
+        @keyframes scroll-up {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-50%);
+            }
+        }
+
+        .withdrawal-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.3rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            font-size: 0.78rem;
+        }
+
+        .withdrawal-item .left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .withdrawal-item .left .flag {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .withdrawal-item .left .info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .withdrawal-item .left .info .name {
+            font-weight: 500;
+            color: rgba(247, 244, 233, 0.70);
+            font-size: 0.78rem;
+        }
+
+        .withdrawal-item .left .info .date {
+            font-size: 0.55rem;
+            color: rgba(247, 244, 233, 0.12);
+        }
+
+        .withdrawal-item .right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .withdrawal-item .right .amount {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #22C55E;
+        }
+
+        .withdrawal-item .right .amount.gold {
+            color: #D4A72C;
+        }
+
+        .withdrawal-item .right .status {
+            font-size: 0.45rem;
+            color: rgba(247, 244, 233, 0.08);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* ================================================================
+                   FEATURE GRID
+                   ================================================================ */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.7rem;
+            margin-bottom: 1.2rem;
+        }
+
+        @media (max-width: 500px) {
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.6rem;
+            }
+        }
+
+        .feature-card {
+            background: rgba(7, 28, 18, 0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 1rem 0.6rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.25s ease;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
-        .quick-item:hover {
-            transform: translateY(-4px);
-            border-color: rgba(96, 165, 250, 0.10);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        .feature-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(212, 167, 44, 0.08);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
         }
 
-        .quick-item .qi-icon {
+        .feature-card:active {
+            transform: scale(0.97);
+        }
+
+        .feature-card .fc-icon {
             width: 44px;
             height: 44px;
             margin: 0 auto 4px;
@@ -279,147 +479,172 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: 0.25s;
         }
 
-        .quick-item:hover .qi-icon {
-            background: rgba(96, 165, 250, 0.04);
-            border-color: rgba(96, 165, 250, 0.06);
+        .feature-card:hover .fc-icon {
+            background: rgba(34, 197, 94, 0.04);
+            border-color: rgba(34, 197, 94, 0.06);
         }
 
-        .quick-item .qi-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: rgba(255, 255, 255, 0.15);
+        .feature-card .fc-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: rgba(247, 244, 233, 0.15);
             stroke-width: 1.8;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
-            transition: 0.2s;
+            transition: 0.25s;
         }
 
-        .quick-item:hover .qi-icon svg {
-            stroke: #60a5fa;
+        .feature-card:hover .fc-icon svg {
+            stroke: #D4A72C;
         }
 
-        .quick-item .qi-label {
-            font-size: 0.75rem;
+        .feature-card .fc-label {
+            font-size: 0.7rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(247, 244, 233, 0.30);
+            letter-spacing: 0.2px;
         }
 
-        /* ----- MARKETPLACE CARD ----- */
-        .marketplace-card {
-            background: rgba(10, 22, 40, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 20px;
-            padding: 2rem 1.5rem;
-            text-align: center;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            margin-bottom: 1.5rem;
+        .feature-card .fc-desc {
+            font-size: 0.5rem;
+            color: rgba(247, 244, 233, 0.08);
+            margin-top: 1px;
+        }
+
+        .feature-card.loan .fc-icon svg {
+            stroke: #D4A72C;
+        }
+        .feature-card.loan .fc-label {
+            color: rgba(212, 167, 44, 0.40);
+        }
+
+        /* ================================================================
+                   CUSTOMER SERVICE CARD
+                   ================================================================ */
+        .support-card {
+            background: linear-gradient(135deg, rgba(212, 167, 44, 0.04), rgba(7, 28, 18, 0.30));
+            border: 1px solid rgba(212, 167, 44, 0.06);
+            border-radius: 16px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             cursor: pointer;
             transition: all 0.25s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
-        .marketplace-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(96, 165, 250, 0.10);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        .support-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(212, 167, 44, 0.12);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
         }
 
-        .marketplace-card .marketplace-icon {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 0.6rem;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        .support-card:active {
+            transform: scale(0.98);
+        }
+
+        .support-card .support-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .support-card .support-left .icon-wrap {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
+            background: rgba(212, 167, 44, 0.04);
+            border: 1px solid rgba(212, 167, 44, 0.06);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 24px rgba(37, 99, 235, 0.12);
+            flex-shrink: 0;
         }
 
-        .marketplace-card .marketplace-icon svg {
-            width: 36px;
-            height: 36px;
-            stroke: #fff;
+        .support-card .support-left .icon-wrap svg {
+            width: 20px;
+            height: 20px;
+            stroke: #D4A72C;
             stroke-width: 2;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
 
-        .marketplace-card h3 {
-            font-size: 1.4rem;
+        .support-card .support-left .support-text .title {
+            font-size: 0.85rem;
             font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.2rem;
+            color: #F7F4E9;
         }
 
-        .marketplace-card p {
-            color: rgba(255, 255, 255, 0.15);
-            font-size: 0.9rem;
-        }
-
-        .marketplace-card .badge-new {
-            display: inline-block;
-            background: rgba(96, 165, 250, 0.06);
-            color: #60a5fa;
+        .support-card .support-left .support-text .desc {
             font-size: 0.65rem;
-            font-weight: 600;
-            padding: 0.15rem 0.7rem;
-            border-radius: 30px;
-            margin-top: 0.4rem;
-            border: 1px solid rgba(96, 165, 250, 0.06);
+            color: rgba(247, 244, 233, 0.15);
         }
 
-        /* ----- FOOTER LINKS ----- */
+        .support-card .support-arrow {
+            color: rgba(212, 167, 44, 0.15);
+            font-size: 1.2rem;
+        }
+
+        /* ================================================================
+                   FOOTER LINKS
+                   ================================================================ */
         .footer-links {
             text-align: center;
-            margin-top: 1.2rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 0.8rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.02);
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 0.8rem 1.5rem;
+            gap: 0.6rem 1.2rem;
         }
 
         .footer-links a {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.08);
+            font-size: 0.6rem;
+            color: rgba(247, 244, 233, 0.06);
             text-decoration: none;
             transition: 0.2s;
         }
 
         .footer-links a:hover {
-            color: #60a5fa;
+            color: rgba(247, 244, 233, 0.15);
         }
 
         .footer-links .copyright {
-            font-size: 0.6rem;
-            color: rgba(255, 255, 255, 0.04);
+            font-size: 0.55rem;
+            color: rgba(247, 244, 233, 0.03);
             width: 100%;
             text-align: center;
             margin-top: 0.1rem;
         }
 
-        /* ----- BOTTOM NAV ----- */
+        /* ================================================================
+                   BOTTOM NAV
+                   ================================================================ */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(10, 22, 40, 0.60);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            background: rgba(7, 28, 18, 0.80);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(212, 167, 44, 0.04);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 4px 4px 10px;
+            padding: 4px 2px 10px;
             z-index: 30;
-            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
         }
 
         .nav-item {
@@ -436,7 +661,8 @@
             border: none;
             background: transparent;
             font-family: inherit;
-            color: rgba(255, 255, 255, 0.15);
+            color: rgba(247, 244, 233, 0.10);
+            position: relative;
         }
 
         .nav-item .nav-icon {
@@ -451,113 +677,206 @@
         }
 
         .nav-item.active .nav-icon {
-            stroke: #60a5fa;
+            stroke: #D4A72C;
             transform: scale(1.05);
         }
 
         .nav-item .nav-label {
             font-size: 0.4rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.12);
+            color: rgba(247, 244, 233, 0.08);
             transition: 0.25s;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
         }
 
         .nav-item.active .nav-label {
-            color: #60a5fa;
+            color: #D4A72C;
         }
 
         .nav-item:hover .nav-icon {
-            stroke: #60a5fa;
+            stroke: rgba(212, 167, 44, 0.30);
         }
 
         .nav-item.marketplace .nav-icon {
             width: 30px;
             height: 30px;
             stroke-width: 2;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            background: linear-gradient(135deg, #14532D, #22C55E);
             border-radius: 50%;
-            padding: 4px;
-            stroke: #fff;
+            padding: 5px;
+            stroke: #F7F4E9;
             margin-bottom: 1px;
+            box-shadow: 0 2px 16px rgba(34, 197, 94, 0.05);
         }
 
         .nav-item.marketplace.active .nav-icon {
-            transform: scale(1.08);
-            box-shadow: 0 0 24px rgba(37, 99, 235, 0.10);
+            transform: scale(1.06);
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.08);
         }
 
         .nav-item.marketplace .nav-label {
-            color: #60a5fa;
+            color: rgba(34, 197, 94, 0.20);
             font-weight: 700;
         }
 
-        /* ----- RESPONSIVE ----- */
+        .nav-item.marketplace.active .nav-label {
+            color: #22C55E;
+        }
+
+        /* ================================================================
+                   RESPONSIVE
+                   ================================================================ */
         @media (max-width: 500px) {
+            .container {
+                padding: 4.4rem 0.7rem 0.5rem 0.7rem;
+            }
             .header {
-                padding: 0.5rem 0.8rem;
+                padding: 0.4rem 0.8rem;
             }
             .logo-text {
                 font-size: 1.1rem;
             }
             .logo-sub {
-                font-size: 0.45rem;
+                font-size: 0.4rem;
             }
-            .container {
-                padding: 0.6rem;
+            .header-user .greeting {
+                font-size: 0.65rem;
+            }
+            .header-user .avatar {
+                width: 24px;
+                height: 24px;
+                font-size: 0.6rem;
+            }
+            .header-user {
+                padding: 3px 8px 3px 5px;
             }
             .greeting-text {
-                font-size: 1.3rem;
+                font-size: 1.1rem;
             }
-            .marketplace-card {
-                padding: 1.5rem 1rem;
+            .withdrawal-card {
+                padding: 0.8rem 0.8rem 0.4rem 0.8rem;
             }
-            .marketplace-card .marketplace-icon {
-                width: 58px;
-                height: 58px;
+            .withdrawal-item {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.2rem;
             }
-            .marketplace-card .marketplace-icon svg {
-                width: 28px;
-                height: 28px;
+            .withdrawal-item .left .info .date {
+                font-size: 0.5rem;
             }
-            .quick-row {
+            .feature-grid {
                 gap: 0.5rem;
             }
-            .quick-item {
-                padding: 0.8rem 0.3rem;
+            .feature-card {
+                padding: 0.7rem 0.3rem;
+                border-radius: 14px;
             }
-            .quick-item .qi-icon {
+            .feature-card .fc-icon {
                 width: 36px;
                 height: 36px;
             }
-            .quick-item .qi-icon svg {
-                width: 18px;
-                height: 18px;
+            .feature-card .fc-icon svg {
+                width: 17px;
+                height: 17px;
+            }
+            .feature-card .fc-label {
+                font-size: 0.6rem;
+            }
+            .support-card {
+                padding: 0.8rem 1rem;
+                border-radius: 14px;
+            }
+            .support-card .support-left .icon-wrap {
+                width: 34px;
+                height: 34px;
+            }
+            .support-card .support-left .icon-wrap svg {
+                width: 17px;
+                height: 17px;
+            }
+            .support-card .support-left .support-text .title {
+                font-size: 0.75rem;
+            }
+            .support-card .support-left .support-text .desc {
+                font-size: 0.55rem;
             }
             .nav-item .nav-icon {
-                width: 20px;
-                height: 20px;
+                width: 18px;
+                height: 18px;
             }
             .nav-item.marketplace .nav-icon {
                 width: 26px;
                 height: 26px;
+                padding: 4px;
+            }
+            .nav-item .nav-label {
+                font-size: 0.35rem;
+            }
+            .hero-slideshow .slide-content h2 {
+                font-size: 0.9rem;
+            }
+            .hero-slideshow .slide-content p {
+                font-size: 0.55rem;
+            }
+            .hero-slideshow .indicators .dot {
+                width: 5px;
+                height: 5px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .container {
+                padding: 4rem 0.4rem 0.5rem 0.4rem;
+            }
+            .feature-grid {
+                gap: 0.4rem;
+            }
+            .feature-card .fc-icon {
+                width: 30px;
+                height: 30px;
+            }
+            .feature-card .fc-icon svg {
+                width: 14px;
+                height: 14px;
+            }
+            .feature-card .fc-label {
+                font-size: 0.5rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .feature-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+            .withdrawal-card {
+                padding: 1.5rem 1.8rem 0.8rem 1.8rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .feature-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== FULL SCREEN BLURRED BACKGROUND ===== -->
-    <div class="hero-bg"></div>
+    <!-- ===== BACKGROUND GRADIENT ===== -->
+    <div class="dashboard-bg"></div>
 
-    <!-- ===== HEADER (NO HAMBURGER) ===== -->
+    <!-- ===== HEADER — NO LOGOUT BUTTON ===== -->
     <header class="header">
         <div class="header-left">
-            <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
+            <a href="index.html" class="logo-text">Sajvera<span class="accent">Capital</span></a>
             <span class="logo-sub">powered by Pureore Capital</span>
         </div>
         <div class="header-right">
-            <!-- NO HAMBURGER – header is clean -->
+            <div class="header-user">
+                <div class="avatar" id="userAvatar">J</div>
+                <span class="greeting">Hi, <span id="userNameDisplay">Investor</span></span>
+            </div>
         </div>
     </header>
 
@@ -566,11 +885,11 @@
 
         <!-- Greeting -->
         <div class="greeting-area">
-            <div class="greeting-text">Welcome back, <span id="userNameDisplay">Investor</span> 👋</div>
+            <div class="greeting-text">Welcome back, <span id="userNameDisplay2">Investor</span> 👋</div>
             <div class="greeting-sub" id="greetingSub">Let's grow your portfolio today</div>
         </div>
 
-        <!-- SLIDESHOW -->
+        <!-- ===== SCROLLING IMAGE SECTION ===== -->
         <div class="hero-slideshow" id="heroSlideshow">
             <div class="slides-wrapper">
                 <div class="slide active" style="background-image: url('https://i.ibb.co/BKQJsR4L/file-00000000d73881f482171aab413d03c3.png');">
@@ -634,72 +953,90 @@
             </div>
         </div>
 
-        <!-- QUICK ACCESS -->
-        <div class="quick-row">
-            <!-- Loan -->
-            <div class="quick-item" onclick="location.href='loan.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                </div>
-                <div class="qi-label">Loan</div>
+        <!-- ===== WITHDRAWAL ACTIVITY CARD — replaces balance card ===== -->
+        <div class="withdrawal-card" id="withdrawalCard">
+            <div class="card-header">
+                <span class="title">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/><path d="M7 12v-2"/><path d="M17 12v-2"/></svg>
+                    Withdrawal Activity
+                </span>
+                <span class="live-dot">
+                    <span class="pulse"></span> LIVE
+                </span>
             </div>
-
-            <!-- Voucher -->
-            <div class="quick-item" onclick="location.href='voucher.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
+            <div class="withdrawal-scroll" id="withdrawalScroll">
+                <div class="scroll-inner" id="withdrawalInner">
+                    <!-- Items injected by JS -->
                 </div>
-                <div class="qi-label">Voucher</div>
             </div>
+        </div>
 
-            <!-- Treasure -->
-            <div class="quick-item" onclick="location.href='treasure.html';">
-                <div class="qi-icon">
+        <!-- ===== FEATURE GRID ===== -->
+        <div class="feature-grid">
+            <div class="feature-card" onclick="location.href='treasure.html';">
+                <div class="fc-icon">
                     <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                 </div>
-                <div class="qi-label">Treasure</div>
+                <div class="fc-label">Treasure</div>
+                <div class="fc-desc">Gold chest</div>
             </div>
 
-            <!-- Daily Check -->
-            <div class="quick-item" onclick="location.href='daily-check.html';">
-                <div class="qi-icon">
+            <div class="feature-card" onclick="location.href='daily-check.html';">
+                <div class="fc-icon">
                     <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="12 14 12 18 16 18"/></svg>
                 </div>
-                <div class="qi-label">Daily Check</div>
+                <div class="fc-label">Daily Check</div>
+                <div class="fc-desc">Calendar</div>
             </div>
 
-            <!-- Saving Money -->
-            <div class="quick-item" onclick="location.href='saving.html';">
-                <div class="qi-icon">
-                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/><path d="M7 12v-2"/><path d="M17 12v-2"/></svg>
+            <div class="feature-card" onclick="location.href='voucher.html';">
+                <div class="fc-icon">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
                 </div>
-                <div class="qi-label">Saving Money</div>
+                <div class="fc-label">Voucher</div>
+                <div class="fc-desc">Ticket</div>
             </div>
 
-            <!-- Job Apply (FIXED: now links to jobs.html) -->
-            <div class="quick-item" onclick="location.href='jobs.html';">
-                <div class="qi-icon">
+            <div class="feature-card" onclick="location.href='jobs.html';">
+                <div class="fc-icon">
                     <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M8 12h8"/></svg>
                 </div>
-                <div class="qi-label">Job Apply</div>
+                <div class="fc-label">Jobs Apply</div>
+                <div class="fc-desc">Briefcase</div>
+            </div>
+
+            <div class="feature-card" onclick="location.href='saving.html';">
+                <div class="fc-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/><path d="M7 12v-2"/><path d="M17 12v-2"/></svg>
+                </div>
+                <div class="fc-label">Saving Money</div>
+                <div class="fc-desc">Wallet</div>
+            </div>
+
+            <div class="feature-card loan" onclick="location.href='loan.html';">
+                <div class="fc-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </div>
+                <div class="fc-label">Loan</div>
+                <div class="fc-desc">Finance</div>
             </div>
         </div>
 
-        <!-- MARKETPLACE CARD -->
-        <div class="marketplace-card" id="marketplaceCard">
-            <div class="marketplace-icon">
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <path d="M16 10a4 4 0 0 1-8 0" />
-                </svg>
+        <!-- ===== CUSTOMER SERVICE CARD ===== -->
+        <div class="support-card" onclick="location.href='support.html';">
+            <div class="support-left">
+                <div class="icon-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <div class="support-text">
+                    <div class="title">Customer Service</div>
+                    <div class="desc">Need help? Contact support</div>
+                </div>
             </div>
-            <h3>Marketplace</h3>
-            <p>Browse investment opportunities and exclusive deals</p>
-            <span class="badge-new">🔥 New plans available</span>
+            <span class="support-arrow">→</span>
         </div>
 
-        <!-- Footer -->
+        <!-- ===== FOOTER LINKS ===== -->
         <div class="footer-links">
             <a href="term.html">Terms of Service</a>
             <a href="privacy.html">Privacy Policy</a>
@@ -709,7 +1046,9 @@
 
     </main>
 
-    <!-- ===== BOTTOM NAV ===== -->
+    <!-- ================================================================
+    BOTTOM NAV
+    ================================================================ -->
     <div class="bottom-nav">
         <button class="nav-item active" data-page="dashboard.html">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
@@ -733,6 +1072,9 @@
         </button>
     </div>
 
+    <!-- ================================================================
+    JAVASCRIPT
+    ================================================================ -->
     <script>
         // ================================================================
         // FIREBASE CONFIG
@@ -766,10 +1108,11 @@
             return el;
         }
 
-        var logoutBtn = getEl('logoutBtn');
         var userNameDisplay = getEl('userNameDisplay');
+        var userNameDisplay2 = getEl('userNameDisplay2');
+        var userAvatar = getEl('userAvatar');
         var greetingSub = getEl('greetingSub');
-        var marketplaceCard = getEl('marketplaceCard');
+        var withdrawalInner = getEl('withdrawalInner');
 
         // ================================================================
         // AUTH STATE
@@ -800,7 +1143,29 @@
                         }
                         var data = doc.data();
                         var name = data.fullName || data.displayName || 'Investor';
+                        var initial = name.charAt(0).toUpperCase();
+
                         if (userNameDisplay) userNameDisplay.textContent = name;
+                        if (userNameDisplay2) userNameDisplay2.textContent = name;
+                        if (userAvatar) userAvatar.textContent = initial;
+
+                        if (greetingSub) {
+                            var hour = new Date().getHours();
+                            var msgs = [
+                                'Start your day with smart investing',
+                                'Keep growing your portfolio',
+                                'Evening is a great time to review your earnings',
+                                'Rest well, tomorrow is another opportunity'
+                            ];
+                            var msg = hour < 12 ? msgs[0] :
+                                hour < 17 ? msgs[1] :
+                                hour < 21 ? msgs[2] : msgs[3];
+                            greetingSub.textContent = msg;
+                        }
+
+                        // Start withdrawal feed
+                        startWithdrawalFeed();
+
                     })
                     .catch(function(e) {
                         console.warn('User load error:', e);
@@ -879,12 +1244,76 @@
         startSlideshow();
 
         // ================================================================
-        // MARKETPLACE CARD CLICK
+        // WITHDRAWAL FEED — Specific demo data
         // ================================================================
-        if (marketplaceCard) {
-            marketplaceCard.addEventListener('click', function() {
-                window.location.href = 'marketplace.html';
-            });
+
+        // The exact withdrawal data requested
+        var withdrawalData = [
+            { name: 'Chanda Mwape', country: '🇿🇲', amount: 23, date: 'Sep 16', isGold: false },
+            { name: 'Brian Kunda', country: '🇿🇲', amount: 53, date: 'Sep 16', isGold: false },
+            { name: 'Ruth Mulenga', country: '🇿🇲', amount: 110, date: 'Sep 16', isGold: true },
+            { name: 'Kwame Asare', country: '🇬🇭', amount: 200, date: 'Sep 16', isGold: true },
+            { name: 'Peter Sinkamba', country: '🇿🇲', amount: 23, date: 'Sep 16', isGold: false },
+            { name: 'Grace Tembo', country: '🇿🇲', amount: 53, date: 'Sep 16', isGold: false },
+            { name: 'Nana Yeboah', country: '🇬🇭', amount: 200, date: 'Sep 16', isGold: true },
+            { name: 'Mulenga Chisanga', country: '🇿🇲', amount: 110, date: 'Sep 16', isGold: true },
+            { name: 'Abdul Fuseini', country: '🇬🇭', amount: 200, date: 'Sep 16', isGold: true },
+            { name: 'Mwape Banda', country: '🇿🇲', amount: 23, date: 'Sep 16', isGold: false },
+        ];
+
+        // Double the data for seamless scrolling (duplicate for smooth loop)
+        var feedData = [];
+        for (var i = 0; i < 3; i++) {
+            feedData = feedData.concat(withdrawalData);
+        }
+
+        function renderWithdrawalItems() {
+            if (!withdrawalInner) return;
+            var html = '';
+            for (var i = 0; i < feedData.length; i++) {
+                var item = feedData[i];
+                var amountClass = item.isGold ? 'gold' : '';
+                // Only show partial phone number (masked)
+                var phoneMask = '096' + String(Math.floor(Math.random() * 9000000 + 1000000)) + '0';
+                var displayPhone = phoneMask.substring(0, 6) + 'xxxx' + phoneMask.substring(10);
+                html += '<div class="withdrawal-item">' +
+                    '<div class="left">' +
+                    '<span class="flag">' + item.country + '</span>' +
+                    '<div class="info">' +
+                    '<span class="name">' + item.name + '</span>' +
+                    '<span class="date">' + item.date + ' • ' + displayPhone + '</span>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="right">' +
+                    '<span class="amount ' + amountClass + '">ZMW ' + item.amount + '</span>' +
+                    '<div class="status">Completed</div>' +
+                    '</div>' +
+                    '</div>';
+            }
+            withdrawalInner.innerHTML = html;
+        }
+
+        function startWithdrawalFeed() {
+            renderWithdrawalItems();
+
+            // Pause on hover
+            var scrollInner = document.querySelector('.scroll-inner');
+            var withdrawalScroll = document.getElementById('withdrawalScroll');
+
+            if (scrollInner && withdrawalScroll) {
+                withdrawalScroll.addEventListener('mouseenter', function() {
+                    scrollInner.classList.add('paused');
+                });
+                withdrawalScroll.addEventListener('mouseleave', function() {
+                    scrollInner.classList.remove('paused');
+                });
+                withdrawalScroll.addEventListener('touchstart', function() {
+                    scrollInner.classList.add('paused');
+                });
+                withdrawalScroll.addEventListener('touchend', function() {
+                    scrollInner.classList.remove('paused');
+                });
+            }
         }
 
         // ================================================================
@@ -906,44 +1335,13 @@
             });
         });
 
-        // ================================================================
-        // DYNAMIC GREETING
-        // ================================================================
-        if (greetingSub) {
-            var hour = new Date().getHours();
-            var msgs = [
-                'Start your day with smart investing',
-                'Keep growing your portfolio',
-                'Evening is a great time to review your earnings',
-                'Rest well, tomorrow is another opportunity'
-            ];
-            var msg = hour < 12 ? msgs[0] :
-                hour < 17 ? msgs[1] :
-                hour < 21 ? msgs[2] : msgs[3];
-            greetingSub.textContent = msg;
-        }
-
-        // ================================================================
-        // LOGOUT
-        // ================================================================
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function() {
-                auth.signOut()
-                    .then(function() {
-                        window.location.href = 'login.html';
-                    })
-                    .catch(function(err) {
-                        console.warn('Logout error:', err);
-                        window.location.href = 'login.html';
-                    });
-            });
-        }
-
-        console.log('✅ Sajvera Capital · Dashboard (clean, no video, no hamburger)');
-        console.log('❌ Video player removed');
-        console.log('❌ Hamburger menu removed');
-        console.log('➕ Added Saving Money and Job Apply quick buttons');
-        console.log('✅ Job Apply now links to jobs.html (fixed 404)');
+        console.log('✅ Sajvera Capital · Dashboard (redesigned)');
+        console.log('❌ Logout button removed');
+        console.log('❌ Balance card removed');
+        console.log('📊 Withdrawal activity feed with specific demo data');
+        console.log('   • Sep 16: 23, 53, 110, 200 (Ghana)');
+        console.log('📱 Mobile-first responsive design');
     </script>
+
 </body>
 </html>

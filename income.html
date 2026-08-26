@@ -1300,7 +1300,7 @@
         }
 
         // ================================================================
-        // GET CLAIM STATUS (Invest Plans)
+        // GET CLAIM STATUS (Invest Plans) – NO MISSED COUNTER, ONLY REMAINING DAYS
         // ================================================================
         function getClaimStatus(inv, now) {
             var start = inv.startDate;
@@ -1316,6 +1316,7 @@
                 var windowEnd = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
 
                 if (now >= windowEnd) {
+                    // This day is missed – skip it without incrementing claimsCount
                     index++;
                     continue;
                 }
@@ -1325,6 +1326,7 @@
                     var hoursSince = Math.max(0, (now - claimStart) / (1000 * 60 * 60));
                     var earnedSoFar = Math.min(dailyAmount, dailyAmount * (hoursSince / 24));
                     var progress = Math.min(100, (hoursSince / 24) * 100);
+                    var daysRemaining = totalBusinessDays - index;
                     return {
                         available: available,
                         nextClaimTime: claimStart,
@@ -1334,12 +1336,14 @@
                         hoursSince: hoursSince,
                         progress: progress,
                         index: index,
-                        status: available ? 'ready' : 'waiting'
+                        status: available ? 'ready' : 'waiting',
+                        daysRemaining: daysRemaining
                     };
                 }
 
                 if (now < claimStart) {
                     var hoursRemaining = (claimStart - now) / (1000 * 60 * 60);
+                    var daysRemaining = totalBusinessDays - index;
                     return {
                         available: false,
                         nextClaimTime: claimStart,
@@ -1350,7 +1354,8 @@
                         progress: 0,
                         index: index,
                         status: 'waiting',
-                        hoursRemaining: hoursRemaining
+                        hoursRemaining: hoursRemaining,
+                        daysRemaining: daysRemaining
                     };
                 }
             }
@@ -1364,7 +1369,8 @@
                 hoursSince: 0,
                 progress: 0,
                 index: -1,
-                status: 'done'
+                status: 'done',
+                daysRemaining: 0
             };
         }
 
@@ -1477,7 +1483,7 @@
         }
 
         // ================================================================
-        // RENDER ACTIVE
+        // RENDER ACTIVE – No missed counter, only total claimed, claims count, days left
         // ================================================================
         async function renderActive(plans) {
             var container = document.getElementById('activePlansContainer');
@@ -1500,10 +1506,10 @@
                 var plan = plans[i];
                 var img = images[i] || 'https://i.ibb.co/BKHsdj4B/IMG-20260525-114417.jpg';
                 if (plan.planType === 'invest') {
-                    // Render Invest Plan (existing)
                     var status = getClaimStatus(plan, now);
                     var canClaim = status.available && !isWeekend(now);
-                    var daysLeft = plan.businessDays - (plan.claimsCount || 0);
+                    var daysLeft = status.daysRemaining !== undefined ? status.daysRemaining : (plan.businessDays - (plan
+                        .claimsCount || 0));
                     var totalClaimed = (plan.claimsCount || 0) * plan.dailyAmount;
                     var claimsCount = plan.claimsCount || 0;
 
@@ -2082,8 +2088,9 @@
             });
         });
 
-        console.log('✅ income.html – real claim enabled for Invest and Buy plans.');
-        console.log('ℹ️ Check console for transaction logs.');
+        console.log('✅ income.html – No missed counter displayed. Missed days are silently skipped.');
+        console.log('ℹ️ Days left reflect remaining business days.');
+        console.log('ℹ️ Claim only the current day\'s earnings.');
     </script>
 
 </body>

@@ -1847,7 +1847,7 @@
             </div>
             <div class="card">
                 <div class="table-wrap" id="treasureTableWrap">
-                    <div class="loading-placeholder"><div class="spinner"></div> Loading treasure...</div>
+                    <!-- Content will be rendered by JavaScript -->
                 </div>
             </div>
         </section>
@@ -4276,7 +4276,7 @@
         };
 
         // ================================================================
-        // ADS, NEWS, TREASURE, TRANSACTIONS, SUPPORT (placeholders)
+        // ADS, NEWS, TRANSACTIONS, SUPPORT (placeholders)
         // ================================================================
         async function loadAds() {
             const wrap = document.getElementById('adsTableWrap');
@@ -4290,12 +4290,163 @@
                 '<div class="empty-state"><i class="fas fa-newspaper"></i><p>News management is available in the News tab.</p></div>';
         }
 
+        // ─── FIXED: TREASURE CODES FULL CRUD ────────────────────────────
+        let allTreasureCodes = [];
+
         async function loadTreasure() {
             const wrap = document.getElementById('treasureTableWrap');
-            wrap.innerHTML =
-                '<div class="empty-state"><i class="fas fa-gem"></i><p>Treasure management is available in the Treasure tab.</p></div>';
+            wrap.innerHTML = '<div class="loading-placeholder"><div class="spinner"></div> Loading treasure codes...</div>';
+
+            try {
+                const snap = await db.collection('treasureCodes').orderBy('createdAt', 'desc').get();
+                allTreasureCodes = [];
+                snap.forEach(d => {
+                    const data = d.data();
+                    data.id = d.id;
+                    allTreasureCodes.push(data);
+                });
+                renderTreasure(allTreasureCodes);
+            } catch (err) {
+                console.error('Load treasure error:', err);
+                wrap.innerHTML =
+                    '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load treasure codes.</p></div>';
+                showToast('Failed to load treasure codes.', 'error');
+            }
         }
 
+        function renderTreasure(codes) {
+            const wrap = document.getElementById('treasureTableWrap');
+            if (!codes || codes.length === 0) {
+                wrap.innerHTML =
+                    '<div class="empty-state"><i class="fas fa-gem"></i><p>No treasure codes created yet.</p></div>';
+                return;
+            }
+
+            let html = `<table>
+                <thead><tr>
+                    <th>Code</th>
+                    <th>Amount (ZMW)</th>
+                    <th>Used</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr></thead><tbody>`;
+            codes.forEach(c => {
+                const isUsed = c.used === true;
+                html += `<tr>
+                    <td><code style="font-weight:700;font-size:1rem;">${escapeHtml(c.code)}</code></td>
+                    <td><strong>${formatMoney(c.amount)}</strong></td>
+                    <td>${isUsed ? '<span class="badge badge-secondary">Used</span>' : '<span class="badge badge-success">Available</span>'}</td>
+                    <td>${formatDate(c.createdAt)}</td>
+                    <td class="actions-cell">
+                        ${!isUsed ? `<button class="btn-action-warning" onclick="markTreasureUsed('${c.id}')"><i class="fas fa-check-circle"></i> Mark Used</button>` : ''}
+                        <button class="btn-action-danger" onclick="deleteTreasureCode('${c.id}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            wrap.innerHTML = html;
+        }
+
+        document.getElementById('refreshTreasureBtn').onclick = loadTreasure;
+
+        document.getElementById('addTreasureBtn').onclick = () => {
+            const html = `
+                <div class="form-group"><label>Treasure Code (7 characters, letters+numbers)</label>
+                    <input class="form-control" id="newTreasureCode" placeholder="e.g. ABC1234" maxlength="7" style="text-transform:uppercase;" />
+                </div>
+                <div class="form-group"><label>Amount (ZMW)</label>
+                    <input class="form-control" id="newTreasureAmount" type="number" step="0.01" placeholder="50" />
+                </div>
+            `;
+            const footer = `
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" id="createTreasureBtn">Create Treasure Code</button>
+            `;
+            openModal('Create Treasure Code', html, footer);
+
+            document.getElementById('createTreasureBtn').onclick = async function() {
+                const btn = this;
+                btn.disabled = true;
+                btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div> Creating...';
+
+                try {
+                    const code = document.getElementById('newTreasureCode').value.trim().toUpperCase();
+                    const amount = parseFloat(document.getElementById('newTreasureAmount').value);
+
+                    if (!code || code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) {
+                        showToast('Code must be exactly 7 characters (letters and numbers).', 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = 'Create Treasure Code';
+                        return;
+                    }
+                    if (isNaN(amount) || amount <= 0) {
+                        showToast('Please enter a valid amount.', 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = 'Create Treasure Code';
+                        return;
+                    }
+
+                    // Check if code already exists
+                    const existing = await db.collection('treasureCodes').where('code', '==', code).get();
+                    if (!existing.empty) {
+                        showToast('This code already exists. Please use a different one.', 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = 'Create Treasure Code';
+                        return;
+                    }
+
+                    await db.collection('treasureCodes').add({
+                        code: code,
+                        amount: amount,
+                        used: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    showToast('Treasure code created: ' + code);
+                    closeModal();
+                    loadTreasure();
+                } catch (err) {
+                    console.error('Create treasure error:', err);
+                    showToast('Failed to create treasure code.', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Create Treasure Code';
+                }
+            };
+        };
+
+        window.markTreasureUsed = async function(id) {
+            const confirmed = await showConfirm('Mark this treasure code as used?', 'This cannot be undone.');
+            if (!confirmed) return;
+            try {
+                await db.collection('treasureCodes').doc(id).update({
+                    used: true,
+                    usedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast('Treasure code marked as used.');
+                loadTreasure();
+            } catch (err) {
+                console.error('Mark treasure used error:', err);
+                showToast('Failed to update treasure code.', 'error');
+            }
+        };
+
+        window.deleteTreasureCode = async function(id) {
+            const confirmed = await showConfirm('Delete this treasure code permanently?', 'This action is irreversible.');
+            if (!confirmed) return;
+            try {
+                await db.collection('treasureCodes').doc(id).delete();
+                showToast('Treasure code deleted.');
+                loadTreasure();
+            } catch (err) {
+                console.error('Delete treasure error:', err);
+                showToast('Failed to delete treasure code.', 'error');
+            }
+        };
+
+        // ================================================================
+        // TRANSACTIONS
+        // ================================================================
         async function loadTransactions() {
             const wrap = document.getElementById('transactionsTableWrap');
             try {
@@ -5287,6 +5438,7 @@
                 console.log('✅ Saving Management: deposits + withdrawals (10% fee) working.');
                 console.log('✅ Buy Plan Management: one plan = one card, no duplication.');
                 console.log('✅ Total Payout removed from marketplace plan form.');
+                console.log('✅ Treasure tab fully functional (add, mark used, delete).');
             } catch (err) {
                 console.error('Initialization error:', err);
             }

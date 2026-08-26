@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Register – Sajvera Capital</title>
     <link rel="preconnect" href="https://www.gstatic.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
@@ -12,143 +14,129 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BODY ----- */
+        /* ================================================================
+                   RESET & BASE
+                   ================================================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html {
+            overscroll-behavior: none;
+        }
+
         body {
             font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            background: #071A2B;
+            background: #071C12;
             min-height: 100vh;
-            padding-top: 70px;
-            padding-bottom: 40px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #ffffff;
+            justify-content: center;
+            color: #F7F4E9;
+            padding: 1rem;
             position: relative;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            overflow-x: hidden;
+            overscroll-behavior: none;
         }
 
-        /* ----- BACKGROUND: sharp image, light overlay ----- */
-        .hero-bg {
+        /* ================================================================
+                   FULL-SCREEN AGRICULTURE BACKGROUND
+                   ================================================================ */
+        .bg-layer {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
             overflow: hidden;
         }
 
-        .hero-bg::before {
+        .bg-layer::before {
             content: "";
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ibb.co/whDf1RCN/file-0000000014c08243b3528ad6e201f91c.png');
-            background-size: cover;
-            background-position: center;
+            inset: 0;
+            background: url('https://i.ibb.co/Q77Q6tqH/file-00000000fe8881f48216b96f2e366505.png') center/cover no-repeat;
+            transform: scale(1.02);
         }
 
-        .hero-bg::after {
+        .bg-layer::after {
             content: "";
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(7, 26, 43, 0.25);
-            mix-blend-mode: multiply;
+            inset: 0;
+            background: rgba(7, 28, 18, 0.55);
+            pointer-events: none;
         }
 
-        /* ----- HEADER ----- */
+        /* ================================================================
+                   HEADER
+                   ================================================================ */
         .header {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            padding: 0.6rem 1.8rem;
+            z-index: 100;
+            padding: 0.6rem 1.2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
-            background: rgba(7, 26, 43, 0.30);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(7, 28, 18, 0.50);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(212, 167, 44, 0.06);
         }
 
         .logo-text {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #F7F4E9;
             text-decoration: none;
             letter-spacing: -0.4px;
         }
-        .logo-text .vc {
-            color: #3E8E63;
+
+        .logo-text .accent {
+            color: #D4A72C;
         }
 
-        /* ----- HERO TAGLINE ----- */
-        .hero-section {
-            width: 100%;
-            max-width: 480px;
-            padding: 0 1.2rem 0.3rem;
-            text-align: center;
-            position: relative;
-            z-index: 2;
-        }
-
-        .hero-tagline h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.3px;
-            line-height: 1.2;
-            color: #ffffff;
-            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
-        }
-
-        .hero-tagline .sub {
-            font-size: 0.7rem;
-            color: #D7E1E8;
-            margin-top: 0.2rem;
-            font-weight: 400;
-            letter-spacing: 0.4px;
-            text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
-            opacity: 0.8;
-        }
-
-        .hero-tagline .sub strong {
-            color: #3E8E63;
-            font-weight: 600;
-        }
-
-        /* ----- FORM CONTAINER (light glass) ----- */
-        .form-container {
-            width: 100%;
-            max-width: 480px;
-            background: rgba(7, 26, 43, 0.25);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            padding: 1.6rem 1.4rem;
+        .header-back {
+            color: rgba(247, 244, 233, 0.30);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: 0.2s;
+            padding: 4px 10px;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            animation: fadeUp 0.4s ease-out;
-            margin: 0.3rem auto 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .header-back:hover {
+            color: #F7F4E9;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* ================================================================
+                   WIZARD CONTAINER
+                   ================================================================ */
+        .wizard-wrapper {
             position: relative;
             z-index: 2;
+            width: 100%;
+            max-width: 480px;
+            margin: 4.5rem auto 1rem;
+            animation: fadeUp 0.6s ease-out forwards;
         }
 
         @keyframes fadeUp {
             0% {
                 opacity: 0;
-                transform: translateY(12px);
+                transform: translateY(24px);
             }
             100% {
                 opacity: 1;
@@ -156,173 +144,410 @@
             }
         }
 
-        .form-header {
-            margin-bottom: 1.2rem;
-            text-align: center;
-        }
-
-        .form-header h1 {
-            font-size: 22px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.3px;
-        }
-
-        .form-header h1 span {
-            color: #3E8E63;
-        }
-
-        .form-header p {
-            color: #D7E1E8;
-            font-size: 13px;
-            margin-top: 2px;
-            opacity: 0.7;
-        }
-
-        /* ----- BONUS BADGE — hidden ----- */
-        .bonus-badge {
-            display: none !important;
-        }
-
-        /* ----- FORM FIELDS (no blur, only semi-transparent) ----- */
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 11px;
-        }
-
-        .input-group {
+        /* ================================================================
+                   GLASS CARD
+                   ================================================================ */
+        .glass-card {
+            background: rgba(7, 28, 18, 0.55);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(212, 167, 44, 0.06);
+            border-radius: 28px;
+            padding: 1.8rem 1.6rem 2rem;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.50);
             position: relative;
+            overflow: hidden;
+            transition: padding 0.3s;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 60%;
+            height: 70%;
+            background: radial-gradient(circle at 70% 30%, rgba(34, 197, 94, 0.02), transparent 70%);
+            pointer-events: none;
+        }
+
+        /* ================================================================
+                   PROGRESS INDICATOR
+                   ================================================================ */
+        .progress-wrap {
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.8rem;
+            position: relative;
+            padding: 0 2px;
         }
 
-        .input-group .input-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            stroke: rgba(255, 255, 255, 0.20);
-            stroke-width: 1.8;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            pointer-events: none;
-            transition: stroke 0.2s;
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            position: relative;
+            cursor: default;
+        }
+
+        .progress-step .dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: rgba(247, 244, 233, 0.15);
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.04);
+            transition: all 0.4s ease;
+            position: relative;
             z-index: 2;
         }
 
-        .input-group:focus-within .input-icon {
-            stroke: #3E8E63;
+        .progress-step .dot .check {
+            display: none;
         }
 
-        .input-group input {
+        .progress-step .dot .num {
+            display: block;
+        }
+
+        .progress-step.completed .dot {
+            background: #22C55E;
+            border-color: #22C55E;
+            color: #071C12;
+        }
+
+        .progress-step.completed .dot .num {
+            display: none;
+        }
+        .progress-step.completed .dot .check {
+            display: block;
+            font-size: 0.8rem;
+        }
+
+        .progress-step.active .dot {
+            background: rgba(34, 197, 94, 0.12);
+            border-color: #22C55E;
+            color: #22C55E;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.08);
+        }
+
+        .progress-step .label {
+            font-size: 0.5rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: rgba(247, 244, 233, 0.15);
+            transition: 0.3s;
+            text-align: center;
+            line-height: 1.2;
+            max-width: 56px;
+        }
+
+        .progress-step.active .label {
+            color: rgba(247, 244, 233, 0.50);
+        }
+        .progress-step.completed .label {
+            color: rgba(247, 244, 233, 0.20);
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 15px;
+            left: 16px;
+            right: 16px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.03);
+            z-index: 0;
+            border-radius: 2px;
+        }
+
+        .progress-line .fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #22C55E, #D4A72C);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        /* ================================================================
+                   STEP CONTENT
+                   ================================================================ */
+        .step-content {
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            animation: stepFade 0.35s ease forwards;
+        }
+
+        @keyframes stepFade {
+            0% {
+                opacity: 0;
+                transform: translateX(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .step-header {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .step-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #F7F4E9;
+            line-height: 1.2;
+        }
+
+        .step-header h2 .accent {
+            color: #22C55E;
+        }
+
+        .step-header p {
+            font-size: 0.85rem;
+            color: rgba(247, 244, 233, 0.45);
+            line-height: 1.5;
+            margin-top: 2px;
+        }
+
+        /* ---- FORM FIELDS ---- */
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .field-group label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(247, 244, 233, 0.40);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .field-group .field-input {
             width: 100%;
-            padding: 0.65rem 1rem 0.65rem 38px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: #ffffff;
-            font-size: 0.9rem;
+            padding: 0.75rem 1rem;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1.5px solid rgba(255, 255, 255, 0.04);
+            color: #F7F4E9;
+            font-size: 0.95rem;
             font-family: inherit;
-            transition: all 0.2s;
+            transition: all 0.3s;
             outline: none;
         }
 
-        .input-group input[type="password"] {
-            padding-right: 42px;
+        .field-group .field-input:focus {
+            border-color: rgba(34, 197, 94, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.02);
         }
 
-        .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.35);
+        .field-group .field-input::placeholder {
+            color: rgba(247, 244, 233, 0.12);
         }
 
-        .input-group input:focus {
-            border-color: rgba(62, 142, 99, 0.20);
-            background: rgba(255, 255, 255, 0.07);
-            box-shadow: 0 0 0 3px rgba(62, 142, 99, 0.03);
+        .field-group .field-input.error {
+            border-color: rgba(239, 68, 68, 0.20);
         }
 
-        /* Phone input with prefix */
-        .phone-prefix {
+        .field-group .field-error {
+            font-size: 0.7rem;
+            color: #f87171;
+            min-height: 1.1rem;
+            padding-left: 4px;
+        }
+
+        /* ---- PHONE WITH COUNTRY CODE DROPDOWN ---- */
+        .phone-wrap {
+            position: relative;
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+        }
+
+        .phone-wrap .country-select {
+            flex-shrink: 0;
+            min-width: 88px;
+            padding: 0.75rem 0.5rem 0.75rem 0.7rem;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1.5px solid rgba(255, 255, 255, 0.04);
+            color: #F7F4E9;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: all 0.3s;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(247,244,233,0.15)'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+
+        .phone-wrap .country-select:focus {
+            border-color: rgba(34, 197, 94, 0.15);
+            background-color: rgba(255, 255, 255, 0.04);
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.02);
+        }
+
+        .phone-wrap .country-select option {
+            background: #071C12;
+            color: #F7F4E9;
+            padding: 4px;
+        }
+
+        .phone-wrap .phone-input-wrap {
+            flex: 1;
+            position: relative;
+            min-width: 0;
+        }
+
+        .phone-wrap .phone-input-wrap .field-input {
+            padding-left: 0.9rem;
+            width: 100%;
+        }
+
+        /* ---- PASSWORD TOGGLE ---- */
+        .pw-toggle {
             position: absolute;
-            left: 38px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.30);
-            font-weight: 600;
-            font-size: 0.9rem;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .phone-input {
-            padding-left: 70px !important;
-        }
-
-        /* Password Toggle */
-        .password-toggle {
-            position: absolute;
-            right: 8px;
+            right: 10px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            padding: 4px;
+            color: rgba(247, 244, 233, 0.12);
             cursor: pointer;
-            color: rgba(255, 255, 255, 0.18);
+            padding: 4px;
             transition: 0.2s;
             z-index: 2;
-            border-radius: 4px;
-            width: 26px;
-            height: 26px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .password-toggle:hover {
-            color: rgba(255, 255, 255, 0.40);
+        .pw-toggle:hover {
+            color: rgba(247, 244, 233, 0.30);
         }
 
-        .password-toggle svg {
-            width: 16px;
-            height: 16px;
+        .pw-toggle svg {
+            width: 18px;
+            height: 18px;
             stroke: currentColor;
             stroke-width: 2;
             fill: none;
         }
 
-        .password-toggle.active {
-            color: #3E8E63;
+        .pw-toggle.active {
+            color: #22C55E;
         }
 
-        /* ----- CAPTCHA (glass only on the display) ----- */
-        .captcha-section {
-            margin-top: 0px;
+        .pw-field {
+            position: relative;
         }
 
-        .captcha-label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #D7E1E8;
-            margin-bottom: 0.2rem;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-            opacity: 0.7;
-        }
-
-        .captcha-wrapper {
+        /* ---- REFERRAL CONFIRMATION ---- */
+        .referral-confirm {
+            background: rgba(34, 197, 94, 0.03);
+            border: 1px solid rgba(34, 197, 94, 0.06);
+            border-radius: 16px;
+            padding: 1rem 1.2rem;
             display: flex;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
+            flex-direction: column;
+            gap: 0.6rem;
         }
 
-        .captcha-wrapper .input-group {
+        .referral-confirm .ref-label {
+            font-size: 0.7rem;
+            color: rgba(247, 244, 233, 0.30);
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .referral-confirm .ref-code {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #D4A72C;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
+        .referral-confirm .ref-question {
+            font-size: 0.9rem;
+            color: rgba(247, 244, 233, 0.60);
+            line-height: 1.5;
+            margin-top: 2px;
+        }
+
+        .ref-actions {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .ref-actions .btn-sm {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            touch-action: manipulation;
+        }
+
+        .ref-actions .btn-sm-yes {
+            background: #22C55E;
+            color: #071C12;
+        }
+        .ref-actions .btn-sm-yes:hover {
+            background: #16A34A;
+            transform: translateY(-1px);
+        }
+
+        .ref-actions .btn-sm-no {
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(247, 244, 233, 0.40);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .ref-actions .btn-sm-no:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #F7F4E9;
+        }
+
+        .ref-actions .btn-sm:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ---- CAPTCHA ---- */
+        .captcha-row {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .captcha-row .field-group {
             flex: 1;
             min-width: 0;
         }
@@ -331,35 +556,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 3px;
-            background: rgba(7, 26, 43, 0.30);
+            background: rgba(7, 28, 18, 0.30);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 0.4rem 0.6rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            padding: 0.4rem 0.8rem;
+            min-width: 100px;
+            height: 50px;
             flex-shrink: 0;
-            min-width: 96px;
-            height: 46px;
-            transition: 0.2s;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
             position: relative;
             overflow: hidden;
-        }
-
-        .captcha-display::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image:
-                linear-gradient(rgba(62, 142, 99, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(62, 142, 99, 0.03) 1px, transparent 1px);
-            background-size: 8px 8px;
-            pointer-events: none;
-            z-index: 0;
         }
 
         .captcha-display .code-chars {
@@ -376,7 +583,7 @@
         .captcha-display .code-chars span {
             display: inline-block;
             transition: 0.3s;
-            text-shadow: 0 0 16px rgba(62, 142, 99, 0.08);
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.04);
         }
 
         .captcha-display .code-chars span.confusing {
@@ -398,47 +605,19 @@
             }
         }
 
-        .captcha-error {
-            font-size: 0.7rem;
-            color: #f87171;
-            margin-top: 3px;
-            min-height: 1.1rem;
-            text-align: left;
-            padding-left: 4px;
-        }
-
         .captcha-hint {
             font-size: 0.6rem;
-            color: rgba(255, 255, 255, 0.25);
-            margin-top: 2px;
-            text-align: left;
+            color: rgba(247, 244, 233, 0.15);
             padding-left: 4px;
         }
 
-        /* ----- REFERRAL NOTE ----- */
-        .referral-note {
-            font-size: 0.68rem;
-            color: rgba(255, 255, 255, 0.20);
-            margin-top: -4px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding-left: 4px;
-        }
-        .referral-note svg {
-            width: 12px;
-            height: 12px;
-            stroke: rgba(255, 255, 255, 0.20);
-            stroke-width: 2;
-        }
-
-        /* ----- 18+ CHECK ----- */
+        /* ---- AGE CHECK ---- */
         .age-check {
             display: flex;
             align-items: flex-start;
-            gap: 10px;
-            margin: 4px 0 2px 0;
+            gap: 12px;
             cursor: pointer;
+            padding: 6px 0;
         }
 
         .age-check input[type="checkbox"] {
@@ -446,33 +625,33 @@
         }
 
         .age-check .check-box {
-            width: 20px;
-            height: 20px;
-            min-width: 20px;
-            border-radius: 5px;
-            border: 2px solid rgba(255, 255, 255, 0.10);
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.06);
             background: rgba(255, 255, 255, 0.02);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: 0.2s;
+            transition: 0.25s;
             margin-top: 1px;
         }
 
         .age-check .check-box svg {
-            width: 12px;
-            height: 12px;
-            stroke: #fff;
+            width: 13px;
+            height: 13px;
+            stroke: #F7F4E9;
             stroke-width: 3;
             fill: none;
             opacity: 0;
-            transform: scale(0.5);
-            transition: 0.2s;
+            transform: scale(0.4);
+            transition: 0.25s;
         }
 
         .age-check input:checked+.check-box {
-            background: #3E8E63;
-            border-color: #3E8E63;
+            background: #22C55E;
+            border-color: #22C55E;
         }
 
         .age-check input:checked+.check-box svg {
@@ -482,57 +661,107 @@
 
         .age-check .check-label {
             font-size: 0.85rem;
-            color: #D7E1E8;
-            line-height: 1.3;
-            opacity: 0.8;
-        }
-        .age-check .check-label strong {
-            color: #ffffff;
-            opacity: 1;
+            color: rgba(247, 244, 233, 0.50);
+            line-height: 1.4;
         }
 
-        /* ----- SUBMIT BUTTON (Deep Navy) ----- */
-        .btn-register {
-            width: 100%;
-            padding: 0.8rem;
-            border: none;
-            border-radius: 12px;
+        .age-check .check-label strong {
+            color: #F7F4E9;
+            font-weight: 600;
+        }
+
+        /* ---- STEP ACTIONS ---- */
+        .step-actions {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 0.6rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .step-actions .btn-back {
+            padding: 0.7rem 1.2rem;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.02);
+            color: rgba(247, 244, 233, 0.20);
             font-family: inherit;
             font-weight: 600;
-            font-size: 0.95rem;
-            color: #ffffff;
-            background: #071A2B;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s;
-            letter-spacing: 0.2px;
-            margin-top: 4px;
-            box-shadow: 0 4px 16px rgba(7, 26, 43, 0.30);
+            transition: all 0.25s ease;
+            touch-action: manipulation;
+            flex-shrink: 0;
         }
 
-        .btn-register:hover {
-            background: #0d2640;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 24px rgba(7, 26, 43, 0.40);
+        .step-actions .btn-back:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: #F7F4E9;
         }
-        .btn-register:active {
-            transform: scale(0.98);
-        }
-        .btn-register:disabled {
-            opacity: 0.5;
-            transform: none;
+        .step-actions .btn-back:disabled {
+            opacity: 0.2;
             cursor: not-allowed;
         }
 
-        .btn-register .spinner-btn {
-            display: inline-block;
+        .step-actions .btn-next {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            color: #071C12;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.10);
+        }
+
+        .step-actions .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(34, 197, 94, 0.18);
+            filter: brightness(1.04);
+        }
+
+        .step-actions .btn-next:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .step-actions .btn-next:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .step-actions .btn-next .spinner {
+            display: none;
             width: 18px;
             height: 18px;
-            border: 2.5px solid rgba(255, 255, 255, 0.15);
-            border-top-color: #ffffff;
+            border: 2.5px solid rgba(7, 28, 18, 0.15);
+            border-top-color: #071C12;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            vertical-align: middle;
-            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .step-actions .btn-next.loading .spinner {
+            display: inline-block;
+        }
+        .step-actions .btn-next.loading .btn-text {
+            display: none;
+        }
+        .step-actions .btn-next.loading .btn-text-loading {
+            display: inline;
+        }
+
+        .step-actions .btn-next .btn-text-loading {
+            display: none;
         }
 
         @keyframes spin {
@@ -541,28 +770,32 @@
             }
         }
 
-        /* ----- MESSAGE BOX (no blur) ----- */
+        /* ================================================================
+                   MESSAGE BOX
+                   ================================================================ */
         .message-box {
             padding: 0.7rem 1rem;
-            border-radius: 12px;
+            border-radius: 14px;
             text-align: center;
             font-weight: 500;
             font-size: 0.85rem;
-            margin-top: 10px;
+            margin-top: 0.8rem;
             display: none;
             border: 1px solid transparent;
-            background: rgba(7, 26, 43, 0.30);
+            background: rgba(7, 28, 18, 0.30);
         }
+
         .message-box.error {
             display: block;
-            border-color: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.12);
             color: #f87171;
         }
         .message-box.success {
             display: block;
-            border-color: rgba(62, 142, 99, 0.15);
+            border-color: rgba(34, 197, 94, 0.12);
             color: #6ee7b7;
         }
+
         .message-box svg {
             width: 16px;
             height: 16px;
@@ -573,22 +806,26 @@
             margin-right: 6px;
         }
 
-        /* ----- LOADING OVERLAY ----- */
+        /* ================================================================
+                   FULL-SCREEN LOADING OVERLAY
+                   ================================================================ */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(7, 26, 43, 0.80);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(7, 28, 18, 0.88);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
+            z-index: 500;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.2rem;
+            padding: 1.5rem;
+            text-align: center;
         }
 
         .loading-overlay.active {
@@ -596,72 +833,59 @@
         }
 
         .loading-spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid rgba(62, 142, 99, 0.12);
-            border-top-color: #3E8E63;
+            width: 52px;
+            height: 52px;
+            border: 4px solid rgba(34, 197, 94, 0.06);
+            border-top-color: #22C55E;
             border-radius: 50%;
             animation: spin 0.9s linear infinite;
         }
 
         .loading-text {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #ffffff;
-            letter-spacing: 0.2px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #F7F4E9;
         }
-
         .loading-sub {
-            font-size: 0.75rem;
-            color: #D7E1E8;
-            margin-top: -0.4rem;
-            opacity: 0.6;
+            font-size: 0.8rem;
+            color: rgba(247, 244, 233, 0.25);
+            max-width: 320px;
+            line-height: 1.5;
         }
 
-        /* ----- FOOTER LINK ----- */
-        .footer-link {
-            text-align: center;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.25);
-        }
-        .footer-link a {
-            color: #3E8E63;
-            text-decoration: none;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-        .footer-link a:hover {
-            text-decoration: underline;
-        }
-
-        /* ----- TOAST (no blur) ----- */
+        /* ================================================================
+                   TOAST
+                   ================================================================ */
         .toast {
             position: fixed;
             bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(7, 26, 43, 0.85);
-            color: #f1f5f9;
+            background: rgba(7, 28, 18, 0.90);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #F7F4E9;
             padding: 10px 22px;
             border-radius: 40px;
             font-weight: 600;
-            z-index: 1001;
+            z-index: 600;
             animation: toastFade 4.5s ease forwards;
             max-width: 90%;
             text-align: center;
-            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.30);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.40);
+            border: 1px solid rgba(255, 255, 255, 0.03);
             font-size: 0.9rem;
         }
+
         .toast.error {
-            border-color: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.10);
             color: #fca5a5;
         }
         .toast.success {
-            border-color: rgba(62, 142, 99, 0.12);
+            border-color: rgba(34, 197, 94, 0.10);
             color: #6ee7b7;
         }
+
         @keyframes toastFade {
             0% {
                 opacity: 0;
@@ -680,201 +904,371 @@
             }
         }
 
-        /* ----- RESPONSIVE ----- */
-        @media (max-width: 480px) {
-            .header {
-                padding: 0.5rem 1rem;
+        /* ================================================================
+                   RESPONSIVE
+                   ================================================================ */
+        @media (max-width: 500px) {
+            body {
+                padding: 0.6rem;
             }
-            .logo-text {
+            .wizard-wrapper {
+                margin: 4rem auto 0.5rem;
+            }
+            .glass-card {
+                padding: 1.2rem 1rem 1.5rem;
+                border-radius: 22px;
+            }
+            .step-header h2 {
                 font-size: 1.2rem;
             }
-            .form-container {
-                padding: 1.2rem 1rem;
-                margin: 0.3rem 0.6rem;
+            .step-content {
+                min-height: 240px;
+                gap: 1rem;
             }
-            .form-header h1 {
-                font-size: 20px;
+            .progress-step .dot {
+                width: 28px;
+                height: 28px;
+                font-size: 0.5rem;
             }
-            .hero-tagline h2 {
-                font-size: 1.3rem;
+            .progress-step .label {
+                font-size: 0.4rem;
+                max-width: 40px;
             }
-            .hero-tagline .sub {
-                font-size: 0.65rem;
-            }
-            .input-group input {
-                padding: 0.6rem 0.8rem 0.6rem 34px;
-                font-size: 0.85rem;
-            }
-            .input-group input[type="password"] {
-                padding-right: 36px;
-            }
-            .input-group .input-icon {
-                left: 10px;
-                width: 14px;
-                height: 14px;
-            }
-            .phone-input {
-                padding-left: 62px !important;
-            }
-            .phone-prefix {
-                left: 34px;
-                font-size: 0.8rem;
-            }
-            .password-toggle {
-                right: 6px;
-                width: 22px;
-                height: 22px;
-            }
-            .password-toggle svg {
-                width: 14px;
-                height: 14px;
+            .progress-line {
+                top: 13px;
+                left: 12px;
+                right: 12px;
             }
             .captcha-display {
-                height: 40px;
                 min-width: 80px;
-                padding: 0.3rem 0.4rem;
+                height: 44px;
+                padding: 0.3rem 0.5rem;
             }
             .captcha-display .code-chars {
                 font-size: 1rem;
                 letter-spacing: 2px;
                 gap: 2px;
             }
-            .loading-spinner {
-                width: 40px;
-                height: 40px;
-            }
-            .loading-text {
+            .step-actions .btn-next {
                 font-size: 0.85rem;
+                padding: 0.65rem 1rem;
             }
-            .btn-register {
+            .step-actions .btn-back {
+                font-size: 0.75rem;
+                padding: 0.6rem 0.8rem;
+            }
+            .field-group .field-input {
+                padding: 0.65rem 0.9rem;
                 font-size: 0.88rem;
-                padding: 0.7rem;
+            }
+            .referral-confirm {
+                padding: 0.8rem 1rem;
+            }
+            .referral-confirm .ref-code {
+                font-size: 1rem;
+            }
+            .ref-actions .btn-sm {
+                font-size: 0.8rem;
+                padding: 0.5rem 0.8rem;
             }
             .age-check .check-label {
                 font-size: 0.78rem;
+            }
+            .header {
+                padding: 0.4rem 0.8rem;
+            }
+            .logo-text {
+                font-size: 1.1rem;
+            }
+            .header-back {
+                font-size: 0.7rem;
+                padding: 3px 8px;
+            }
+            .phone-wrap .country-select {
+                min-width: 72px;
+                font-size: 0.75rem;
+                padding: 0.65rem 0.4rem 0.65rem 0.5rem;
+                padding-right: 22px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .glass-card {
+                padding: 1rem 0.7rem 1.2rem;
+            }
+            .step-header h2 {
+                font-size: 1rem;
+            }
+            .progress-step .dot {
+                width: 24px;
+                height: 24px;
+                font-size: 0.45rem;
+            }
+            .progress-step .label {
+                font-size: 0.35rem;
+                max-width: 32px;
+            }
+            .progress-line {
+                top: 11px;
+            }
+            .captcha-display {
+                min-width: 64px;
+                height: 38px;
+            }
+            .captcha-display .code-chars {
+                font-size: 0.85rem;
+                letter-spacing: 1px;
+            }
+            .field-group .field-input {
+                font-size: 0.82rem;
+                padding: 0.55rem 0.7rem;
+            }
+            .phone-wrap .country-select {
+                min-width: 60px;
+                font-size: 0.7rem;
+                padding: 0.55rem 0.3rem 0.55rem 0.4rem;
+                padding-right: 18px;
             }
         }
     </style>
 </head>
 <body>
 
+    <!-- ===== FULL-SCREEN BACKGROUND ===== -->
+    <div class="bg-layer"></div>
+
     <!-- ===== LOADING OVERLAY ===== -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Creating your account...</div>
-        <div class="loading-sub">Please wait while we set up your profile</div>
+        <div class="loading-text" id="loadingText">Please wait...</div>
+        <div class="loading-sub" id="loadingSub">Loading next step</div>
     </div>
-
-    <!-- ===== HERO BACKGROUND (sharp farmland) ===== -->
-    <div class="hero-bg"></div>
 
     <!-- ===== HEADER ===== -->
     <header class="header">
-        <a href="index.html" class="logo-text">Sajvera<span class="vc">Capital</span></a>
+        <a href="index.html" class="logo-text">Sajvera<span class="accent">Capital</span></a>
+        <a href="index.html" class="header-back">← Back</a>
     </header>
 
-    <!-- ===== HERO TAGLINE ===== -->
-    <div class="hero-section">
-        <div class="hero-tagline">
-            <h2>Where Vision Meets Opportunity</h2>
-            <div class="sub">Powered by <strong>Sajvera Capital</strong></div>
-        </div>
-    </div>
+    <!-- ================================================================
+    WIZARD
+    ================================================================ -->
+    <div class="wizard-wrapper" id="wizardWrapper">
 
-    <!-- ===== FORM ===== -->
-    <main class="form-container">
-        <div class="form-header">
-            <h1>Create your <span>account</span></h1>
-            <p>Join the next generation of smart investing</p>
-        </div>
+        <div class="glass-card">
 
-        <!-- BONUS BADGE — hidden -->
-        <div class="bonus-badge"></div>
+            <!-- ===== PROGRESS ===== -->
+            <div class="progress-wrap" id="progressWrap">
+                <div class="progress-line">
+                    <div class="fill" id="progressFill" style="width: 0%;"></div>
+                </div>
 
-        <form id="registerForm">
-
-            <!-- Full Name -->
-            <div class="input-group">
-                <svg class="input-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <input type="text" id="fullName" placeholder="Full name" required autocomplete="name" />
+                <div class="progress-step active" data-step="0">
+                    <div class="dot"><span class="num">1</span><span class="check">✓</span></div>
+                    <span class="label">Email</span>
+                </div>
+                <div class="progress-step" data-step="1">
+                    <div class="dot"><span class="num">2</span><span class="check">✓</span></div>
+                    <span class="label">Phone</span>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="dot"><span class="num">3</span><span class="check">✓</span></div>
+                    <span class="label">Security</span>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="dot"><span class="num">4</span><span class="check">✓</span></div>
+                    <span class="label">Name</span>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="dot"><span class="num">5</span><span class="check">✓</span></div>
+                    <span class="label">Referral</span>
+                </div>
+                <div class="progress-step" data-step="5">
+                    <div class="dot"><span class="num">6</span><span class="check">✓</span></div>
+                    <span class="label">Verify</span>
+                </div>
+                <div class="progress-step" data-step="6">
+                    <div class="dot"><span class="num">7</span><span class="check">✓</span></div>
+                    <span class="label">Confirm</span>
+                </div>
             </div>
 
-            <!-- Phone Number -->
-            <div class="input-group">
-                <svg class="input-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.5"/><path d="M8 2v20"/><path d="M16 2v20"/><path d="M2 8h20"/><path d="M2 16h20"/></svg>
-                <span class="phone-prefix">+260</span>
-                <input type="tel" id="phoneNumber" class="phone-input" placeholder="977000000" maxlength="9" autocomplete="tel" />
-            </div>
+            <!-- ===== STEP CONTENT ===== -->
+            <div id="stepContainer">
 
-            <!-- Email Address -->
-            <div class="input-group">
-                <svg class="input-icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                <input type="email" id="email" placeholder="Email address" required autocomplete="email" />
-            </div>
-
-            <!-- Password -->
-            <div class="input-group">
-                <svg class="input-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <input type="password" id="password" placeholder="Password (min 6)" required autocomplete="new-password" />
-                <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password">
-                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="input-group">
-                <svg class="input-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="17"/></svg>
-                <input type="password" id="confirmPassword" placeholder="Confirm password" required autocomplete="off" />
-                <button type="button" class="password-toggle" id="togglePassword2" aria-label="Toggle password">
-                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-            </div>
-
-            <!-- Referral Code -->
-            <div class="input-group">
-                <svg class="input-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-                <input type="text" id="referralCode" placeholder="Referral code (required)" required autocomplete="off" />
-            </div>
-            <div class="referral-note">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                Enter a valid referral code to register
-            </div>
-
-            <!-- CAPTCHA / Verification Code -->
-            <div class="captcha-section">
-                <label class="captcha-label">Verification Code</label>
-                <div class="captcha-wrapper">
-                    <div class="input-group">
-                        <svg class="input-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        <input type="text" id="captchaInput" placeholder="Enter 6-digit code" maxlength="6" autocomplete="off" inputmode="numeric" pattern="[0-9]*" />
+                <!-- STEP 1: EMAIL -->
+                <div class="step-content" data-step="0">
+                    <div class="step-header">
+                        <h2>Enter your <span class="accent">email</span></h2>
+                        <p>We'll use this to sign you in and send updates.</p>
                     </div>
-                    <div class="captcha-display" id="captchaDisplay">
-                        <span class="code-chars" id="captchaChars"></span>
+                    <div class="field-group">
+                        <label for="stepEmail">Email address</label>
+                        <input type="email" id="stepEmail" class="field-input" placeholder="you@example.com" autocomplete="email" />
+                        <div class="field-error" id="emailError"></div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn-back" disabled>Back</button>
+                        <button class="btn-next" id="nextEmail">Next →</button>
                     </div>
                 </div>
-                <div class="captcha-error" id="captchaError"></div>
-                <div class="captcha-hint">Enter the 6 numbers shown in the box above</div>
+
+                <!-- STEP 2: PHONE -->
+                <div class="step-content" data-step="1" style="display:none;">
+                    <div class="step-header">
+                        <h2>Enter your <span class="accent">phone number</span></h2>
+                        <p>We'll use this for account security and support.</p>
+                    </div>
+                    <div class="field-group">
+                        <label for="stepPhone">Phone number</label>
+                        <div class="phone-wrap">
+                            <select class="country-select" id="countrySelect">
+                                <!-- populated by JS -->
+                            </select>
+                            <div class="phone-input-wrap">
+                                <input type="tel" id="stepPhone" class="field-input" placeholder="977000000" autocomplete="tel" />
+                            </div>
+                        </div>
+                        <div class="field-error" id="phoneError"></div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn-back" id="backPhone">← Back</button>
+                        <button class="btn-next" id="nextPhone">Next →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: SECURITY -->
+                <div class="step-content" data-step="2" style="display:none;">
+                    <div class="step-header">
+                        <h2>Choose your <span class="accent">password</span></h2>
+                        <p>Create a strong password (min 6 characters).</p>
+                    </div>
+                    <div class="field-group">
+                        <label for="stepPassword">Password</label>
+                        <div class="pw-field">
+                            <input type="password" id="stepPassword" class="field-input" placeholder="••••••••" autocomplete="new-password" />
+                            <button type="button" class="pw-toggle" id="togglePw1" aria-label="Toggle password">
+                                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </div>
+                        <div class="field-error" id="passwordError"></div>
+                    </div>
+                    <div class="field-group">
+                        <label for="stepConfirm">Confirm password</label>
+                        <div class="pw-field">
+                            <input type="password" id="stepConfirm" class="field-input" placeholder="••••••••" autocomplete="off" />
+                            <button type="button" class="pw-toggle" id="togglePw2" aria-label="Toggle password">
+                                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </div>
+                        <div class="field-error" id="confirmError"></div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn-back" id="backSecurity">← Back</button>
+                        <button class="btn-next" id="nextSecurity">Next →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: FULL NAME -->
+                <div class="step-content" data-step="3" style="display:none;">
+                    <div class="step-header">
+                        <h2>What's your <span class="accent">full name</span>?</h2>
+                        <p>This helps us personalise your experience.</p>
+                    </div>
+                    <div class="field-group">
+                        <label for="stepFirstName">First name</label>
+                        <input type="text" id="stepFirstName" class="field-input" placeholder="John" autocomplete="given-name" />
+                        <div class="field-error" id="firstNameError"></div>
+                    </div>
+                    <div class="field-group">
+                        <label for="stepLastName">Last name</label>
+                        <input type="text" id="stepLastName" class="field-input" placeholder="Doe" autocomplete="family-name" />
+                        <div class="field-error" id="lastNameError"></div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn-back" id="backName">← Back</button>
+                        <button class="btn-next" id="nextName">Next →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 5: REFERRAL -->
+                <div class="step-content" data-step="4" style="display:none;">
+                    <div class="step-header">
+                        <h2><span class="accent">Referral</span> confirmation</h2>
+                        <p>Verify the referral code you used.</p>
+                    </div>
+                    <div id="referralContainer">
+                        <!-- dynamically filled -->
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn-back" id="backReferral">← Back</button>
+                        <button class="btn-next" id="nextReferral" style="display:none;">Next →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 6: HUMAN VERIFICATION -->
+                <div class="step-content" data-step="5" style="display:none;">
+                    <div class="step-header">
+                        <h2>Verify you're <span class="accent">human</span></h2>
+                        <p>Enter the 6 numbers shown in the box.</p>
+                    </div>
+                    <div class="captcha-row">
+                        <div class="field-group">
+                            <label for="captchaInput">Verification code</label>
+                            <input type="text" id="captchaInput" class="field-input" placeholder="Enter 6 digits" maxlength="6" autocomplete="off" inputmode="numeric" pattern="[0-9]*" />
+                            <div class="field-error" id="captchaError"></div>
+                        </div>
+                        <div class="captcha-display" id="captchaDisplay">
+                            <span class="code-chars" id="captchaChars"></span>
+                        </div>
+                    </div>
+                    <div class="captcha-hint">Enter the numbers exactly as shown — they change each time.</div>
+                    <div class="step-actions">
+                        <button class="btn-back" id="backCaptcha">← Back</button>
+                        <button class="btn-next" id="nextCaptcha">Next →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 7: AGE CONFIRMATION -->
+                <div class="step-content" data-step="6" style="display:none;">
+                    <div class="step-header">
+                        <h2>Confirm your <span class="accent">eligibility</span></h2>
+                        <p>One last step to complete your registration.</p>
+                    </div>
+                    <label class="age-check">
+                        <input type="checkbox" id="ageCheck" />
+                        <span class="check-box"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+                        <span class="check-label">I confirm that I am <strong>18+ years old</strong> and agree to the terms</span>
+                    </label>
+                    <div class="field-error" id="ageError"></div>
+                    <div class="step-actions">
+                        <button class="btn-back" id="backAge">← Back</button>
+                        <button class="btn-next" id="completeRegistration">Complete Registration</button>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- 18+ Check -->
-            <label class="age-check">
-                <input type="checkbox" id="ageCheck" required />
-                <span class="check-box"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-                <span class="check-label">I confirm that I am <strong>18+ years old</strong> and agree to the terms</span>
-            </label>
+            <!-- ===== MESSAGE BOX ===== -->
+            <div id="messageBox" class="message-box"></div>
 
-            <button type="submit" class="btn-register" id="registerBtn">Register</button>
+        </div>
+        <!-- end glass-card -->
 
-        </form>
+        <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:rgba(247,244,233,0.08);">
+            Sajvera Capital · secure &amp; transparent
+        </div>
 
-        <div id="message" class="message-box"></div>
+    </div>
+    <!-- end wizard-wrapper -->
 
-        <div class="footer-link">Already have an account? <a href="login.html">Sign in</a></div>
-    </main>
 
+    <!-- ================================================================
+    JAVASCRIPT — PRESERVED FUNCTIONALITY
+    ================================================================ -->
     <script>
         // ================================================================
-        // FIREBASE CONFIG
+        // FIREBASE CONFIG (unchanged)
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -891,8 +1285,7 @@
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
         // ================================================================
-        // FLAG: prevent the onAuthStateChanged listener from redirecting
-        // during the registration flow.
+        // FLAG: prevent onAuthStateChanged redirect during submission
         // ================================================================
         var isSubmitting = false;
 
@@ -908,58 +1301,192 @@
         // ================================================================
         // DOM REFS
         // ================================================================
-        var form = document.getElementById('registerForm');
-        var registerBtn = document.getElementById('registerBtn');
-        var msgBox = document.getElementById('message');
-        var fullName = document.getElementById('fullName');
-        var phoneInput = document.getElementById('phoneNumber');
-        var emailInput = document.getElementById('email');
-        var passwordInput = document.getElementById('password');
-        var confirmInput = document.getElementById('confirmPassword');
-        var referralInput = document.getElementById('referralCode');
-        var ageCheck = document.getElementById('ageCheck');
+        var steps = document.querySelectorAll('.step-content');
+        var progressDots = document.querySelectorAll('.progress-step');
+        var progressFill = document.getElementById('progressFill');
+        var messageBox = document.getElementById('messageBox');
 
+        // Step fields
+        var stepEmail = document.getElementById('stepEmail');
+        var stepPhone = document.getElementById('stepPhone');
+        var countrySelect = document.getElementById('countrySelect');
+        var stepPassword = document.getElementById('stepPassword');
+        var stepConfirm = document.getElementById('stepConfirm');
+        var stepFirstName = document.getElementById('stepFirstName');
+        var stepLastName = document.getElementById('stepLastName');
         var captchaInput = document.getElementById('captchaInput');
         var captchaChars = document.getElementById('captchaChars');
         var captchaError = document.getElementById('captchaError');
+        var ageCheck = document.getElementById('ageCheck');
+
+        // Error containers
+        var emailError = document.getElementById('emailError');
+        var phoneError = document.getElementById('phoneError');
+        var passwordError = document.getElementById('passwordError');
+        var confirmError = document.getElementById('confirmError');
+        var firstNameError = document.getElementById('firstNameError');
+        var lastNameError = document.getElementById('lastNameError');
+        var ageError = document.getElementById('ageError');
+
+        // Buttons
+        var nextEmail = document.getElementById('nextEmail');
+        var nextPhone = document.getElementById('nextPhone');
+        var nextSecurity = document.getElementById('nextSecurity');
+        var nextName = document.getElementById('nextName');
+        var nextReferral = document.getElementById('nextReferral');
+        var nextCaptcha = document.getElementById('nextCaptcha');
+        var completeReg = document.getElementById('completeRegistration');
+
+        var backPhone = document.getElementById('backPhone');
+        var backSecurity = document.getElementById('backSecurity');
+        var backName = document.getElementById('backName');
+        var backReferral = document.getElementById('backReferral');
+        var backCaptcha = document.getElementById('backCaptcha');
+        var backAge = document.getElementById('backAge');
+
+        var referralContainer = document.getElementById('referralContainer');
 
         var loadingOverlay = document.getElementById('loadingOverlay');
+        var loadingText = document.getElementById('loadingText');
+        var loadingSub = document.getElementById('loadingSub');
 
         // ================================================================
-        // PASSWORD TOGGLE
+        // STATE
         // ================================================================
-        function setupToggle(toggleBtn, inputField) {
-            toggleBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var isPw = inputField.type === 'password';
-                inputField.type = isPw ? 'text' : 'password';
-                this.classList.toggle('active', !isPw);
-                var svg = this.querySelector('svg');
-                svg.innerHTML = !isPw ?
-                    '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" />' :
-                    '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />';
+        var currentStep = 0;
+        var totalSteps = 7;
+        var formData = {
+            email: '',
+            phone: '',
+            password: '',
+            firstName: '',
+            lastName: '',
+            referral: '',
+            referralValid: false,
+            referralConfirmed: false
+        };
+
+        // CAPTCHA
+        var currentCaptcha = '';
+        var captchaColors = [
+            '#60a5fa', '#3b82f6', '#93c5fd', '#1d4ed8', '#7dd3fc',
+            '#38bdf8', '#4f46e5', '#818cf8', '#22C55E', '#D4A72C'
+        ];
+
+        // ================================================================
+        // COUNTRY CODES
+        // ================================================================
+        var countryCodes = [
+            { code: '+93', name: 'Afghanistan' }, { code: '+355', name: 'Albania' },
+            { code: '+213', name: 'Algeria' }, { code: '+376', name: 'Andorra' },
+            { code: '+244', name: 'Angola' }, { code: '+54', name: 'Argentina' },
+            { code: '+61', name: 'Australia' }, { code: '+43', name: 'Austria' },
+            { code: '+994', name: 'Azerbaijan' }, { code: '+973', name: 'Bahrain' },
+            { code: '+880', name: 'Bangladesh' }, { code: '+375', name: 'Belarus' },
+            { code: '+32', name: 'Belgium' }, { code: '+229', name: 'Benin' },
+            { code: '+975', name: 'Bhutan' }, { code: '+591', name: 'Bolivia' },
+            { code: '+387', name: 'Bosnia' }, { code: '+267', name: 'Botswana' },
+            { code: '+55', name: 'Brazil' }, { code: '+359', name: 'Bulgaria' },
+            { code: '+226', name: 'Burkina Faso' }, { code: '+257', name: 'Burundi' },
+            { code: '+855', name: 'Cambodia' }, { code: '+237', name: 'Cameroon' },
+            { code: '+1', name: 'Canada' }, { code: '+238', name: 'Cape Verde' },
+            { code: '+236', name: 'CAR' }, { code: '+235', name: 'Chad' },
+            { code: '+56', name: 'Chile' }, { code: '+86', name: 'China' },
+            { code: '+57', name: 'Colombia' }, { code: '+269', name: 'Comoros' },
+            { code: '+242', name: 'Congo' }, { code: '+243', name: 'DRC' },
+            { code: '+506', name: 'Costa Rica' }, { code: '+385', name: 'Croatia' },
+            { code: '+53', name: 'Cuba' }, { code: '+357', name: 'Cyprus' },
+            { code: '+420', name: 'Czechia' }, { code: '+45', name: 'Denmark' },
+            { code: '+253', name: 'Djibouti' }, { code: '+1', name: 'Dominican Rep.' },
+            { code: '+593', name: 'Ecuador' }, { code: '+20', name: 'Egypt' },
+            { code: '+503', name: 'El Salvador' }, { code: '+240', name: 'Eq. Guinea' },
+            { code: '+291', name: 'Eritrea' }, { code: '+372', name: 'Estonia' },
+            { code: '+251', name: 'Ethiopia' }, { code: '+679', name: 'Fiji' },
+            { code: '+358', name: 'Finland' }, { code: '+33', name: 'France' },
+            { code: '+241', name: 'Gabon' }, { code: '+220', name: 'Gambia' },
+            { code: '+995', name: 'Georgia' }, { code: '+49', name: 'Germany' },
+            { code: '+233', name: 'Ghana' }, { code: '+30', name: 'Greece' },
+            { code: '+502', name: 'Guatemala' }, { code: '+224', name: 'Guinea' },
+            { code: '+245', name: 'Guinea-Bissau' }, { code: '+592', name: 'Guyana' },
+            { code: '+509', name: 'Haiti' }, { code: '+504', name: 'Honduras' },
+            { code: '+36', name: 'Hungary' }, { code: '+354', name: 'Iceland' },
+            { code: '+91', name: 'India' }, { code: '+62', name: 'Indonesia' },
+            { code: '+98', name: 'Iran' }, { code: '+964', name: 'Iraq' },
+            { code: '+353', name: 'Ireland' }, { code: '+972', name: 'Israel' },
+            { code: '+39', name: 'Italy' }, { code: '+225', name: 'Ivory Coast' },
+            { code: '+81', name: 'Japan' }, { code: '+962', name: 'Jordan' },
+            { code: '+7', name: 'Kazakhstan' }, { code: '+254', name: 'Kenya' },
+            { code: '+686', name: 'Kiribati' }, { code: '+383', name: 'Kosovo' },
+            { code: '+965', name: 'Kuwait' }, { code: '+996', name: 'Kyrgyzstan' },
+            { code: '+856', name: 'Laos' }, { code: '+371', name: 'Latvia' },
+            { code: '+961', name: 'Lebanon' }, { code: '+266', name: 'Lesotho' },
+            { code: '+231', name: 'Liberia' }, { code: '+218', name: 'Libya' },
+            { code: '+423', name: 'Liechtenstein' }, { code: '+370', name: 'Lithuania' },
+            { code: '+352', name: 'Luxembourg' }, { code: '+261', name: 'Madagascar' },
+            { code: '+265', name: 'Malawi' }, { code: '+60', name: 'Malaysia' },
+            { code: '+960', name: 'Maldives' }, { code: '+223', name: 'Mali' },
+            { code: '+356', name: 'Malta' }, { code: '+692', name: 'Marshall Is.' },
+            { code: '+222', name: 'Mauritania' }, { code: '+230', name: 'Mauritius' },
+            { code: '+52', name: 'Mexico' }, { code: '+691', name: 'Micronesia' },
+            { code: '+373', name: 'Moldova' }, { code: '+377', name: 'Monaco' },
+            { code: '+976', name: 'Mongolia' }, { code: '+382', name: 'Montenegro' },
+            { code: '+212', name: 'Morocco' }, { code: '+258', name: 'Mozambique' },
+            { code: '+95', name: 'Myanmar' }, { code: '+264', name: 'Namibia' },
+            { code: '+674', name: 'Nauru' }, { code: '+977', name: 'Nepal' },
+            { code: '+31', name: 'Netherlands' }, { code: '+64', name: 'New Zealand' },
+            { code: '+505', name: 'Nicaragua' }, { code: '+227', name: 'Niger' },
+            { code: '+234', name: 'Nigeria' }, { code: '+47', name: 'Norway' },
+            { code: '+968', name: 'Oman' }, { code: '+92', name: 'Pakistan' },
+            { code: '+680', name: 'Palau' }, { code: '+970', name: 'Palestine' },
+            { code: '+507', name: 'Panama' }, { code: '+675', name: 'Papua New Guinea' },
+            { code: '+595', name: 'Paraguay' }, { code: '+51', name: 'Peru' },
+            { code: '+63', name: 'Philippines' }, { code: '+48', name: 'Poland' },
+            { code: '+351', name: 'Portugal' }, { code: '+974', name: 'Qatar' },
+            { code: '+40', name: 'Romania' }, { code: '+7', name: 'Russia' },
+            { code: '+250', name: 'Rwanda' }, { code: '+685', name: 'Samoa' },
+            { code: '+378', name: 'San Marino' }, { code: '+239', name: 'Sao Tome' },
+            { code: '+966', name: 'Saudi Arabia' }, { code: '+221', name: 'Senegal' },
+            { code: '+381', name: 'Serbia' }, { code: '+248', name: 'Seychelles' },
+            { code: '+232', name: 'Sierra Leone' }, { code: '+65', name: 'Singapore' },
+            { code: '+421', name: 'Slovakia' }, { code: '+386', name: 'Slovenia' },
+            { code: '+677', name: 'Solomon Is.' }, { code: '+252', name: 'Somalia' },
+            { code: '+27', name: 'South Africa' }, { code: '+82', name: 'South Korea' },
+            { code: '+211', name: 'South Sudan' }, { code: '+34', name: 'Spain' },
+            { code: '+94', name: 'Sri Lanka' }, { code: '+249', name: 'Sudan' },
+            { code: '+597', name: 'Suriname' }, { code: '+268', name: 'Swaziland' },
+            { code: '+46', name: 'Sweden' }, { code: '+41', name: 'Switzerland' },
+            { code: '+963', name: 'Syria' }, { code: '+886', name: 'Taiwan' },
+            { code: '+992', name: 'Tajikistan' }, { code: '+255', name: 'Tanzania' },
+            { code: '+66', name: 'Thailand' }, { code: '+228', name: 'Togo' },
+            { code: '+676', name: 'Tonga' }, { code: '+216', name: 'Tunisia' },
+            { code: '+90', name: 'Turkey' }, { code: '+993', name: 'Turkmenistan' },
+            { code: '+688', name: 'Tuvalu' }, { code: '+256', name: 'Uganda' },
+            { code: '+380', name: 'Ukraine' }, { code: '+971', name: 'UAE' },
+            { code: '+44', name: 'UK' }, { code: '+1', name: 'USA' },
+            { code: '+598', name: 'Uruguay' }, { code: '+998', name: 'Uzbekistan' },
+            { code: '+678', name: 'Vanuatu' }, { code: '+379', name: 'Vatican' },
+            { code: '+58', name: 'Venezuela' }, { code: '+84', name: 'Vietnam' },
+            { code: '+967', name: 'Yemen' }, { code: '+260', name: 'Zambia' },
+            { code: '+263', name: 'Zimbabwe' }
+        ];
+
+        // ================================================================
+        // POPULATE COUNTRY SELECT
+        // ================================================================
+        function populateCountries() {
+            countryCodes.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.code;
+                opt.textContent = c.code + ' (' + c.name + ')';
+                if (c.code === '+260') opt.selected = true; // Default Zambia
+                countrySelect.appendChild(opt);
             });
         }
-        setupToggle(document.getElementById('togglePassword'), passwordInput);
-        setupToggle(document.getElementById('togglePassword2'), confirmInput);
-
-        // ================================================================
-        // PHONE INPUT VALIDATION
-        // ================================================================
-        phoneInput.addEventListener('input', function() {
-            this.value = this.value.replace(/\D/g, '').slice(0, 9);
-        });
+        populateCountries();
 
         // ================================================================
         // CAPTCHA
         // ================================================================
-        var currentCaptcha = '';
-        var captchaColors = [
-            '#60a5fa', '#3b82f6', '#93c5fd', '#1d4ed8', '#7dd3fc',
-            '#38bdf8', '#4f46e5', '#818cf8'
-        ];
-
         function generateCaptcha() {
             var code = '';
             for (var i = 0; i < 6; i++) {
@@ -994,16 +1521,37 @@
             captchaInput.value = '';
             captchaError.textContent = '';
         }
-
         refreshCaptcha();
 
         captchaInput.addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '').slice(0, 6);
         });
 
-        function autoRefreshCaptchaOnError() {
-            refreshCaptcha();
+        // ================================================================
+        // PASSWORD TOGGLE
+        // ================================================================
+        function setupToggle(btn, input) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var isPw = input.type === 'password';
+                input.type = isPw ? 'text' : 'password';
+                this.classList.toggle('active', !isPw);
+                var svg = this.querySelector('svg');
+                svg.innerHTML = !isPw ?
+                    '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" />' :
+                    '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />';
+            });
         }
+        setupToggle(document.getElementById('togglePw1'), stepPassword);
+        setupToggle(document.getElementById('togglePw2'), stepConfirm);
+
+        // ================================================================
+        // PHONE INPUT
+        // ================================================================
+        stepPhone.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+        });
 
         // ================================================================
         // REFERRAL FROM URL
@@ -1012,40 +1560,58 @@
             var ref = new URLSearchParams(window.location.search).get('ref') ||
                 new URLSearchParams(window.location.hash.split('?')[1]).get('ref');
             if (ref) {
-                referralInput.value = ref.toUpperCase();
-                referralInput.style.borderColor = 'rgba(62,142,99,0.25)';
-                referralInput.style.background = 'rgba(62,142,99,0.03)';
+                formData.referral = ref.toUpperCase();
+                formData.referralValid = true;
             }
         })();
 
         // ================================================================
-        // SHOW / HIDE LOADING
+        // NAVIGATION HELPERS
         // ================================================================
-        function showLoading(text) {
-            var loadingText = document.querySelector('.loading-text');
-            if (loadingText) loadingText.textContent = text || 'Creating your account...';
-            loadingOverlay.classList.add('active');
-        }
+        function goToStep(step) {
+            if (step < 0 || step >= totalSteps) return;
+            currentStep = step;
 
-        function hideLoading() {
-            loadingOverlay.classList.remove('active');
-        }
+            steps.forEach(function(el) { el.style.display = 'none'; });
+            steps[step].style.display = 'flex';
 
-        // ================================================================
-        // MESSAGE HELPERS
-        // ================================================================
-        function showMessage(type, text) {
-            msgBox.className = 'message-box ' + type;
-            var icon = type === 'error' ?
-                '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' :
-                '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
-            msgBox.innerHTML = icon + ' ' + text;
-            msgBox.style.display = 'block';
+            progressDots.forEach(function(dot, i) {
+                dot.classList.remove('active', 'completed');
+                if (i < step) dot.classList.add('completed');
+                else if (i === step) dot.classList.add('active');
+            });
+
+            var pct = (step / (totalSteps - 1)) * 100;
+            progressFill.style.width = pct + '%';
+
+            var wrapper = document.getElementById('wizardWrapper');
+            if (wrapper) {
+                wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            if (step === 4) {
+                renderReferralStep();
+            }
+
+            if (step === 6) {
+                ageCheck.focus();
+            }
+
+            hideMessage();
         }
 
         function hideMessage() {
-            msgBox.style.display = 'none';
-            msgBox.className = 'message-box';
+            messageBox.style.display = 'none';
+            messageBox.className = 'message-box';
+        }
+
+        function showMessage(type, text) {
+            messageBox.className = 'message-box ' + type;
+            var icon = type === 'error' ?
+                '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' :
+                '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+            messageBox.innerHTML = icon + ' ' + text;
+            messageBox.style.display = 'block';
         }
 
         function showToast(msg, isError) {
@@ -1058,8 +1624,40 @@
             setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4000);
         }
 
+        function setLoading(btn, loading) {
+            if (loading) {
+                btn.classList.add('loading');
+                btn.disabled = true;
+            } else {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        function showOverlay(text, sub) {
+            loadingText.textContent = text || 'Please wait...';
+            loadingSub.textContent = sub || 'Loading next step';
+            loadingOverlay.classList.add('active');
+        }
+
+        function hideOverlay() {
+            loadingOverlay.classList.remove('active');
+        }
+
         // ================================================================
-        // VALIDATE REFERRAL
+        // FORMAT PHONE
+        // ================================================================
+        function formatPhone(phone, countryCode) {
+            var clean = phone.replace(/\D/g, '');
+            // Remove leading zeros if any
+            if (clean.startsWith('0')) {
+                clean = clean.substring(1);
+            }
+            return countryCode + clean;
+        }
+
+        // ================================================================
+        // VALIDATE REFERRAL (Firestore)
         // ================================================================
         function validateReferral(code, callback) {
             if (!code) return callback(false);
@@ -1074,115 +1672,417 @@
         }
 
         // ================================================================
-        // FORMAT PHONE
+        // RENDER REFERRAL STEP
         // ================================================================
-        function formatPhone(phone) {
-            var clean = phone.replace(/\s/g, '');
-            if (clean.startsWith('0')) {
-                clean = '260' + clean.substring(1);
-            } else if (clean.length === 9 && /^\d{9}$/.test(clean)) {
-                clean = '260' + clean;
+        function renderReferralStep() {
+            var container = referralContainer;
+            var ref = formData.referral;
+
+            if (!ref) {
+                container.innerHTML = `
+                    <div class="referral-confirm">
+                        <div class="ref-label">No referral code detected</div>
+                        <div class="ref-question" style="color:rgba(247,244,233,0.30);">
+                            You can continue without a referral.
+                        </div>
+                    </div>
+                    <div style="margin-top:0.6rem;">
+                        <button class="btn-sm btn-sm-yes" id="refSkip" style="width:100%;padding:0.7rem;border-radius:14px;border:none;font-family:inherit;font-weight:600;font-size:0.9rem;background:#22C55E;color:#071C12;cursor:pointer;">
+                            Continue without referral
+                        </button>
+                    </div>
+                `;
+                var skipBtn = document.getElementById('refSkip');
+                if (skipBtn) {
+                    skipBtn.addEventListener('click', function() {
+                        formData.referralConfirmed = true;
+                        formData.referralValid = true;
+                        goToStep(5);
+                    });
+                }
+                nextReferral.style.display = 'none';
+                return;
             }
-            return clean;
+
+            container.innerHTML = `
+                <div class="referral-confirm">
+                    <div class="ref-label">Referred by</div>
+                    <div class="ref-code">${ref}</div>
+                    <div class="ref-question">
+                        Is this the referral link you were referred with?
+                    </div>
+                    <div class="ref-actions">
+                        <button class="btn-sm btn-sm-yes" id="refYes">Yes, continue</button>
+                        <button class="btn-sm btn-sm-no" id="refNo">No, go back</button>
+                    </div>
+                </div>
+            `;
+
+            var yesBtn = document.getElementById('refYes');
+            var noBtn = document.getElementById('refNo');
+
+            if (yesBtn) {
+                yesBtn.addEventListener('click', function() {
+                    formData.referralConfirmed = true;
+                    goToStep(5);
+                });
+            }
+            if (noBtn) {
+                noBtn.addEventListener('click', function() {
+                    window.location.href = 'index.html';
+                });
+            }
+
+            nextReferral.style.display = 'none';
         }
 
         // ================================================================
-        // SUBMIT
+        // STEP VALIDATIONS
         // ================================================================
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            hideMessage();
 
-            var name = fullName.value.trim();
-            var phone = phoneInput.value.trim();
-            var email = emailInput.value.trim();
-            var password = passwordInput.value;
-            var confirm = confirmInput.value;
-            var referral = referralInput.value.trim().toUpperCase();
-            var ageOk = ageCheck.checked;
-            var captchaInputVal = captchaInput.value.trim();
+        // Step 1: Email
+        function validateEmail() {
+            var val = stepEmail.value.trim();
+            if (!val) {
+                emailError.textContent = 'Please enter your email address.';
+                stepEmail.classList.add('error');
+                return false;
+            }
+            if (!val.includes('@') || !val.includes('.')) {
+                emailError.textContent = 'Please enter a valid email address.';
+                stepEmail.classList.add('error');
+                return false;
+            }
+            emailError.textContent = '';
+            stepEmail.classList.remove('error');
+            formData.email = val;
+            return true;
+        }
 
-            if (!name || !phone || !email || !password || !confirm || !referral) {
-                showMessage('error', 'All fields are required.');
-                autoRefreshCaptchaOnError();
-                return;
+        stepEmail.addEventListener('input', function() {
+            if (this.value.trim()) {
+                emailError.textContent = '';
+                this.classList.remove('error');
+            }
+        });
+
+        nextEmail.addEventListener('click', function() {
+            if (validateEmail()) {
+                showOverlay('Please wait...', 'Loading next step');
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(1);
+                }, 700);
+            }
+        });
+
+        stepEmail.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextEmail.click();
+            }
+        });
+
+        // Step 2: Phone
+        function validatePhone() {
+            var val = stepPhone.value.trim();
+            var countryCode = countrySelect.value;
+            if (!val) {
+                phoneError.textContent = 'Please enter your phone number.';
+                stepPhone.classList.add('error');
+                return false;
+            }
+            var fullNumber = formatPhone(val, countryCode);
+            if (fullNumber.length < 8 || fullNumber.length > 15) {
+                phoneError.textContent = 'Please enter a valid phone number.';
+                stepPhone.classList.add('error');
+                return false;
+            }
+            phoneError.textContent = '';
+            stepPhone.classList.remove('error');
+            formData.phone = fullNumber;
+            return true;
+        }
+
+        stepPhone.addEventListener('input', function() {
+            if (this.value.trim()) {
+                phoneError.textContent = '';
+                this.classList.remove('error');
+            }
+        });
+
+        nextPhone.addEventListener('click', function() {
+            if (validatePhone()) {
+                showOverlay('Please wait...', 'Loading next step');
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(2);
+                }, 700);
+            }
+        });
+
+        stepPhone.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextPhone.click();
+            }
+        });
+
+        backPhone.addEventListener('click', function() { goToStep(0); });
+
+        // Step 3: Security
+        function validateSecurity() {
+            var pw = stepPassword.value;
+            var cf = stepConfirm.value;
+            var ok = true;
+
+            if (pw.length < 6) {
+                passwordError.textContent = 'Password must be at least 6 characters.';
+                stepPassword.classList.add('error');
+                ok = false;
+            } else {
+                passwordError.textContent = '';
+                stepPassword.classList.remove('error');
             }
 
-            if (!ageOk) {
-                showMessage('error', 'You must confirm you are 18+ years old.');
-                autoRefreshCaptchaOnError();
-                return;
+            if (!cf) {
+                confirmError.textContent = 'Please confirm your password.';
+                stepConfirm.classList.add('error');
+                ok = false;
+            } else if (pw !== cf) {
+                confirmError.textContent = 'Passwords do not match.';
+                stepConfirm.classList.add('error');
+                ok = false;
+            } else {
+                confirmError.textContent = '';
+                stepConfirm.classList.remove('error');
             }
 
-            if (password.length < 6) {
-                showMessage('error', 'Password must be at least 6 characters.');
-                autoRefreshCaptchaOnError();
-                return;
+            if (ok) {
+                formData.password = pw;
+            }
+            return ok;
+        }
+
+        stepPassword.addEventListener('input', function() {
+            if (this.value.length >= 6) {
+                passwordError.textContent = '';
+                this.classList.remove('error');
+            }
+        });
+        stepConfirm.addEventListener('input', function() {
+            if (this.value === stepPassword.value) {
+                confirmError.textContent = '';
+                this.classList.remove('error');
+            }
+        });
+
+        nextSecurity.addEventListener('click', function() {
+            if (validateSecurity()) {
+                showOverlay('Please wait...', 'Loading next step');
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(3);
+                }, 700);
+            }
+        });
+
+        stepConfirm.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextSecurity.click();
+            }
+        });
+
+        backSecurity.addEventListener('click', function() { goToStep(1); });
+
+        // Step 4: Name
+        function validateName() {
+            var fn = stepFirstName.value.trim();
+            var ln = stepLastName.value.trim();
+            var ok = true;
+
+            if (!fn) {
+                firstNameError.textContent = 'Please enter your first name.';
+                stepFirstName.classList.add('error');
+                ok = false;
+            } else {
+                firstNameError.textContent = '';
+                stepFirstName.classList.remove('error');
             }
 
-            if (password !== confirm) {
-                showMessage('error', 'Passwords do not match.');
-                autoRefreshCaptchaOnError();
-                return;
+            if (!ln) {
+                lastNameError.textContent = 'Please enter your last name.';
+                stepLastName.classList.add('error');
+                ok = false;
+            } else {
+                lastNameError.textContent = '';
+                stepLastName.classList.remove('error');
             }
 
-            var formattedPhone = formatPhone(phone);
-            if (formattedPhone.length !== 12 || !/^260\d{9}$/.test(formattedPhone)) {
-                showMessage('error', 'Enter a valid phone number (9 digits after 260).');
-                autoRefreshCaptchaOnError();
-                return;
+            if (ok) {
+                formData.firstName = fn;
+                formData.lastName = ln;
             }
+            return ok;
+        }
 
-            if (!email.includes('@') || !email.includes('.')) {
-                showMessage('error', 'Enter a valid email address.');
-                autoRefreshCaptchaOnError();
-                return;
+        stepFirstName.addEventListener('input', function() {
+            if (this.value.trim()) {
+                firstNameError.textContent = '';
+                this.classList.remove('error');
             }
+        });
+        stepLastName.addEventListener('input', function() {
+            if (this.value.trim()) {
+                lastNameError.textContent = '';
+                this.classList.remove('error');
+            }
+        });
 
-            if (captchaInputVal.length !== 6 || !/^\d{6}$/.test(captchaInputVal)) {
+        nextName.addEventListener('click', function() {
+            if (validateName()) {
+                if (formData.referral && formData.referralValid) {
+                    showOverlay('Please wait...', 'Loading next step');
+                    setTimeout(function() {
+                        hideOverlay();
+                        goToStep(4);
+                    }, 700);
+                } else {
+                    formData.referralConfirmed = true;
+                    formData.referralValid = true;
+                    showOverlay('Please wait...', 'Loading next step');
+                    setTimeout(function() {
+                        hideOverlay();
+                        goToStep(5);
+                    }, 700);
+                }
+            }
+        });
+
+        stepLastName.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextName.click();
+            }
+        });
+
+        backName.addEventListener('click', function() { goToStep(2); });
+
+        // Step 5: Referral
+        backReferral.addEventListener('click', function() { goToStep(3); });
+
+        // Step 6: CAPTCHA
+        function validateCaptcha() {
+            var val = captchaInput.value.trim();
+            if (val.length !== 6 || !/^\d{6}$/.test(val)) {
                 captchaError.textContent = 'Please enter exactly 6 numbers.';
+                captchaInput.classList.add('error');
                 refreshCaptcha();
-                return;
+                return false;
             }
-
-            if (captchaInputVal !== currentCaptcha) {
-                captchaError.textContent = 'Incorrect verification code. Please try again.';
+            if (val !== currentCaptcha) {
+                captchaError.textContent = 'Incorrect code. Please try again.';
+                captchaInput.classList.add('error');
                 refreshCaptcha();
-                return;
+                return false;
             }
             captchaError.textContent = '';
+            captchaInput.classList.remove('error');
+            return true;
+        }
 
-            // ✅ Block the onAuthStateChanged listener from redirecting during registration
+        captchaInput.addEventListener('input', function() {
+            if (this.value.length === 6) {
+                captchaError.textContent = '';
+                this.classList.remove('error');
+            }
+        });
+
+        nextCaptcha.addEventListener('click', function() {
+            if (validateCaptcha()) {
+                showOverlay('Please wait...', 'Loading next step');
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(6);
+                }, 700);
+            }
+        });
+
+        captchaInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextCaptcha.click();
+            }
+        });
+
+        backCaptcha.addEventListener('click', function() {
+            if (!formData.referral || !formData.referralValid) {
+                goToStep(3);
+            } else {
+                goToStep(4);
+            }
+        });
+
+        // Step 7: Age + Complete
+        ageCheck.addEventListener('change', function() {
+            if (this.checked) {
+                ageError.textContent = '';
+            }
+        });
+
+        // ================================================================
+        // COMPLETE REGISTRATION
+        // ================================================================
+        completeReg.addEventListener('click', function() {
+            if (!ageCheck.checked) {
+                ageError.textContent = 'You must confirm you are 18+ to continue.';
+                return;
+            }
+            ageError.textContent = '';
+
+            if (!formData.email || !formData.phone || !formData.password ||
+                !formData.firstName || !formData.lastName) {
+                showMessage('error', 'Missing required information. Please go back and check.');
+                return;
+            }
+
+            if (!formData.referralConfirmed) {
+                showMessage('error', 'Please confirm your referral before continuing.');
+                return;
+            }
+
             isSubmitting = true;
+            showOverlay('Creating your account...', 'Please wait while we set up your profile');
 
-            showLoading('Creating your account...');
+            var refCode = (formData.referral && formData.referralValid) ? formData.referral : '';
 
-            validateReferral(referral, function(isValid) {
-                if (!isValid) {
-                    hideLoading();
-                    showMessage('error', 'Invalid referral code. Please check and try again.');
-                    autoRefreshCaptchaOnError();
-                    isSubmitting = false; // allow listener to work again
+            validateReferral(refCode, function(isValid) {
+                if (!isValid && refCode) {
+                    hideOverlay();
+                    isSubmitting = false;
+                    showMessage('error', 'Invalid referral code. Please go back and check.');
                     return;
                 }
 
-                auth.createUserWithEmailAndPassword(email, password)
+                auth.createUserWithEmailAndPassword(formData.email, formData.password)
                     .then(function(userCredential) {
                         var user = userCredential.user;
                         var uid = user.uid;
                         var genRef = Math.random().toString(36).substring(2, 10).toUpperCase();
 
-                        // ✅ Auto‑add 15 ZMW bonus
                         return db.collection('users').doc(uid).set({
-                            fullName: name,
-                            email: email,
-                            phone: formattedPhone,
+                            fullName: formData.firstName + ' ' + formData.lastName,
+                            firstName: formData.firstName,
+                            lastName: formData.lastName,
+                            email: formData.email,
+                            phone: formData.phone,
                             balance: 15,
                             walletBalance: 15,
                             depositBalance: 0,
                             activityBalance: 0,
                             referralCode: genRef,
-                            referredBy: referral,
+                            referredBy: refCode || '',
                             role: 'user',
                             isBlocked: false,
                             canRequestLoan: true,
@@ -1191,7 +2091,6 @@
                             photoURL: null,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         }).then(function() {
-                            // Record transaction
                             return db.collection('transactions').add({
                                 userId: uid,
                                 type: 'bonus',
@@ -1202,18 +2101,17 @@
                         });
                     })
                     .then(function() {
-                        hideLoading();
-                        showMessage('success', 'Registration successful! You received 15 ZMW welcome bonus.');
-                        showToast('✅ Welcome ' + name + '!', false);
-                        // Allow listener to redirect if needed, but we're about to leave
+                        hideOverlay();
                         isSubmitting = false;
+                        showMessage('success', 'Registration successful! You received 15 ZMW welcome bonus.');
+                        showToast('✅ Welcome ' + formData.firstName + '!', false);
                         setTimeout(function() {
                             window.location.href = 'dashboard.html';
                         }, 1800);
                     })
                     .catch(function(err) {
-                        hideLoading();
-                        isSubmitting = false; // allow listener to work again
+                        hideOverlay();
+                        isSubmitting = false;
                         var friendly = 'Registration failed. Please try again.';
                         if (err.code === 'auth/email-already-in-use') {
                             friendly = 'Email already registered. Please login.';
@@ -1226,29 +2124,36 @@
                         }
                         showMessage('error', friendly);
                         showToast('❌ ' + friendly, true);
-                        autoRefreshCaptchaOnError();
+                        refreshCaptcha();
                     });
             });
         });
 
+        backAge.addEventListener('click', function() { goToStep(5); });
+
         // ================================================================
-        // ENTER KEY SUPPORT
+        // KEYBOARD: Enter on age checkbox
         // ================================================================
-        passwordInput.addEventListener('keydown', function(e) {
+        ageCheck.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                form.dispatchEvent(new Event('submit'));
+                e.preventDefault();
+                this.checked = !this.checked;
+                completeReg.click();
             }
         });
 
         // ================================================================
-        // AUTO-FOCUS
+        // AUTO-FOCUS first field
         // ================================================================
-        setTimeout(function() { fullName.focus(); }, 400);
+        setTimeout(function() { stepEmail.focus(); }, 500);
 
-        console.log('✅ Sajvera Capital · Registration (15 ZMW bonus auto‑added)');
-        console.log('🌾 Farmland image is sharp, no blur on background');
-        console.log('🔐 Firebase Auth with email + password');
-        console.log('💰 Bonus: 15 ZMW credited at signup');
+        console.log('✅ Sajvera Capital · Wizard Registration (15 ZMW bonus)');
+        console.log('🌾 Agriculture background with glassmorphism');
+        console.log('🔐 Firebase Auth + Firestore');
+        console.log('💰 Welcome bonus: 15 ZMW');
+        console.log('📋 7-step wizard flow with full-screen loading');
+        console.log('🌍 Full country code support');
+        console.log('🔗 Referral confirmation step');
     </script>
 
 </body>
