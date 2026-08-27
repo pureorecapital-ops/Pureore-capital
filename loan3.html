@@ -890,24 +890,27 @@
         }
 
         // ================================================================
-        // FETCH USER DATA FROM FIRESTORE
+        // FETCH USER DATA FROM FIRESTORE – FIXED: using 'loans' collection
         // ================================================================
         async function fetchUserData(uid) {
+            // Fetch user document
             var userDoc = await db.collection('users').doc(uid).get();
             if (!userDoc.exists) {
                 throw new Error('User data not found.');
             }
             var data = userDoc.data();
 
-            // Fetch loan history
-            var loanHistorySnapshot = await db.collection('loanApplications')
+            // ------------------------------------------------------------
+            // LOAN HISTORY – now from the 'loans' collection
+            // ------------------------------------------------------------
+            var loanHistorySnapshot = await db.collection('loans')
                 .where('userId', '==', uid)
-                .where('status', 'in', ['completed', 'approved', 'active', 'pending'])
                 .get();
 
             var loanHistory = [];
             var activeLoan = null;
             var pendingLoan = null;
+            var completedLoans = [];
 
             loanHistorySnapshot.forEach(function(doc) {
                 var loan = doc.data();
@@ -919,19 +922,24 @@
                 if (loan.status === 'pending') {
                     pendingLoan = loan;
                 }
+                if (loan.status === 'completed') {
+                    completedLoans.push(loan);
+                }
             });
 
+            // We only need completed loans for progression
             var result = {
                 id: uid,
                 fullName: data.fullName || '',
                 email: data.email || '',
+                phone: data.phone || '',
                 activityBalance: data.activityBalance || 0,
                 invitedMembers: data.invitedMembers || 0,
                 activeInvestments: data.activeInvestments || [],
                 supportInvestments: data.supportInvestments || [],
                 goldmineInvestment: data.goldmineInvestment || { amount: 0 },
                 goldmineInvited: data.goldmineInvited || 0,
-                loanHistory: loanHistory,
+                loanHistory: completedLoans,
                 activeLoan: activeLoan,
                 pendingLoan: pendingLoan
             };
@@ -961,7 +969,7 @@
                 throw new Error('You already have an active loan.');
             }
             if (data.pendingLoan) {
-                throw new Error('Loan application already exists.');
+                throw new Error('You already have a pending loan application.');
             }
 
             var branchObj = BRANCHES[branchId];
@@ -1103,7 +1111,7 @@
         }
 
         // ================================================================
-        // SUBMIT LOAN REQUEST (to Firestore)
+        // SUBMIT LOAN REQUEST (to Firestore) – FIXED: writes to 'loans'
         // ================================================================
         async function submitLoanRequest() {
             if (isSubmitting) return;
@@ -1139,11 +1147,10 @@
                     finalTotal = finalAmount + finalFee;
                 }
 
-                // Create loan document
+                // Create loan document – uses 'loans' collection
                 var loanData = {
                     userId: user.uid,
-                    userEmail: user.email,
-                    loanBranch: selectedBranchId,
+                    branch: selectedBranchId,        // matches the field used in branch definitions
                     branchName: branchObj.name,
                     amount: finalAmount,
                     level: finalLevel,
@@ -1154,15 +1161,15 @@
                     status: 'pending',
                     submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    // Additional user info
+                    // Optional user info
                     userFullName: data.fullName || '',
                     userPhone: data.phone || '',
-                    // We can also store the eligibility requirements as a snapshot
+                    // Snapshot of eligibility requirements (optional)
                     eligibilitySnapshot: checkResult.requirements
                 };
 
-                // Write to Firestore
-                var docRef = await db.collection('loanApplications').add(loanData);
+                // Write to Firestore 'loans' collection
+                var docRef = await db.collection('loans').add(loanData);
 
                 // Success – show overlay
                 document.getElementById('successBranch').textContent = branchObj.name;
@@ -1255,9 +1262,9 @@
         // ================================================================
         // START – wait for auth
         // ================================================================
-        console.log('✅ loan3.html loaded with Firebase integration');
-        console.log('ℹ️ User data fetched from Firestore.');
-        console.log('ℹ️ Loan submission writes to loanApplications collection.');
+        console.log('✅ loan3.html loaded with Firebase integration (fixed collection)');
+        console.log('ℹ️ User data fetched from Firestore using `loans` collection.');
+        console.log('ℹ️ Loan submission writes to `loans` collection.');
     </script>
 </body>
 </html>

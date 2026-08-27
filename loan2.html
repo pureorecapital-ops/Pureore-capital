@@ -563,8 +563,6 @@
                     redirectTimeout = null;
                 }
                 console.log('✅ User logged in:', user.uid, user.email);
-                // Firestore data fetch will be triggered inside init() after auth is ready.
-                // We'll call init() if not already started.
                 if (!window._initialized) {
                     window._initialized = true;
                     init();
@@ -616,7 +614,7 @@
                 repaymentDays: 15,
                 tag: 'Flexible',
                 badgeClass: 'badge-flex',
-                fee: null, // no fee defined
+                fee: null,
                 check: function(data) {
                     var result = { eligible: true, requirements: [] };
                     var actBal = data.activityBalance || 0;
@@ -731,7 +729,7 @@
                 repaymentDays: 25,
                 tag: 'Premium',
                 badgeClass: 'badge-goldmine',
-                fee: null, // not configured yet
+                fee: null,
                 check: function(data) {
                     var result = { eligible: true, requirements: [] };
                     var inv = data.goldmineInvestment || {};
@@ -813,7 +811,7 @@
         }
 
         // ================================================================
-        // FETCH USER DATA FROM FIRESTORE
+        // FETCH USER DATA FROM FIRESTORE – FIXED: using 'loans' collection
         // ================================================================
         async function fetchUserData(uid) {
             // Fetch user document
@@ -823,15 +821,17 @@
             }
             var data = userDoc.data();
 
-            // Fetch loan history: all loan applications where userId == uid and status == 'completed'
-            var loanHistorySnapshot = await db.collection('loanApplications')
+            // ------------------------------------------------------------
+            // LOAN HISTORY – now from the 'loans' collection
+            // ------------------------------------------------------------
+            var loanHistorySnapshot = await db.collection('loans')
                 .where('userId', '==', uid)
-                .where('status', 'in', ['completed', 'approved', 'active', 'pending'])
                 .get();
 
             var loanHistory = [];
             var activeLoan = null;
             var pendingLoan = null;
+            var completedLoans = [];
 
             loanHistorySnapshot.forEach(function(doc) {
                 var loan = doc.data();
@@ -843,15 +843,12 @@
                 if (loan.status === 'pending') {
                     pendingLoan = loan;
                 }
+                if (loan.status === 'completed') {
+                    completedLoans.push(loan);
+                }
             });
 
-            // Also fetch active investments: we need to query savings records
-            // For simplicity, we assume the user has fields: activeInvestments, supportInvestments, goldmineInvestment
-            // that are stored as arrays/objects in the user document.
-            // If not, we can derive from savings subcollections.
-
-            // For now, we use the fields from the user document as expected.
-            // We'll also ensure we have the required fields.
+            // We only need completed loans for progression
             var result = {
                 id: uid,
                 fullName: data.fullName || '',
@@ -862,7 +859,7 @@
                 supportInvestments: data.supportInvestments || [],
                 goldmineInvestment: data.goldmineInvestment || { amount: 0 },
                 goldmineInvited: data.goldmineInvited || 0,
-                loanHistory: loanHistory,
+                loanHistory: completedLoans,
                 activeLoan: activeLoan,
                 pendingLoan: pendingLoan
             };
@@ -1024,7 +1021,6 @@
             // Click on the whole checkbox area to toggle
             var wrap = document.getElementById('termsCheckboxWrap');
             wrap.addEventListener('click', function(e) {
-                // Don't toggle if the click is directly on the checkbox (it already toggles)
                 if (e.target.tagName === 'INPUT') return;
                 checkbox.checked = !checkbox.checked;
                 continueBtn.disabled = !checkbox.checked;
@@ -1142,8 +1138,8 @@
         // ================================================================
         // START – we wait for auth to be ready (handled by onAuthStateChanged)
         // ================================================================
-        console.log('✅ loan2.html loaded with Firebase integration');
-        console.log('ℹ️ User data is fetched from Firestore.');
+        console.log('✅ loan2.html loaded with Firebase integration (fixed collection)');
+        console.log('ℹ️ User data is fetched from Firestore using `loans` collection.');
         console.log('ℹ️ Eligibility and amount are calculated from real data.');
         console.log('ℹ️ Continues to loan3.html after terms acceptance.');
     </script>

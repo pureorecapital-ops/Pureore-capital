@@ -12,7 +12,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ----- RESET & BODY ----- */
+        /* ================================================================
+           RESET & BASE
+        ================================================================ */
         * {
             margin: 0;
             padding: 0;
@@ -28,6 +30,8 @@
             display: flex;
             flex-direction: column;
             color: #f1f5f9;
+            background-image: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.02), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(250, 204, 21, 0.02), transparent 50%);
         }
 
         /* ----- HEADER ----- */
@@ -96,12 +100,20 @@
         /* ----- PAGE TITLE ----- */
         .page-title {
             text-align: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
         }
         .page-title h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
+            font-size: 1.8rem;
+            font-weight: 800;
             color: #f1f5f9;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .page-title h1 .icon {
+            font-size: 1.6rem;
         }
         .page-title p {
             color: #94a3b8;
@@ -112,24 +124,72 @@
         /* ----- COIN BALANCE ----- */
         .coin-balance {
             text-align: center;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: #facc15;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .coin-balance span {
             font-weight: 700;
             background: rgba(250, 204, 21, 0.06);
-            padding: 0.2rem 1rem;
+            padding: 0.3rem 1.2rem;
             border-radius: 30px;
             border: 1px solid rgba(250, 204, 21, 0.06);
+            backdrop-filter: blur(4px);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .coin-balance .coin-icon {
+            font-size: 1.4rem;
+            line-height: 1;
         }
 
-        /* ----- GRID (7 days) ----- */
+        /* ----- PROGRESS BAR (cycle progress) ----- */
+        .cycle-progress {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 30px;
+            padding: 0.3rem;
+            margin-bottom: 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .cycle-progress .track {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .cycle-progress .fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #facc15, #f5a623);
+            border-radius: 30px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 12px rgba(250, 204, 21, 0.2);
+        }
+
+        .cycle-progress .labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.15);
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        /* ----- 7-DAY GRID ----- */
         .checkin-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 0.8rem;
-            margin-bottom: 1.8rem;
+            margin-bottom: 1.5rem;
         }
 
         @media (min-width: 500px) {
@@ -139,66 +199,125 @@
         }
 
         .day-card {
-            background: #1e293b;
-            border-radius: 16px;
-            padding: 0.8rem 0.3rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 18px;
+            padding: 0.9rem 0.3rem;
             text-align: center;
-            border: 2px solid transparent;
-            transition: all 0.25s;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
             position: relative;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
         }
 
-        .day-card.active {
-            border-color: #facc15;
-            box-shadow: 0 0 30px rgba(250, 204, 21, 0.08);
-        }
-
-        .day-card.claimed {
-            border-color: #22c55e;
-            opacity: 0.7;
-        }
-        .day-card.claimed .day-reward {
-            text-decoration: line-through;
-            color: #22c55e;
+        .day-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         .day-card .day-number {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #94a3b8;
-            font-weight: 600;
+            color: rgba(255, 255, 255, 0.15);
+            transition: 0.3s;
         }
 
         .day-card .day-reward {
             font-size: 1.3rem;
             font-weight: 700;
             color: #facc15;
-            margin: 0.2rem 0;
+            margin: 2px 0;
+            transition: 0.3s;
         }
         .day-card .day-reward .plus {
-            font-size: 1rem;
-            color: #94a3b8;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.1);
             margin-right: 2px;
         }
 
-        .day-card .day-check {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: #22c55e;
+        .day-card .day-status {
+            font-size: 1.2rem;
+            line-height: 1;
+            margin-top: 2px;
+            transition: 0.3s;
         }
 
-        .day-card .day-lock {
-            font-size: 0.65rem;
-            font-weight: 600;
+        /* ---- STATES ---- */
+        .day-card.claimed {
+            border-color: rgba(74, 222, 128, 0.15);
+            background: rgba(74, 222, 128, 0.02);
+        }
+        .day-card.claimed .day-number {
+            color: rgba(74, 222, 128, 0.4);
+        }
+        .day-card.claimed .day-reward {
+            color: rgba(74, 222, 128, 0.6);
+            text-decoration: line-through;
+        }
+        .day-card.claimed .day-status {
+            color: #4ade80;
+        }
+
+        .day-card.active {
+            border-color: #facc15;
+            background: rgba(250, 204, 21, 0.03);
+            box-shadow: 0 0 30px rgba(250, 204, 21, 0.04);
+            transform: scale(1.02);
+        }
+        .day-card.active .day-number {
+            color: #facc15;
+        }
+        .day-card.active .day-reward {
+            color: #facc15;
+        }
+        .day-card.active .day-status {
+            color: #facc15;
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.08);
+                opacity: 0.7;
+            }
+        }
+
+        .day-card.locked {
+            opacity: 0.4;
+        }
+        .day-card.locked .day-status {
             color: #64748b;
         }
 
-        .day-card .day-available {
-            font-size: 0.65rem;
+        /* ----- STATUS TEXT ----- */
+        .turnover {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 1.2rem;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            display: inline-block;
+            width: auto;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .turnover strong {
+            color: #f1f5f9;
             font-weight: 600;
-            color: #facc15;
         }
 
         /* ----- CHECK-IN BUTTON ----- */
@@ -217,7 +336,7 @@
             font-family: inherit;
             color: #0b1120;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 30px rgba(250, 204, 21, 0.15);
             letter-spacing: 0.5px;
             display: inline-flex;
@@ -226,7 +345,7 @@
         }
 
         .btn-checkin:hover:not(:disabled) {
-            transform: translateY(-3px);
+            transform: translateY(-3px) scale(1.02);
             box-shadow: 0 8px 40px rgba(250, 204, 21, 0.25);
         }
 
@@ -244,18 +363,6 @@
         .btn-checkin .coin-icon {
             font-size: 1.4rem;
             line-height: 1;
-        }
-
-        /* ----- TURNOVER / STATUS ----- */
-        .turnover {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-bottom: 1.2rem;
-        }
-        .turnover strong {
-            color: #f1f5f9;
-            font-weight: 600;
         }
 
         /* ----- TOAST (success) ----- */
@@ -354,7 +461,7 @@
                 padding: 1rem 0.8rem;
             }
             .page-title h1 {
-                font-size: 1.3rem;
+                font-size: 1.4rem;
             }
             .day-card .day-reward {
                 font-size: 1.1rem;
@@ -368,6 +475,14 @@
             }
             .day-card {
                 padding: 0.6rem 0.2rem;
+                border-radius: 14px;
+            }
+            .day-card .day-status {
+                font-size: 1rem;
+            }
+            .turnover {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
             }
         }
 
@@ -401,13 +516,25 @@
     <!-- MAIN CONTENT -->
     <main class="container">
         <div class="page-title">
-            <h1> Daily Checkin</h1>
-            <p>Check in once per day to claim your reward in order. Miss a day? You can pick up where you left off.</p>
+            <h1><span class="icon"></span> Daily Checkin</h1>
+            <p>Check in once per day to claim your reward in order.</p>
         </div>
 
         <!-- Coin balance -->
         <div class="coin-balance">
-            <span> <span id="coinBalance">0</span> coins</span>
+            <span><span class="coin-icon"></span> <span id="coinBalance">0</span> coins</span>
+        </div>
+
+        <!-- Cycle progress bar -->
+        <div class="cycle-progress">
+            <div class="track">
+                <div class="fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+            <div class="labels">
+                <span>Day 1</span>
+                <span id="cycleStatus">0 / 7 completed</span>
+                <span>Day 7</span>
+            </div>
         </div>
 
         <!-- Turnover status -->
@@ -440,7 +567,7 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- JAVASCRIPT -->
+    <!-- JAVASCRIPT – PRESERVED FUNCTIONALITY + CYCLE RECYCLING -->
     <!-- ============================================================ -->
     <script>
         // ================================================================
@@ -534,10 +661,12 @@
                     rewards = defaultRewards.slice();
                 }
 
-                // Parse user state
+                // Parse user state – checkinDay is 1-7, but we need to know last claimed day in current cycle
                 if (userDoc.exists) {
                     var userData = userDoc.data();
                     lastClaimedDay = userData.checkinDay || 0;
+                    // If lastClaimedDay is 7, the next day should be 1 (cycle restart)
+                    // but we handle that in the render logic
                 } else {
                     lastClaimedDay = 0;
                 }
@@ -560,49 +689,68 @@
             var btn = document.getElementById('checkinBtn');
             var statusEl = document.getElementById('todayStatus');
             var coinBalanceEl = document.getElementById('coinBalance');
+            var progressFill = document.getElementById('progressFill');
+            var cycleStatus = document.getElementById('cycleStatus');
 
-            // Determine next claimable day
+            // Determine next claimable day (with cycle recycling)
             var nextDay = lastClaimedDay + 1;
-            var canClaimToday = !todayClaimed && nextDay <= 7;
+            if (nextDay > 7) {
+                nextDay = 1; // cycle restarts
+            }
+            var canClaimToday = !todayClaimed && (lastClaimedDay < 7 || (lastClaimedDay === 7 && !todayClaimed));
 
             // Build grid
             var html = '';
+            var claimedCount = 0;
             for (var i = 0; i < 7; i++) {
                 var dayNum = i + 1;
                 var reward = rewards[i] || 0;
+
+                // Determine if this day is claimed (in this cycle)
+                // If lastClaimedDay is 0, none claimed. If lastClaimedDay is 3, days 1-3 claimed.
+                // If lastClaimedDay is 7, all days claimed (cycle complete).
                 var claimed = (dayNum <= lastClaimedDay);
-                var active = (dayNum === nextDay && canClaimToday);
+                if (lastClaimedDay === 7) {
+                    claimed = true; // all days claimed in this cycle
+                }
+
+                var active = (dayNum === nextDay && canClaimToday && !todayClaimed);
 
                 var cardClass = 'day-card';
                 if (claimed) cardClass += ' claimed';
                 if (active) cardClass += ' active';
+                if (!claimed && !active) cardClass += ' locked';
 
-                var statusHtml = '';
+                var statusIcon = '';
                 if (claimed) {
-                    statusHtml = '<div class="day-check"></div>';
+                    statusIcon = '';
                 } else if (active) {
-                    statusHtml = '<div class="day-available"> Claim</div>';
-                } else if (dayNum < nextDay) {
-                    // This should never happen because we increment lastClaimedDay sequentially
-                    statusHtml = '<div class="day-lock"></div>';
+                    statusIcon = '';
                 } else {
-                    statusHtml = '<div class="day-lock"></div>';
+                    statusIcon = '';
                 }
 
                 html += '<div class="' + cardClass + '">';
                 html += '<div class="day-number">Day ' + dayNum + '</div>';
                 html += '<div class="day-reward"><span class="plus">+</span>' + reward + '</div>';
-                html += statusHtml;
+                html += '<div class="day-status">' + statusIcon + '</div>';
                 html += '</div>';
+
+                if (claimed) claimedCount++;
             }
             grid.innerHTML = html;
+
+            // Update progress
+            var progressPercent = (claimedCount / 7) * 100;
+            progressFill.style.width = progressPercent + '%';
+            cycleStatus.textContent = claimedCount + ' / 7 completed';
 
             // Update status
             if (todayClaimed) {
                 statusEl.textContent = ' Claimed today (Day ' + lastClaimedDay + ')';
-                statusEl.style.color = '#22c55e';
-            } else if (lastClaimedDay >= 7) {
-                statusEl.textContent = ' All 7 days claimed!';
+                statusEl.style.color = '#4ade80';
+            } else if (lastClaimedDay === 7 && !todayClaimed) {
+                statusEl.textContent = ' Day 7 completed! Start a new cycle from Day 1 tomorrow.';
                 statusEl.style.color = '#facc15';
             } else if (canClaimToday) {
                 statusEl.textContent = ' Day ' + nextDay + ' ready to claim';
@@ -621,15 +769,14 @@
             }).catch(console.warn);
 
             // Enable/disable button
-            var canClaim = canClaimToday;
-            btn.disabled = !canClaim;
-            if (canClaim) {
+            btn.disabled = !canClaimToday;
+            if (canClaimToday) {
                 btn.innerHTML = '<span class="coin-icon"></span> Check In (Day ' + nextDay + ')';
             } else {
                 if (todayClaimed) {
                     btn.innerHTML = '<span class="coin-icon"></span> Claimed Today';
-                } else if (lastClaimedDay >= 7) {
-                    btn.innerHTML = '<span class="coin-icon"></span> All Claimed!';
+                } else if (lastClaimedDay === 7) {
+                    btn.innerHTML = '<span class="coin-icon"></span> Cycle Complete!';
                 } else {
                     btn.innerHTML = '<span class="coin-icon"></span> Come Back Tomorrow';
                 }
@@ -637,7 +784,7 @@
         }
 
         // ================================================================
-        // CHECK-IN ACTION
+        // CHECK-IN ACTION (with cycle recycling)
         // ================================================================
         document.getElementById('checkinBtn').addEventListener('click', function() {
             if (this.disabled) return;
@@ -665,10 +812,10 @@
                         var userData = userDoc.exists ? userDoc.data() : {};
                         var currentDay = userData.checkinDay || 0;
 
-                        // Next day to claim
+                        // Next day to claim (with cycle recycling)
                         var nextDay = currentDay + 1;
                         if (nextDay > 7) {
-                            throw new Error('All days already claimed.');
+                            nextDay = 1; // restart cycle
                         }
 
                         var rewardAmount = rewards[nextDay - 1] || 0;
@@ -686,25 +833,24 @@
                                 claimedAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
 
-                            // Update user: increment checkinDay and walletBalance
-                            var updateData = {
+                            // Update user: increment checkinDay (with cycle recycling)
+                            // If we just claimed Day 7, next day will be reset to 1 on next claim
+                            transaction.update(userRef, {
                                 checkinDay: nextDay,
                                 lastCheckin: firebase.firestore.FieldValue.serverTimestamp()
-                            };
+                            });
+
                             if (rewardAmount > 0) {
-                                // Only update walletBalance (consistent with income.html)
                                 transaction.update(userRef, {
                                     walletBalance: firebase.firestore.FieldValue.increment(rewardAmount)
                                 });
                             }
-                            transaction.update(userRef, updateData);
 
                             return rewardAmount;
                         });
                     });
                 });
             }).then(function(amount) {
-                // Show success toast and redirect to me.html
                 showClaimSuccess(amount);
             }).catch(function(err) {
                 console.error('Check-in error:', err);
@@ -734,7 +880,8 @@
         // ================================================================
         // INIT
         // ================================================================
-        console.log(' Daily Check-in – Simple sequential claims, no lost days.');
+        console.log(' Daily Check-in – 7-day cycle with automatic recycling after Day 7.');
+        console.log(' Day 1  Day 2  ...  Day 7  Day 1  ...');
     </script>
 </body>
 </html>
