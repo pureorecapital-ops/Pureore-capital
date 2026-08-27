@@ -415,6 +415,9 @@
             line-height: 1.4;
             padding-left: 2px;
         }
+        .referral-final .ref-hint.warning {
+            color: #fbbf24;
+        }
         .referral-final .ref-confirmed {
             display: none;
             align-items: center;
@@ -1116,12 +1119,16 @@
                     </div>
                     <div class="referral-final" id="referralFinal">
                         <div class="ref-label">Referral code</div>
+                        <!-- No referral message -->
+                        <div id="refNoReferralMsg" style="display:none; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.10); border-radius: 10px; padding: 0.6rem 0.8rem; font-size: 0.85rem; color: #fbbf24;">
+                            ⚠️ No referral code detected. You need a valid referral to continue.
+                        </div>
                         <div class="ref-input-row">
                             <input type="text" id="refFinalInput" class="field-input" placeholder="e.g. ABC123" maxlength="10" autocomplete="off" spellcheck="false" />
                             <button class="btn-verify" id="refFinalVerify">Verify</button>
                         </div>
                         <div class="ref-status" id="refFinalStatus"></div>
-                        <div class="ref-hint">A valid referral is required. If you don't have one, you won't be able to open an account.</div>
+                        <div class="ref-hint" id="refHint">A valid referral is required. If you don't have one, you won't be able to open an account.</div>
                         <div class="ref-confirmed" id="refConfirmed">
                             <span class="check-icon">✓</span>
                             Referral <span class="ref-code-display" id="refConfirmedCode"></span> verified
@@ -1225,6 +1232,8 @@
         var refFinalStatus = document.getElementById('refFinalStatus');
         var refConfirmed = document.getElementById('refConfirmed');
         var refConfirmedCode = document.getElementById('refConfirmedCode');
+        var refNoReferralMsg = document.getElementById('refNoReferralMsg');
+        var refHint = document.getElementById('refHint');
 
         var loadingOverlay = document.getElementById('loadingOverlay');
         var loadingText = document.getElementById('loadingText');
@@ -1445,8 +1454,6 @@
                     formData.referral = urlRef;
                     formData.referralValid = true;
                     formData.referralConfirmed = true;
-                    // Pre-fill and auto-confirm when the step loads
-                    // We'll store it and apply when step 6 is shown
                     console.log('Referral from URL is valid:', urlRef);
                     // If the referral step is already visible, update it
                     if (currentStep === 6) {
@@ -1460,6 +1467,10 @@
                     formData.referral = '';
                     formData.referralValid = false;
                     formData.referralConfirmed = false;
+                    // Show no referral message if step 6 is active
+                    if (currentStep === 6) {
+                        showNoReferralMessage(true);
+                    }
                 }
             });
         }
@@ -1474,6 +1485,7 @@
                 refFinalStatus.textContent = '✓ Referral verified from link';
                 refFinalStatus.className = 'ref-status valid';
                 completeReg.disabled = false;
+                showNoReferralMessage(false);
                 showToast('✅ Referral code from link verified!', false);
             }
         }
@@ -1491,6 +1503,21 @@
                 .catch(function() {
                     callback(false);
                 });
+        }
+
+        // ================================================================
+        // SHOW/HIDE "NO REFERRAL" MESSAGE
+        // ================================================================
+        function showNoReferralMessage(show) {
+            if (show) {
+                refNoReferralMsg.style.display = 'block';
+                refHint.textContent = 'No referral code detected. Enter one above to continue.';
+                refHint.className = 'ref-hint warning';
+            } else {
+                refNoReferralMsg.style.display = 'none';
+                refHint.textContent = 'A valid referral is required. If you don\'t have one, you won\'t be able to open an account.';
+                refHint.className = 'ref-hint';
+            }
         }
 
         // ================================================================
@@ -1513,17 +1540,20 @@
             }
 
             if (step === 6) {
-                // If we have a valid referral from URL, apply it
+                // Update referral UI based on current state
                 if (formData.referral && formData.referralValid && formData.referralConfirmed) {
                     applyReferralAutoFill();
+                    showNoReferralMessage(false);
                 } else {
-                    // Reset state if no valid referral
+                    // No valid referral
                     refFinalInput.disabled = false;
                     refFinalVerify.disabled = false;
                     refConfirmed.classList.remove('show');
                     refFinalStatus.textContent = '';
                     refFinalStatus.className = 'ref-status';
                     completeReg.disabled = true;
+                    showNoReferralMessage(true);
+                    // If there is a pending invalid URL ref, it's already cleared
                 }
                 setTimeout(function() { refFinalInput.focus(); }, 200);
             }
@@ -1859,6 +1889,7 @@
                     refFinalInput.disabled = true;
                     refFinalVerify.disabled = true;
                     completeReg.disabled = false;
+                    showNoReferralMessage(false);
                     showToast('✅ Referral code verified!', false);
                 } else {
                     refFinalStatus.textContent = '❌ Invalid referral code. Please try again.';
@@ -1871,6 +1902,7 @@
                     formData.referralValid = false;
                     formData.referralConfirmed = false;
                     completeReg.disabled = true;
+                    showNoReferralMessage(true);
                 }
             });
         });
@@ -1884,6 +1916,7 @@
 
         refFinalInput.addEventListener('input', function() {
             this.value = this.value.toUpperCase();
+            // If the user types, reset the confirmed state and show the "no referral" message
             if (formData.referralConfirmed) {
                 formData.referralConfirmed = false;
                 formData.referralValid = false;
@@ -1894,6 +1927,15 @@
                 refFinalInput.disabled = false;
                 refFinalVerify.disabled = false;
                 refFinalVerify.textContent = 'Verify';
+                showNoReferralMessage(true);
+            }
+            // If the field is empty, show no referral message; if not, keep it but status will be shown on verify
+            if (!this.value.trim()) {
+                showNoReferralMessage(true);
+            } else {
+                // If user types, hide the "no referral" message temporarily? Or keep it until verified.
+                // Better to keep it visible until verified.
+                // We'll keep the message visible if no verification done.
             }
         });
 
@@ -1930,6 +1972,7 @@
                     refFinalVerify.disabled = false;
                     refFinalVerify.textContent = 'Verify';
                     completeReg.disabled = true;
+                    showNoReferralMessage(true);
                     return;
                 }
 
@@ -2000,7 +2043,7 @@
         setTimeout(function() { stepEmail.focus(); }, 500);
 
         console.log('✅ Sajvera Capital · Wizard Registration (15 ZMW bonus)');
-        console.log('🔗 Referral from URL is auto-verified.');
+        console.log('🔗 Referral from URL is auto-verified. If none, user must enter manually.');
         console.log('📊 Progress bar only — no numbered dots.');
     </script>
 </body>
