@@ -1252,7 +1252,8 @@
             lastName: '',
             referral: '',
             referralValid: false,
-            referralConfirmed: false
+            referralConfirmed: false,
+            pendingReferral: false // true while validating the URL ref
         };
 
         var currentCaptcha = '';
@@ -1445,34 +1446,64 @@
             new URLSearchParams(window.location.hash.split('?')[1]).get('ref');
         if (urlRef) {
             urlRef = urlRef.toUpperCase();
-            // Show a temporary loading state
-            refFinalStatus.textContent = 'Checking referral from link...';
-            refFinalStatus.className = 'ref-status checking';
-            // Validate against Firestore
+            formData.pendingReferral = true;
+            // Show checking status if already on step 6
+            if (currentStep === 6) {
+                refFinalStatus.textContent = 'Checking referral from link...';
+                refFinalStatus.className = 'ref-status checking';
+            }
             validateReferral(urlRef, function(isValid) {
+                formData.pendingReferral = false;
                 if (isValid) {
                     formData.referral = urlRef;
                     formData.referralValid = true;
                     formData.referralConfirmed = true;
                     console.log('Referral from URL is valid:', urlRef);
-                    // If the referral step is already visible, update it
-                    if (currentStep === 6) {
-                        applyReferralAutoFill();
-                    }
+                    // Update UI if we're on step 6
+                    refreshReferralUI();
                 } else {
                     console.warn('Referral from URL is invalid:', urlRef);
-                    refFinalStatus.textContent = '❌ Invalid referral code from link.';
-                    refFinalStatus.className = 'ref-status invalid';
-                    // Clear formData
                     formData.referral = '';
                     formData.referralValid = false;
                     formData.referralConfirmed = false;
-                    // Show no referral message if step 6 is active
+                    // Show error if on step 6
                     if (currentStep === 6) {
+                        refFinalStatus.textContent = '❌ Invalid referral code from link.';
+                        refFinalStatus.className = 'ref-status invalid';
                         showNoReferralMessage(true);
                     }
                 }
             });
+        }
+
+        // ================================================================
+        // REFRESH REFERRAL UI (call when state changes)
+        // ================================================================
+        function refreshReferralUI() {
+            if (currentStep !== 6) return;
+            if (formData.referralValid && formData.referralConfirmed) {
+                // Auto-fill and enable
+                applyReferralAutoFill();
+                showNoReferralMessage(false);
+            } else if (formData.pendingReferral) {
+                refFinalStatus.textContent = 'Checking referral from link...';
+                refFinalStatus.className = 'ref-status checking';
+                showNoReferralMessage(false);
+                // keep input disabled? We'll let user type, but we show checking.
+                refFinalInput.disabled = true;
+                refFinalVerify.disabled = true;
+                completeReg.disabled = true;
+            } else {
+                // No valid referral
+                refFinalInput.disabled = false;
+                refFinalVerify.disabled = false;
+                refConfirmed.classList.remove('show');
+                refFinalStatus.textContent = '';
+                refFinalStatus.className = 'ref-status';
+                completeReg.disabled = true;
+                showNoReferralMessage(true);
+                // If there is a pending invalid URL ref, it's already cleared
+            }
         }
 
         function applyReferralAutoFill() {
@@ -1540,22 +1571,11 @@
             }
 
             if (step === 6) {
-                // Update referral UI based on current state
-                if (formData.referral && formData.referralValid && formData.referralConfirmed) {
-                    applyReferralAutoFill();
-                    showNoReferralMessage(false);
-                } else {
-                    // No valid referral
-                    refFinalInput.disabled = false;
-                    refFinalVerify.disabled = false;
-                    refConfirmed.classList.remove('show');
-                    refFinalStatus.textContent = '';
-                    refFinalStatus.className = 'ref-status';
-                    completeReg.disabled = true;
-                    showNoReferralMessage(true);
-                    // If there is a pending invalid URL ref, it's already cleared
+                refreshReferralUI();
+                if (!formData.referralConfirmed && !formData.pendingReferral) {
+                    // Focus input for manual entry
+                    setTimeout(function() { refFinalInput.focus(); }, 200);
                 }
-                setTimeout(function() { refFinalInput.focus(); }, 200);
             }
 
             hideMessage();
@@ -1871,6 +1891,8 @@
                 refFinalStatus.className = 'ref-status invalid';
                 return;
             }
+            // If we have a valid referral already, and user is typing, they might want to change
+            // So we allow re-verification.
             refFinalVerify.disabled = true;
             refFinalVerify.textContent = 'Checking...';
             refFinalStatus.textContent = 'Checking referral...';
@@ -1882,6 +1904,7 @@
                     formData.referral = code;
                     formData.referralValid = true;
                     formData.referralConfirmed = true;
+                    formData.pendingReferral = false;
                     refFinalStatus.textContent = '✓ Referral verified!';
                     refFinalStatus.className = 'ref-status valid';
                     refConfirmed.classList.add('show');
@@ -1901,6 +1924,7 @@
                     formData.referral = '';
                     formData.referralValid = false;
                     formData.referralConfirmed = false;
+                    formData.pendingReferral = false;
                     completeReg.disabled = true;
                     showNoReferralMessage(true);
                 }
@@ -1916,10 +1940,11 @@
 
         refFinalInput.addEventListener('input', function() {
             this.value = this.value.toUpperCase();
-            // If the user types, reset the confirmed state and show the "no referral" message
+            // If the user types, we reset any previous confirmation and show the "no referral" message
             if (formData.referralConfirmed) {
                 formData.referralConfirmed = false;
                 formData.referralValid = false;
+                formData.pendingReferral = false;
                 refConfirmed.classList.remove('show');
                 refFinalStatus.textContent = '';
                 refFinalStatus.className = 'ref-status';
@@ -1929,13 +1954,12 @@
                 refFinalVerify.textContent = 'Verify';
                 showNoReferralMessage(true);
             }
-            // If the field is empty, show no referral message; if not, keep it but status will be shown on verify
+            // If the field is empty, ensure the no referral message is shown
             if (!this.value.trim()) {
                 showNoReferralMessage(true);
             } else {
-                // If user types, hide the "no referral" message temporarily? Or keep it until verified.
-                // Better to keep it visible until verified.
-                // We'll keep the message visible if no verification done.
+                // If user types, keep the message visible until verification
+                // We'll keep it as is; the status will update on verify.
             }
         });
 
@@ -1967,6 +1991,7 @@
                     showMessage('error', 'Referral code is no longer valid. Please go back and check.');
                     formData.referralConfirmed = false;
                     formData.referralValid = false;
+                    formData.pendingReferral = false;
                     refConfirmed.classList.remove('show');
                     refFinalInput.disabled = false;
                     refFinalVerify.disabled = false;
@@ -2043,7 +2068,7 @@
         setTimeout(function() { stepEmail.focus(); }, 500);
 
         console.log('✅ Sajvera Capital · Wizard Registration (15 ZMW bonus)');
-        console.log('🔗 Referral from URL is auto-verified. If none, user must enter manually.');
+        console.log('🔗 Referral from URL is auto-verified and saved. If none, user must enter manually.');
         console.log('📊 Progress bar only — no numbered dots.');
     </script>
 </body>
