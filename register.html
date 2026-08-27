@@ -172,7 +172,7 @@
         }
 
         /* ================================================================
-                   PROGRESS INDICATOR — numbers hidden
+                   PROGRESS INDICATOR — numbers and labels hidden
                    ================================================================ */
         .progress-wrap {
             display: flex;
@@ -187,7 +187,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 0;
+            /* no gap needed since labels are hidden */
             flex: 1;
             position: relative;
             cursor: default;
@@ -210,8 +211,9 @@
             z-index: 2;
         }
 
-        /* Hide the number completely */
-        .progress-step .dot .num {
+        /* Hide numbers and labels completely */
+        .progress-step .dot .num,
+        .progress-step .label {
             display: none;
         }
 
@@ -236,25 +238,6 @@
             border-color: #22C55E;
             color: #22C55E;
             box-shadow: 0 0 20px rgba(34, 197, 94, 0.08);
-        }
-
-        .progress-step .label {
-            font-size: 0.5rem;
-            font-weight: 600;
-            letter-spacing: 0.4px;
-            text-transform: uppercase;
-            color: rgba(247, 244, 233, 0.15);
-            transition: 0.3s;
-            text-align: center;
-            line-height: 1.2;
-            max-width: 56px;
-        }
-
-        .progress-step.active .label {
-            color: rgba(247, 244, 233, 0.50);
-        }
-        .progress-step.completed .label {
-            color: rgba(247, 244, 233, 0.20);
         }
 
         .progress-line {
@@ -952,10 +935,6 @@
                 height: 28px;
                 font-size: 0.5rem;
             }
-            .progress-step .label {
-                font-size: 0.4rem;
-                max-width: 40px;
-            }
             .progress-line {
                 top: 13px;
                 left: 12px;
@@ -1026,10 +1005,6 @@
                 height: 24px;
                 font-size: 0.45rem;
             }
-            .progress-step .label {
-                font-size: 0.35rem;
-                max-width: 32px;
-            }
             .progress-line {
                 top: 11px;
             }
@@ -1079,7 +1054,7 @@
 
         <div class="glass-card">
 
-            <!-- ===== PROGRESS ===== -->
+            <!-- ===== PROGRESS INDICATOR (dots only, no labels) ===== -->
             <div class="progress-wrap" id="progressWrap">
                 <div class="progress-line">
                     <div class="fill" id="progressFill" style="width: 0%;"></div>
@@ -1087,31 +1062,25 @@
 
                 <div class="progress-step active" data-step="0">
                     <div class="dot"><span class="num">1</span><span class="check">✓</span></div>
-                    <span class="label">Email</span>
+                    <!-- label removed -->
                 </div>
                 <div class="progress-step" data-step="1">
                     <div class="dot"><span class="num">2</span><span class="check">✓</span></div>
-                    <span class="label">Phone</span>
                 </div>
                 <div class="progress-step" data-step="2">
                     <div class="dot"><span class="num">3</span><span class="check">✓</span></div>
-                    <span class="label">Security</span>
                 </div>
                 <div class="progress-step" data-step="3">
                     <div class="dot"><span class="num">4</span><span class="check">✓</span></div>
-                    <span class="label">Name</span>
                 </div>
                 <div class="progress-step" data-step="4">
                     <div class="dot"><span class="num">5</span><span class="check">✓</span></div>
-                    <span class="label">Referral</span>
                 </div>
                 <div class="progress-step" data-step="5">
                     <div class="dot"><span class="num">6</span><span class="check">✓</span></div>
-                    <span class="label">Verify</span>
                 </div>
                 <div class="progress-step" data-step="6">
                     <div class="dot"><span class="num">7</span><span class="check">✓</span></div>
-                    <span class="label">Confirm</span>
                 </div>
             </div>
 
@@ -1213,11 +1182,11 @@
                     </div>
                 </div>
 
-                <!-- STEP 5: REFERRAL — no "Next" button, must confirm -->
+                <!-- STEP 5: REFERRAL (mandatory) -->
                 <div class="step-content" data-step="4" style="display:none;">
                     <div class="step-header">
-                        <h2><span class="accent">Referral</span> confirmation</h2>
-                        <p>Verify the referral code you used.</p>
+                        <h2><span class="accent">Referral</span> required</h2>
+                        <p>You need a valid referral code to register.</p>
                     </div>
                     <div id="referralContainer">
                         <!-- dynamically filled -->
@@ -1291,11 +1260,11 @@
 
 
     <!-- ================================================================
-    JAVASCRIPT — PRESERVED FUNCTIONALITY
+    JAVASCRIPT
     ================================================================ -->
     <script>
         // ================================================================
-        // FIREBASE CONFIG (unchanged)
+        // FIREBASE CONFIG
         // ================================================================
         var firebaseConfig = {
             apiKey: "AIzaSyALbWDHrhratYCCq3WpAu7jZFw6S8kTg2U",
@@ -1699,64 +1668,108 @@
         }
 
         // ================================================================
-        // RENDER REFERRAL STEP
+        // RENDER REFERRAL STEP (mandatory)
         // ================================================================
         function renderReferralStep() {
             var container = referralContainer;
             var ref = formData.referral;
 
-            if (!ref) {
+            // If a referral code is already present and validated, show confirmation
+            if (ref && formData.referralValid) {
                 container.innerHTML = `
                     <div class="referral-confirm">
-                        <div class="ref-label">No referral code detected</div>
-                        <div class="ref-question" style="color:rgba(247,244,233,0.30);">
-                            You can continue without a referral.
+                        <div class="ref-label">Referred by</div>
+                        <div class="ref-code">${ref}</div>
+                        <div class="ref-question">
+                            Is this the referral link you were referred with?
+                        </div>
+                        <div class="ref-actions">
+                            <button class="btn-sm btn-sm-yes" id="refYes">Yes, continue</button>
+                            <button class="btn-sm btn-sm-no" id="refNo">No, go back</button>
                         </div>
                     </div>
-                    <div style="margin-top:0.6rem;">
-                        <button class="btn-sm btn-sm-yes" id="refSkip" style="width:100%;padding:0.7rem;border-radius:14px;border:none;font-family:inherit;font-weight:600;font-size:0.9rem;background:#22C55E;color:#071C12;cursor:pointer;">
-                            Continue without referral
-                        </button>
-                    </div>
                 `;
-                var skipBtn = document.getElementById('refSkip');
-                if (skipBtn) {
-                    skipBtn.addEventListener('click', function() {
+                var yesBtn = document.getElementById('refYes');
+                var noBtn = document.getElementById('refNo');
+                if (yesBtn) {
+                    yesBtn.addEventListener('click', function() {
                         formData.referralConfirmed = true;
-                        formData.referralValid = true;
                         goToStep(5);
+                    });
+                }
+                if (noBtn) {
+                    noBtn.addEventListener('click', function() {
+                        // Clear referral and reset to input mode
+                        formData.referral = '';
+                        formData.referralValid = false;
+                        formData.referralConfirmed = false;
+                        renderReferralStep();
                     });
                 }
                 nextReferral.style.display = 'none';
                 return;
             }
 
+            // No valid referral — show input field and verify button
             container.innerHTML = `
                 <div class="referral-confirm">
-                    <div class="ref-label">Referred by</div>
-                    <div class="ref-code">${ref}</div>
-                    <div class="ref-question">
-                        Is this the referral link you were referred with?
+                    <div class="ref-label">Enter your referral code</div>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <input type="text" id="refInput" class="field-input" style="flex:1;" placeholder="e.g., ABC123" maxlength="10" autocomplete="off" />
+                        <button class="btn-sm btn-sm-yes" id="refVerifyBtn" style="flex-shrink:0;padding:0.6rem 1.2rem;">Verify</button>
                     </div>
-                    <div class="ref-actions">
-                        <button class="btn-sm btn-sm-yes" id="refYes">Yes, continue</button>
-                        <button class="btn-sm btn-sm-no" id="refNo">No, go back</button>
+                    <div id="refVerifyMessage" style="font-size:0.75rem;color:rgba(247,244,233,0.30);min-height:1.2rem;"></div>
+                    <div class="ref-question" style="margin-top:0.2rem;color:rgba(247,244,233,0.20);font-size:0.7rem;">
+                        You must have a valid referral code to register.
                     </div>
                 </div>
             `;
 
-            var yesBtn = document.getElementById('refYes');
-            var noBtn = document.getElementById('refNo');
+            var refInput = document.getElementById('refInput');
+            var verifyBtn = document.getElementById('refVerifyBtn');
+            var verifyMsg = document.getElementById('refVerifyMessage');
 
-            if (yesBtn) {
-                yesBtn.addEventListener('click', function() {
-                    formData.referralConfirmed = true;
-                    goToStep(5);
+            // Focus the input
+            setTimeout(function() { if (refInput) refInput.focus(); }, 100);
+
+            verifyBtn.addEventListener('click', function() {
+                var code = refInput.value.trim().toUpperCase();
+                if (code.length < 3) {
+                    verifyMsg.textContent = 'Please enter a valid referral code.';
+                    verifyMsg.style.color = '#f87171';
+                    return;
+                }
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Checking...';
+
+                validateReferral(code, function(isValid) {
+                    if (isValid) {
+                        formData.referral = code;
+                        formData.referralValid = true;
+                        formData.referralConfirmed = true;
+                        verifyMsg.textContent = '✅ Code verified! Continuing...';
+                        verifyMsg.style.color = '#6ee7b7';
+                        setTimeout(function() {
+                            goToStep(5);
+                        }, 600);
+                    } else {
+                        verifyMsg.textContent = '❌ Invalid referral code. Please try again.';
+                        verifyMsg.style.color = '#f87171';
+                        verifyBtn.disabled = false;
+                        verifyBtn.textContent = 'Verify';
+                        refInput.value = '';
+                        refInput.focus();
+                    }
                 });
-            }
-            if (noBtn) {
-                noBtn.addEventListener('click', function() {
-                    window.location.href = 'index.html';
+            });
+
+            // Allow Enter key to trigger verify
+            if (refInput) {
+                refInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        verifyBtn.click();
+                    }
                 });
             }
 
@@ -1969,21 +1982,11 @@
 
         nextName.addEventListener('click', function() {
             if (validateName()) {
-                if (formData.referral && formData.referralValid) {
-                    showOverlay('Please wait...', 'Loading next step');
-                    setTimeout(function() {
-                        hideOverlay();
-                        goToStep(4);
-                    }, 700);
-                } else {
-                    formData.referralConfirmed = true;
-                    formData.referralValid = true;
-                    showOverlay('Please wait...', 'Loading next step');
-                    setTimeout(function() {
-                        hideOverlay();
-                        goToStep(5);
-                    }, 700);
-                }
+                showOverlay('Please wait...', 'Loading next step');
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(4);
+                }, 700);
             }
         });
 
@@ -1996,8 +1999,7 @@
 
         backName.addEventListener('click', function() { goToStep(2); });
 
-        // Step 5: Referral — no automatic next; user must confirm via button
-        backReferral.addEventListener('click', function() { goToStep(3); });
+        // Step 5: Referral — handled via renderReferralStep, no automatic next
 
         // Step 6: CAPTCHA
         function validateCaptcha() {
@@ -2044,11 +2046,7 @@
         });
 
         backCaptcha.addEventListener('click', function() {
-            if (!formData.referral || !formData.referralValid) {
-                goToStep(3);
-            } else {
-                goToStep(4);
-            }
+            goToStep(4); // back to referral
         });
 
         // Step 7: Age + Complete
@@ -2074,21 +2072,21 @@
                 return;
             }
 
-            if (!formData.referralConfirmed) {
-                showMessage('error', 'Please confirm your referral before continuing.');
+            if (!formData.referralConfirmed || !formData.referralValid) {
+                showMessage('error', 'You must confirm a valid referral before completing registration.');
                 return;
             }
 
             isSubmitting = true;
             showOverlay('Creating your account...', 'Please wait while we set up your profile');
 
-            var refCode = (formData.referral && formData.referralValid) ? formData.referral : '';
+            var refCode = formData.referral;
 
             validateReferral(refCode, function(isValid) {
-                if (!isValid && refCode) {
+                if (!isValid) {
                     hideOverlay();
                     isSubmitting = false;
-                    showMessage('error', 'Invalid referral code. Please go back and check.');
+                    showMessage('error', 'Referral code is no longer valid. Please go back and check.');
                     return;
                 }
 
@@ -2109,7 +2107,7 @@
                             depositBalance: 0,
                             activityBalance: 0,
                             referralCode: genRef,
-                            referredBy: refCode || '',
+                            referredBy: refCode,
                             role: 'user',
                             isBlocked: false,
                             canRequestLoan: true,
@@ -2175,11 +2173,8 @@
         setTimeout(function() { stepEmail.focus(); }, 500);
 
         console.log('✅ Sajvera Capital · Wizard Registration (15 ZMW bonus)');
-        console.log('🌾 Agriculture background with glassmorphism');
-        console.log('🔐 Firebase Auth + Firestore');
-        console.log('💰 Welcome bonus: 15 ZMW');
-        console.log('📋 7-step wizard flow with numbers hidden');
-        console.log('🔗 Referral step: user must confirm before proceeding');
+        console.log('🔗 Referral is mandatory — no referral, no account.');
+        console.log('📋 Step numbers and labels removed.');
     </script>
 
 </body>
