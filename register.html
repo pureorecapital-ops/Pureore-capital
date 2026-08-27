@@ -14,17 +14,19 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ------------------------------------------------------------
-           RESET & BASE
-           ------------------------------------------------------------ */
+        /* ================================================================
+                   RESET & BASE
+                   ================================================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         html {
             overscroll-behavior: none;
         }
+
         body {
             font-family: 'Inter', -apple-system, system-ui, sans-serif;
             background: #071C12;
@@ -39,9 +41,10 @@
             overflow-x: hidden;
             overscroll-behavior: none;
         }
-        /* ------------------------------------------------------------
-           FULL-SCREEN AGRICULTURE BACKGROUND
-           ------------------------------------------------------------ */
+
+        /* ================================================================
+                   FULL-SCREEN AGRICULTURE BACKGROUND
+                   ================================================================ */
         .bg-layer {
             position: fixed;
             top: 0;
@@ -51,6 +54,7 @@
             z-index: 0;
             overflow: hidden;
         }
+
         .bg-layer::before {
             content: "";
             position: absolute;
@@ -58,6 +62,7 @@
             background: url('https://i.ibb.co/Q77Q6tqH/file-00000000fe8881f48216b96f2e366505.png') center/cover no-repeat;
             transform: scale(1.02);
         }
+
         .bg-layer::after {
             content: "";
             position: absolute;
@@ -65,9 +70,10 @@
             background: rgba(7, 28, 18, 0.55);
             pointer-events: none;
         }
-        /* ------------------------------------------------------------
-           HEADER
-           ------------------------------------------------------------ */
+
+        /* ================================================================
+                   HEADER
+                   ================================================================ */
         .header {
             position: fixed;
             top: 0;
@@ -83,6 +89,7 @@
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(212, 167, 44, 0.06);
         }
+
         .logo-text {
             font-size: 1.3rem;
             font-weight: 800;
@@ -90,9 +97,11 @@
             text-decoration: none;
             letter-spacing: -0.4px;
         }
+
         .logo-text .accent {
             color: #D4A72C;
         }
+
         .header-back {
             color: rgba(247, 244, 233, 0.30);
             text-decoration: none;
@@ -106,13 +115,15 @@
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.03);
         }
+
         .header-back:hover {
             color: #F7F4E9;
             background: rgba(255, 255, 255, 0.03);
         }
-        /* ------------------------------------------------------------
-           WIZARD CONTAINER
-           ------------------------------------------------------------ */
+
+        /* ================================================================
+                   WIZARD CONTAINER
+                   ================================================================ */
         .wizard-wrapper {
             position: relative;
             z-index: 2;
@@ -121,6 +132,7 @@
             margin: 4.5rem auto 1rem;
             animation: fadeUp 0.6s ease-out forwards;
         }
+
         @keyframes fadeUp {
             0% {
                 opacity: 0;
@@ -131,9 +143,10 @@
                 transform: translateY(0);
             }
         }
-        /* ------------------------------------------------------------
-           GLASS CARD
-           ------------------------------------------------------------ */
+
+        /* ================================================================
+                   GLASS CARD
+                   ================================================================ */
         .glass-card {
             background: rgba(7, 28, 18, 0.55);
             backdrop-filter: blur(24px);
@@ -146,6 +159,7 @@
             overflow: hidden;
             transition: padding 0.3s;
         }
+
         .glass-card::before {
             content: '';
             position: absolute;
@@ -156,40 +170,98 @@
             background: radial-gradient(circle at 70% 30%, rgba(34, 197, 94, 0.02), transparent 70%);
             pointer-events: none;
         }
-        /* ------------------------------------------------------------
-           PROGRESS BAR — clean, no numbers
-           ------------------------------------------------------------ */
-        .progress-bar-wrap {
+
+        /* ================================================================
+                   PROGRESS INDICATOR — numbers and labels hidden
+                   ================================================================ */
+        .progress-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 1.8rem;
             position: relative;
+            padding: 0 2px;
         }
-        .progress-bar-track {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 4px;
-            overflow: hidden;
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            /* no gap needed since labels are hidden */
+            flex: 1;
             position: relative;
+            cursor: default;
         }
-        .progress-bar-fill {
+
+        .progress-step .dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: rgba(247, 244, 233, 0.15);
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.04);
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Hide numbers and labels completely */
+        .progress-step .dot .num,
+        .progress-step .label {
+            display: none;
+        }
+
+        .progress-step .dot .check {
+            display: none;
+            font-size: 0.8rem;
+            color: #071C12;
+        }
+
+        .progress-step.completed .dot {
+            background: #22C55E;
+            border-color: #22C55E;
+            color: #071C12;
+        }
+
+        .progress-step.completed .dot .check {
+            display: block;
+        }
+
+        .progress-step.active .dot {
+            background: rgba(34, 197, 94, 0.12);
+            border-color: #22C55E;
+            color: #22C55E;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.08);
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 15px;
+            left: 16px;
+            right: 16px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.03);
+            z-index: 0;
+            border-radius: 2px;
+        }
+
+        .progress-line .fill {
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, #22C55E, #D4A72C);
-            border-radius: 4px;
-            transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            border-radius: 2px;
+            transition: width 0.5s ease;
         }
-        .progress-label {
-            display: flex;
-            justify-content: flex-end;
-            font-size: 0.6rem;
-            color: rgba(247, 244, 233, 0.10);
-            margin-top: 4px;
-            letter-spacing: 0.5px;
-            font-weight: 500;
-        }
-        /* ------------------------------------------------------------
-           STEP CONTENT
-           ------------------------------------------------------------ */
+
+        /* ================================================================
+                   STEP CONTENT
+                   ================================================================ */
         .step-content {
             min-height: 280px;
             display: flex;
@@ -197,6 +269,7 @@
             gap: 1.2rem;
             animation: stepFade 0.35s ease forwards;
         }
+
         @keyframes stepFade {
             0% {
                 opacity: 0;
@@ -207,27 +280,38 @@
                 transform: translateX(0);
             }
         }
+
+        .step-header {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
         .step-header h2 {
             font-size: 1.4rem;
             font-weight: 700;
             color: #F7F4E9;
             line-height: 1.2;
         }
+
         .step-header h2 .accent {
             color: #22C55E;
         }
+
         .step-header p {
             font-size: 0.85rem;
             color: rgba(247, 244, 233, 0.45);
             line-height: 1.5;
             margin-top: 2px;
         }
+
         /* ---- FORM FIELDS ---- */
         .field-group {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
+
         .field-group label {
             font-size: 0.7rem;
             font-weight: 600;
@@ -235,6 +319,7 @@
             letter-spacing: 0.4px;
             text-transform: uppercase;
         }
+
         .field-group .field-input {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -247,29 +332,36 @@
             transition: all 0.3s;
             outline: none;
         }
+
         .field-group .field-input:focus {
             border-color: rgba(34, 197, 94, 0.15);
             background: rgba(255, 255, 255, 0.04);
             box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.02);
         }
+
         .field-group .field-input::placeholder {
             color: rgba(247, 244, 233, 0.12);
         }
+
         .field-group .field-input.error {
             border-color: rgba(239, 68, 68, 0.20);
         }
+
         .field-group .field-error {
             font-size: 0.7rem;
             color: #f87171;
             min-height: 1.1rem;
             padding-left: 4px;
         }
-        /* ---- PHONE ---- */
+
+        /* ---- PHONE WITH COUNTRY CODE DROPDOWN ---- */
         .phone-wrap {
+            position: relative;
             display: flex;
             gap: 6px;
             align-items: stretch;
         }
+
         .phone-wrap .country-select {
             flex-shrink: 0;
             min-width: 88px;
@@ -290,25 +382,30 @@
             background-position: right 10px center;
             padding-right: 28px;
         }
+
         .phone-wrap .country-select:focus {
             border-color: rgba(34, 197, 94, 0.15);
             background-color: rgba(255, 255, 255, 0.04);
             box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.02);
         }
+
         .phone-wrap .country-select option {
             background: #071C12;
             color: #F7F4E9;
             padding: 4px;
         }
+
         .phone-wrap .phone-input-wrap {
             flex: 1;
             position: relative;
             min-width: 0;
         }
+
         .phone-wrap .phone-input-wrap .field-input {
             padding-left: 0.9rem;
             width: 100%;
         }
+
         /* ---- PASSWORD TOGGLE ---- */
         .pw-toggle {
             position: absolute;
@@ -327,9 +424,11 @@
             align-items: center;
             justify-content: center;
         }
+
         .pw-toggle:hover {
             color: rgba(247, 244, 233, 0.30);
         }
+
         .pw-toggle svg {
             width: 18px;
             height: 18px;
@@ -337,120 +436,104 @@
             stroke-width: 2;
             fill: none;
         }
+
         .pw-toggle.active {
             color: #22C55E;
         }
+
         .pw-field {
             position: relative;
         }
-        /* ---- REFERRAL (final step) ---- */
-        .referral-final {
-            background: rgba(34, 197, 94, 0.02);
-            border: 1px solid rgba(34, 197, 94, 0.05);
+
+        /* ---- REFERRAL CONFIRMATION ---- */
+        .referral-confirm {
+            background: rgba(34, 197, 94, 0.03);
+            border: 1px solid rgba(34, 197, 94, 0.06);
             border-radius: 16px;
-            padding: 1.2rem 1.2rem 1rem;
+            padding: 1rem 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 0.8rem;
+            gap: 0.6rem;
         }
-        .referral-final .ref-label {
+
+        .referral-confirm .ref-label {
             font-size: 0.7rem;
             color: rgba(247, 244, 233, 0.30);
             font-weight: 500;
             letter-spacing: 0.3px;
-            text-transform: uppercase;
         }
-        .referral-final .ref-input-row {
-            display: flex;
-            gap: 0.6rem;
-            align-items: center;
-        }
-        .referral-final .ref-input-row .field-input {
-            flex: 1;
+
+        .referral-confirm .ref-code {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #D4A72C;
             font-family: 'Courier New', monospace;
             letter-spacing: 1px;
-            text-transform: uppercase;
         }
-        .referral-final .ref-input-row .btn-verify {
-            flex-shrink: 0;
-            padding: 0.7rem 1.2rem;
-            border-radius: 14px;
+
+        .referral-confirm .ref-question {
+            font-size: 0.9rem;
+            color: rgba(247, 244, 233, 0.60);
+            line-height: 1.5;
+            margin-top: 2px;
+        }
+
+        .ref-actions {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .ref-actions .btn-sm {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
             border: none;
-            background: rgba(34, 197, 94, 0.10);
-            color: #22C55E;
             font-family: inherit;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.25s ease;
             touch-action: manipulation;
-            border: 1px solid rgba(34, 197, 94, 0.06);
         }
-        .referral-final .ref-input-row .btn-verify:hover:not(:disabled) {
-            background: rgba(34, 197, 94, 0.18);
+
+        .ref-actions .btn-sm-yes {
+            background: #22C55E;
+            color: #071C12;
+        }
+        .ref-actions .btn-sm-yes:hover {
+            background: #16A34A;
             transform: translateY(-1px);
         }
-        .referral-final .ref-input-row .btn-verify:disabled {
-            opacity: 0.4;
+
+        .ref-actions .btn-sm-no {
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(247, 244, 233, 0.40);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .ref-actions .btn-sm-no:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #F7F4E9;
+        }
+
+        .ref-actions .btn-sm:disabled {
+            opacity: 0.3;
             cursor: not-allowed;
             transform: none !important;
         }
-        .referral-final .ref-status {
-            font-size: 0.8rem;
-            min-height: 1.4rem;
-            padding-left: 2px;
-        }
-        .referral-final .ref-status.valid {
-            color: #6ee7b7;
-        }
-        .referral-final .ref-status.invalid {
-            color: #f87171;
-        }
-        .referral-final .ref-status.checking {
-            color: rgba(247, 244, 233, 0.30);
-        }
-        .referral-final .ref-hint {
-            font-size: 0.7rem;
-            color: rgba(247, 244, 233, 0.15);
-            line-height: 1.4;
-            padding-left: 2px;
-        }
-        .referral-final .ref-hint.warning {
-            color: #fbbf24;
-        }
-        .referral-final .ref-confirmed {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            padding: 0.5rem 0.8rem;
-            background: rgba(34, 197, 94, 0.04);
-            border-radius: 12px;
-            border: 1px solid rgba(34, 197, 94, 0.06);
-        }
-        .referral-final .ref-confirmed.show {
-            display: flex;
-        }
-        .referral-final .ref-confirmed .check-icon {
-            color: #22C55E;
-            font-size: 1.1rem;
-            font-weight: 700;
-        }
-        .referral-final .ref-confirmed .ref-code-display {
-            font-family: 'Courier New', monospace;
-            font-weight: 700;
-            color: #D4A72C;
-            letter-spacing: 1px;
-        }
+
         /* ---- CAPTCHA ---- */
         .captcha-row {
             display: flex;
             gap: 10px;
             align-items: stretch;
         }
+
         .captcha-row .field-group {
             flex: 1;
             min-width: 0;
         }
+
         .captcha-display {
             display: flex;
             align-items: center;
@@ -467,6 +550,7 @@
             position: relative;
             overflow: hidden;
         }
+
         .captcha-display .code-chars {
             display: flex;
             gap: 4px;
@@ -477,14 +561,17 @@
             position: relative;
             z-index: 1;
         }
+
         .captcha-display .code-chars span {
             display: inline-block;
             transition: 0.3s;
             text-shadow: 0 0 20px rgba(34, 197, 94, 0.04);
         }
+
         .captcha-display .code-chars span.confusing {
             animation: confuse 0.5s ease forwards;
         }
+
         @keyframes confuse {
             0% {
                 transform: rotate(0deg) scale(1);
@@ -499,11 +586,13 @@
                 opacity: 1;
             }
         }
+
         .captcha-hint {
             font-size: 0.6rem;
             color: rgba(247, 244, 233, 0.15);
             padding-left: 4px;
         }
+
         /* ---- AGE CHECK ---- */
         .age-check {
             display: flex;
@@ -512,9 +601,11 @@
             cursor: pointer;
             padding: 6px 0;
         }
+
         .age-check input[type="checkbox"] {
             display: none;
         }
+
         .age-check .check-box {
             width: 22px;
             height: 22px;
@@ -528,6 +619,7 @@
             transition: 0.25s;
             margin-top: 1px;
         }
+
         .age-check .check-box svg {
             width: 13px;
             height: 13px;
@@ -538,23 +630,28 @@
             transform: scale(0.4);
             transition: 0.25s;
         }
+
         .age-check input:checked+.check-box {
             background: #22C55E;
             border-color: #22C55E;
         }
+
         .age-check input:checked+.check-box svg {
             opacity: 1;
             transform: scale(1);
         }
+
         .age-check .check-label {
             font-size: 0.85rem;
             color: rgba(247, 244, 233, 0.50);
             line-height: 1.4;
         }
+
         .age-check .check-label strong {
             color: #F7F4E9;
             font-weight: 600;
         }
+
         /* ---- STEP ACTIONS ---- */
         .step-actions {
             display: flex;
@@ -563,6 +660,7 @@
             padding-top: 0.6rem;
             border-top: 1px solid rgba(255, 255, 255, 0.02);
         }
+
         .step-actions .btn-back {
             padding: 0.7rem 1.2rem;
             border-radius: 14px;
@@ -577,6 +675,7 @@
             touch-action: manipulation;
             flex-shrink: 0;
         }
+
         .step-actions .btn-back:hover {
             background: rgba(255, 255, 255, 0.04);
             color: #F7F4E9;
@@ -585,6 +684,7 @@
             opacity: 0.2;
             cursor: not-allowed;
         }
+
         .step-actions .btn-next {
             flex: 1;
             padding: 0.75rem 1.5rem;
@@ -604,19 +704,23 @@
             gap: 8px;
             box-shadow: 0 4px 20px rgba(34, 197, 94, 0.10);
         }
+
         .step-actions .btn-next:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 32px rgba(34, 197, 94, 0.18);
             filter: brightness(1.04);
         }
+
         .step-actions .btn-next:active:not(:disabled) {
             transform: scale(0.97);
         }
+
         .step-actions .btn-next:disabled {
             opacity: 0.35;
             cursor: not-allowed;
             transform: none !important;
         }
+
         .step-actions .btn-next .spinner {
             display: none;
             width: 18px;
@@ -627,6 +731,7 @@
             animation: spin 0.8s linear infinite;
             flex-shrink: 0;
         }
+
         .step-actions .btn-next.loading .spinner {
             display: inline-block;
         }
@@ -636,70 +741,20 @@
         .step-actions .btn-next.loading .btn-text-loading {
             display: inline;
         }
+
         .step-actions .btn-next .btn-text-loading {
             display: none;
         }
+
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
         }
-        /* ---- Complete button ---- */
-        .btn-complete {
-            flex: 1;
-            padding: 0.75rem 1.5rem;
-            border-radius: 14px;
-            border: none;
-            background: linear-gradient(135deg, #D4A72C, #b8921f);
-            color: #071C12;
-            font-family: inherit;
-            font-weight: 800;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            touch-action: manipulation;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 20px rgba(212, 167, 44, 0.12);
-        }
-        .btn-complete:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(212, 167, 44, 0.20);
-            filter: brightness(1.05);
-        }
-        .btn-complete:active:not(:disabled) {
-            transform: scale(0.97);
-        }
-        .btn-complete:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        .btn-complete .spinner {
-            display: none;
-            width: 18px;
-            height: 18px;
-            border: 2.5px solid rgba(7, 28, 18, 0.15);
-            border-top-color: #071C12;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            flex-shrink: 0;
-        }
-        .btn-complete.loading .spinner {
-            display: inline-block;
-        }
-        .btn-complete.loading .btn-text {
-            display: none;
-        }
-        .btn-complete.loading .btn-text-loading {
-            display: inline;
-        }
-        .btn-complete .btn-text-loading {
-            display: none;
-        }
-        /* ---- MESSAGE BOX ---- */
+
+        /* ================================================================
+                   MESSAGE BOX
+                   ================================================================ */
         .message-box {
             padding: 0.7rem 1rem;
             border-radius: 14px;
@@ -711,6 +766,7 @@
             border: 1px solid transparent;
             background: rgba(7, 28, 18, 0.30);
         }
+
         .message-box.error {
             display: block;
             border-color: rgba(239, 68, 68, 0.12);
@@ -721,6 +777,7 @@
             border-color: rgba(34, 197, 94, 0.12);
             color: #6ee7b7;
         }
+
         .message-box svg {
             width: 16px;
             height: 16px;
@@ -730,7 +787,10 @@
             vertical-align: middle;
             margin-right: 6px;
         }
-        /* ---- LOADING OVERLAY ---- */
+
+        /* ================================================================
+                   FULL-SCREEN LOADING OVERLAY
+                   ================================================================ */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -749,9 +809,11 @@
             padding: 1.5rem;
             text-align: center;
         }
+
         .loading-overlay.active {
             display: flex;
         }
+
         .loading-spinner {
             width: 52px;
             height: 52px;
@@ -760,6 +822,7 @@
             border-radius: 50%;
             animation: spin 0.9s linear infinite;
         }
+
         .loading-text {
             font-size: 1.15rem;
             font-weight: 700;
@@ -771,7 +834,10 @@
             max-width: 320px;
             line-height: 1.5;
         }
-        /* ---- TOAST ---- */
+
+        /* ================================================================
+                   TOAST
+                   ================================================================ */
         .toast {
             position: fixed;
             bottom: 80px;
@@ -792,6 +858,7 @@
             border: 1px solid rgba(255, 255, 255, 0.03);
             font-size: 0.9rem;
         }
+
         .toast.error {
             border-color: rgba(239, 68, 68, 0.10);
             color: #fca5a5;
@@ -800,6 +867,7 @@
             border-color: rgba(34, 197, 94, 0.10);
             color: #6ee7b7;
         }
+
         @keyframes toastFade {
             0% {
                 opacity: 0;
@@ -817,13 +885,17 @@
                 transform: translateX(-50%) translateY(-16px) scale(0.95);
             }
         }
-        /* ---- SIGN IN LINK ---- */
+
+        /* ================================================================
+                   SIGN IN LINK
+                   ================================================================ */
         .signin-link {
             text-align: center;
             margin-top: 1.2rem;
             font-size: 0.9rem;
             color: rgba(247, 244, 233, 0.25);
         }
+
         .signin-link a {
             color: #F7F4E9;
             font-weight: 600;
@@ -831,11 +903,15 @@
             border-bottom: 1px solid rgba(212, 167, 44, 0.15);
             transition: 0.2s;
         }
+
         .signin-link a:hover {
             color: #D4A72C;
             border-bottom-color: #D4A72C;
         }
-        /* ---- RESPONSIVE ---- */
+
+        /* ================================================================
+                   RESPONSIVE
+                   ================================================================ */
         @media (max-width: 500px) {
             body {
                 padding: 0.6rem;
@@ -853,6 +929,16 @@
             .step-content {
                 min-height: 240px;
                 gap: 1rem;
+            }
+            .progress-step .dot {
+                width: 28px;
+                height: 28px;
+                font-size: 0.5rem;
+            }
+            .progress-line {
+                top: 13px;
+                left: 12px;
+                right: 12px;
             }
             .captcha-display {
                 min-width: 80px;
@@ -876,15 +962,15 @@
                 padding: 0.65rem 0.9rem;
                 font-size: 0.88rem;
             }
-            .referral-final {
+            .referral-confirm {
                 padding: 0.8rem 1rem;
             }
-            .referral-final .ref-input-row .field-input {
-                font-size: 0.85rem;
+            .referral-confirm .ref-code {
+                font-size: 1rem;
             }
-            .referral-final .ref-input-row .btn-verify {
-                font-size: 0.75rem;
-                padding: 0.6rem 0.9rem;
+            .ref-actions .btn-sm {
+                font-size: 0.8rem;
+                padding: 0.5rem 0.8rem;
             }
             .age-check .check-label {
                 font-size: 0.78rem;
@@ -905,17 +991,22 @@
                 padding: 0.65rem 0.4rem 0.65rem 0.5rem;
                 padding-right: 22px;
             }
-            .btn-complete {
-                font-size: 0.85rem;
-                padding: 0.65rem 1rem;
-            }
         }
+
         @media (max-width: 380px) {
             .glass-card {
                 padding: 1rem 0.7rem 1.2rem;
             }
             .step-header h2 {
                 font-size: 1rem;
+            }
+            .progress-step .dot {
+                width: 24px;
+                height: 24px;
+                font-size: 0.45rem;
+            }
+            .progress-line {
+                top: 11px;
             }
             .captcha-display {
                 min-width: 64px;
@@ -935,19 +1026,12 @@
                 padding: 0.55rem 0.3rem 0.55rem 0.4rem;
                 padding-right: 18px;
             }
-            .referral-final .ref-input-row {
-                flex-wrap: wrap;
-            }
-            .referral-final .ref-input-row .btn-verify {
-                width: 100%;
-                justify-content: center;
-            }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== BACKGROUND ===== -->
+    <!-- ===== FULL-SCREEN BACKGROUND ===== -->
     <div class="bg-layer"></div>
 
     <!-- ===== LOADING OVERLAY ===== -->
@@ -963,21 +1047,47 @@
         <a href="index.html" class="header-back">← Back</a>
     </header>
 
-    <!-- ===== WIZARD ===== -->
+    <!-- ================================================================
+    WIZARD
+    ================================================================ -->
     <div class="wizard-wrapper" id="wizardWrapper">
+
         <div class="glass-card">
 
-            <!-- ===== PROGRESS BAR ===== -->
-            <div class="progress-bar-wrap">
-                <div class="progress-bar-track">
-                    <div class="progress-bar-fill" id="progressFill" style="width: 0%;"></div>
+            <!-- ===== PROGRESS INDICATOR (dots only, no labels) ===== -->
+            <div class="progress-wrap" id="progressWrap">
+                <div class="progress-line">
+                    <div class="fill" id="progressFill" style="width: 0%;"></div>
                 </div>
-                <div class="progress-label" id="progressLabel">0%</div>
+
+                <div class="progress-step active" data-step="0">
+                    <div class="dot"><span class="num">1</span><span class="check">✓</span></div>
+                    <!-- label removed -->
+                </div>
+                <div class="progress-step" data-step="1">
+                    <div class="dot"><span class="num">2</span><span class="check">✓</span></div>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="dot"><span class="num">3</span><span class="check">✓</span></div>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="dot"><span class="num">4</span><span class="check">✓</span></div>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="dot"><span class="num">5</span><span class="check">✓</span></div>
+                </div>
+                <div class="progress-step" data-step="5">
+                    <div class="dot"><span class="num">6</span><span class="check">✓</span></div>
+                </div>
+                <div class="progress-step" data-step="6">
+                    <div class="dot"><span class="num">7</span><span class="check">✓</span></div>
+                </div>
             </div>
 
-            <!-- ===== STEPS ===== -->
+            <!-- ===== STEP CONTENT ===== -->
             <div id="stepContainer">
-                <!-- STEP 0: EMAIL -->
+
+                <!-- STEP 1: EMAIL -->
                 <div class="step-content" data-step="0">
                     <div class="step-header">
                         <h2>Enter your <span class="accent">email</span></h2>
@@ -994,7 +1104,7 @@
                     </div>
                 </div>
 
-                <!-- STEP 1: PHONE -->
+                <!-- STEP 2: PHONE -->
                 <div class="step-content" data-step="1" style="display:none;">
                     <div class="step-header">
                         <h2>Enter your <span class="accent">phone number</span></h2>
@@ -1003,7 +1113,9 @@
                     <div class="field-group">
                         <label for="stepPhone">Phone number</label>
                         <div class="phone-wrap">
-                            <select class="country-select" id="countrySelect"></select>
+                            <select class="country-select" id="countrySelect">
+                                <!-- populated by JS -->
+                            </select>
                             <div class="phone-input-wrap">
                                 <input type="tel" id="stepPhone" class="field-input" placeholder="977000000" autocomplete="tel" />
                             </div>
@@ -1016,7 +1128,7 @@
                     </div>
                 </div>
 
-                <!-- STEP 2: PASSWORD -->
+                <!-- STEP 3: SECURITY -->
                 <div class="step-content" data-step="2" style="display:none;">
                     <div class="step-header">
                         <h2>Choose your <span class="accent">password</span></h2>
@@ -1048,7 +1160,7 @@
                     </div>
                 </div>
 
-                <!-- STEP 3: FULL NAME -->
+                <!-- STEP 4: FULL NAME -->
                 <div class="step-content" data-step="3" style="display:none;">
                     <div class="step-header">
                         <h2>What's your <span class="accent">full name</span>?</h2>
@@ -1070,8 +1182,23 @@
                     </div>
                 </div>
 
-                <!-- STEP 4: CAPTCHA -->
+                <!-- STEP 5: REFERRAL (mandatory) -->
                 <div class="step-content" data-step="4" style="display:none;">
+                    <div class="step-header">
+                        <h2><span class="accent">Referral</span> required</h2>
+                        <p>You need a valid referral code to register.</p>
+                    </div>
+                    <div id="referralContainer">
+                        <!-- dynamically filled -->
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn-back" id="backReferral">← Back</button>
+                        <button class="btn-next" id="nextReferral" style="display:none;">Next →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 6: HUMAN VERIFICATION -->
+                <div class="step-content" data-step="5" style="display:none;">
                     <div class="step-header">
                         <h2>Verify you're <span class="accent">human</span></h2>
                         <p>Enter the 6 numbers shown in the box.</p>
@@ -1093,11 +1220,11 @@
                     </div>
                 </div>
 
-                <!-- STEP 5: AGE -->
-                <div class="step-content" data-step="5" style="display:none;">
+                <!-- STEP 7: AGE CONFIRMATION -->
+                <div class="step-content" data-step="6" style="display:none;">
                     <div class="step-header">
                         <h2>Confirm your <span class="accent">eligibility</span></h2>
-                        <p>One more step before we ask for your referral.</p>
+                        <p>One last step to complete your registration.</p>
                     </div>
                     <label class="age-check">
                         <input type="checkbox" id="ageCheck" />
@@ -1107,38 +1234,10 @@
                     <div class="field-error" id="ageError"></div>
                     <div class="step-actions">
                         <button class="btn-back" id="backAge">← Back</button>
-                        <button class="btn-next" id="nextAge">Next →</button>
+                        <button class="btn-next" id="completeRegistration">Complete Registration</button>
                     </div>
                 </div>
 
-                <!-- STEP 6: REFERRAL (FINAL) -->
-                <div class="step-content" data-step="6" style="display:none;">
-                    <div class="step-header">
-                        <h2>Enter your <span class="accent">referral code</span></h2>
-                        <p>You need a valid referral to open an account.</p>
-                    </div>
-                    <div class="referral-final" id="referralFinal">
-                        <div class="ref-label">Referral code</div>
-                        <!-- No referral message -->
-                        <div id="refNoReferralMsg" style="display:none; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.10); border-radius: 10px; padding: 0.6rem 0.8rem; font-size: 0.85rem; color: #fbbf24;">
-                            ⚠️ No referral code detected. You need a valid referral to continue.
-                        </div>
-                        <div class="ref-input-row">
-                            <input type="text" id="refFinalInput" class="field-input" placeholder="e.g. ABC123" maxlength="10" autocomplete="off" spellcheck="false" />
-                            <button class="btn-verify" id="refFinalVerify">Verify</button>
-                        </div>
-                        <div class="ref-status" id="refFinalStatus"></div>
-                        <div class="ref-hint" id="refHint">A valid referral is required. If you don't have one, you won't be able to open an account.</div>
-                        <div class="ref-confirmed" id="refConfirmed">
-                            <span class="check-icon">✓</span>
-                            Referral <span class="ref-code-display" id="refConfirmedCode"></span> verified
-                        </div>
-                    </div>
-                    <div class="step-actions">
-                        <button class="btn-back" id="backReferral">← Back</button>
-                        <button class="btn-complete" id="completeRegistration" disabled>Complete Registration</button>
-                    </div>
-                </div>
             </div>
 
             <!-- ===== MESSAGE BOX ===== -->
@@ -1150,10 +1249,15 @@
             </div>
 
         </div>
+        <!-- end glass-card -->
+
         <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:rgba(247,244,233,0.08);">
             Sajvera Capital · secure &amp; transparent
         </div>
+
     </div>
+    <!-- end wizard-wrapper -->
+
 
     <!-- ================================================================
     JAVASCRIPT
@@ -1176,8 +1280,14 @@
         var db = firebase.firestore();
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.warn);
 
+        // ================================================================
+        // FLAG: prevent onAuthStateChanged redirect during submission
+        // ================================================================
         var isSubmitting = false;
 
+        // ================================================================
+        // AUTO-REDIRECT if already logged in (only when NOT submitting)
+        // ================================================================
         auth.onAuthStateChanged(function(user) {
             if (user && !isSubmitting) {
                 window.location.href = 'dashboard.html';
@@ -1188,10 +1298,11 @@
         // DOM REFS
         // ================================================================
         var steps = document.querySelectorAll('.step-content');
+        var progressDots = document.querySelectorAll('.progress-step');
         var progressFill = document.getElementById('progressFill');
-        var progressLabel = document.getElementById('progressLabel');
         var messageBox = document.getElementById('messageBox');
 
+        // Step fields
         var stepEmail = document.getElementById('stepEmail');
         var stepPhone = document.getElementById('stepPhone');
         var countrySelect = document.getElementById('countrySelect');
@@ -1204,6 +1315,7 @@
         var captchaError = document.getElementById('captchaError');
         var ageCheck = document.getElementById('ageCheck');
 
+        // Error containers
         var emailError = document.getElementById('emailError');
         var phoneError = document.getElementById('phoneError');
         var passwordError = document.getElementById('passwordError');
@@ -1212,28 +1324,23 @@
         var lastNameError = document.getElementById('lastNameError');
         var ageError = document.getElementById('ageError');
 
+        // Buttons
         var nextEmail = document.getElementById('nextEmail');
         var nextPhone = document.getElementById('nextPhone');
         var nextSecurity = document.getElementById('nextSecurity');
         var nextName = document.getElementById('nextName');
+        var nextReferral = document.getElementById('nextReferral');
         var nextCaptcha = document.getElementById('nextCaptcha');
-        var nextAge = document.getElementById('nextAge');
         var completeReg = document.getElementById('completeRegistration');
 
         var backPhone = document.getElementById('backPhone');
         var backSecurity = document.getElementById('backSecurity');
         var backName = document.getElementById('backName');
+        var backReferral = document.getElementById('backReferral');
         var backCaptcha = document.getElementById('backCaptcha');
         var backAge = document.getElementById('backAge');
-        var backReferral = document.getElementById('backReferral');
 
-        var refFinalInput = document.getElementById('refFinalInput');
-        var refFinalVerify = document.getElementById('refFinalVerify');
-        var refFinalStatus = document.getElementById('refFinalStatus');
-        var refConfirmed = document.getElementById('refConfirmed');
-        var refConfirmedCode = document.getElementById('refConfirmedCode');
-        var refNoReferralMsg = document.getElementById('refNoReferralMsg');
-        var refHint = document.getElementById('refHint');
+        var referralContainer = document.getElementById('referralContainer');
 
         var loadingOverlay = document.getElementById('loadingOverlay');
         var loadingText = document.getElementById('loadingText');
@@ -1252,10 +1359,10 @@
             lastName: '',
             referral: '',
             referralValid: false,
-            referralConfirmed: false,
-            pendingReferral: false // true while validating the URL ref
+            referralConfirmed: false
         };
 
+        // CAPTCHA
         var currentCaptcha = '';
         var captchaColors = [
             '#60a5fa', '#3b82f6', '#93c5fd', '#1d4ed8', '#7dd3fc',
@@ -1359,12 +1466,15 @@
             { code: '+263', name: 'Zimbabwe' }
         ];
 
+        // ================================================================
+        // POPULATE COUNTRY SELECT
+        // ================================================================
         function populateCountries() {
             countryCodes.forEach(function(c) {
                 var opt = document.createElement('option');
                 opt.value = c.code;
                 opt.textContent = c.code + ' (' + c.name + ')';
-                if (c.code === '+260') opt.selected = true;
+                if (c.code === '+260') opt.selected = true; // Default Zambia
                 countrySelect.appendChild(opt);
             });
         }
@@ -1440,116 +1550,16 @@
         });
 
         // ================================================================
-        // REFERRAL FROM URL — VALIDATE ON LOAD
+        // REFERRAL FROM URL
         // ================================================================
-        var urlRef = new URLSearchParams(window.location.search).get('ref') ||
-            new URLSearchParams(window.location.hash.split('?')[1]).get('ref');
-        if (urlRef) {
-            urlRef = urlRef.toUpperCase();
-            formData.pendingReferral = true;
-            // Show checking status if already on step 6
-            if (currentStep === 6) {
-                refFinalStatus.textContent = 'Checking referral from link...';
-                refFinalStatus.className = 'ref-status checking';
+        (function() {
+            var ref = new URLSearchParams(window.location.search).get('ref') ||
+                new URLSearchParams(window.location.hash.split('?')[1]).get('ref');
+            if (ref) {
+                formData.referral = ref.toUpperCase();
+                formData.referralValid = true;
             }
-            validateReferral(urlRef, function(isValid) {
-                formData.pendingReferral = false;
-                if (isValid) {
-                    formData.referral = urlRef;
-                    formData.referralValid = true;
-                    formData.referralConfirmed = true;
-                    console.log('Referral from URL is valid:', urlRef);
-                    // Update UI if we're on step 6
-                    refreshReferralUI();
-                } else {
-                    console.warn('Referral from URL is invalid:', urlRef);
-                    formData.referral = '';
-                    formData.referralValid = false;
-                    formData.referralConfirmed = false;
-                    // Show error if on step 6
-                    if (currentStep === 6) {
-                        refFinalStatus.textContent = '❌ Invalid referral code from link.';
-                        refFinalStatus.className = 'ref-status invalid';
-                        showNoReferralMessage(true);
-                    }
-                }
-            });
-        }
-
-        // ================================================================
-        // REFRESH REFERRAL UI (call when state changes)
-        // ================================================================
-        function refreshReferralUI() {
-            if (currentStep !== 6) return;
-            if (formData.referralValid && formData.referralConfirmed) {
-                // Auto-fill and enable
-                applyReferralAutoFill();
-                showNoReferralMessage(false);
-            } else if (formData.pendingReferral) {
-                refFinalStatus.textContent = 'Checking referral from link...';
-                refFinalStatus.className = 'ref-status checking';
-                showNoReferralMessage(false);
-                // keep input disabled? We'll let user type, but we show checking.
-                refFinalInput.disabled = true;
-                refFinalVerify.disabled = true;
-                completeReg.disabled = true;
-            } else {
-                // No valid referral
-                refFinalInput.disabled = false;
-                refFinalVerify.disabled = false;
-                refConfirmed.classList.remove('show');
-                refFinalStatus.textContent = '';
-                refFinalStatus.className = 'ref-status';
-                completeReg.disabled = true;
-                showNoReferralMessage(true);
-                // If there is a pending invalid URL ref, it's already cleared
-            }
-        }
-
-        function applyReferralAutoFill() {
-            if (formData.referral && formData.referralValid && formData.referralConfirmed) {
-                refFinalInput.value = formData.referral;
-                refFinalInput.disabled = true;
-                refFinalVerify.disabled = true;
-                refConfirmed.classList.add('show');
-                refConfirmedCode.textContent = formData.referral;
-                refFinalStatus.textContent = '✓ Referral verified from link';
-                refFinalStatus.className = 'ref-status valid';
-                completeReg.disabled = false;
-                showNoReferralMessage(false);
-                showToast('✅ Referral code from link verified!', false);
-            }
-        }
-
-        // ================================================================
-        // VALIDATE REFERRAL (Firestore)
-        // ================================================================
-        function validateReferral(code, callback) {
-            if (!code) return callback(false);
-            var q = code.trim().toUpperCase();
-            db.collection('users').where('referralCode', '==', q).limit(1).get()
-                .then(function(snap) {
-                    callback(!snap.empty);
-                })
-                .catch(function() {
-                    callback(false);
-                });
-        }
-
-        // ================================================================
-        // SHOW/HIDE "NO REFERRAL" MESSAGE
-        // ================================================================
-        function showNoReferralMessage(show) {
-            if (show) {
-                refNoReferralMsg.style.display = 'block';
-                refHint.textContent = 'No referral code detected. Enter one above to continue.';
-                refHint.className = 'ref-hint warning';
-            } else {
-                refNoReferralMsg.style.display = 'none';
-                refHint.textContent = 'A valid referral is required. If you don\'t have one, you won\'t be able to open an account.';
-                refHint.className = 'ref-hint';
-            }
-        }
+        })();
 
         // ================================================================
         // NAVIGATION HELPERS
@@ -1561,21 +1571,26 @@
             steps.forEach(function(el) { el.style.display = 'none'; });
             steps[step].style.display = 'flex';
 
+            progressDots.forEach(function(dot, i) {
+                dot.classList.remove('active', 'completed');
+                if (i < step) dot.classList.add('completed');
+                else if (i === step) dot.classList.add('active');
+            });
+
             var pct = (step / (totalSteps - 1)) * 100;
             progressFill.style.width = pct + '%';
-            progressLabel.textContent = Math.round(pct) + '%';
 
             var wrapper = document.getElementById('wizardWrapper');
             if (wrapper) {
                 wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
+            if (step === 4) {
+                renderReferralStep();
+            }
+
             if (step === 6) {
-                refreshReferralUI();
-                if (!formData.referralConfirmed && !formData.pendingReferral) {
-                    // Focus input for manual entry
-                    setTimeout(function() { refFinalInput.focus(); }, 200);
-                }
+                ageCheck.focus();
             }
 
             hideMessage();
@@ -1625,8 +1640,12 @@
             loadingOverlay.classList.remove('active');
         }
 
+        // ================================================================
+        // FORMAT PHONE
+        // ================================================================
         function formatPhone(phone, countryCode) {
             var clean = phone.replace(/\D/g, '');
+            // Remove leading zeros if any
             if (clean.startsWith('0')) {
                 clean = clean.substring(1);
             }
@@ -1634,10 +1653,134 @@
         }
 
         // ================================================================
+        // VALIDATE REFERRAL (Firestore)
+        // ================================================================
+        function validateReferral(code, callback) {
+            if (!code) return callback(false);
+            var q = code.trim().toUpperCase();
+            db.collection('users').where('referralCode', '==', q).limit(1).get()
+                .then(function(snap) {
+                    callback(!snap.empty);
+                })
+                .catch(function() {
+                    callback(false);
+                });
+        }
+
+        // ================================================================
+        // RENDER REFERRAL STEP (mandatory)
+        // ================================================================
+        function renderReferralStep() {
+            var container = referralContainer;
+            var ref = formData.referral;
+
+            // If a referral code is already present and validated, show confirmation
+            if (ref && formData.referralValid) {
+                container.innerHTML = `
+                    <div class="referral-confirm">
+                        <div class="ref-label">Referred by</div>
+                        <div class="ref-code">${ref}</div>
+                        <div class="ref-question">
+                            Is this the referral link you were referred with?
+                        </div>
+                        <div class="ref-actions">
+                            <button class="btn-sm btn-sm-yes" id="refYes">Yes, continue</button>
+                            <button class="btn-sm btn-sm-no" id="refNo">No, go back</button>
+                        </div>
+                    </div>
+                `;
+                var yesBtn = document.getElementById('refYes');
+                var noBtn = document.getElementById('refNo');
+                if (yesBtn) {
+                    yesBtn.addEventListener('click', function() {
+                        formData.referralConfirmed = true;
+                        goToStep(5);
+                    });
+                }
+                if (noBtn) {
+                    noBtn.addEventListener('click', function() {
+                        // Clear referral and reset to input mode
+                        formData.referral = '';
+                        formData.referralValid = false;
+                        formData.referralConfirmed = false;
+                        renderReferralStep();
+                    });
+                }
+                nextReferral.style.display = 'none';
+                return;
+            }
+
+            // No valid referral — show input field and verify button
+            container.innerHTML = `
+                <div class="referral-confirm">
+                    <div class="ref-label">Enter your referral code</div>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <input type="text" id="refInput" class="field-input" style="flex:1;" placeholder="e.g., ABC123" maxlength="10" autocomplete="off" />
+                        <button class="btn-sm btn-sm-yes" id="refVerifyBtn" style="flex-shrink:0;padding:0.6rem 1.2rem;">Verify</button>
+                    </div>
+                    <div id="refVerifyMessage" style="font-size:0.75rem;color:rgba(247,244,233,0.30);min-height:1.2rem;"></div>
+                    <div class="ref-question" style="margin-top:0.2rem;color:rgba(247,244,233,0.20);font-size:0.7rem;">
+                        You must have a valid referral code to register.
+                    </div>
+                </div>
+            `;
+
+            var refInput = document.getElementById('refInput');
+            var verifyBtn = document.getElementById('refVerifyBtn');
+            var verifyMsg = document.getElementById('refVerifyMessage');
+
+            // Focus the input
+            setTimeout(function() { if (refInput) refInput.focus(); }, 100);
+
+            verifyBtn.addEventListener('click', function() {
+                var code = refInput.value.trim().toUpperCase();
+                if (code.length < 3) {
+                    verifyMsg.textContent = 'Please enter a valid referral code.';
+                    verifyMsg.style.color = '#f87171';
+                    return;
+                }
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Checking...';
+
+                validateReferral(code, function(isValid) {
+                    if (isValid) {
+                        formData.referral = code;
+                        formData.referralValid = true;
+                        formData.referralConfirmed = true;
+                        verifyMsg.textContent = '✅ Code verified! Continuing...';
+                        verifyMsg.style.color = '#6ee7b7';
+                        setTimeout(function() {
+                            goToStep(5);
+                        }, 600);
+                    } else {
+                        verifyMsg.textContent = '❌ Invalid referral code. Please try again.';
+                        verifyMsg.style.color = '#f87171';
+                        verifyBtn.disabled = false;
+                        verifyBtn.textContent = 'Verify';
+                        refInput.value = '';
+                        refInput.focus();
+                    }
+                });
+            });
+
+            // Allow Enter key to trigger verify
+            if (refInput) {
+                refInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        verifyBtn.click();
+                    }
+                });
+            }
+
+            nextReferral.style.display = 'none';
+        }
+
+        // ================================================================
         // STEP VALIDATIONS
         // ================================================================
 
-        // STEP 0: EMAIL
+        // Step 1: Email
         function validateEmail() {
             var val = stepEmail.value.trim();
             if (!val) {
@@ -1655,25 +1798,32 @@
             formData.email = val;
             return true;
         }
+
         stepEmail.addEventListener('input', function() {
             if (this.value.trim()) {
                 emailError.textContent = '';
                 this.classList.remove('error');
             }
         });
+
         nextEmail.addEventListener('click', function() {
             if (validateEmail()) {
                 showOverlay('Please wait...', 'Loading next step');
-                setTimeout(function() { hideOverlay();
-                    goToStep(1); }, 700);
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(1);
+                }, 700);
             }
         });
+
         stepEmail.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault();
-                nextEmail.click(); }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextEmail.click();
+            }
         });
 
-        // STEP 1: PHONE
+        // Step 2: Phone
         function validatePhone() {
             var val = stepPhone.value.trim();
             var countryCode = countrySelect.value;
@@ -1693,30 +1843,39 @@
             formData.phone = fullNumber;
             return true;
         }
+
         stepPhone.addEventListener('input', function() {
             if (this.value.trim()) {
                 phoneError.textContent = '';
                 this.classList.remove('error');
             }
         });
+
         nextPhone.addEventListener('click', function() {
             if (validatePhone()) {
                 showOverlay('Please wait...', 'Loading next step');
-                setTimeout(function() { hideOverlay();
-                    goToStep(2); }, 700);
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(2);
+                }, 700);
             }
         });
+
         stepPhone.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault();
-                nextPhone.click(); }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextPhone.click();
+            }
         });
+
         backPhone.addEventListener('click', function() { goToStep(0); });
 
-        // STEP 2: PASSWORD
+        // Step 3: Security
         function validateSecurity() {
             var pw = stepPassword.value;
             var cf = stepConfirm.value;
             var ok = true;
+
             if (pw.length < 6) {
                 passwordError.textContent = 'Password must be at least 6 characters.';
                 stepPassword.classList.add('error');
@@ -1725,6 +1884,7 @@
                 passwordError.textContent = '';
                 stepPassword.classList.remove('error');
             }
+
             if (!cf) {
                 confirmError.textContent = 'Please confirm your password.';
                 stepConfirm.classList.add('error');
@@ -1737,9 +1897,13 @@
                 confirmError.textContent = '';
                 stepConfirm.classList.remove('error');
             }
-            if (ok) formData.password = pw;
+
+            if (ok) {
+                formData.password = pw;
+            }
             return ok;
         }
+
         stepPassword.addEventListener('input', function() {
             if (this.value.length >= 6) {
                 passwordError.textContent = '';
@@ -1752,24 +1916,32 @@
                 this.classList.remove('error');
             }
         });
+
         nextSecurity.addEventListener('click', function() {
             if (validateSecurity()) {
                 showOverlay('Please wait...', 'Loading next step');
-                setTimeout(function() { hideOverlay();
-                    goToStep(3); }, 700);
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(3);
+                }, 700);
             }
         });
+
         stepConfirm.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault();
-                nextSecurity.click(); }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextSecurity.click();
+            }
         });
+
         backSecurity.addEventListener('click', function() { goToStep(1); });
 
-        // STEP 3: NAME
+        // Step 4: Name
         function validateName() {
             var fn = stepFirstName.value.trim();
             var ln = stepLastName.value.trim();
             var ok = true;
+
             if (!fn) {
                 firstNameError.textContent = 'Please enter your first name.';
                 stepFirstName.classList.add('error');
@@ -1778,6 +1950,7 @@
                 firstNameError.textContent = '';
                 stepFirstName.classList.remove('error');
             }
+
             if (!ln) {
                 lastNameError.textContent = 'Please enter your last name.';
                 stepLastName.classList.add('error');
@@ -1786,12 +1959,14 @@
                 lastNameError.textContent = '';
                 stepLastName.classList.remove('error');
             }
+
             if (ok) {
                 formData.firstName = fn;
                 formData.lastName = ln;
             }
             return ok;
         }
+
         stepFirstName.addEventListener('input', function() {
             if (this.value.trim()) {
                 firstNameError.textContent = '';
@@ -1804,20 +1979,29 @@
                 this.classList.remove('error');
             }
         });
+
         nextName.addEventListener('click', function() {
             if (validateName()) {
                 showOverlay('Please wait...', 'Loading next step');
-                setTimeout(function() { hideOverlay();
-                    goToStep(4); }, 700);
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(4);
+                }, 700);
             }
         });
+
         stepLastName.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault();
-                nextName.click(); }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nextName.click();
+            }
         });
+
         backName.addEventListener('click', function() { goToStep(2); });
 
-        // STEP 4: CAPTCHA
+        // Step 5: Referral — handled via renderReferralStep, no automatic next
+
+        // Step 6: CAPTCHA
         function validateCaptcha() {
             var val = captchaInput.value.trim();
             if (val.length !== 6 || !/^\d{6}$/.test(val)) {
@@ -1836,146 +2020,60 @@
             captchaInput.classList.remove('error');
             return true;
         }
+
         captchaInput.addEventListener('input', function() {
             if (this.value.length === 6) {
                 captchaError.textContent = '';
                 this.classList.remove('error');
             }
         });
+
         nextCaptcha.addEventListener('click', function() {
             if (validateCaptcha()) {
                 showOverlay('Please wait...', 'Loading next step');
-                setTimeout(function() { hideOverlay();
-                    goToStep(5); }, 700);
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(6);
+                }, 700);
             }
         });
+
         captchaInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault();
-                nextCaptcha.click(); }
-        });
-        backCaptcha.addEventListener('click', function() { goToStep(3); });
-
-        // STEP 5: AGE
-        function validateAge() {
-            if (!ageCheck.checked) {
-                ageError.textContent = 'You must confirm you are 18+ to continue.';
-                return false;
-            }
-            ageError.textContent = '';
-            return true;
-        }
-        ageCheck.addEventListener('change', function() {
-            if (this.checked) ageError.textContent = '';
-        });
-        nextAge.addEventListener('click', function() {
-            if (validateAge()) {
-                showOverlay('Please wait...', 'Loading next step');
-                setTimeout(function() { hideOverlay();
-                    goToStep(6); }, 700);
-            }
-        });
-        ageCheck.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault();
-                this.checked = !this.checked;
-                nextAge.click(); }
-        });
-        backAge.addEventListener('click', function() { goToStep(4); });
-
-        // ================================================================
-        // REFERRAL STEP — Manual verification
-        // ================================================================
-        refFinalVerify.addEventListener('click', function() {
-            var code = refFinalInput.value.trim().toUpperCase();
-            if (code.length < 3) {
-                refFinalStatus.textContent = 'Please enter a valid referral code.';
-                refFinalStatus.className = 'ref-status invalid';
-                return;
-            }
-            // If we have a valid referral already, and user is typing, they might want to change
-            // So we allow re-verification.
-            refFinalVerify.disabled = true;
-            refFinalVerify.textContent = 'Checking...';
-            refFinalStatus.textContent = 'Checking referral...';
-            refFinalStatus.className = 'ref-status checking';
-            refConfirmed.classList.remove('show');
-
-            validateReferral(code, function(isValid) {
-                if (isValid) {
-                    formData.referral = code;
-                    formData.referralValid = true;
-                    formData.referralConfirmed = true;
-                    formData.pendingReferral = false;
-                    refFinalStatus.textContent = '✓ Referral verified!';
-                    refFinalStatus.className = 'ref-status valid';
-                    refConfirmed.classList.add('show');
-                    refConfirmedCode.textContent = code;
-                    refFinalInput.disabled = true;
-                    refFinalVerify.disabled = true;
-                    completeReg.disabled = false;
-                    showNoReferralMessage(false);
-                    showToast('✅ Referral code verified!', false);
-                } else {
-                    refFinalStatus.textContent = '❌ Invalid referral code. Please try again.';
-                    refFinalStatus.className = 'ref-status invalid';
-                    refFinalVerify.disabled = false;
-                    refFinalVerify.textContent = 'Verify';
-                    refFinalInput.value = '';
-                    refFinalInput.focus();
-                    formData.referral = '';
-                    formData.referralValid = false;
-                    formData.referralConfirmed = false;
-                    formData.pendingReferral = false;
-                    completeReg.disabled = true;
-                    showNoReferralMessage(true);
-                }
-            });
-        });
-
-        refFinalInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                if (!this.disabled) refFinalVerify.click();
+                nextCaptcha.click();
             }
         });
 
-        refFinalInput.addEventListener('input', function() {
-            this.value = this.value.toUpperCase();
-            // If the user types, we reset any previous confirmation and show the "no referral" message
-            if (formData.referralConfirmed) {
-                formData.referralConfirmed = false;
-                formData.referralValid = false;
-                formData.pendingReferral = false;
-                refConfirmed.classList.remove('show');
-                refFinalStatus.textContent = '';
-                refFinalStatus.className = 'ref-status';
-                completeReg.disabled = true;
-                refFinalInput.disabled = false;
-                refFinalVerify.disabled = false;
-                refFinalVerify.textContent = 'Verify';
-                showNoReferralMessage(true);
-            }
-            // If the field is empty, ensure the no referral message is shown
-            if (!this.value.trim()) {
-                showNoReferralMessage(true);
-            } else {
-                // If user types, keep the message visible until verification
-                // We'll keep it as is; the status will update on verify.
-            }
+        backCaptcha.addEventListener('click', function() {
+            goToStep(4); // back to referral
         });
 
-        backReferral.addEventListener('click', function() { goToStep(5); });
+        // Step 7: Age + Complete
+        ageCheck.addEventListener('change', function() {
+            if (this.checked) {
+                ageError.textContent = '';
+            }
+        });
 
         // ================================================================
         // COMPLETE REGISTRATION
         // ================================================================
         completeReg.addEventListener('click', function() {
-            if (!formData.referralConfirmed || !formData.referralValid) {
-                showMessage('error', 'Please verify a valid referral code first.');
+            if (!ageCheck.checked) {
+                ageError.textContent = 'You must confirm you are 18+ to continue.';
                 return;
             }
+            ageError.textContent = '';
+
             if (!formData.email || !formData.phone || !formData.password ||
                 !formData.firstName || !formData.lastName) {
                 showMessage('error', 'Missing required information. Please go back and check.');
+                return;
+            }
+
+            if (!formData.referralConfirmed || !formData.referralValid) {
+                showMessage('error', 'You must confirm a valid referral before completing registration.');
                 return;
             }
 
@@ -1989,15 +2087,6 @@
                     hideOverlay();
                     isSubmitting = false;
                     showMessage('error', 'Referral code is no longer valid. Please go back and check.');
-                    formData.referralConfirmed = false;
-                    formData.referralValid = false;
-                    formData.pendingReferral = false;
-                    refConfirmed.classList.remove('show');
-                    refFinalInput.disabled = false;
-                    refFinalVerify.disabled = false;
-                    refFinalVerify.textContent = 'Verify';
-                    completeReg.disabled = true;
-                    showNoReferralMessage(true);
                     return;
                 }
 
@@ -2006,6 +2095,7 @@
                         var user = userCredential.user;
                         var uid = user.uid;
                         var genRef = Math.random().toString(36).substring(2, 10).toUpperCase();
+
                         return db.collection('users').doc(uid).set({
                             fullName: formData.firstName + ' ' + formData.lastName,
                             firstName: formData.firstName,
@@ -2040,7 +2130,9 @@
                         isSubmitting = false;
                         showMessage('success', 'Registration successful! You received 15 ZMW welcome bonus.');
                         showToast('✅ Welcome ' + formData.firstName + '!', false);
-                        setTimeout(function() { window.location.href = 'dashboard.html'; }, 1800);
+                        setTimeout(function() {
+                            window.location.href = 'dashboard.html';
+                        }, 1800);
                     })
                     .catch(function(err) {
                         hideOverlay();
@@ -2062,14 +2154,28 @@
             });
         });
 
+        backAge.addEventListener('click', function() { goToStep(5); });
+
+        // ================================================================
+        // KEYBOARD: Enter on age checkbox
+        // ================================================================
+        ageCheck.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.checked = !this.checked;
+                completeReg.click();
+            }
+        });
+
         // ================================================================
         // AUTO-FOCUS first field
         // ================================================================
         setTimeout(function() { stepEmail.focus(); }, 500);
 
         console.log('✅ Sajvera Capital · Wizard Registration (15 ZMW bonus)');
-        console.log('🔗 Referral from URL is auto-verified and saved. If none, user must enter manually.');
-        console.log('📊 Progress bar only — no numbered dots.');
+        console.log('🔗 Referral is mandatory — no referral, no account.');
+        console.log('📋 Step numbers and labels removed.');
     </script>
+
 </body>
 </html>
