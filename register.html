@@ -1074,7 +1074,7 @@
                     <div class="fill" id="progressFill" style="width: 0%;"></div>
                 </div>
 
-                <!-- 9 steps now -->
+                <!-- 9 steps -->
                 <div class="progress-step active" data-step="0">
                     <div class="dot"><span class="num">1</span><span class="check">✓</span></div>
                 </div>
@@ -1153,7 +1153,7 @@
                     </div>
                 </div>
 
-                <!-- STEP 2: EMAIL (was 0) -->
+                <!-- STEP 2: EMAIL -->
                 <div class="step-content" data-step="2" style="display:none;">
                     <div class="step-header">
                         <h2>Enter your <span class="accent">email</span></h2>
@@ -1248,7 +1248,7 @@
                     </div>
                 </div>
 
-                <!-- STEP 6: REFERRAL (mandatory) -->
+                <!-- STEP 6: REFERRAL (mandatory — cannot be skipped) -->
                 <div class="step-content" data-step="6" style="display:none;">
                     <div class="step-header">
                         <h2><span class="accent">Referral</span> required</h2>
@@ -1424,7 +1424,7 @@
         // STATE
         // ================================================================
         var currentStep = 0;
-        var totalSteps = 9; // updated
+        var totalSteps = 9;
         var formData = {
             country: '',
             currency: '',
@@ -1743,12 +1743,13 @@
         }
 
         // ================================================================
-        // RENDER REFERRAL STEP (mandatory)
+        // RENDER REFERRAL STEP (mandatory — cannot be skipped)
         // ================================================================
         function renderReferralStep() {
             var container = referralContainer;
             var ref = formData.referral;
 
+            // If a referral code is already present and validated, show confirmation
             if (ref && formData.referralValid) {
                 container.innerHTML = `
                     <div class="referral-confirm">
@@ -1773,6 +1774,7 @@
                 }
                 if (noBtn) {
                     noBtn.addEventListener('click', function() {
+                        // Clear referral and reset to input mode
                         formData.referral = '';
                         formData.referralValid = false;
                         formData.referralConfirmed = false;
@@ -1783,6 +1785,7 @@
                 return;
             }
 
+            // No valid referral — show input field and verify button
             container.innerHTML = `
                 <div class="referral-confirm">
                     <div class="ref-label">Enter your referral code</div>
@@ -2098,12 +2101,13 @@
             }
         });
 
+        // FIX: Always go to referral step (step 6) — no skips
         nextName.addEventListener('click', function() {
             if (validateName()) {
                 showOverlay('Please wait...', 'Loading next step');
                 setTimeout(function() {
                     hideOverlay();
-                    goToStep(6);
+                    goToStep(6); // Always go to referral
                 }, 700);
             }
         });
@@ -2118,6 +2122,7 @@
         backName.addEventListener('click', function() { goToStep(4); });
 
         // Step 6: Referral — handled via renderReferralStep
+        // FIX: Back from referral goes to step 5 (name)
         backReferral.addEventListener('click', function() { goToStep(5); });
 
         // Step 7: CAPTCHA
@@ -2164,6 +2169,7 @@
             }
         });
 
+        // FIX: Back from captcha goes to referral (step 6)
         backCaptcha.addEventListener('click', function() {
             goToStep(6);
         });
@@ -2295,7 +2301,7 @@
         setTimeout(function() { stepCountry.focus(); }, 500);
 
         console.log('✅ Sajvera Capital · Wizard Registration (15 ZMW bonus)');
-        console.log('🔗 Referral is mandatory — no referral, no account.');
+        console.log('🔗 Referral is mandatory — no referral, no account. No skips.');
         console.log('🌍 Added Country and Currency steps at the start.');
         console.log('📋 Step numbers and labels removed.');
     </script>
