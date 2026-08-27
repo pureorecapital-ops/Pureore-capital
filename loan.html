@@ -6,7 +6,7 @@
     <title>Sajvera Capital – Loans</title>
 
     <!-- ============================================================
-         FIREBASE SDKs – Load these in the <head>
+         FIREBASE SDKs
          ============================================================ -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -14,7 +14,7 @@
 
     <style>
         /* ──────────────────────────────────────────────
-           RESET & BASE (same as before)
+           RESET & BASE (same as before, unchanged)
         ────────────────────────────────────────────── */
         * {
             margin: 0;
@@ -201,6 +201,7 @@
             opacity: 0.6;
         }
 
+        /* Sajvera Flex – deep navy + gold */
         .branch-flex::before {
             background: linear-gradient(90deg, #1e3a5f, #facc15);
         }
@@ -213,6 +214,7 @@
             border: 1px solid rgba(250, 204, 21, 0.06);
         }
 
+        /* PureOre Support – charcoal + silver/blue */
         .branch-support::before {
             background: linear-gradient(90deg, #2d3748, #60a5fa);
         }
@@ -225,6 +227,7 @@
             border: 1px solid rgba(96, 165, 250, 0.06);
         }
 
+        /* GoldMine Advance – dark + gold/amber */
         .branch-goldmine::before {
             background: linear-gradient(90deg, #1a1a2e, #f59e0b);
         }
@@ -589,6 +592,7 @@
 
         <!-- Branch grid -->
         <div class="branch-grid" id="branchGrid">
+
             <!-- Sajvera Flex -->
             <div class="branch-card branch-flex" data-branch="sajvera_flex">
                 <div class="branch-top">
@@ -605,10 +609,10 @@
                     <span class="label">Progression</span>
                     <span class="value">+K200 per level</span>
                 </div>
-                <div class="branch-amount"><span class="currency">K</span><span id="amount-flex">—</span></div>
+                <div class="branch-amount"><span class="currency">K</span><span id="amount-sajvera_flex">—</span></div>
                 <div class="branch-action">
-                    <span class="branch-status unknown" id="status-flex">Check</span>
-                    <button class="btn-select" id="select-flex" data-branch="sajvera_flex">Select</button>
+                    <span class="branch-status unknown" id="status-sajvera_flex">Check</span>
+                    <button class="btn-select" id="select-sajvera_flex" data-branch="sajvera_flex">Select</button>
                 </div>
             </div>
 
@@ -628,10 +632,10 @@
                     <span class="label">Fee</span>
                     <span class="value">20% once</span>
                 </div>
-                <div class="branch-amount"><span class="currency">K</span><span id="amount-support">—</span></div>
+                <div class="branch-amount"><span class="currency">K</span><span id="amount-pureore_support">—</span></div>
                 <div class="branch-action">
-                    <span class="branch-status unknown" id="status-support">Check</span>
-                    <button class="btn-select" id="select-support" data-branch="pureore_support">Select</button>
+                    <span class="branch-status unknown" id="status-pureore_support">Check</span>
+                    <button class="btn-select" id="select-pureore_support" data-branch="pureore_support">Select</button>
                 </div>
             </div>
 
@@ -651,12 +655,13 @@
                     <span class="label">Progression</span>
                     <span class="value">+K500 per level</span>
                 </div>
-                <div class="branch-amount"><span class="currency">K</span><span id="amount-goldmine">—</span></div>
+                <div class="branch-amount"><span class="currency">K</span><span id="amount-goldmine_advance">—</span></div>
                 <div class="branch-action">
-                    <span class="branch-status unknown" id="status-goldmine">Check</span>
-                    <button class="btn-select" id="select-goldmine" data-branch="goldmine_advance">Select</button>
+                    <span class="branch-status unknown" id="status-goldmine_advance">Check</span>
+                    <button class="btn-select" id="select-goldmine_advance" data-branch="goldmine_advance">Select</button>
                 </div>
             </div>
+
         </div>
 
         <!-- Result area (hidden until branch selection) -->
@@ -665,7 +670,7 @@
     </div>
 
     <!-- ================================================================
-    JAVASCRIPT – FIREBASE INTEGRATION (FIXED COLLECTION NAME)
+    JAVASCRIPT – FIREBASE INTEGRATION (FIXED ID MAPPING)
     ================================================================ -->
     <script>
         // ================================================================
@@ -906,7 +911,7 @@
         var branchEligibility = {};
 
         // ================================================================
-        // FETCH USER DATA FROM FIRESTORE (FIXED: using 'loans' collection)
+        // FETCH USER DATA FROM FIRESTORE (using 'loans' collection)
         // ================================================================
         async function fetchUserData(uid) {
             var userDoc = await db.collection('users').doc(uid).get();
@@ -915,9 +920,7 @@
             }
             var data = userDoc.data();
 
-            // ------------------------------------------------------------
-            // LOAN HISTORY – now from the 'loans' collection
-            // ------------------------------------------------------------
+            // Fetch loan history from 'loans' collection
             var loanHistorySnapshot = await db.collection('loans')
                 .where('userId', '==', uid)
                 .get();
@@ -925,7 +928,6 @@
             var loanHistory = [];
             var activeLoan = null;
             var pendingLoan = null;
-            var completedLoans = [];
 
             loanHistorySnapshot.forEach(function(doc) {
                 var loan = doc.data();
@@ -937,12 +939,11 @@
                 if (loan.status === 'pending') {
                     pendingLoan = loan;
                 }
-                if (loan.status === 'completed') {
-                    completedLoans.push(loan);
-                }
             });
 
-            // We only need completed loans for progression
+            // We only need completed loans for history
+            var completedLoans = loanHistory.filter(function(l) { return l.status === 'completed'; });
+
             var result = {
                 id: uid,
                 fullName: data.fullName || '',
@@ -953,7 +954,7 @@
                 supportInvestments: data.supportInvestments || [],
                 goldmineInvestment: data.goldmineInvestment || { amount: 0 },
                 goldmineInvited: data.goldmineInvited || 0,
-                loanHistory: completedLoans, // only completed loans count for progression
+                loanHistory: completedLoans,
                 activeLoan: activeLoan,
                 pendingLoan: pendingLoan
             };
@@ -970,10 +971,15 @@
                 var branch = BRANCHES[bid];
                 var result = branch.check(userData);
                 branchEligibility[bid] = result;
-                // Update UI
+                // Update UI using the correct element IDs
                 var statusEl = document.getElementById('status-' + bid);
                 var amountEl = document.getElementById('amount-' + bid);
                 var selectBtn = document.getElementById('select-' + bid);
+
+                if (!statusEl || !amountEl || !selectBtn) {
+                    console.warn('Element not found for branch:', bid);
+                    return;
+                }
 
                 if (result.eligible) {
                     var eligibleAmount = branch.getAmount(userData);
@@ -1081,7 +1087,6 @@
         // INITIALIZATION
         // ================================================================
         function init() {
-            // Show loading
             loadingOverlay.classList.remove('hidden');
             loadingTitle.textContent = 'Checking your loan eligibility...';
             loadingSub.textContent = 'Please wait while we securely check your account.';
@@ -1101,7 +1106,7 @@
                 console.error('Error fetching user data:', error);
                 loadingOverlay.classList.add('hidden');
                 mainContent.style.display = 'block';
-                // Show error message in the branch grid area
+                // Show error message
                 var errorHtml = `
                     <div style="text-align:center;padding:20px;background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.06);border-radius:20px;margin-top:10px;">
                         <div style="font-size:1.2rem;font-weight:700;color:#f87171;">Unable to load your data</div>
@@ -1137,11 +1142,10 @@
         });
 
         // ================================================================
-        // START – wait for auth
+        // START
         // ================================================================
-        console.log('✅ loan.html loaded with Firebase integration (fixed collection)');
+        console.log('✅ loan.html loaded with Firebase integration (fixed ID mapping)');
         console.log('ℹ️ User data fetched from Firestore using `loans` collection.');
-        console.log('ℹ️ Eligibility and amount are calculated from real data.');
     </script>
 </body>
 </html>
