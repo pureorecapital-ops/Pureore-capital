@@ -188,7 +188,6 @@
             flex-direction: column;
             align-items: center;
             gap: 0;
-            /* no gap needed since labels are hidden */
             flex: 1;
             position: relative;
             cursor: default;
@@ -352,6 +351,21 @@
             color: #f87171;
             min-height: 1.1rem;
             padding-left: 4px;
+        }
+
+        /* ---- SELECT DROPDOWN ---- */
+        .field-group select.field-input {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(247,244,233,0.15)'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+
+        .field-group select.field-input option {
+            background: #071C12;
+            color: #F7F4E9;
         }
 
         /* ---- PHONE WITH COUNTRY CODE DROPDOWN ---- */
@@ -1060,9 +1074,9 @@
                     <div class="fill" id="progressFill" style="width: 0%;"></div>
                 </div>
 
+                <!-- 9 steps now -->
                 <div class="progress-step active" data-step="0">
                     <div class="dot"><span class="num">1</span><span class="check">✓</span></div>
-                    <!-- label removed -->
                 </div>
                 <div class="progress-step" data-step="1">
                     <div class="dot"><span class="num">2</span><span class="check">✓</span></div>
@@ -1082,13 +1096,65 @@
                 <div class="progress-step" data-step="6">
                     <div class="dot"><span class="num">7</span><span class="check">✓</span></div>
                 </div>
+                <div class="progress-step" data-step="7">
+                    <div class="dot"><span class="num">8</span><span class="check">✓</span></div>
+                </div>
+                <div class="progress-step" data-step="8">
+                    <div class="dot"><span class="num">9</span><span class="check">✓</span></div>
+                </div>
             </div>
 
             <!-- ===== STEP CONTENT ===== -->
             <div id="stepContainer">
 
-                <!-- STEP 1: EMAIL -->
+                <!-- STEP 0: COUNTRY -->
                 <div class="step-content" data-step="0">
+                    <div class="step-header">
+                        <h2>Select your <span class="accent">country</span></h2>
+                        <p>Choose the country you are currently located in.</p>
+                    </div>
+                    <div class="field-group">
+                        <label for="stepCountry">Country</label>
+                        <select id="stepCountry" class="field-input">
+                            <option value="Zambia">Zambia</option>
+                            <option value="Congo" selected>Congo</option>
+                            <option value="Tanzania">Tanzania</option>
+                            <option value="Ghana">Ghana</option>
+                            <option value="Zimbabwe">Zimbabwe</option>
+                        </select>
+                        <div class="field-error" id="countryError"></div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn-back" disabled>Back</button>
+                        <button class="btn-next" id="nextCountry">Next →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 1: CURRENCY -->
+                <div class="step-content" data-step="1" style="display:none;">
+                    <div class="step-header">
+                        <h2>Select your <span class="accent">currency</span></h2>
+                        <p>Choose the currency you use in your country.</p>
+                    </div>
+                    <div class="field-group">
+                        <label for="stepCurrency">Currency</label>
+                        <select id="stepCurrency" class="field-input">
+                            <option value="K">Zambian Kwacha (K)</option>
+                            <option value="FC">Congolese Franc (FC)</option>
+                            <option value="TSh">Tanzanian Shilling (TSh)</option>
+                            <option value="GH₵">Ghanaian Cedi (GH₵)</option>
+                            <option value="Z$">Zimbabwean Dollar (Z$)</option>
+                        </select>
+                        <div class="field-error" id="currencyError"></div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn-back" id="backCurrency">← Back</button>
+                        <button class="btn-next" id="nextCurrency">Next →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: EMAIL (was 0) -->
+                <div class="step-content" data-step="2" style="display:none;">
                     <div class="step-header">
                         <h2>Enter your <span class="accent">email</span></h2>
                         <p>We'll use this to sign you in and send updates.</p>
@@ -1099,13 +1165,13 @@
                         <div class="field-error" id="emailError"></div>
                     </div>
                     <div class="step-actions">
-                        <button class="btn-back" disabled>Back</button>
+                        <button class="btn-back" id="backEmail">← Back</button>
                         <button class="btn-next" id="nextEmail">Next →</button>
                     </div>
                 </div>
 
-                <!-- STEP 2: PHONE -->
-                <div class="step-content" data-step="1" style="display:none;">
+                <!-- STEP 3: PHONE -->
+                <div class="step-content" data-step="3" style="display:none;">
                     <div class="step-header">
                         <h2>Enter your <span class="accent">phone number</span></h2>
                         <p>We'll use this for account security and support.</p>
@@ -1128,8 +1194,8 @@
                     </div>
                 </div>
 
-                <!-- STEP 3: SECURITY -->
-                <div class="step-content" data-step="2" style="display:none;">
+                <!-- STEP 4: SECURITY -->
+                <div class="step-content" data-step="4" style="display:none;">
                     <div class="step-header">
                         <h2>Choose your <span class="accent">password</span></h2>
                         <p>Create a strong password (min 6 characters).</p>
@@ -1160,8 +1226,8 @@
                     </div>
                 </div>
 
-                <!-- STEP 4: FULL NAME -->
-                <div class="step-content" data-step="3" style="display:none;">
+                <!-- STEP 5: FULL NAME -->
+                <div class="step-content" data-step="5" style="display:none;">
                     <div class="step-header">
                         <h2>What's your <span class="accent">full name</span>?</h2>
                         <p>This helps us personalise your experience.</p>
@@ -1182,8 +1248,8 @@
                     </div>
                 </div>
 
-                <!-- STEP 5: REFERRAL (mandatory) -->
-                <div class="step-content" data-step="4" style="display:none;">
+                <!-- STEP 6: REFERRAL (mandatory) -->
+                <div class="step-content" data-step="6" style="display:none;">
                     <div class="step-header">
                         <h2><span class="accent">Referral</span> required</h2>
                         <p>You need a valid referral code to register.</p>
@@ -1197,8 +1263,8 @@
                     </div>
                 </div>
 
-                <!-- STEP 6: HUMAN VERIFICATION -->
-                <div class="step-content" data-step="5" style="display:none;">
+                <!-- STEP 7: HUMAN VERIFICATION -->
+                <div class="step-content" data-step="7" style="display:none;">
                     <div class="step-header">
                         <h2>Verify you're <span class="accent">human</span></h2>
                         <p>Enter the 6 numbers shown in the box.</p>
@@ -1220,8 +1286,8 @@
                     </div>
                 </div>
 
-                <!-- STEP 7: AGE CONFIRMATION -->
-                <div class="step-content" data-step="6" style="display:none;">
+                <!-- STEP 8: AGE CONFIRMATION -->
+                <div class="step-content" data-step="8" style="display:none;">
                     <div class="step-header">
                         <h2>Confirm your <span class="accent">eligibility</span></h2>
                         <p>One last step to complete your registration.</p>
@@ -1303,6 +1369,8 @@
         var messageBox = document.getElementById('messageBox');
 
         // Step fields
+        var stepCountry = document.getElementById('stepCountry');
+        var stepCurrency = document.getElementById('stepCurrency');
         var stepEmail = document.getElementById('stepEmail');
         var stepPhone = document.getElementById('stepPhone');
         var countrySelect = document.getElementById('countrySelect');
@@ -1316,6 +1384,8 @@
         var ageCheck = document.getElementById('ageCheck');
 
         // Error containers
+        var countryError = document.getElementById('countryError');
+        var currencyError = document.getElementById('currencyError');
         var emailError = document.getElementById('emailError');
         var phoneError = document.getElementById('phoneError');
         var passwordError = document.getElementById('passwordError');
@@ -1325,6 +1395,8 @@
         var ageError = document.getElementById('ageError');
 
         // Buttons
+        var nextCountry = document.getElementById('nextCountry');
+        var nextCurrency = document.getElementById('nextCurrency');
         var nextEmail = document.getElementById('nextEmail');
         var nextPhone = document.getElementById('nextPhone');
         var nextSecurity = document.getElementById('nextSecurity');
@@ -1333,6 +1405,8 @@
         var nextCaptcha = document.getElementById('nextCaptcha');
         var completeReg = document.getElementById('completeRegistration');
 
+        var backCurrency = document.getElementById('backCurrency');
+        var backEmail = document.getElementById('backEmail');
         var backPhone = document.getElementById('backPhone');
         var backSecurity = document.getElementById('backSecurity');
         var backName = document.getElementById('backName');
@@ -1350,8 +1424,10 @@
         // STATE
         // ================================================================
         var currentStep = 0;
-        var totalSteps = 7;
+        var totalSteps = 9; // updated
         var formData = {
+            country: '',
+            currency: '',
             email: '',
             phone: '',
             password: '',
@@ -1370,7 +1446,7 @@
         ];
 
         // ================================================================
-        // COUNTRY CODES
+        // COUNTRY CODES for phone
         // ================================================================
         var countryCodes = [
             { code: '+93', name: 'Afghanistan' }, { code: '+355', name: 'Albania' },
@@ -1467,7 +1543,7 @@
         ];
 
         // ================================================================
-        // POPULATE COUNTRY SELECT
+        // POPULATE COUNTRY SELECT for phone
         // ================================================================
         function populateCountries() {
             countryCodes.forEach(function(c) {
@@ -1585,11 +1661,11 @@
                 wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
-            if (step === 4) {
+            if (step === 6) {
                 renderReferralStep();
             }
 
-            if (step === 6) {
+            if (step === 8) {
                 ageCheck.focus();
             }
 
@@ -1645,7 +1721,6 @@
         // ================================================================
         function formatPhone(phone, countryCode) {
             var clean = phone.replace(/\D/g, '');
-            // Remove leading zeros if any
             if (clean.startsWith('0')) {
                 clean = clean.substring(1);
             }
@@ -1674,7 +1749,6 @@
             var container = referralContainer;
             var ref = formData.referral;
 
-            // If a referral code is already present and validated, show confirmation
             if (ref && formData.referralValid) {
                 container.innerHTML = `
                     <div class="referral-confirm">
@@ -1694,12 +1768,11 @@
                 if (yesBtn) {
                     yesBtn.addEventListener('click', function() {
                         formData.referralConfirmed = true;
-                        goToStep(5);
+                        goToStep(7);
                     });
                 }
                 if (noBtn) {
                     noBtn.addEventListener('click', function() {
-                        // Clear referral and reset to input mode
                         formData.referral = '';
                         formData.referralValid = false;
                         formData.referralConfirmed = false;
@@ -1710,7 +1783,6 @@
                 return;
             }
 
-            // No valid referral — show input field and verify button
             container.innerHTML = `
                 <div class="referral-confirm">
                     <div class="ref-label">Enter your referral code</div>
@@ -1729,7 +1801,6 @@
             var verifyBtn = document.getElementById('refVerifyBtn');
             var verifyMsg = document.getElementById('refVerifyMessage');
 
-            // Focus the input
             setTimeout(function() { if (refInput) refInput.focus(); }, 100);
 
             verifyBtn.addEventListener('click', function() {
@@ -1750,7 +1821,7 @@
                         verifyMsg.textContent = '✅ Code verified! Continuing...';
                         verifyMsg.style.color = '#6ee7b7';
                         setTimeout(function() {
-                            goToStep(5);
+                            goToStep(7);
                         }, 600);
                     } else {
                         verifyMsg.textContent = '❌ Invalid referral code. Please try again.';
@@ -1763,7 +1834,6 @@
                 });
             });
 
-            // Allow Enter key to trigger verify
             if (refInput) {
                 refInput.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
@@ -1780,7 +1850,53 @@
         // STEP VALIDATIONS
         // ================================================================
 
-        // Step 1: Email
+        // Step 0: Country (always selected)
+        function validateCountry() {
+            var val = stepCountry.value;
+            if (!val) {
+                countryError.textContent = 'Please select your country.';
+                return false;
+            }
+            countryError.textContent = '';
+            formData.country = val;
+            return true;
+        }
+
+        nextCountry.addEventListener('click', function() {
+            if (validateCountry()) {
+                showOverlay('Please wait...', 'Loading next step');
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(1);
+                }, 700);
+            }
+        });
+
+        // Step 1: Currency
+        function validateCurrency() {
+            var val = stepCurrency.value;
+            if (!val) {
+                currencyError.textContent = 'Please select your currency.';
+                return false;
+            }
+            currencyError.textContent = '';
+            formData.currency = val;
+            return true;
+        }
+
+        nextCurrency.addEventListener('click', function() {
+            if (validateCurrency()) {
+                showOverlay('Please wait...', 'Loading next step');
+                setTimeout(function() {
+                    hideOverlay();
+                    goToStep(2);
+                }, 700);
+            }
+        });
+
+        backCurrency.addEventListener('click', function() { goToStep(0); });
+
+        // Step 2: Email
         function validateEmail() {
             var val = stepEmail.value.trim();
             if (!val) {
@@ -1811,7 +1927,7 @@
                 showOverlay('Please wait...', 'Loading next step');
                 setTimeout(function() {
                     hideOverlay();
-                    goToStep(1);
+                    goToStep(3);
                 }, 700);
             }
         });
@@ -1823,7 +1939,9 @@
             }
         });
 
-        // Step 2: Phone
+        backEmail.addEventListener('click', function() { goToStep(1); });
+
+        // Step 3: Phone
         function validatePhone() {
             var val = stepPhone.value.trim();
             var countryCode = countrySelect.value;
@@ -1856,7 +1974,7 @@
                 showOverlay('Please wait...', 'Loading next step');
                 setTimeout(function() {
                     hideOverlay();
-                    goToStep(2);
+                    goToStep(4);
                 }, 700);
             }
         });
@@ -1868,9 +1986,9 @@
             }
         });
 
-        backPhone.addEventListener('click', function() { goToStep(0); });
+        backPhone.addEventListener('click', function() { goToStep(2); });
 
-        // Step 3: Security
+        // Step 4: Security
         function validateSecurity() {
             var pw = stepPassword.value;
             var cf = stepConfirm.value;
@@ -1922,7 +2040,7 @@
                 showOverlay('Please wait...', 'Loading next step');
                 setTimeout(function() {
                     hideOverlay();
-                    goToStep(3);
+                    goToStep(5);
                 }, 700);
             }
         });
@@ -1934,9 +2052,9 @@
             }
         });
 
-        backSecurity.addEventListener('click', function() { goToStep(1); });
+        backSecurity.addEventListener('click', function() { goToStep(3); });
 
-        // Step 4: Name
+        // Step 5: Name
         function validateName() {
             var fn = stepFirstName.value.trim();
             var ln = stepLastName.value.trim();
@@ -1985,7 +2103,7 @@
                 showOverlay('Please wait...', 'Loading next step');
                 setTimeout(function() {
                     hideOverlay();
-                    goToStep(4);
+                    goToStep(6);
                 }, 700);
             }
         });
@@ -1997,11 +2115,12 @@
             }
         });
 
-        backName.addEventListener('click', function() { goToStep(2); });
+        backName.addEventListener('click', function() { goToStep(4); });
 
-        // Step 5: Referral — handled via renderReferralStep, no automatic next
+        // Step 6: Referral — handled via renderReferralStep
+        backReferral.addEventListener('click', function() { goToStep(5); });
 
-        // Step 6: CAPTCHA
+        // Step 7: CAPTCHA
         function validateCaptcha() {
             var val = captchaInput.value.trim();
             if (val.length !== 6 || !/^\d{6}$/.test(val)) {
@@ -2033,7 +2152,7 @@
                 showOverlay('Please wait...', 'Loading next step');
                 setTimeout(function() {
                     hideOverlay();
-                    goToStep(6);
+                    goToStep(8);
                 }, 700);
             }
         });
@@ -2046,10 +2165,10 @@
         });
 
         backCaptcha.addEventListener('click', function() {
-            goToStep(4); // back to referral
+            goToStep(6);
         });
 
-        // Step 7: Age + Complete
+        // Step 8: Age + Complete
         ageCheck.addEventListener('change', function() {
             if (this.checked) {
                 ageError.textContent = '';
@@ -2067,7 +2186,8 @@
             ageError.textContent = '';
 
             if (!formData.email || !formData.phone || !formData.password ||
-                !formData.firstName || !formData.lastName) {
+                !formData.firstName || !formData.lastName ||
+                !formData.country || !formData.currency) {
                 showMessage('error', 'Missing required information. Please go back and check.');
                 return;
             }
@@ -2102,6 +2222,8 @@
                             lastName: formData.lastName,
                             email: formData.email,
                             phone: formData.phone,
+                            country: formData.country,
+                            currency: formData.currency,
                             balance: 15,
                             walletBalance: 15,
                             depositBalance: 0,
@@ -2154,7 +2276,7 @@
             });
         });
 
-        backAge.addEventListener('click', function() { goToStep(5); });
+        backAge.addEventListener('click', function() { goToStep(7); });
 
         // ================================================================
         // KEYBOARD: Enter on age checkbox
@@ -2170,10 +2292,11 @@
         // ================================================================
         // AUTO-FOCUS first field
         // ================================================================
-        setTimeout(function() { stepEmail.focus(); }, 500);
+        setTimeout(function() { stepCountry.focus(); }, 500);
 
         console.log('✅ Sajvera Capital · Wizard Registration (15 ZMW bonus)');
         console.log('🔗 Referral is mandatory — no referral, no account.');
+        console.log('🌍 Added Country and Currency steps at the start.');
         console.log('📋 Step numbers and labels removed.');
     </script>
 
