@@ -958,7 +958,7 @@
             </div>
         </div>
 
-        <!-- ===== WITHDRAWAL ACTIVITY CARD — replaces balance card ===== -->
+        <!-- ===== WITHDRAWAL ACTIVITY CARD — DYNAMIC FEED ===== -->
         <div class="withdrawal-card" id="withdrawalCard">
             <div class="card-header">
                 <span class="title">
@@ -1249,36 +1249,98 @@
         startSlideshow();
 
         // ================================================================
-        // WITHDRAWAL FEED — Specific demo data
+        // WITHDRAWAL FEED — DYNAMIC DATES & 09:00–17:00 TIMES
         // ================================================================
 
-        // The exact withdrawal data requested
-        var withdrawalData = [
-            { name: 'Chanda Mwape', country: '🇿🇲', amount: 23, date: 'Sep 16', isGold: false },
-            { name: 'Brian Kunda', country: '🇿🇲', amount: 53, date: 'Sep 16', isGold: false },
-            { name: 'Ruth Mulenga', country: '🇿🇲', amount: 110, date: 'Sep 16', isGold: true },
-            { name: 'Kwame Asare', country: '🇬🇭', amount: 200, date: 'Sep 16', isGold: true },
-            { name: 'Peter Sinkamba', country: '🇿🇲', amount: 23, date: 'Sep 16', isGold: false },
-            { name: 'Grace Tembo', country: '🇿🇲', amount: 53, date: 'Sep 16', isGold: false },
-            { name: 'Nana Yeboah', country: '🇬🇭', amount: 200, date: 'Sep 16', isGold: true },
-            { name: 'Mulenga Chisanga', country: '🇿🇲', amount: 110, date: 'Sep 16', isGold: true },
-            { name: 'Abdul Fuseini', country: '🇬🇭', amount: 200, date: 'Sep 16', isGold: true },
-            { name: 'Mwape Banda', country: '🇿🇲', amount: 23, date: 'Sep 16', isGold: false },
-        ];
+        // Sample names per country
+        var namesByCountry = {
+            '🇿🇲': ['Chanda Mwape', 'Brian Kunda', 'Ruth Mulenga', 'Peter Sinkamba', 'Grace Tembo', 'Mulenga Chisanga', 'Mwape Banda', 'Mutale Nkandu', 'Chileshe Bwalya', 'Mundia Njobvu'],
+            '🇿🇼': ['Tendai Moyo', 'Farai Dube', 'Kudzai Ncube', 'Tawanda Zvobgo', 'Rudo Makoni', 'Blessing Chirara', 'Tinashe Muzavazi', 'Shamiso Mhondoro'],
+            '🇨🇩': ['Jean-Pierre Kazadi', 'Mukendi Tshibola', 'Samba Mutombo', 'Kabasele Ngoyi', 'Yvonne Kabila', 'Fiston Mwamba', 'Grace Kabeya'],
+            '🇹🇿': ['Juma Hassan', 'Mwanaisha Mwinyi', 'Saidi Juma', 'Zainab Mussa', 'Hamisi Bakari', 'Khadija Suleiman', 'Rajabu Mushi'],
+            '🇬🇭': ['Kwame Asare', 'Nana Yeboah', 'Abdul Fuseini', 'Ama Adjei', 'Kofi Mensah', 'Esi Tetteh', 'Yaw Ofori']
+        };
 
-        // Double the data for seamless scrolling (duplicate for smooth loop)
-        var feedData = [];
-        for (var i = 0; i < 3; i++) {
-            feedData = feedData.concat(withdrawalData);
+        var countries = ['🇿🇲', '🇿🇼', '🇨🇩', '🇹🇿', '🇬🇭'];
+
+        function getRandomName(flag) {
+            var list = namesByCountry[flag] || ['John Doe'];
+            return list[Math.floor(Math.random() * list.length)];
         }
 
+        function getRandomAmount() {
+            var base = 20 + Math.floor(Math.random() * 260);
+            var isGold = base >= 100;
+            return { amount: base, isGold: isGold };
+        }
+
+        function generateWithdrawalData() {
+            var data = [];
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Number of entries: 20-25
+            var numEntries = 20 + Math.floor(Math.random() * 6);
+
+            for (var i = 0; i < numEntries; i++) {
+                // Distribute dates from today up to 6 days ago
+                var daysAgo = Math.floor(Math.random() * 7); // 0..6
+                var date = new Date(today);
+                date.setDate(date.getDate() - daysAgo);
+
+                // Random time between 09:00 and 17:00 (9 AM – 5 PM)
+                var hour = 9 + Math.floor(Math.random() * 8); // 9..16
+                var minute = Math.floor(Math.random() * 60);
+                var ampm = hour >= 12 ? 'PM' : 'AM';
+                var hour12 = hour % 12 || 12;
+                var timeStr = String(hour12).padStart(2, '0') + ':' + String(minute).padStart(2, '0') + ' ' + ampm;
+
+                var flag = countries[Math.floor(Math.random() * countries.length)];
+                var name = getRandomName(flag);
+                var amountObj = getRandomAmount();
+                var amount = amountObj.amount;
+                var isGold = amountObj.isGold;
+
+                var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                var dateStr = monthNames[date.getMonth()] + ' ' + String(date.getDate()).padStart(2, '0');
+
+                data.push({
+                    name: name,
+                    country: flag,
+                    amount: amount,
+                    date: dateStr,
+                    time: timeStr,
+                    isGold: isGold,
+                    fullDate: date // for sorting
+                });
+            }
+
+            // Sort by date descending (latest first)
+            data.sort(function(a, b) { return b.fullDate - a.fullDate; });
+
+            return data;
+        }
+
+        // ================================================================
+        // RENDER WITHDRAWAL FEED
+        // ================================================================
         function renderWithdrawalItems() {
             if (!withdrawalInner) return;
+
+            // Generate fresh data (will auto-update each day)
+            var feedData = generateWithdrawalData();
+
+            // Duplicate for seamless scrolling (3 times)
+            var extendedData = [];
+            for (var i = 0; i < 3; i++) {
+                extendedData = extendedData.concat(feedData);
+            }
+
             var html = '';
-            for (var i = 0; i < feedData.length; i++) {
-                var item = feedData[i];
+            for (var i = 0; i < extendedData.length; i++) {
+                var item = extendedData[i];
                 var amountClass = item.isGold ? 'gold' : '';
-                // Only show partial phone number (masked)
+                // Phone mask (for realism)
                 var phoneMask = '096' + String(Math.floor(Math.random() * 9000000 + 1000000)) + '0';
                 var displayPhone = phoneMask.substring(0, 6) + 'xxxx' + phoneMask.substring(10);
                 html += '<div class="withdrawal-item">' +
@@ -1286,7 +1348,7 @@
                     '<span class="flag">' + item.country + '</span>' +
                     '<div class="info">' +
                     '<span class="name">' + item.name + '</span>' +
-                    '<span class="date">' + item.date + ' • ' + displayPhone + '</span>' +
+                    '<span class="date">' + item.date + ' • ' + item.time + ' • ' + displayPhone + '</span>' +
                     '</div>' +
                     '</div>' +
                     '<div class="right">' +
@@ -1319,6 +1381,11 @@
                     scrollInner.classList.remove('paused');
                 });
             }
+
+            // Refresh the feed every 60 seconds to update timestamps (and dates at midnight)
+            setInterval(function() {
+                renderWithdrawalItems();
+            }, 60000);
         }
 
         // ================================================================
@@ -1341,8 +1408,8 @@
         });
 
         console.log('✅ Sajvera Capital · Dashboard (blue accent)');
-        console.log('🔵 Feature cards now have blue blur glass style');
-        console.log('📊 Withdrawal activity feed with specific demo data');
+        console.log('📊 Withdrawal feed: dynamic dates relative to today, times 09:00–17:00');
+        console.log('🔄 Feed auto-updates every 60 seconds');
     </script>
 
 </body>
