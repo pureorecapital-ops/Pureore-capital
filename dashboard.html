@@ -14,16 +14,19 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        /* ===== CSS – same as before (paste your existing CSS here) ===== */
-        /* For brevity, I've included the full CSS from the previous version, but you can reuse yours. */
+        /* ================================================================
+           RESET & BASE
+        ================================================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         html {
             overscroll-behavior: none;
         }
+
         body {
             font-family: 'Inter', -apple-system, system-ui, sans-serif;
             background: #071C12;
@@ -33,6 +36,7 @@
             overflow-x: hidden;
             overscroll-behavior: none;
         }
+
         .dashboard-bg {
             position: fixed;
             top: 0;
@@ -42,6 +46,7 @@
             z-index: 0;
             background: radial-gradient(ellipse at 20% 50%, #0f2e1a 0%, #071C12 70%);
         }
+
         .dashboard-bg::after {
             content: '';
             position: absolute;
@@ -52,6 +57,10 @@
             background: radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.02) 0%, transparent 60%);
             pointer-events: none;
         }
+
+        /* ================================================================
+           HEADER — NO LOGOUT BUTTON
+        ================================================================ */
         .header {
             position: fixed;
             top: 0;
@@ -67,12 +76,14 @@
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(59, 130, 246, 0.06);
         }
+
         .header-left {
             display: flex;
             flex-direction: column;
             gap: 0;
             line-height: 1.2;
         }
+
         .logo-text {
             font-size: 1.3rem;
             font-weight: 800;
@@ -80,9 +91,11 @@
             text-decoration: none;
             letter-spacing: -0.4px;
         }
+
         .logo-text .accent {
             color: #3b82f6;
         }
+
         .logo-sub {
             font-size: 0.45rem;
             letter-spacing: 0.5px;
@@ -90,11 +103,13 @@
             color: rgba(247, 244, 233, 0.15);
             text-transform: uppercase;
         }
+
         .header-right {
             display: flex;
             align-items: center;
             gap: 0.6rem;
         }
+
         .header-user {
             display: flex;
             align-items: center;
@@ -104,6 +119,7 @@
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.03);
         }
+
         .header-user .avatar {
             width: 28px;
             height: 28px;
@@ -117,14 +133,20 @@
             color: #F7F4E9;
             flex-shrink: 0;
         }
+
         .header-user .greeting {
             font-size: 0.75rem;
             font-weight: 600;
             color: rgba(247, 244, 233, 0.60);
         }
+
         .header-user .greeting span {
             color: #F7F4E9;
         }
+
+        /* ================================================================
+           MAIN CONTAINER
+        ================================================================ */
         .container {
             position: relative;
             z-index: 1;
@@ -133,6 +155,10 @@
             padding: 4.8rem 1rem 1rem 1rem;
             width: 100%;
         }
+
+        /* ================================================================
+           GREETING
+        ================================================================ */
         .greeting-area {
             margin-bottom: 1.2rem;
             display: flex;
@@ -141,19 +167,26 @@
             flex-wrap: wrap;
             gap: 0.3rem;
         }
+
         .greeting-text {
             font-size: 1.3rem;
             font-weight: 700;
             color: #F7F4E9;
             letter-spacing: -0.2px;
         }
+
         .greeting-text span {
             color: #3b82f6;
         }
+
         .greeting-sub {
             font-size: 0.75rem;
             color: rgba(247, 244, 233, 0.20);
         }
+
+        /* ================================================================
+           SCROLLING IMAGE SECTION
+        ================================================================ */
         .hero-slideshow {
             width: 100%;
             border-radius: 20px;
@@ -165,11 +198,13 @@
             border: 1px solid rgba(255, 255, 255, 0.03);
             position: relative;
         }
+
         .hero-slideshow .slides-wrapper {
             position: relative;
             width: 100%;
             height: 100%;
         }
+
         .hero-slideshow .slide {
             position: absolute;
             top: 0;
@@ -181,15 +216,18 @@
             background-size: cover;
             background-position: center;
         }
+
         .hero-slideshow .slide.active {
             opacity: 1;
         }
+
         .hero-slideshow .slide-overlay {
             position: absolute;
             inset: 0;
             background: linear-gradient(135deg, rgba(7, 28, 18, 0.50) 0%, rgba(7, 28, 18, 0.05) 60%);
             z-index: 1;
         }
+
         .hero-slideshow .slide-content {
             position: absolute;
             bottom: 16%;
@@ -199,16 +237,19 @@
             color: #F7F4E9;
             text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
         }
+
         .hero-slideshow .slide-content h2 {
             font-size: clamp(1rem, 2.5vw, 1.8rem);
             font-weight: 700;
             line-height: 1.2;
         }
+
         .hero-slideshow .slide-content p {
             font-size: clamp(0.6rem, 0.9vw, 0.85rem);
             opacity: 0.7;
             margin-top: 2px;
         }
+
         .hero-slideshow .indicators {
             position: absolute;
             bottom: 10px;
@@ -218,6 +259,7 @@
             display: flex;
             gap: 6px;
         }
+
         .hero-slideshow .indicators .dot {
             width: 6px;
             height: 6px;
@@ -228,11 +270,16 @@
             transition: all 0.3s;
             padding: 0;
         }
+
         .hero-slideshow .indicators .dot.active {
             background: #3b82f6;
             transform: scale(1.3);
             box-shadow: 0 0 16px rgba(59, 130, 246, 0.10);
         }
+
+        /* ================================================================
+           WITHDRAWAL ACTIVITY CARD — replaces balance card
+        ================================================================ */
         .withdrawal-card {
             background: rgba(7, 28, 18, 0.45);
             backdrop-filter: blur(12px);
@@ -244,12 +291,14 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             overflow: hidden;
         }
+
         .withdrawal-card .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0.6rem;
         }
+
         .withdrawal-card .card-header .title {
             font-size: 0.8rem;
             font-weight: 700;
@@ -260,6 +309,7 @@
             align-items: center;
             gap: 6px;
         }
+
         .withdrawal-card .card-header .title svg {
             width: 16px;
             height: 16px;
@@ -267,6 +317,7 @@
             stroke-width: 2;
             fill: none;
         }
+
         .withdrawal-card .card-header .live-dot {
             display: flex;
             align-items: center;
@@ -275,6 +326,7 @@
             font-weight: 600;
             color: rgba(59, 130, 246, 0.40);
         }
+
         .withdrawal-card .card-header .live-dot .pulse {
             width: 6px;
             height: 6px;
@@ -282,6 +334,7 @@
             background: #3b82f6;
             animation: pulse-dot 1.5s ease-in-out infinite;
         }
+
         @keyframes pulse-dot {
             0%,
             100% {
@@ -293,17 +346,21 @@
                 transform: scale(0.6);
             }
         }
+
         .withdrawal-scroll {
             max-height: 170px;
             overflow: hidden;
             position: relative;
         }
+
         .withdrawal-scroll .scroll-inner {
             animation: scroll-up 18s linear infinite;
         }
+
         .withdrawal-scroll .scroll-inner.paused {
             animation-play-state: paused;
         }
+
         @keyframes scroll-up {
             0% {
                 transform: translateY(0);
@@ -312,6 +369,7 @@
                 transform: translateY(-50%);
             }
         }
+
         .withdrawal-item {
             display: flex;
             align-items: center;
@@ -320,98 +378,120 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.02);
             font-size: 0.78rem;
         }
+
         .withdrawal-item .left {
             display: flex;
             align-items: center;
             gap: 8px;
             min-width: 0;
         }
+
         .withdrawal-item .left .flag {
             font-size: 1rem;
             flex-shrink: 0;
         }
+
         .withdrawal-item .left .info {
             display: flex;
             flex-direction: column;
             min-width: 0;
         }
+
         .withdrawal-item .left .info .name {
             font-weight: 500;
             color: rgba(247, 244, 233, 0.70);
             font-size: 0.78rem;
         }
+
         .withdrawal-item .left .info .date {
             font-size: 0.55rem;
             color: rgba(247, 244, 233, 0.12);
         }
+
         .withdrawal-item .right {
             text-align: right;
             flex-shrink: 0;
         }
+
         .withdrawal-item .right .amount {
             font-weight: 700;
             font-size: 0.85rem;
             color: #3b82f6;
         }
+
         .withdrawal-item .right .amount.gold {
             color: #D4A72C;
         }
+
         .withdrawal-item .right .status {
             font-size: 0.45rem;
             color: rgba(247, 244, 233, 0.08);
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.7rem;
+
+        /* ================================================================
+           FEATURE LIST — FULL-WIDTH CARDS (NEW)
+        ================================================================ */
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
             margin-bottom: 1.2rem;
         }
-        @media (max-width: 500px) {
-            .feature-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.6rem;
-            }
-        }
-        .feature-card {
-            background: rgba(7, 28, 18, 0.35);
+
+        .feature-list .feature-card {
+            background: rgba(7, 28, 18, 0.45);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(59, 130, 246, 0.04);
             border-radius: 16px;
-            padding: 1rem 0.6rem;
-            text-align: center;
+            padding: 0.9rem 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             cursor: pointer;
             transition: all 0.25s ease;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
-        .feature-card:hover {
-            transform: translateY(-3px);
+
+        .feature-list .feature-card:hover {
+            transform: translateY(-2px);
             border-color: rgba(59, 130, 246, 0.12);
             box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25), 0 0 40px rgba(59, 130, 246, 0.02);
         }
-        .feature-card:active {
-            transform: scale(0.97);
+
+        .feature-list .feature-card:active {
+            transform: scale(0.98);
         }
-        .feature-card .fc-icon {
-            width: 44px;
-            height: 44px;
-            margin: 0 auto 4px;
-            background: rgba(59, 130, 246, 0.02);
+
+        .feature-list .feature-card .fc-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .feature-list .feature-card .fc-icon {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
+            background: rgba(59, 130, 246, 0.04);
+            border: 1px solid rgba(59, 130, 246, 0.06);
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid rgba(59, 130, 246, 0.04);
+            flex-shrink: 0;
             transition: 0.25s;
         }
-        .feature-card:hover .fc-icon {
-            background: rgba(59, 130, 246, 0.06);
-            border-color: rgba(59, 130, 246, 0.10);
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.02);
+
+        .feature-list .feature-card:hover .fc-icon {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: rgba(59, 130, 246, 0.12);
         }
-        .feature-card .fc-icon svg {
+
+        .feature-list .feature-card .fc-icon svg {
             width: 20px;
             height: 20px;
             stroke: rgba(59, 130, 246, 0.25);
@@ -421,29 +501,54 @@
             stroke-linejoin: round;
             transition: 0.25s;
         }
-        .feature-card:hover .fc-icon svg {
+
+        .feature-list .feature-card:hover .fc-icon svg {
             stroke: #3b82f6;
         }
-        .feature-card .fc-label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: rgba(247, 244, 233, 0.30);
-            letter-spacing: 0.2px;
+
+        .feature-list .feature-card .fc-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
         }
-        .feature-card .fc-desc {
-            font-size: 0.5rem;
-            color: rgba(247, 244, 233, 0.08);
+
+        .feature-list .feature-card .fc-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #F7F4E9;
+            letter-spacing: -0.2px;
+        }
+
+        .feature-list .feature-card .fc-desc {
+            font-size: 0.65rem;
+            color: rgba(247, 244, 233, 0.15);
             margin-top: 1px;
         }
-        .feature-card.loan .fc-icon svg {
+
+        .feature-list .feature-card .fc-arrow {
+            color: rgba(59, 130, 246, 0.15);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            margin-left: 8px;
+            transition: 0.25s;
+        }
+
+        .feature-list .feature-card:hover .fc-arrow {
+            color: rgba(59, 130, 246, 0.30);
+            transform: translateX(3px);
+        }
+
+        /* Loan card keeps the same style */
+        .feature-list .feature-card.loan .fc-icon svg {
             stroke: rgba(59, 130, 246, 0.25);
         }
-        .feature-card.loan .fc-label {
-            color: rgba(247, 244, 233, 0.30);
-        }
-        .feature-card.loan:hover .fc-icon svg {
+        .feature-list .feature-card.loan:hover .fc-icon svg {
             stroke: #3b82f6;
         }
+
+        /* ================================================================
+           CUSTOMER SERVICE CARD
+        ================================================================ */
         .support-card {
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.04), rgba(7, 28, 18, 0.30));
             border: 1px solid rgba(59, 130, 246, 0.06);
@@ -457,19 +562,23 @@
             transition: all 0.25s ease;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
+
         .support-card:hover {
             transform: translateY(-2px);
             border-color: rgba(59, 130, 246, 0.12);
             box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
         }
+
         .support-card:active {
             transform: scale(0.98);
         }
+
         .support-card .support-left {
             display: flex;
             align-items: center;
             gap: 12px;
         }
+
         .support-card .support-left .icon-wrap {
             width: 40px;
             height: 40px;
@@ -481,6 +590,7 @@
             justify-content: center;
             flex-shrink: 0;
         }
+
         .support-card .support-left .icon-wrap svg {
             width: 20px;
             height: 20px;
@@ -490,19 +600,26 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
+
         .support-card .support-left .support-text .title {
             font-size: 0.85rem;
             font-weight: 700;
             color: #F7F4E9;
         }
+
         .support-card .support-left .support-text .desc {
             font-size: 0.65rem;
             color: rgba(247, 244, 233, 0.15);
         }
+
         .support-card .support-arrow {
             color: rgba(59, 130, 246, 0.15);
             font-size: 1.2rem;
         }
+
+        /* ================================================================
+           FOOTER LINKS
+        ================================================================ */
         .footer-links {
             text-align: center;
             margin-top: 0.8rem;
@@ -513,15 +630,18 @@
             justify-content: center;
             gap: 0.6rem 1.2rem;
         }
+
         .footer-links a {
             font-size: 0.6rem;
             color: rgba(247, 244, 233, 0.06);
             text-decoration: none;
             transition: 0.2s;
         }
+
         .footer-links a:hover {
             color: rgba(247, 244, 233, 0.15);
         }
+
         .footer-links .copyright {
             font-size: 0.55rem;
             color: rgba(247, 244, 233, 0.03);
@@ -529,6 +649,10 @@
             text-align: center;
             margin-top: 0.1rem;
         }
+
+        /* ================================================================
+           BOTTOM NAV
+        ================================================================ */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -545,6 +669,7 @@
             z-index: 30;
             box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
         }
+
         .nav-item {
             display: flex;
             flex-direction: column;
@@ -562,6 +687,7 @@
             color: rgba(247, 244, 233, 0.10);
             position: relative;
         }
+
         .nav-item .nav-icon {
             width: 22px;
             height: 22px;
@@ -572,10 +698,12 @@
             stroke-linejoin: round;
             transition: all 0.25s;
         }
+
         .nav-item.active .nav-icon {
             stroke: #3b82f6;
             transform: scale(1.05);
         }
+
         .nav-item .nav-label {
             font-size: 0.4rem;
             font-weight: 600;
@@ -584,12 +712,15 @@
             letter-spacing: 0.3px;
             text-transform: uppercase;
         }
+
         .nav-item.active .nav-label {
             color: #3b82f6;
         }
+
         .nav-item:hover .nav-icon {
             stroke: rgba(59, 130, 246, 0.30);
         }
+
         .nav-item.marketplace .nav-icon {
             width: 30px;
             height: 30px;
@@ -601,17 +732,24 @@
             margin-bottom: 1px;
             box-shadow: 0 2px 16px rgba(59, 130, 246, 0.05);
         }
+
         .nav-item.marketplace.active .nav-icon {
             transform: scale(1.06);
             box-shadow: 0 0 30px rgba(59, 130, 246, 0.08);
         }
+
         .nav-item.marketplace .nav-label {
             color: rgba(59, 130, 246, 0.20);
             font-weight: 700;
         }
+
         .nav-item.marketplace.active .nav-label {
             color: #3b82f6;
         }
+
+        /* ================================================================
+           RESPONSIVE
+        ================================================================ */
         @media (max-width: 500px) {
             .container {
                 padding: 4.4rem 0.7rem 0.5rem 0.7rem;
@@ -649,22 +787,24 @@
             .withdrawal-item .left .info .date {
                 font-size: 0.5rem;
             }
-            .feature-grid {
-                gap: 0.5rem;
+            .feature-list {
+                gap: 0.6rem;
             }
-            .feature-card {
-                padding: 0.7rem 0.3rem;
-                border-radius: 14px;
+            .feature-list .feature-card {
+                padding: 0.7rem 1rem;
             }
-            .feature-card .fc-icon {
-                width: 36px;
-                height: 36px;
+            .feature-list .feature-card .fc-icon {
+                width: 34px;
+                height: 34px;
             }
-            .feature-card .fc-icon svg {
+            .feature-list .feature-card .fc-icon svg {
                 width: 17px;
                 height: 17px;
             }
-            .feature-card .fc-label {
+            .feature-list .feature-card .fc-label {
+                font-size: 0.8rem;
+            }
+            .feature-list .feature-card .fc-desc {
                 font-size: 0.6rem;
             }
             .support-card {
@@ -708,37 +848,30 @@
                 height: 5px;
             }
         }
+
         @media (max-width: 380px) {
             .container {
                 padding: 4rem 0.4rem 0.5rem 0.4rem;
             }
-            .feature-grid {
-                gap: 0.4rem;
-            }
-            .feature-card .fc-icon {
+            .feature-list .feature-card .fc-icon {
                 width: 30px;
                 height: 30px;
             }
-            .feature-card .fc-icon svg {
+            .feature-list .feature-card .fc-icon svg {
                 width: 14px;
                 height: 14px;
             }
-            .feature-card .fc-label {
-                font-size: 0.5rem;
+            .feature-list .feature-card .fc-label {
+                font-size: 0.7rem;
             }
         }
+
         @media (min-width: 768px) {
-            .feature-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1rem;
-            }
             .withdrawal-card {
                 padding: 1.5rem 1.8rem 0.8rem 1.8rem;
             }
-        }
-        @media (min-width: 1024px) {
-            .feature-grid {
-                grid-template-columns: repeat(3, 1fr);
+            .feature-list .feature-card {
+                padding: 1rem 1.8rem;
             }
         }
     </style>
@@ -748,7 +881,7 @@
     <!-- ===== BACKGROUND GRADIENT ===== -->
     <div class="dashboard-bg"></div>
 
-    <!-- ===== HEADER ===== -->
+    <!-- ===== HEADER — NO LOGOUT BUTTON ===== -->
     <header class="header">
         <div class="header-left">
             <a href="index.html" class="logo-text">Sajvera<span class="accent">Capital</span></a>
@@ -771,7 +904,7 @@
             <div class="greeting-sub" id="greetingSub">Let's grow your portfolio today</div>
         </div>
 
-        <!-- Slideshow -->
+        <!-- ===== SCROLLING IMAGE SECTION ===== -->
         <div class="hero-slideshow" id="heroSlideshow">
             <div class="slides-wrapper">
                 <div class="slide active" style="background-image: url('https://i.ibb.co/BKQJsR4L/file-00000000d73881f482171aab413d03c3.png');">
@@ -853,44 +986,115 @@
             </div>
         </div>
 
-        <!-- Feature Grid -->
-        <div class="feature-grid">
+        <!-- ===== FEATURE LIST — FULL-WIDTH CARDS ===== -->
+        <div class="feature-list">
+
+            <!-- Treasure -->
             <div class="feature-card" onclick="location.href='treasure.html';">
-                <div class="fc-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
-                <div class="fc-label">Treasure</div>
-                <div class="fc-desc">Gold chest</div>
+                <div class="fc-left">
+                    <div class="fc-icon">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    </div>
+                    <div class="fc-text">
+                        <div class="fc-label">Treasure</div>
+                        <div class="fc-desc">Gold chest</div>
+                    </div>
+                </div>
+                <span class="fc-arrow">→</span>
             </div>
+
+            <!-- Daily Check -->
             <div class="feature-card" onclick="location.href='daily-check.html';">
-                <div class="fc-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="12 14 12 18 16 18"/></svg></div>
-                <div class="fc-label">Daily Check</div>
-                <div class="fc-desc">Calendar</div>
+                <div class="fc-left">
+                    <div class="fc-icon">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="12 14 12 18 16 18"/></svg>
+                    </div>
+                    <div class="fc-text">
+                        <div class="fc-label">Daily Check</div>
+                        <div class="fc-desc">Calendar</div>
+                    </div>
+                </div>
+                <span class="fc-arrow">→</span>
             </div>
+
+            <!-- Voucher -->
             <div class="feature-card" onclick="location.href='voucher.html';">
-                <div class="fc-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg></div>
-                <div class="fc-label">Voucher</div>
-                <div class="fc-desc">Ticket</div>
+                <div class="fc-left">
+                    <div class="fc-icon">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 10h4"/><path d="M14 10h4"/></svg>
+                    </div>
+                    <div class="fc-text">
+                        <div class="fc-label">Voucher</div>
+                        <div class="fc-desc">Ticket</div>
+                    </div>
+                </div>
+                <span class="fc-arrow">→</span>
             </div>
+
+            <!-- Jobs Apply -->
             <div class="feature-card" onclick="location.href='jobs.html';">
-                <div class="fc-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M8 12h8"/></svg></div>
-                <div class="fc-label">Jobs Apply</div>
-                <div class="fc-desc">Briefcase</div>
+                <div class="fc-left">
+                    <div class="fc-icon">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M8 12h8"/></svg>
+                    </div>
+                    <div class="fc-text">
+                        <div class="fc-label">Jobs Apply</div>
+                        <div class="fc-desc">Briefcase</div>
+                    </div>
+                </div>
+                <span class="fc-arrow">→</span>
             </div>
+
+            <!-- Saving Money -->
             <div class="feature-card" onclick="location.href='saving.html';">
-                <div class="fc-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/><path d="M7 12v-2"/><path d="M17 12v-2"/></svg></div>
-                <div class="fc-label">Saving Money</div>
-                <div class="fc-desc">Wallet</div>
+                <div class="fc-left">
+                    <div class="fc-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/><path d="M7 12v-2"/><path d="M17 12v-2"/></svg>
+                    </div>
+                    <div class="fc-text">
+                        <div class="fc-label">Saving Money</div>
+                        <div class="fc-desc">Wallet</div>
+                    </div>
+                </div>
+                <span class="fc-arrow">→</span>
             </div>
+
+            <!-- Loan -->
             <div class="feature-card loan" onclick="location.href='loan.html';">
-                <div class="fc-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-                <div class="fc-label">Loan</div>
-                <div class="fc-desc">Finance</div>
+                <div class="fc-left">
+                    <div class="fc-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <div class="fc-text">
+                        <div class="fc-label">Loan</div>
+                        <div class="fc-desc">Finance</div>
+                    </div>
+                </div>
+                <span class="fc-arrow">→</span>
             </div>
+
+            <!-- About Us (NEW) -->
+            <div class="feature-card" onclick="location.href='about-us.html';">
+                <div class="fc-left">
+                    <div class="fc-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div class="fc-text">
+                        <div class="fc-label">About Us</div>
+                        <div class="fc-desc">Learn more about Sajvera Capital</div>
+                    </div>
+                </div>
+                <span class="fc-arrow">→</span>
+            </div>
+
         </div>
 
-        <!-- Support Card -->
+        <!-- ===== CUSTOMER SERVICE CARD ===== -->
         <div class="support-card" onclick="location.href='support.html';">
             <div class="support-left">
-                <div class="icon-wrap"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                <div class="icon-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
                 <div class="support-text">
                     <div class="title">Customer Service</div>
                     <div class="desc">Need help? Contact support</div>
@@ -899,7 +1103,7 @@
             <span class="support-arrow">→</span>
         </div>
 
-        <!-- Footer -->
+        <!-- ===== FOOTER LINKS ===== -->
         <div class="footer-links">
             <a href="term.html">Terms of Service</a>
             <a href="privacy.html">Privacy Policy</a>
@@ -909,7 +1113,9 @@
 
     </main>
 
-    <!-- Bottom Nav -->
+    <!-- ================================================================
+    BOTTOM NAV
+    ================================================================ -->
     <div class="bottom-nav">
         <button class="nav-item active" data-page="dashboard.html">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
@@ -933,6 +1139,9 @@
         </button>
     </div>
 
+    <!-- ================================================================
+    JAVASCRIPT
+    ================================================================ -->
     <script>
         // ================================================================
         // FIREBASE CONFIG
@@ -1288,10 +1497,10 @@
             });
         });
 
-        console.log('✅ Sajvera Capital · Dashboard (with country currencies & fixed date ranges)');
+        console.log('✅ Sajvera Capital · Dashboard (full-width feature cards)');
+        console.log('📋 Features now displayed as horizontal cards with About Us');
         console.log('🇿🇲 Zambia: dates from 15 Sep 2026, currency K');
         console.log('Others: dates from 10 Sep 2026, with their own currencies');
     </script>
-
 </body>
 </html>
