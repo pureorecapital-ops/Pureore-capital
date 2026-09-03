@@ -199,8 +199,8 @@
             line-height: 1.5;
         }
 
-        /* ----- WEEKEND BLOCK NOTICE ----- */
-        .weekend-notice {
+        /* ----- BLOCK NOTICE (WEEKEND + TIME) ----- */
+        .block-notice {
             background: rgba(239, 68, 68, 0.04);
             border: 1px solid rgba(239, 68, 68, 0.06);
             border-radius: 16px;
@@ -213,10 +213,10 @@
             align-items: flex-start;
             gap: 10px;
         }
-        .weekend-notice.visible {
+        .block-notice.visible {
             display: flex;
         }
-        .weekend-notice svg {
+        .block-notice svg {
             width: 20px;
             height: 20px;
             stroke: #f87171;
@@ -225,12 +225,16 @@
             flex-shrink: 0;
             margin-top: 1px;
         }
-        .weekend-notice strong {
+        .block-notice strong {
             color: #f87171;
             font-weight: 600;
         }
-        .weekend-notice .weekend-day {
+        .block-notice .highlight-text {
             color: #facc15;
+            font-weight: 600;
+        }
+        .block-notice .time-range {
+            color: #60a5fa;
             font-weight: 600;
         }
 
@@ -606,7 +610,7 @@
                 font-size: 0.65rem;
                 padding: 0.3rem 0.8rem;
             }
-            .weekend-notice {
+            .block-notice {
                 font-size: 0.7rem;
                 padding: 0.6rem 0.8rem;
             }
@@ -624,7 +628,7 @@
                 font-size: 0.7rem;
                 padding: 0.6rem 0.8rem;
             }
-            .weekend-notice {
+            .block-notice {
                 font-size: 0.65rem;
                 padding: 0.5rem 0.6rem;
             }
@@ -653,13 +657,12 @@
             <div class="card-title">💰 <span>Deposit</span> Funds</div>
             <div class="card-sub">Enter the amount you wish to deposit.</div>
 
-            <!-- ─── WEEKEND BLOCK NOTICE ─── -->
-            <div class="weekend-notice" id="weekendNotice">
+            <!-- ─── BLOCK NOTICE (WEEKEND + TIME) ─── -->
+            <div class="block-notice" id="blockNotice">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <div>
-                    <strong>Deposits are not available on weekends.</strong><br />
-                    Today is <span class="weekend-day" id="weekendDay">Saturday</span>.<br />
-                    Please come back on a weekday (Monday–Friday) to make a deposit.
+                <div id="blockNoticeText">
+                    <strong>Deposits are not available right now.</strong><br />
+                    <span id="blockReason">Please come back during operating hours.</span>
                 </div>
             </div>
 
@@ -732,18 +735,96 @@
         }
 
         // ================================================================
-        // ─── WEEKEND CHECK ──────────────────────────────────────
+        // ─── DEPOSIT BLOCK CHECKS ───────────────────────────────────────
         // ================================================================
+
+        // Allowed hours: 08:00 – 18:30 (6:30 PM)
+        const ALLOWED_START_HOUR = 8;
+        const ALLOWED_START_MINUTE = 0;
+        const ALLOWED_END_HOUR = 18;
+        const ALLOWED_END_MINUTE = 30;
+
         function isWeekend() {
             var now = new Date();
             var day = now.getDay(); // 0 = Sunday, 6 = Saturday
             return day === 0 || day === 6;
         }
 
+        function isWithinAllowedHours() {
+            var now = new Date();
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+
+            var totalMinutes = hours * 60 + minutes;
+            var startMinutes = ALLOWED_START_HOUR * 60 + ALLOWED_START_MINUTE;
+            var endMinutes = ALLOWED_END_HOUR * 60 + ALLOWED_END_MINUTE;
+
+            return totalMinutes >= startMinutes && totalMinutes < endMinutes;
+        }
+
         function getWeekendDayName() {
             var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             var now = new Date();
             return days[now.getDay()];
+        }
+
+        function formatTime(hours, minutes) {
+            var ampm = hours >= 12 ? 'PM' : 'AM';
+            var h12 = hours % 12 || 12;
+            var m = String(minutes).padStart(2, '0');
+            return h12 + ':' + m + ' ' + ampm;
+        }
+
+        function getBlockReason() {
+            var now = new Date();
+            var day = now.getDay();
+
+            // Weekend check
+            if (day === 0 || day === 6) {
+                return {
+                    isBlocked: true,
+                    reason: 'weekend',
+                    message: 'Deposits are not available on weekends. Today is <span class="highlight-text">' +
+                        getWeekendDayName() + '</span>.<br />Please come back on a weekday (Monday–Friday).'
+                };
+            }
+
+            // Time check
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+            var totalMinutes = hours * 60 + minutes;
+            var startMinutes = ALLOWED_START_HOUR * 60 + ALLOWED_START_MINUTE;
+            var endMinutes = ALLOWED_END_HOUR * 60 + ALLOWED_END_MINUTE;
+
+            if (totalMinutes < startMinutes) {
+                var startTimeStr = formatTime(ALLOWED_START_HOUR, ALLOWED_START_MINUTE);
+                return {
+                    isBlocked: true,
+                    reason: 'too_early',
+                    message: 'Deposits open at <span class="time-range">' + startTimeStr +
+                        '</span>.<br />Please come back during operating hours: ' +
+                        '<span class="time-range">' + startTimeStr + ' – ' +
+                        formatTime(ALLOWED_END_HOUR, ALLOWED_END_MINUTE) + '</span>.'
+                };
+            }
+
+            if (totalMinutes >= endMinutes) {
+                var endTimeStr = formatTime(ALLOWED_END_HOUR, ALLOWED_END_MINUTE);
+                return {
+                    isBlocked: true,
+                    reason: 'too_late',
+                    message: 'Deposits close at <span class="time-range">' + endTimeStr +
+                        '</span>.<br />Please come back during operating hours: ' +
+                        '<span class="time-range">' + formatTime(ALLOWED_START_HOUR, ALLOWED_START_MINUTE) +
+                        ' – ' + endTimeStr + '</span>.'
+                };
+            }
+
+            return {
+                isBlocked: false,
+                reason: 'allowed',
+                message: ''
+            };
         }
 
         // ================================================================
@@ -757,30 +838,34 @@
         var loaderEmail = document.getElementById('loaderEmail');
         var loaderAmount = document.getElementById('loaderAmount');
         var loaderStatus = document.getElementById('loaderStatus');
-        var weekendNotice = document.getElementById('weekendNotice');
-        var weekendDay = document.getElementById('weekendDay');
+        var blockNotice = document.getElementById('blockNotice');
+        var blockNoticeText = document.getElementById('blockNoticeText');
+        var blockReason = document.getElementById('blockReason');
 
         var currentUser = null;
         var userData = null;
         var isDepositBlocked = false;
 
         // ================================================================
-        // ─── CHECK WEEKEND AND UPDATE UI ──────────────────────────────
+        // ─── UPDATE BLOCK STATUS ────────────────────────────────────────
         // ================================================================
-        function checkWeekendAndUpdate() {
-            if (isWeekend()) {
+        function updateBlockStatus() {
+            var result = getBlockReason();
+
+            if (result.isBlocked) {
                 isDepositBlocked = true;
-                weekendNotice.classList.add('visible');
-                weekendDay.textContent = getWeekendDayName();
+                blockNotice.classList.add('visible');
+                // The blockNoticeText contains the whole message with formatting
+                blockNoticeText.innerHTML = result.message;
                 continueBtn.disabled = true;
-                continueBtn.textContent = '🚫 Deposits Blocked on Weekends';
+                continueBtn.textContent = '🚫 Deposits Blocked';
                 continueBtn.classList.add('blocked');
                 amountInput.disabled = true;
                 amountInput.style.opacity = '0.4';
-                amountInput.placeholder = 'Deposits unavailable on weekends';
+                amountInput.placeholder = 'Deposits unavailable';
             } else {
                 isDepositBlocked = false;
-                weekendNotice.classList.remove('visible');
+                blockNotice.classList.remove('visible');
                 continueBtn.classList.remove('blocked');
                 amountInput.disabled = false;
                 amountInput.style.opacity = '1';
@@ -831,8 +916,11 @@
                     }
                 }, function(err) { console.warn('Block listener error:', err); });
 
-                // ─── Check weekend after auth ──────────────────────
-                checkWeekendAndUpdate();
+                // ─── Check block status after auth ──────────────────
+                updateBlockStatus();
+
+                // ─── Also update every minute in case time crosses threshold ───
+                setInterval(updateBlockStatus, 60000);
 
             } else {
                 if (!authResolved) {
@@ -856,7 +944,7 @@
         // VALIDATE AMOUNT
         // ================================================================
         function validateAmount() {
-            // If deposits are blocked on weekends, keep button disabled
+            // If deposits are blocked, keep button disabled
             if (isDepositBlocked) {
                 continueBtn.disabled = true;
                 return false;
@@ -886,9 +974,11 @@
         continueBtn.addEventListener('click', function() {
             if (this.disabled) return;
 
-            // Double-check weekend block
-            if (isWeekend()) {
-                showToast('🚫 Deposits are not available on weekends. Please come back on a weekday.', true);
+            // Double-check block status
+            var blockResult = getBlockReason();
+            if (blockResult.isBlocked) {
+                showToast('🚫 ' + blockResult.message.replace(/<[^>]*>/g, '').trim(), true);
+                updateBlockStatus();
                 return;
             }
 
@@ -950,7 +1040,7 @@
         // FOCUS
         // ================================================================
         setTimeout(function() {
-            if (!isWeekend()) {
+            if (!isDepositBlocked) {
                 amountInput.focus();
             }
         }, 400);
@@ -964,7 +1054,8 @@
         });
 
         console.log('💰 Deposit · Sajvera Capital · Glassmorphism design');
-        console.log('🚫 Weekend deposit block active (Saturday & Sunday)');
+        console.log('🕐 Deposit hours: 08:00 AM – 18:30 PM (weekdays only)');
+        console.log('🚫 Weekends: blocked');
         console.log('👤 Loading overlay shows user name during payment processing');
         console.log('🔐 Login check and block monitoring active');
     </script>

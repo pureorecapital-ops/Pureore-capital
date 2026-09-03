@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
+        /* (All CSS unchanged – same as your original) */
         /* ----- RESET & BASE (DARK BLUE THEME) ----- */
         * {
             margin: 0;
@@ -29,7 +30,6 @@
             color: #ffffff;
             position: relative;
             background: #000;
-            /* No overflow-y: auto or -webkit-overflow-scrolling: touch – these cause Android scroll jump */
         }
 
         .hero-bg {
@@ -1301,7 +1301,96 @@
         }
 
         // ================================================================
-        // GET CLAIM STATUS (Invest Plans) – NO MISSED COUNTER, ONLY REMAINING DAYS
+        // GET CURRENT BUSINESS DAY INDEX (0-based)
+        // ================================================================
+        function getCurrentBusinessDayIndex(startDate, now, totalBusinessDays) {
+            if (totalBusinessDays <= 0) return 0;
+            // Count business days from startDate to now (excluding weekends)
+            var count = 0;
+            var current = new Date(startDate);
+            current.setHours(0, 0, 0, 0);
+            var today = new Date(now);
+            today.setHours(0, 0, 0, 0);
+            while (current <= today && count < totalBusinessDays) {
+                if (!isWeekend(current)) count++;
+                current.setDate(current.getDate() + 1);
+            }
+            // If today is a weekend, we should not count it as a business day that can be claimed.
+            // But we only care about business days. If today is weekend, the count is the last business day.
+            // However, the claim windows are defined only on business days, so we need to consider that.
+            // Actually, we need the index of the current business day (if today is a business day) or the next business day.
+            // For simplicity, we'll use the count of business days passed so far (including today if it's a business day and not yet fully elapsed?).
+            // Better: We'll compute the index of the last business day that has fully passed.
+            // We'll use the logic: count business days from start to end of today (if today is a business day, count it; else not)
+            // Then subtract 1 if today's claim window hasn't started yet? But we'll handle that in claim status.
+            // We'll just return the number of business days that have started (including today if it's a business day)
+            // The claim status function will check if the current time is within the window for that index.
+            // So we want: count of business days that have occurred up to now (including today if it's a business day).
+            // If now is before the start of today's business day (e.g., before 00:00), we might count today as not yet started.
+            // But the claim window starts at the start of the business day (00:00). So we can use the date part.
+            // We'll count the number of business days from startDate to today (including today if it's a business day).
+            // Then we'll subtract 1 if today is a business day but the current time is before the claim window start? Actually the claim window starts at 00:00, so if it's a business day, the window is open from 00:00.
+            // So we can just count business days up to today inclusive.
+            // Let's do that.
+            var index = 0;
+            current = new Date(startDate);
+            current.setHours(0, 0, 0, 0);
+            while (current <= today && index < totalBusinessDays) {
+                if (!isWeekend(current)) index++;
+                current.setDate(current.getDate() + 1);
+            }
+            // index is the number of business days that have started (including today if it's a business day)
+            // However, if today is a weekend, index is the last business day count.
+            return index;
+        }
+
+        // ================================================================
+        // AUTO-SYNC MISSED CLAIMS (advance claimsCount to current day index)
+        // ================================================================
+        async function syncMissedClaims(plan) {
+            // plan is an investment object with id, startDate, businessDays, claimsCount, etc.
+            var startDate = plan.startDate;
+            if (!(startDate instanceof Date)) {
+                startDate = startDate.toDate ? startDate.toDate() : new Date(startDate);
+            }
+            var totalBusinessDays = plan.businessDays || plan.days || 0;
+            var now = new Date();
+            var currentIndex = getCurrentBusinessDayIndex(startDate, now, totalBusinessDays);
+            // currentIndex is the number of business days that have started (including today if it's a business day)
+            // We need to cap at totalBusinessDays
+            if (currentIndex > totalBusinessDays) currentIndex = totalBusinessDays;
+            // If the plan is already expired (claimsCount >= totalBusinessDays), we don't need to update
+            var claimsCount = plan.claimsCount || 0;
+            if (claimsCount < currentIndex) {
+                // We missed some days, update claimsCount to currentIndex
+                try {
+                    await db.collection('investments').doc(plan.id).update({
+                        claimsCount: currentIndex,
+                        lastClaimed: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    plan.claimsCount = currentIndex;
+                    console.log(`Synced missed claims for plan ${plan.id}: claimsCount now ${currentIndex}`);
+                } catch (err) {
+                    console.warn('Failed to sync missed claims:', err);
+                }
+            }
+            // If the plan has expired (currentIndex >= totalBusinessDays), we can mark as completed
+            if (currentIndex >= totalBusinessDays && plan.status === 'active') {
+                try {
+                    await db.collection('investments').doc(plan.id).update({
+                        status: 'completed',
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    plan.status = 'completed';
+                } catch (err) {
+                    console.warn('Failed to mark plan as completed:', err);
+                }
+            }
+            return plan;
+        }
+
+        // ================================================================
+        // GET CLAIM STATUS (Invest Plans) – simplified using claimsCount
         // ================================================================
         function getClaimStatus(inv, now) {
             var start = inv.startDate;
@@ -1309,74 +1398,85 @@
             var dailyAmount = inv.dailyAmount;
             var totalBusinessDays = inv.businessDays;
 
-            var index = claimsCount;
-            while (index < totalBusinessDays) {
-                var dueDate = index === 0 ? start : addBusinessDays(start, index);
-                var claimStart = new Date(dueDate);
-                claimStart.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
-                var windowEnd = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
-
-                if (now >= windowEnd) {
-                    // This day is missed – skip it without incrementing claimsCount
-                    index++;
-                    continue;
-                }
-
-                if (now >= claimStart && now < windowEnd) {
-                    var available = !isWeekend(now);
-                    var hoursSince = Math.max(0, (now - claimStart) / (1000 * 60 * 60));
-                    var earnedSoFar = Math.min(dailyAmount, dailyAmount * (hoursSince / 24));
-                    var progress = Math.min(100, (hoursSince / 24) * 100);
-                    var daysRemaining = totalBusinessDays - index;
-                    return {
-                        available: available,
-                        nextClaimTime: claimStart,
-                        windowEnd: windowEnd,
-                        dailyAmount: dailyAmount,
-                        earnedSoFar: earnedSoFar,
-                        hoursSince: hoursSince,
-                        progress: progress,
-                        index: index,
-                        status: available ? 'ready' : 'waiting',
-                        daysRemaining: daysRemaining
-                    };
-                }
-
-                if (now < claimStart) {
-                    var hoursRemaining = (claimStart - now) / (1000 * 60 * 60);
-                    var daysRemaining = totalBusinessDays - index;
-                    return {
-                        available: false,
-                        nextClaimTime: claimStart,
-                        windowEnd: windowEnd,
-                        dailyAmount: dailyAmount,
-                        earnedSoFar: 0,
-                        hoursSince: 0,
-                        progress: 0,
-                        index: index,
-                        status: 'waiting',
-                        hoursRemaining: hoursRemaining,
-                        daysRemaining: daysRemaining
-                    };
-                }
+            // If all days claimed, done
+            if (claimsCount >= totalBusinessDays) {
+                return {
+                    available: false,
+                    nextClaimTime: null,
+                    windowEnd: null,
+                    dailyAmount: dailyAmount,
+                    earnedSoFar: 0,
+                    hoursSince: 0,
+                    progress: 0,
+                    index: -1,
+                    status: 'done',
+                    daysRemaining: 0
+                };
             }
 
-            return {
-                available: false,
-                nextClaimTime: null,
-                windowEnd: null,
-                dailyAmount: dailyAmount,
-                earnedSoFar: 0,
-                hoursSince: 0,
-                progress: 0,
-                index: -1,
-                status: 'done',
-                daysRemaining: 0
-            };
+            // Compute claim date for current index
+            var dueDate = claimsCount === 0 ? start : addBusinessDays(start, claimsCount);
+            var claimStart = new Date(dueDate);
+            claimStart.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
+            var windowEnd = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
+
+            // Check if now is in the window
+            if (now >= claimStart && now < windowEnd) {
+                var available = !isWeekend(now);
+                var hoursSince = Math.max(0, (now - claimStart) / (1000 * 60 * 60));
+                var earnedSoFar = Math.min(dailyAmount, dailyAmount * (hoursSince / 24));
+                var progress = Math.min(100, (hoursSince / 24) * 100);
+                var daysRemaining = totalBusinessDays - claimsCount;
+                return {
+                    available: available,
+                    nextClaimTime: claimStart,
+                    windowEnd: windowEnd,
+                    dailyAmount: dailyAmount,
+                    earnedSoFar: earnedSoFar,
+                    hoursSince: hoursSince,
+                    progress: progress,
+                    index: claimsCount,
+                    status: available ? 'ready' : 'waiting',
+                    daysRemaining: daysRemaining
+                };
+            } else if (now < claimStart) {
+                // Waiting for next window
+                var hoursRemaining = (claimStart - now) / (1000 * 60 * 60);
+                var daysRemaining = totalBusinessDays - claimsCount;
+                return {
+                    available: false,
+                    nextClaimTime: claimStart,
+                    windowEnd: windowEnd,
+                    dailyAmount: dailyAmount,
+                    earnedSoFar: 0,
+                    hoursSince: 0,
+                    progress: 0,
+                    index: claimsCount,
+                    status: 'waiting',
+                    hoursRemaining: hoursRemaining,
+                    daysRemaining: daysRemaining
+                };
+            } else {
+                // Past window (should not happen if we auto-sync, but handle)
+                // This day is missed, but we have already synced, so this should be rare.
+                // We'll treat as unavailable.
+                return {
+                    available: false,
+                    nextClaimTime: claimStart,
+                    windowEnd: windowEnd,
+                    dailyAmount: dailyAmount,
+                    earnedSoFar: 0,
+                    hoursSince: 0,
+                    progress: 0,
+                    index: -1,
+                    status: 'waiting',
+                    daysRemaining: 0
+                };
+            }
         }
 
         // ================================================================
-        // LOAD ALL PLANS (Invest + Buy)
+        // LOAD ALL PLANS (Invest + Buy) – with auto-sync
         // ================================================================
         async function loadAllPlans() {
             if (!currentUserId) return;
@@ -1387,11 +1487,23 @@
                     .get();
 
                 var investPlans = [];
-                invSnapshot.forEach(function(doc) {
-                    investPlans.push({ id: doc.id, ...doc.data(), planType: 'invest' });
-                });
+                for (var doc of invSnapshot.docs) {
+                    var data = doc.data();
+                    data.id = doc.id;
+                    // Convert timestamps to Dates
+                    if (data.startDate) data.startDate = data.startDate.toDate();
+                    if (data.businessEndDate) data.businessEndDate = data.businessEndDate.toDate();
+                    investPlans.push(data);
+                }
 
-                // 2. Load Buy plans from "marketplacePurchases"
+                // 2. Auto-sync missed claims for each invest plan
+                for (var plan of investPlans) {
+                    if (plan.status === 'active') {
+                        await syncMissedClaims(plan);
+                    }
+                }
+
+                // 3. Load Buy plans from "marketplacePurchases"
                 var buySnapshot = await db.collection('marketplacePurchases')
                     .where('userId', '==', currentUserId)
                     .where('type', '==', 'buy')
@@ -1399,7 +1511,9 @@
 
                 var buyPlans = [];
                 buySnapshot.forEach(function(doc) {
-                    buyPlans.push({ id: doc.id, ...doc.data(), planType: 'buy' });
+                    var data = doc.data();
+                    data.id = doc.id;
+                    buyPlans.push({ id: doc.id, ...data, planType: 'buy' });
                 });
 
                 // Combine all plans
@@ -1420,9 +1534,9 @@
                 for (var i = 0; i < allPlans.length; i++) {
                     var plan = allPlans[i];
                     if (plan.planType === 'invest') {
-                        var startDate = plan.startDate.toDate();
+                        var startDate = plan.startDate;
                         var businessDays = plan.businessDays || plan.days;
-                        var endDate = plan.businessEndDate ? plan.businessEndDate.toDate() : addBusinessDays(startDate,
+                        var endDate = plan.businessEndDate ? plan.businessEndDate : addBusinessDays(startDate,
                             businessDays);
                         var today = new Date();
                         today.setHours(0, 0, 0, 0);
@@ -1439,7 +1553,7 @@
                             lastClaimed: plan.lastClaimed,
                             purchasedOnWeekend: plan.purchasedOnWeekend || false,
                             planType: 'invest',
-                            claimable: true // Invest plans have daily claims
+                            claimable: true
                         };
                         if (!isExpired) {
                             active.push(investment);
@@ -1461,7 +1575,7 @@
                             status: plan.status || 'active',
                             claimedAt: plan.claimedAt || null,
                             claimAmount: plan.claimAmount || null,
-                            claimable: false // Buy plans are not daily claimable
+                            claimable: false
                         };
                         if (!isExpiredBuy) {
                             active.push(buyPlan);
@@ -1484,7 +1598,7 @@
         }
 
         // ================================================================
-        // RENDER ACTIVE – No missed counter, only total claimed, claims count, days left
+        // RENDER ACTIVE – updated for new claim status logic
         // ================================================================
         async function renderActive(plans) {
             var container = document.getElementById('activePlansContainer');
@@ -1598,7 +1712,7 @@
                         </div>
                     `;
                 } else {
-                    // Render Buy Plan
+                    // Render Buy Plan (unchanged)
                     var expiryDate = plan.expiryDate;
                     var isExpired = plan.status === 'claimed' || (expiryDate && now > expiryDate);
                     var isReady = !isExpired && expiryDate && now >= expiryDate && plan.status !== 'claimed';
@@ -1670,7 +1784,7 @@
                 });
             });
 
-            // Attach events for Buy claims – now calls the real claim directly
+            // Attach events for Buy claims
             document.querySelectorAll('.claim-btn.buy-claim.ready').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -1684,7 +1798,7 @@
         }
 
         // ================================================================
-        // RENDER EXPIRED
+        // RENDER EXPIRED (unchanged)
         // ================================================================
         async function renderExpired(plans) {
             var container = document.getElementById('expiredPlansContainer');
@@ -1752,7 +1866,7 @@
         }
 
         // ================================================================
-        // UPDATE TIMERS
+        // UPDATE TIMERS (unchanged)
         // ================================================================
         function updateTimers() {
             var now = new Date();
@@ -1839,7 +1953,7 @@
 
                     var userRef = db.collection('users').doc(user.uid);
 
-                    // ✅ Update ONLY walletBalance – do NOT touch balance, depositBalance, or activityBalance
+                    // Update ONLY walletBalance
                     transaction.update(userRef, {
                         walletBalance: firebase.firestore.FieldValue.increment(dailyAmount)
                     });
@@ -1873,7 +1987,7 @@
         }
 
         // ================================================================
-        // CLAIM BUY PLAN – REAL IMPLEMENTATION (no diagnostic)
+        // CLAIM BUY PLAN (unchanged)
         // ================================================================
         async function claimBuyPlan(purchaseId, btnElement) {
             console.log("=== BUY CLAIM START ===");
@@ -1888,7 +2002,6 @@
             console.log("User UID:", uid);
 
             try {
-                // Pre-flight check (optional but helpful)
                 const docSnap = await db.collection('marketplacePurchases').doc(purchaseId).get();
                 if (!docSnap.exists) {
                     showToast('Plan not found.', true);
@@ -1915,15 +2028,12 @@
                 }
                 console.log("Pre-flight OK.");
 
-                // Transaction
                 await db.runTransaction(async function(transaction) {
                     const purchaseRef = db.collection('marketplacePurchases').doc(purchaseId);
                     const purchaseSnap = await transaction.get(purchaseRef);
                     if (!purchaseSnap.exists) throw new Error('Plan not found in transaction');
                     const purchaseData = purchaseSnap.data();
-                    console.log("Transaction purchase data:", purchaseData);
 
-                    // Re-validate inside transaction
                     if (purchaseData.userId !== uid) throw new Error('Ownership mismatch');
                     if (purchaseData.status === 'claimed') throw new Error('Already claimed');
                     const expiryTx = purchaseData.expiresAt ? purchaseData.expiresAt.toDate() : null;
@@ -1932,24 +2042,18 @@
                     const amount = purchaseData.amount || 0;
                     const totalIncome = purchaseData.totalIncome || 0;
                     const finalAmount = amount + totalIncome;
-                    console.log("Final amount to claim:", finalAmount);
 
-                    // Update user – ONLY walletBalance
                     const userRef = db.collection('users').doc(uid);
                     transaction.update(userRef, {
                         walletBalance: firebase.firestore.FieldValue.increment(finalAmount)
                     });
-                    console.log("User walletBalance incremented.");
 
-                    // Update purchase – only allowed fields
                     transaction.update(purchaseRef, {
                         status: 'claimed',
                         claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
                         claimAmount: finalAmount
                     });
-                    console.log("Purchase updated.");
 
-                    // Create transaction record
                     const txRef = db.collection('transactions').doc();
                     transaction.set(txRef, {
                         userId: uid,
@@ -1958,7 +2062,6 @@
                         description: 'Buy plan claim: ' + purchaseData.planName,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    console.log("Transaction record created.");
                 });
 
                 console.log("✅ BUY CLAIM SUCCESS");
@@ -1966,14 +2069,10 @@
                 if (btnElement) btnElement.disabled = true;
                 await loadAllPlans();
             } catch (err) {
-                console.error("❌ BUY CLAIM FAILED");
-                console.error("Code:", err.code);
-                console.error("Message:", err.message);
-                console.error("Stack:", err.stack);
+                console.error("❌ BUY CLAIM FAILED", err);
                 showToast(err.message || 'Claim failed. Check console.', true);
                 if (btnElement) btnElement.disabled = false;
             }
-            console.log("=== BUY CLAIM END ===");
         }
 
         // ================================================================
@@ -2031,7 +2130,7 @@
         }
 
         // ================================================================
-        // TABS
+        // TABS (unchanged)
         // ================================================================
         var tabBtns = document.querySelectorAll('.tab-btn');
         var activeTab = document.getElementById('activeTab');
@@ -2056,7 +2155,7 @@
         document.getElementById('claimAllBtn')?.addEventListener('click', claimAllAvailable);
 
         // ================================================================
-        // HAMBURGER MENU
+        // HAMBURGER MENU (unchanged)
         // ================================================================
         var hamburger = document.getElementById('hamburger');
         var menuPanel = document.getElementById('menuPanel');
@@ -2074,7 +2173,7 @@
         });
 
         // ================================================================
-        // BOTTOM NAV
+        // BOTTOM NAV (unchanged)
         // ================================================================
         var navItems = document.querySelectorAll('.nav-item');
         var currentPage = window.location.pathname.split('/').pop() || 'income.html';
@@ -2089,10 +2188,9 @@
             });
         });
 
-        console.log('✅ income.html – No missed counter displayed. Missed days are silently skipped.');
-        console.log('ℹ️ Days left reflect remaining business days.');
-        console.log('ℹ️ Claim only the current day\'s earnings.');
-        console.log('✅ Scrolling fix: no overflow-y:auto or -webkit-overflow-scrolling:touch on body.');
+        console.log('✅ income.html – Fixed missed day claims.');
+        console.log('ℹ️ Missed days are automatically skipped without credit.');
+        console.log('ℹ️ Plans expire after all business days are passed.');
     </script>
 
 </body>
