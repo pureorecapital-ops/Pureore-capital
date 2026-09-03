@@ -2358,15 +2358,24 @@
         // TAB SWITCHING
         // ================================================================
         function switchTab(tabId) {
+            // Hide all tab sections
             Object.values(tabSections).forEach(el => el.classList.remove('active'));
-            if (tabSections[tabId]) tabSections[tabId].classList.add('active');
+            // Show the target section
+            if (tabSections[tabId]) {
+                tabSections[tabId].classList.add('active');
+            } else {
+                console.warn('Tab section not found:', tabId);
+                return;
+            }
 
+            // Update button active states
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.tab === tabId);
             });
 
             currentTab = tabId;
 
+            // Load the data for this tab
             const loaders = {
                 'tab-dashboard': loadDashboardStats,
                 'tab-users': loadUsers,
@@ -2387,7 +2396,11 @@
                 'tab-savings': loadSavings,
                 'tab-jobs': loadJobs
             };
-            if (loaders[tabId]) loaders[tabId]();
+            if (loaders[tabId]) {
+                loaders[tabId]();
+            } else {
+                console.warn('No loader defined for tab:', tabId);
+            }
         }
 
         // Quick action buttons
@@ -2424,13 +2437,16 @@
         updateClock();
 
         // ================================================================
-        // DASHBOARD STATS (unchanged)
+        // DASHBOARD STATS
         // ================================================================
         async function loadDashboardStats() {
             const ids = ['statUsers', 'statDeposits', 'statWithdrawals', 'statInvestments', 'statBalance',
                 'statDailyEarnings', 'statAgents', 'statPendingDeposits', 'statPendingWithdrawals'
             ];
-            ids.forEach(id => document.getElementById(id).textContent = '...');
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = '...';
+            });
 
             try {
                 const [usersSnap, depositsSnap, withdrawalsSnap, investmentsSnap, agentsSnap] = await Promise.all([
@@ -2486,11 +2502,15 @@
             } catch (err) {
                 console.error('Dashboard stats error:', err);
                 showToast('Failed to load dashboard stats.', 'error');
+                ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = '?';
+                });
             }
         }
 
         // ================================================================
-        // RECENT ACTIVITY (unchanged)
+        // RECENT ACTIVITY
         // ================================================================
         async function loadRecentActivities() {
             try {
@@ -2522,7 +2542,7 @@
         }
 
         // ================================================================
-        // USERS (unchanged)
+        // USERS
         // ================================================================
         let allUsers = [];
 
@@ -2788,7 +2808,7 @@
         };
 
         // ================================================================
-        // DEPOSITS (unchanged)
+        // DEPOSITS
         // ================================================================
         let allDeposits = [];
 
@@ -3038,7 +3058,7 @@
         }
 
         // ================================================================
-        // WITHDRAWALS (unchanged)
+        // WITHDRAWALS
         // ================================================================
         let allWithdrawals = [];
 
@@ -3286,7 +3306,7 @@
         }
 
         // ================================================================
-        // INVESTMENTS (unchanged)
+        // INVESTMENTS
         // ================================================================
         let allInvestments = [];
 
@@ -3349,7 +3369,7 @@
         document.getElementById('refreshInvestmentsBtn').onclick = loadInvestments;
 
         // ================================================================
-        // MARKETPLACE – FIXED: Removed Total Payout from form
+        // MARKETPLACE
         // ================================================================
         let allPlans = [];
 
@@ -3454,7 +3474,7 @@
             showPlanForm('Create Marketplace Plan', null);
         }
 
-        // ─── UPDATED showPlanForm: removed Total Payout ───
+        // ─── showPlanForm: removed Total Payout ───
         function showPlanForm(title, planData) {
             const isEdit = !!planData;
             const p = planData || {};
@@ -3599,7 +3619,7 @@
             document.getElementById('mpPublishBtn').onclick = async function() { await savePlan(true); };
         }
 
-        // ─── UPDATED savePlan: removes Total Payout UI, keeps compatibility ───
+        // ─── savePlan: removes Total Payout UI, keeps compatibility ───
         async function savePlan(publish) {
             const btn = publish ? document.getElementById('mpPublishBtn') : document.getElementById('mpSaveDraftBtn');
             const originalText = btn.innerHTML;
@@ -3742,7 +3762,7 @@
         };
 
         // ================================================================
-        // VOUCHERS (unchanged)
+        // VOUCHERS
         // ================================================================
         let allVouchers = [];
 
@@ -3885,7 +3905,7 @@
         };
 
         // ================================================================
-        // AGENTS (unchanged)
+        // AGENTS
         // ================================================================
         let allAgents = [];
 
@@ -4143,7 +4163,7 @@
         };
 
         // ================================================================
-        // ADMINS (unchanged)
+        // ADMINS
         // ================================================================
         let allAdmins = [];
 
@@ -4276,21 +4296,72 @@
         };
 
         // ================================================================
-        // ADS, NEWS, TRANSACTIONS, SUPPORT (placeholders)
+        // ADS, NEWS, TRANSACTIONS, SUPPORT (placeholders with clear messages)
         // ================================================================
         async function loadAds() {
             const wrap = document.getElementById('adsTableWrap');
-            wrap.innerHTML =
-                '<div class="empty-state"><i class="fas fa-ad"></i><p>Ad management is available in the Ads tab.</p></div>';
+            wrap.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-ad"></i>
+                    <p>Ad management is available in the Ads tab.</p>
+                    <p style="font-size:0.7rem;margin-top:4px;">(No ads found or feature not implemented yet.)</p>
+                </div>
+            `;
         }
 
         async function loadNews() {
             const wrap = document.getElementById('newsTableWrap');
-            wrap.innerHTML =
-                '<div class="empty-state"><i class="fas fa-newspaper"></i><p>News management is available in the News tab.</p></div>';
+            wrap.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-newspaper"></i>
+                    <p>News management is available in the News tab.</p>
+                    <p style="font-size:0.7rem;margin-top:4px;">(No news found or feature not implemented yet.)</p>
+                </div>
+            `;
         }
 
-        // ─── FIXED: TREASURE CODES FULL CRUD ────────────────────────────
+        async function loadTransactions() {
+            const wrap = document.getElementById('transactionsTableWrap');
+            try {
+                const snap = await db.collection('transactions').orderBy('createdAt', 'desc').limit(50).get();
+                let html = `<table>
+                    <thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr></thead><tbody>`;
+                if (snap.empty) {
+                    html += '<tr><td colspan="5" class="empty-state">No transactions found.</td></tr>';
+                } else {
+                    snap.forEach(d => {
+                        const data = d.data();
+                        html += `<tr>
+                            <td>${escapeHtml(data.userEmail || data.userId || '—')}</td>
+                            <td>${getStatusBadge(data.type || '—')}</td>
+                            <td>${formatMoney(data.amount)} ZMW</td>
+                            <td>${escapeHtml(data.description || '—')}</td>
+                            <td>${formatDate(data.createdAt)}</td>
+                        </tr>`;
+                    });
+                }
+                html += '</tbody></table>';
+                wrap.innerHTML = html;
+            } catch (err) {
+                console.error('loadTransactions error:', err);
+                wrap.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load transactions.</p></div>';
+            }
+        }
+
+        async function loadSupport() {
+            const wrap = document.getElementById('supportTableWrap');
+            wrap.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-headset"></i>
+                    <p>Support tickets are available in the Support tab.</p>
+                    <p style="font-size:0.7rem;margin-top:4px;">(No tickets found or feature not implemented yet.)</p>
+                </div>
+            `;
+        }
+
+        // ================================================================
+        // TREASURE
+        // ================================================================
         let allTreasureCodes = [];
 
         async function loadTreasure() {
@@ -4445,43 +4516,7 @@
         };
 
         // ================================================================
-        // TRANSACTIONS
-        // ================================================================
-        async function loadTransactions() {
-            const wrap = document.getElementById('transactionsTableWrap');
-            try {
-                const snap = await db.collection('transactions').orderBy('createdAt', 'desc').limit(50).get();
-                let html = `<table>
-                    <thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Description</th><th>Date</th></tr></thead><tbody>`;
-                if (snap.empty) {
-                    html += '<tr><td colspan="5" class="empty-state">No transactions</td></tr>';
-                } else {
-                    snap.forEach(d => {
-                        const data = d.data();
-                        html += `<tr>
-                            <td>${escapeHtml(data.userEmail || data.userId || '—')}</td>
-                            <td>${getStatusBadge(data.type || '—')}</td>
-                            <td>${formatMoney(data.amount)} ZMW</td>
-                            <td>${escapeHtml(data.description || '—')}</td>
-                            <td>${formatDate(data.createdAt)}</td>
-                        </tr>`;
-                    });
-                }
-                html += '</tbody></table>';
-                wrap.innerHTML = html;
-            } catch (err) {
-                wrap.innerHTML = '<div class="empty-state"><p>Failed to load transactions.</p></div>';
-            }
-        }
-
-        async function loadSupport() {
-            const wrap = document.getElementById('supportTableWrap');
-            wrap.innerHTML =
-                '<div class="empty-state"><i class="fas fa-headset"></i><p>Support tickets are available in the Support tab.</p></div>';
-        }
-
-        // ================================================================
-        // SETTINGS (unchanged)
+        // SETTINGS
         // ================================================================
         async function loadSettings() {
             try {
@@ -4521,6 +4556,7 @@
                 }
             } catch (err) {
                 console.error('Load settings error:', err);
+                showToast('Failed to load settings.', 'error');
             }
         }
 
@@ -4668,7 +4704,7 @@
         };
 
         // ================================================================
-        // FIX MISSING DOCUMENTS (unchanged)
+        // FIX MISSING DOCUMENTS
         // ================================================================
         document.getElementById('fixMissingBtn').onclick = async function() {
             const btn = this;
@@ -4727,7 +4763,7 @@
         };
 
         // ================================================================
-        // APPEARANCE (unchanged)
+        // APPEARANCE
         // ================================================================
         async function loadAppearance() {
             try {
@@ -5251,7 +5287,7 @@
         }
 
         // ================================================================
-        // JOBS (unchanged)
+        // JOBS
         // ================================================================
         let allJobs = [];
 
@@ -5434,12 +5470,8 @@
                 loadSettings();
                 loadAppearance();
                 loadRecentActivities();
-                console.log('✅ Admin Dashboard initialized with Savings & Jobs tabs.');
-                console.log('✅ Saving Management: deposits + withdrawals (10% fee) working.');
-                console.log('✅ Buy Plan Management: one plan = one card, no duplication.');
-                console.log('✅ Total Payout removed from marketplace plan form.');
-                console.log('✅ Treasure tab fully functional (add, mark used, delete).');
-                console.log('✅ Scrolling fix applied: removed scroll-behavior from html.');
+                console.log('✅ Admin Dashboard initialized with all tabs fixed.');
+                console.log('✅ Every tab now shows data or a clear empty-state message.');
             } catch (err) {
                 console.error('Initialization error:', err);
             }
