@@ -2322,40 +2322,115 @@
                 console.error(err); }
         };
 
+        // ─── EDIT USER (with Deposit & Withdraw balance controls) ───
         window.editUser = function(uid) {
             const u = allUsers.find(x => x.id === uid);
             if (!u) { showToast('User not found.', 'error'); return; }
+
+            // Build the form with new fields
             const html = `
                 <div class="form-group"><label>Full Name</label><input class="form-control" id="editUName" value="${escapeHtml(u.fullName || '')}" /></div>
                 <div class="form-group"><label>Email</label><input class="form-control" id="editUEmail" value="${escapeHtml(u.email || '')}" /></div>
                 <div class="form-group"><label>Phone</label><input class="form-control" id="editUPhone" value="${escapeHtml(u.phone || '')}" /></div>
-                <div class="form-group"><label>Balance</label><input class="form-control" id="editUBalance" type="number" step="0.01" value="${u.balance || 0}" /></div>
-                <div class="form-group"><label>Role</label><select class="form-control" id="editURole"><option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option><option value="agent" ${u.role === 'agent' ? 'selected' : ''}>Agent</option><option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option></select></div>
-                <div class="form-group"><label>Blocked</label><select class="form-control" id="editUBlocked"><option value="false" ${!u.isBlocked ? 'selected' : ''}>Active</option><option value="true" ${u.isBlocked ? 'selected' : ''}>Blocked</option></select></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Withdraw Balance</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input class="form-control" id="editUBalance" type="number" step="0.01" value="${u.balance || 0}" />
+                            <button class="btn btn-danger btn-sm" id="clearWithdrawBalanceBtn" style="flex-shrink:0;">Clear</button>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Deposit Balance</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input class="form-control" id="editDepositBalance" type="number" step="0.01" value="${u.depositBalance || 0}" />
+                            <button class="btn btn-danger btn-sm" id="clearDepositBalanceBtn" style="flex-shrink:0;">Clear</button>
+                            <button class="btn btn-accent btn-sm" id="addDepositBalanceBtn" style="flex-shrink:0;">+ Add</button>
+                        </div>
+                        <div style="margin-top:4px;display:flex;gap:6px;align-items:center;">
+                            <input class="form-control" id="addDepositAmount" type="number" step="0.01" placeholder="Amount" style="width:100px;" />
+                            <span style="font-size:0.7rem;color:var(--text-muted);">Add to Deposit Balance</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group"><label>Role</label><select class="form-control" id="editURole">
+                    <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                    <option value="agent" ${u.role === 'agent' ? 'selected' : ''}>Agent</option>
+                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select></div>
+                <div class="form-group"><label>Blocked</label><select class="form-control" id="editUBlocked">
+                    <option value="false" ${!u.isBlocked ? 'selected' : ''}>Active</option>
+                    <option value="true" ${u.isBlocked ? 'selected' : ''}>Blocked</option>
+                </select></div>
+                <input type="hidden" id="editUid" value="${uid}" />
             `;
+
             const footer =
-                `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="saveEditUserBtn" data-uid="${uid}">Save Changes</button>`;
+                `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="saveEditUserBtn">Save Changes</button>`;
+
             openModal('Edit User', html, footer);
+
+            // ─── Attach event listeners ───
+
+            // Clear Withdraw Balance
+            document.getElementById('clearWithdrawBalanceBtn').onclick = function() {
+                document.getElementById('editUBalance').value = '0';
+            };
+
+            // Clear Deposit Balance
+            document.getElementById('clearDepositBalanceBtn').onclick = function() {
+                document.getElementById('editDepositBalance').value = '0';
+            };
+
+            // Add to Deposit Balance
+            document.getElementById('addDepositBalanceBtn').onclick = function() {
+                const amountInput = document.getElementById('addDepositAmount');
+                const depositInput = document.getElementById('editDepositBalance');
+                const amount = parseFloat(amountInput.value);
+                if (isNaN(amount) || amount <= 0) {
+                    showToast('Please enter a valid positive amount to add.', 'warning');
+                    return;
+                }
+                const current = parseFloat(depositInput.value) || 0;
+                depositInput.value = (current + amount).toFixed(2);
+                amountInput.value = '';
+                showToast(`Added ${formatMoney(amount)} to deposit balance.`, 'success');
+            };
+
+            // Save handler
             document.getElementById('saveEditUserBtn').onclick = async function() {
                 const btn = this;
                 btn.disabled = true;
                 btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div> Saving...';
+
                 try {
+                    const uid = document.getElementById('editUid').value;
+                    const fullName = document.getElementById('editUName').value.trim();
+                    const email = document.getElementById('editUEmail').value.trim();
+                    const phone = document.getElementById('editUPhone').value.trim();
+                    const balance = parseFloat(document.getElementById('editUBalance').value) || 0;
+                    const depositBalance = parseFloat(document.getElementById('editDepositBalance').value) || 0;
+                    const role = document.getElementById('editURole').value;
+                    const isBlocked = document.getElementById('editUBlocked').value === 'true';
+
                     await db.collection('users').doc(uid).update({
-                        fullName: document.getElementById('editUName').value.trim(),
-                        email: document.getElementById('editUEmail').value.trim(),
-                        phone: document.getElementById('editUPhone').value.trim(),
-                        balance: parseFloat(document.getElementById('editUBalance').value) || 0,
-                        role: document.getElementById('editURole').value,
-                        isBlocked: document.getElementById('editUBlocked').value === 'true',
+                        fullName,
+                        email,
+                        phone,
+                        balance,
+                        depositBalance,
+                        role,
+                        isBlocked,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     showToast('User updated successfully.');
                     closeModal();
                     loadUsers();
-                } catch (err) { console.error('Edit user error:', err);
-                    showToast('Failed to update user.', 'error'); } finally { btn.disabled = false;
-                    btn.innerHTML = 'Save Changes'; }
+                } catch (err) {
+                    console.error('Edit user error:', err);
+                    showToast('Failed to update user: ' + err.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Save Changes';
+                }
             };
         };
 
@@ -2654,9 +2729,7 @@
         }
 
         // ================================================================
-        // 14. WITHDRAWALS (similar structure — abbreviated for brevity)
-        //    Full implementation follows the same pattern as deposits.
-        //    For space, we include the core functions.
+        // 14. WITHDRAWALS (similar to deposits)
         // ================================================================
         let allWithdrawals = [];
 
@@ -2725,7 +2798,6 @@
                 if (data.status === 'approved' || data.status === 'completed') { showToast('Already processed.',
                     'warning'); return; }
 
-                // Check withdrawal rules
                 const rulesDoc = await db.collection('systemSettings').doc('withdrawalRules').get();
                 const rules = rulesDoc.exists ? rulesDoc.data() : {};
                 const requireDeposit = rules.requireDeposit !== false;
@@ -2842,7 +2914,7 @@
         }
 
         // ================================================================
-        // 15. INVESTMENTS
+        // 15. INVESTMENTS (unchanged)
         // ================================================================
         let allInvestments = [];
 
@@ -2898,7 +2970,7 @@
         document.getElementById('refreshInvestmentsBtn').onclick = loadInvestments;
 
         // ================================================================
-        // 16. MARKETPLACE PLANS
+        // 16. MARKETPLACE PLANS (with fixed planType saving)
         // ================================================================
         let allPlans = [];
 
@@ -2962,11 +3034,14 @@
             plans.forEach(p => {
                 const status = getPlanStatus(p);
                 const visible = p.showOnMarketplace === true;
-                const planType = p.planType || 'Daily';
+                const planType = p.planType || 'invest'; // default to invest
+                // Display friendly name
+                const displayType = (planType === 'invest' || planType === 'Daily') ? 'Daily (Invest)' :
+                    (planType === 'buy' || planType === 'Buy') ? 'Buy' : planType;
                 html += `<tr>
                     <td><strong>${escapeHtml(p.planName || '—')}</strong></td>
                     <td>${formatMoney(p.investmentPrice)} ZMW</td>
-                    <td>${escapeHtml(planType)}</td>
+                    <td>${escapeHtml(displayType)}</td>
                     <td>${getStatusBadge(status)}</td>
                     <td>${visible ? '<span class="badge badge-success">Visible</span>' : '<span class="badge badge-secondary">Hidden</span>'}</td>
                     <td class="actions-cell">
@@ -2986,12 +3061,15 @@
 
         function openCreatePlanForm() { showPlanForm('Create Marketplace Plan', null); }
 
-        // ─── showPlanForm — creates/edits a plan ───
+        // ─── showPlanForm — fixed to save 'invest' / 'buy' (lowercase) ───
         function showPlanForm(title, planData) {
             const isEdit = !!planData;
             const p = planData || {};
-            const planType = p.planType || 'Daily';
-            const isDaily = planType === 'Daily';
+            // Normalize plan type: if it's 'Daily' or 'invest' -> 'invest', else 'buy'
+            let planType = (p.planType || 'invest').toLowerCase();
+            if (planType === 'daily') planType = 'invest';
+            if (planType === 'buy') planType = 'buy';
+            const isDaily = (planType === 'invest');
 
             const html = `
                 <div class="form-group"><label>Plan Name *</label><input class="form-control" id="mpName" value="${escapeHtml(p.planName || '')}" placeholder="e.g. Starter Plan" /></div>
@@ -3052,8 +3130,9 @@
             const planTypeHidden = document.getElementById('mpPlanTypeHidden');
 
             function setPlanType(type) {
+                // type will be 'invest' or 'buy'
                 planTypeHidden.value = type;
-                const isDaily = type === 'Daily';
+                const isDaily = (type === 'invest');
                 dailyBtn.className = `btn ${isDaily ? 'btn-primary' : 'btn-outline'}`;
                 buyBtn.className = `btn ${!isDaily ? 'btn-primary' : 'btn-outline'}`;
                 document.getElementById('mpDailyFields').style.display = isDaily ? '' : 'none';
@@ -3061,8 +3140,8 @@
                 if (isDaily) updateCalc();
             }
 
-            dailyBtn.onclick = () => setPlanType('Daily');
-            buyBtn.onclick = () => setPlanType('Buy');
+            dailyBtn.onclick = () => setPlanType('invest');
+            buyBtn.onclick = () => setPlanType('buy');
 
             const imgUrlInput = document.getElementById('mpImageUrl');
             const previewContainer = document.getElementById('mpImagePreview');
@@ -3104,10 +3183,15 @@
                     document.getElementById('mpImagePreview').innerHTML =
                         `<img src="${escapeHtml(planData.imageUrl)}" alt="Preview" onerror="this.parentElement.innerHTML='<div class=\\'error-preview\\'><i class=\\'fas fa-exclamation-circle\\'></i> Invalid image URL</div>'" />`;
                 }
-                setPlanType(planData.planType || 'Daily');
-                if (planData.planType === 'Daily') updateCalc();
-            } else { setPlanType('Daily');
-                updateCalc(); }
+                // Set the correct toggle state based on normalized planType
+                const initialType = (planData.planType || 'invest').toLowerCase();
+                const isDailyInitial = (initialType === 'invest' || initialType === 'daily');
+                setPlanType(isDailyInitial ? 'invest' : 'buy');
+                if (isDailyInitial) updateCalc();
+            } else {
+                setPlanType('invest');
+                updateCalc();
+            }
 
             document.getElementById('mpSaveDraftBtn').onclick = async function() { await savePlan(false); };
             document.getElementById('mpPublishBtn').onclick = async function() { await savePlan(true); };
@@ -3122,10 +3206,10 @@
 
             try {
                 const id = document.getElementById('mpEditId').value;
-                const planType = document.getElementById('mpPlanTypeHidden').value;
+                const planType = document.getElementById('mpPlanTypeHidden').value; // 'invest' or 'buy'
                 const data = {
                     planName: document.getElementById('mpName').value.trim(),
-                    planType: planType,
+                    planType: planType, // lowercase
                     imageUrl: document.getElementById('mpImageUrl').value.trim(),
                     investmentPrice: parseFloat(document.getElementById('mpPrice').value) || 0,
                     releaseDate: document.getElementById('mpReleaseDate').value,
@@ -3136,15 +3220,15 @@
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                if (planType === 'Daily') {
+                if (planType === 'invest') {
                     data.dailyReturn = parseFloat(document.getElementById('mpDailyReturn').value) || 0;
                     data.earningDays = parseInt(document.getElementById('mpEarningDays').value) || 0;
                     data.totalProfit = data.dailyReturn * data.earningDays;
                     data.totalPayout = data.investmentPrice + data.totalProfit;
-                } else {
+                } else { // buy
                     data.dailyReturn = parseFloat(document.getElementById('mpProfit').value) || 0;
                     data.earningDays = parseInt(document.getElementById('mpDuration').value) || 0;
-                    data.totalProfit = data.dailyReturn;
+                    data.totalProfit = data.dailyReturn; // profit for buy
                     data.totalPayout = data.investmentPrice + data.dailyReturn;
                 }
 
@@ -3154,7 +3238,7 @@
                 if (data.investmentPrice <= 0) { showToast('Please enter a valid investment price.', 'warning');
                     btn.disabled = false;
                     btn.innerHTML = originalText; return; }
-                if (planType === 'Daily') {
+                if (planType === 'invest') {
                     if (data.dailyReturn <= 0) { showToast('Please enter daily return.', 'warning');
                         btn.disabled = false;
                         btn.innerHTML = originalText; return; }
@@ -3671,7 +3755,7 @@
         };
 
         // ================================================================
-        // 20. ADS, NEWS, TRANSACTIONS, SUPPORT (placeholders & real)
+        // 20. ADS, NEWS, TRANSACTIONS, SUPPORT
         // ================================================================
         async function loadAds() {
             document.getElementById('adsTableWrap').innerHTML =
@@ -4074,7 +4158,7 @@
         };
 
         // ================================================================
-        // 25. SAVINGS — Full implementation
+        // 25. SAVINGS — Full implementation (unchanged from working version)
         // ================================================================
         let allSavings = [];
         let allSavingsWithdrawals = [];
@@ -4415,7 +4499,7 @@
         }
 
         // ================================================================
-        // 26. JOBS
+        // 26. JOBS (unchanged)
         // ================================================================
         let allJobs = [];
 
@@ -4581,8 +4665,9 @@
                 loadSettings();
                 loadAppearance();
                 loadRecentActivities();
-                console.log('✅ Sajvera Admin Dashboard initialized successfully.');
-                console.log('📌 All tabs are functional. Data loads on tab switch.');
+                console.log('✅ Sajvera Admin Dashboard initialized with fixes.');
+                console.log('📌 Plan type now saves as "invest" or "buy" (lowercase).');
+                console.log('📌 User edit includes deposit & withdraw balance controls.');
             } catch (err) { console.error('Initialization error:', err); }
         }
 
