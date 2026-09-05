@@ -467,6 +467,11 @@
             border-color: rgba(167, 139, 250, 0.15);
             transform: translateY(-1px);
         }
+        .quick-actions .btn-qa.danger-qa:hover {
+            background: rgba(239, 68, 68, 0.08);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.15);
+        }
 
         /* ================================================================
            CARDS
@@ -1432,6 +1437,18 @@
         .status-dot.matured {
             background: var(--accent-1);
         }
+
+        /* Reset Stats button special style */
+        .btn-reset-stats {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+        .btn-reset-stats:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.25);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -1504,6 +1521,8 @@
                 <button class="btn-qa" data-action="createPlan"><i class="fas fa-plus-circle"></i> New Plan</button>
                 <button class="btn-qa" data-action="goSavings"><i class="fas fa-piggy-bank"></i> Savings</button>
                 <button class="btn-qa" data-action="goJobs"><i class="fas fa-briefcase"></i> Jobs</button>
+                <!-- Reset Stats Button -->
+                <button class="btn-qa btn-reset-stats" id="resetStatsBtn"><i class="fas fa-undo-alt"></i> Reset Deposit/Withdraw Stats</button>
             </div>
 
             <div class="card">
@@ -2327,7 +2346,6 @@
             const u = allUsers.find(x => x.id === uid);
             if (!u) { showToast('User not found.', 'error'); return; }
 
-            // Build the form with new fields
             const html = `
                 <div class="form-group"><label>Full Name</label><input class="form-control" id="editUName" value="${escapeHtml(u.fullName || '')}" /></div>
                 <div class="form-group"><label>Email</label><input class="form-control" id="editUEmail" value="${escapeHtml(u.email || '')}" /></div>
@@ -2368,19 +2386,12 @@
 
             openModal('Edit User', html, footer);
 
-            // ─── Attach event listeners ───
-
-            // Clear Withdraw Balance
             document.getElementById('clearWithdrawBalanceBtn').onclick = function() {
                 document.getElementById('editUBalance').value = '0';
             };
-
-            // Clear Deposit Balance
             document.getElementById('clearDepositBalanceBtn').onclick = function() {
                 document.getElementById('editDepositBalance').value = '0';
             };
-
-            // Add to Deposit Balance
             document.getElementById('addDepositBalanceBtn').onclick = function() {
                 const amountInput = document.getElementById('addDepositAmount');
                 const depositInput = document.getElementById('editDepositBalance');
@@ -2394,13 +2405,10 @@
                 amountInput.value = '';
                 showToast(`Added ${formatMoney(amount)} to deposit balance.`, 'success');
             };
-
-            // Save handler
             document.getElementById('saveEditUserBtn').onclick = async function() {
                 const btn = this;
                 btn.disabled = true;
                 btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div> Saving...';
-
                 try {
                     const uid = document.getElementById('editUid').value;
                     const fullName = document.getElementById('editUName').value.trim();
@@ -2410,7 +2418,6 @@
                     const depositBalance = parseFloat(document.getElementById('editDepositBalance').value) || 0;
                     const role = document.getElementById('editURole').value;
                     const isBlocked = document.getElementById('editUBlocked').value === 'true';
-
                     await db.collection('users').doc(uid).update({
                         fullName,
                         email,
@@ -2585,7 +2592,6 @@
                 const data = doc.data();
                 if (data.status === 'approved') { showToast('Already approved.', 'warning'); return; }
 
-                // Check deposit rules
                 const rulesDoc = await db.collection('systemSettings').doc('depositRules').get();
                 const rules = rulesDoc.exists ? rulesDoc.data() : {};
                 const requireAmountMatch = rules.requireAmountMatch !== false;
@@ -2729,7 +2735,7 @@
         }
 
         // ================================================================
-        // 14. WITHDRAWALS (similar to deposits)
+        // 14. WITHDRAWALS
         // ================================================================
         let allWithdrawals = [];
 
@@ -2914,7 +2920,7 @@
         }
 
         // ================================================================
-        // 15. INVESTMENTS (unchanged)
+        // 15. INVESTMENTS
         // ================================================================
         let allInvestments = [];
 
@@ -2970,7 +2976,7 @@
         document.getElementById('refreshInvestmentsBtn').onclick = loadInvestments;
 
         // ================================================================
-        // 16. MARKETPLACE PLANS (with fixed planType saving)
+        // 16. MARKETPLACE PLANS — FIXED: Buy vs Invest logic
         // ================================================================
         let allPlans = [];
 
@@ -3029,19 +3035,26 @@
                     '<div class="empty-state"><i class="fas fa-store"></i><p>No marketplace plans created yet.</p></div>';
                 return;
             }
+            // Show plan details in table: for Invest show Daily Return + Earning Days, for Buy show Profit + Duration
             let html =
-                `<table><thead><tr><th>Plan</th><th>Price</th><th>Type</th><th>Status</th><th>Visibility</th><th>Actions</th></tr></thead><tbody>`;
+                `<table><thead><tr><th>Plan</th><th>Price</th><th>Type</th><th>Return / Profit</th><th>Days / Duration</th><th>Total Profit</th><th>Status</th><th>Visibility</th><th>Actions</th></tr></thead><tbody>`;
             plans.forEach(p => {
                 const status = getPlanStatus(p);
                 const visible = p.showOnMarketplace === true;
-                const planType = p.planType || 'invest'; // default to invest
-                // Display friendly name
-                const displayType = (planType === 'invest' || planType === 'Daily') ? 'Daily (Invest)' :
-                    (planType === 'buy' || planType === 'Buy') ? 'Buy' : planType;
+                const planType = p.planType || 'invest';
+                const isInvest = (planType === 'invest' || planType === 'Daily');
+                // Display values
+                const returnOrProfit = isInvest ? p.dailyReturn : p.totalProfit;
+                const daysOrDuration = isInvest ? p.earningDays : p.earningDays;
+                const totalProfit = isInvest ? (p.dailyReturn || 0) * (p.earningDays || 0) : (p.totalProfit || 0);
+                const displayType = isInvest ? 'Daily (Invest)' : 'Buy';
                 html += `<tr>
                     <td><strong>${escapeHtml(p.planName || '—')}</strong></td>
                     <td>${formatMoney(p.investmentPrice)} ZMW</td>
                     <td>${escapeHtml(displayType)}</td>
+                    <td>${isInvest ? formatMoney(returnOrProfit) + ' / day' : formatMoney(returnOrProfit) + ' ZMW'}</td>
+                    <td>${daysOrDuration || 0} ${isInvest ? 'days' : 'days'}</td>
+                    <td>${formatMoney(totalProfit)} ZMW</td>
                     <td>${getStatusBadge(status)}</td>
                     <td>${visible ? '<span class="badge badge-success">Visible</span>' : '<span class="badge badge-secondary">Hidden</span>'}</td>
                     <td class="actions-cell">
@@ -3061,22 +3074,21 @@
 
         function openCreatePlanForm() { showPlanForm('Create Marketplace Plan', null); }
 
-        // ─── showPlanForm — fixed to save 'invest' / 'buy' (lowercase) ───
+        // ─── showPlanForm — FIXED: Buy plan shows Profit + Duration, Invest shows Daily Return + Days ───
         function showPlanForm(title, planData) {
             const isEdit = !!planData;
             const p = planData || {};
-            // Normalize plan type: if it's 'Daily' or 'invest' -> 'invest', else 'buy'
             let planType = (p.planType || 'invest').toLowerCase();
             if (planType === 'daily') planType = 'invest';
             if (planType === 'buy') planType = 'buy';
-            const isDaily = (planType === 'invest');
+            const isInvest = (planType === 'invest');
 
             const html = `
                 <div class="form-group"><label>Plan Name *</label><input class="form-control" id="mpName" value="${escapeHtml(p.planName || '')}" placeholder="e.g. Starter Plan" /></div>
                 <div class="form-group"><label>Plan Type *</label>
                     <div class="plan-type-toggle">
-                        <button type="button" class="btn ${isDaily ? 'btn-primary' : 'btn-outline'}" id="mpTypeDailyBtn">Daily (Invest)</button>
-                        <button type="button" class="btn ${!isDaily ? 'btn-primary' : 'btn-outline'}" id="mpTypeBuyBtn">Buy</button>
+                        <button type="button" class="btn ${isInvest ? 'btn-primary' : 'btn-outline'}" id="mpTypeInvestBtn">Daily (Invest)</button>
+                        <button type="button" class="btn ${!isInvest ? 'btn-primary' : 'btn-outline'}" id="mpTypeBuyBtn">Buy</button>
                     </div>
                     <input type="hidden" id="mpPlanTypeHidden" value="${planType}" />
                 </div>
@@ -3085,17 +3097,26 @@
                     <div class="image-preview-container" id="mpImagePreview">${p.imageUrl ? `<img src="${escapeHtml(p.imageUrl)}" alt="Plan image" onerror="this.parentElement.innerHTML='<div class=\\'error-preview\\'><i class=\\'fas fa-exclamation-circle\\'></i> Invalid image URL</div>'" />` : ''}</div>
                 </div>
                 <div class="form-group"><label>Investment Price (ZMW) *</label><input class="form-control" id="mpPrice" type="number" step="0.01" value="${p.investmentPrice || ''}" placeholder="100" /></div>
-                <div id="mpDailyFields" style="${isDaily ? '' : 'display:none;'}">
+                <!-- INVEST FIELDS -->
+                <div id="mpInvestFields" style="${isInvest ? '' : 'display:none;'}">
                     <div class="form-row">
                         <div class="form-group"><label>Daily Return (ZMW) *</label><input class="form-control" id="mpDailyReturn" type="number" step="0.01" value="${p.dailyReturn || ''}" placeholder="10" /></div>
                         <div class="form-group"><label>Earning Days *</label><input class="form-control" id="mpEarningDays" type="number" step="1" value="${p.earningDays || ''}" placeholder="10" /></div>
                     </div>
-                    <div class="calc-box"><div class="calc-item"><span class="calc-label">Total Income</span><span class="calc-value" id="mpCalcProfit">0.00 ZMW</span></div></div>
+                    <div class="calc-box">
+                        <div class="calc-item"><span class="calc-label">Total Income</span><span class="calc-value" id="mpCalcProfit">0.00 ZMW</span></div>
+                        <div class="calc-item"><span class="calc-label">Total Payout</span><span class="calc-value" id="mpCalcPayout">0.00 ZMW</span></div>
+                    </div>
                 </div>
-                <div id="mpBuyFields" style="${isDaily ? 'display:none;' : ''}">
+                <!-- BUY FIELDS -->
+                <div id="mpBuyFields" style="${isInvest ? 'display:none;' : ''}">
                     <div class="form-row">
                         <div class="form-group"><label>Profit (ZMW) *</label><input class="form-control" id="mpProfit" type="number" step="0.01" value="${p.totalProfit || ''}" placeholder="100" /></div>
                         <div class="form-group"><label>Duration (Days) *</label><input class="form-control" id="mpDuration" type="number" step="1" value="${p.earningDays || ''}" placeholder="10" /></div>
+                    </div>
+                    <div class="calc-box">
+                        <div class="calc-item"><span class="calc-label">Total Profit</span><span class="calc-value" id="mpBuyCalcProfit">0.00 ZMW</span></div>
+                        <div class="calc-item"><span class="calc-label">Total Payout</span><span class="calc-value" id="mpBuyCalcPayout">0.00 ZMW</span></div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -3124,25 +3145,26 @@
 
             openModal(title, html, footer);
 
-            // Setup form
-            const dailyBtn = document.getElementById('mpTypeDailyBtn');
+            // ─── Setup toggle ───
+            const investBtn = document.getElementById('mpTypeInvestBtn');
             const buyBtn = document.getElementById('mpTypeBuyBtn');
             const planTypeHidden = document.getElementById('mpPlanTypeHidden');
 
             function setPlanType(type) {
-                // type will be 'invest' or 'buy'
                 planTypeHidden.value = type;
-                const isDaily = (type === 'invest');
-                dailyBtn.className = `btn ${isDaily ? 'btn-primary' : 'btn-outline'}`;
-                buyBtn.className = `btn ${!isDaily ? 'btn-primary' : 'btn-outline'}`;
-                document.getElementById('mpDailyFields').style.display = isDaily ? '' : 'none';
-                document.getElementById('mpBuyFields').style.display = isDaily ? 'none' : '';
-                if (isDaily) updateCalc();
+                const isInvestNow = (type === 'invest');
+                investBtn.className = `btn ${isInvestNow ? 'btn-primary' : 'btn-outline'}`;
+                buyBtn.className = `btn ${!isInvestNow ? 'btn-primary' : 'btn-outline'}`;
+                document.getElementById('mpInvestFields').style.display = isInvestNow ? '' : 'none';
+                document.getElementById('mpBuyFields').style.display = isInvestNow ? 'none' : '';
+                if (isInvestNow) updateInvestCalc();
+                else updateBuyCalc();
             }
 
-            dailyBtn.onclick = () => setPlanType('invest');
+            investBtn.onclick = () => setPlanType('invest');
             buyBtn.onclick = () => setPlanType('buy');
 
+            // ─── Image preview ───
             const imgUrlInput = document.getElementById('mpImageUrl');
             const previewContainer = document.getElementById('mpImagePreview');
             imgUrlInput.oninput = function() {
@@ -3153,19 +3175,45 @@
                 } else previewContainer.innerHTML = '';
             };
 
+            // ─── Invest calculator ───
             const dailyReturnInput = document.getElementById('mpDailyReturn');
             const earningDaysInput = document.getElementById('mpEarningDays');
             const calcProfit = document.getElementById('mpCalcProfit');
+            const calcPayout = document.getElementById('mpCalcPayout');
 
-            function updateCalc() {
+            function updateInvestCalc() {
                 const daily = parseFloat(dailyReturnInput.value) || 0;
                 const days = parseInt(earningDaysInput.value) || 0;
-                calcProfit.textContent = formatMoney(daily * days) + ' ZMW';
+                const total = daily * days;
+                const price = parseFloat(document.getElementById('mpPrice').value) || 0;
+                calcProfit.textContent = formatMoney(total) + ' ZMW';
+                calcPayout.textContent = formatMoney(price + total) + ' ZMW';
             }
+            dailyReturnInput.oninput = updateInvestCalc;
+            earningDaysInput.oninput = updateInvestCalc;
 
-            dailyReturnInput.oninput = updateCalc;
-            earningDaysInput.oninput = updateCalc;
+            // ─── Buy calculator ───
+            const profitInput = document.getElementById('mpProfit');
+            const durationInput = document.getElementById('mpDuration');
+            const buyCalcProfit = document.getElementById('mpBuyCalcProfit');
+            const buyCalcPayout = document.getElementById('mpBuyCalcPayout');
 
+            function updateBuyCalc() {
+                const profit = parseFloat(profitInput.value) || 0;
+                const price = parseFloat(document.getElementById('mpPrice').value) || 0;
+                buyCalcProfit.textContent = formatMoney(profit) + ' ZMW';
+                buyCalcPayout.textContent = formatMoney(price + profit) + ' ZMW';
+            }
+            profitInput.oninput = updateBuyCalc;
+            durationInput.oninput = updateBuyCalc;
+
+            // ─── Price also affects calcs ───
+            document.getElementById('mpPrice').oninput = function() {
+                if (planTypeHidden.value === 'invest') updateInvestCalc();
+                else updateBuyCalc();
+            };
+
+            // ─── Populate form if editing ───
             if (planData) {
                 document.getElementById('mpName').value = planData.planName || '';
                 document.getElementById('mpImageUrl').value = planData.imageUrl || '';
@@ -3183,16 +3231,17 @@
                     document.getElementById('mpImagePreview').innerHTML =
                         `<img src="${escapeHtml(planData.imageUrl)}" alt="Preview" onerror="this.parentElement.innerHTML='<div class=\\'error-preview\\'><i class=\\'fas fa-exclamation-circle\\'></i> Invalid image URL</div>'" />`;
                 }
-                // Set the correct toggle state based on normalized planType
                 const initialType = (planData.planType || 'invest').toLowerCase();
-                const isDailyInitial = (initialType === 'invest' || initialType === 'daily');
-                setPlanType(isDailyInitial ? 'invest' : 'buy');
-                if (isDailyInitial) updateCalc();
+                const isInvestInit = (initialType === 'invest' || initialType === 'daily');
+                setPlanType(isInvestInit ? 'invest' : 'buy');
+                if (isInvestInit) updateInvestCalc();
+                else updateBuyCalc();
             } else {
                 setPlanType('invest');
-                updateCalc();
+                updateInvestCalc();
             }
 
+            // ─── Save handlers ───
             document.getElementById('mpSaveDraftBtn').onclick = async function() { await savePlan(false); };
             document.getElementById('mpPublishBtn').onclick = async function() { await savePlan(true); };
         }
@@ -3209,7 +3258,7 @@
                 const planType = document.getElementById('mpPlanTypeHidden').value; // 'invest' or 'buy'
                 const data = {
                     planName: document.getElementById('mpName').value.trim(),
-                    planType: planType, // lowercase
+                    planType: planType,
                     imageUrl: document.getElementById('mpImageUrl').value.trim(),
                     investmentPrice: parseFloat(document.getElementById('mpPrice').value) || 0,
                     releaseDate: document.getElementById('mpReleaseDate').value,
@@ -3226,10 +3275,10 @@
                     data.totalProfit = data.dailyReturn * data.earningDays;
                     data.totalPayout = data.investmentPrice + data.totalProfit;
                 } else { // buy
-                    data.dailyReturn = parseFloat(document.getElementById('mpProfit').value) || 0;
+                    data.dailyReturn = 0; // not used for buy
                     data.earningDays = parseInt(document.getElementById('mpDuration').value) || 0;
-                    data.totalProfit = data.dailyReturn; // profit for buy
-                    data.totalPayout = data.investmentPrice + data.dailyReturn;
+                    data.totalProfit = parseFloat(document.getElementById('mpProfit').value) || 0;
+                    data.totalPayout = data.investmentPrice + data.totalProfit;
                 }
 
                 if (!data.planName) { showToast('Please enter a plan name.', 'warning');
@@ -3246,7 +3295,7 @@
                         btn.disabled = false;
                         btn.innerHTML = originalText; return; }
                 } else {
-                    if (data.dailyReturn <= 0) { showToast('Please enter profit.', 'warning');
+                    if (data.totalProfit <= 0) { showToast('Please enter profit.', 'warning');
                         btn.disabled = false;
                         btn.innerHTML = originalText; return; }
                     if (data.earningDays <= 0) { showToast('Please enter duration.', 'warning');
@@ -3439,7 +3488,7 @@
         };
 
         // ================================================================
-        // 18. AGENTS (full implementation)
+        // 18. AGENTS
         // ================================================================
         let allAgents = [];
 
@@ -4158,7 +4207,7 @@
         };
 
         // ================================================================
-        // 25. SAVINGS — Full implementation (unchanged from working version)
+        // 25. SAVINGS
         // ================================================================
         let allSavings = [];
         let allSavingsWithdrawals = [];
@@ -4317,7 +4366,6 @@
         });
         document.getElementById('refreshSavingsBtn').onclick = loadSavings;
 
-        // ─── Approve Savings Deposit ───
         window.approveSavingsDeposit = async function(id) {
             if (!await showConfirm('Approve this savings deposit?', 'The user\'s savings balance will be credited.'))
             return;
@@ -4336,7 +4384,6 @@
                     approvedBy: currentAdmin ? currentAdmin.uid : 'admin'
                 });
 
-                // Update user's savings subcollection
                 const userSavingsRef = db.collection('users').doc(userId).collection('savings');
                 const userSavingsSnap = await userSavingsRef.where('branch', '==', branch).limit(1).get();
                 if (!userSavingsSnap.empty) {
@@ -4354,7 +4401,6 @@
                     });
                 }
 
-                // Update user document
                 const userRef = db.collection('users').doc(userId);
                 const userDoc = await userRef.get();
                 if (userDoc.exists) {
@@ -4371,7 +4417,6 @@
                 showToast('Failed to approve savings deposit: ' + err.message, 'error'); }
         };
 
-        // ─── Reject Savings Deposit ───
         window.rejectSavingsDeposit = async function(id) {
             if (!await showConfirm('Reject this savings deposit?', 'The user will not be credited.')) return;
             try {
@@ -4386,7 +4431,6 @@
                 showToast('Failed to reject savings deposit.', 'error'); }
         };
 
-        // ─── Approve Savings Withdrawal ───
         window.approveSavingsWithdrawal = async function(id) {
             if (!await showConfirm('Approve this savings withdrawal?',
                 'The amount will be deducted (10% fee applies).')) return;
@@ -4405,7 +4449,6 @@
                     approvedBy: currentAdmin ? currentAdmin.uid : 'admin'
                 });
 
-                // Deduct from savings balance
                 const userSavingsRef = db.collection('users').doc(userId).collection('savings');
                 const userSavingsSnap = await userSavingsRef.where('branch', '==', branch).limit(1).get();
                 if (userSavingsSnap.empty) throw new Error('User has no savings balance in this branch.');
@@ -4431,7 +4474,6 @@
                 showToast('Failed to approve savings withdrawal: ' + err.message, 'error'); }
         };
 
-        // ─── Reject Savings Withdrawal ───
         window.rejectSavingsWithdrawal = async function(id) {
             if (!await showConfirm('Reject this savings withdrawal?', 'The user\'s savings will not be deducted.'))
             return;
@@ -4447,7 +4489,6 @@
                 showToast('Failed to reject savings withdrawal.', 'error'); }
         };
 
-        // ─── View Savings ───
         window.viewSavings = async function(id) {
             try {
                 const doc = await db.collection('savingsTransactions').doc(id).get();
@@ -4472,7 +4513,6 @@
                 console.error(err); }
         };
 
-        // ─── Savings History ───
         async function loadSavingsHistory() {
             const wrap = document.getElementById('savingsHistoryList');
             try {
@@ -4499,7 +4539,7 @@
         }
 
         // ================================================================
-        // 26. JOBS (unchanged)
+        // 26. JOBS
         // ================================================================
         let allJobs = [];
 
@@ -4656,7 +4696,64 @@
         };
 
         // ================================================================
-        // 27. INITIALIZATION
+        // 27. RESET DEPOSIT / WITHDRAW STATS
+        // ================================================================
+        document.getElementById('resetStatsBtn').onclick = async function() {
+            if (!await showConfirm('Reset Deposit & Withdrawal Stats?',
+                    'This will reset all deposit and withdrawal records. User balances will NOT be affected. This action is permanent.'
+                    )) return;
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div> Resetting...';
+            try {
+                // Delete all deposit records
+                const depositsSnap = await db.collection('deposits').get();
+                const batchSize = 500;
+                let count = 0;
+                for (const doc of depositsSnap.docs) {
+                    await db.collection('deposits').doc(doc.id).delete();
+                    count++;
+                    if (count % batchSize === 0) {
+                        // Small delay to avoid hammering Firestore
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                // Delete all withdrawal records
+                const withdrawalsSnap = await db.collection('withdrawals').get();
+                for (const doc of withdrawalsSnap.docs) {
+                    await db.collection('withdrawals').doc(doc.id).delete();
+                    count++;
+                    if (count % batchSize === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                // Delete all transactions related to deposits/withdrawals (optional)
+                const txSnap = await db.collection('transactions').where('type', 'in', ['deposit', 'withdrawal',
+                    'refund'
+                ]).get();
+                for (const doc of txSnap.docs) {
+                    await db.collection('transactions').doc(doc.id).delete();
+                    count++;
+                    if (count % batchSize === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                showToast(`✅ Reset completed: ${count} records deleted. User balances unchanged.`, 'success');
+                loadDashboardStats();
+                loadDeposits();
+                loadWithdrawals();
+                loadTransactions();
+            } catch (err) {
+                console.error('Reset stats error:', err);
+                showToast('❌ Failed to reset stats: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-undo-alt"></i> Reset Deposit/Withdraw Stats';
+            }
+        };
+
+        // ================================================================
+        // 28. INITIALIZATION
         // ================================================================
         async function init() {
             try {
@@ -4666,8 +4763,8 @@
                 loadAppearance();
                 loadRecentActivities();
                 console.log('✅ Sajvera Admin Dashboard initialized with fixes.');
-                console.log('📌 Plan type now saves as "invest" or "buy" (lowercase).');
-                console.log('📌 User edit includes deposit & withdraw balance controls.');
+                console.log('📌 Plan type: Invest = Daily Return × Days | Buy = Profit + Duration (no multiplication)');
+                console.log('📌 Reset Stats: Deletes deposit/withdrawal records. User balances are NOT affected.');
             } catch (err) { console.error('Initialization error:', err); }
         }
 
